@@ -41,6 +41,7 @@ const FEATURES = [
     setupProgressPanel,
     setupHero,
     setupChecklists,
+    setupRestTimer,
     setupTools,
     setupContactForm,
     setupLinks,      // keep after features that add routes
@@ -1202,7 +1203,9 @@ function setupPrograms() {
                     <label for="${id}" class="ex-name">${escapeHtml(x.name)}</label>
                     <span class="ex-dose">${escapeHtml(dose.text)}</span>
                     ${badges ? `<span class="ex-badges">${badges}</span>` : ""}
-                    ${x.rest ? `<span class="ex-rest">Rest ${escapeHtml(x.rest)}</span>` : ""}
+                    ${x.rest ? (restSeconds(x.rest)
+                        ? `<button type="button" class="rest-btn" data-rest="${restSeconds(x.rest)}" data-rest-name="${escapeHtml(x.name)}"><span aria-hidden="true">&#9654;</span> Rest ${escapeHtml(x.rest)}<span class="visually-hidden">: start rest timer</span></button>`
+                        : `<span class="ex-rest">Rest ${escapeHtml(x.rest)}</span>`) : ""}
                     ${easier ? `<span class="ex-swap">Easier option: ${escapeHtml(easier)}</span>` : ""}
                     ${target ? `<span class="ex-target${target.up ? " is-up" : ""}">${target.lastText ? `<span class="ex-last">Last time: ${escapeHtml(target.lastText)}</span>` : ""}${escapeHtml(target.text)}</span>` : ""}
                     <span class="ex-actions">
@@ -1419,6 +1422,107 @@ function setupPrograms() {
     });
 
     render();
+}
+
+// "90 s" -> 90, "2 min" -> 120, "2–3 min" -> 120 (the shorter end)
+function restSeconds(text) {
+    const m = String(text).match(/(\d+)(?:\s*[–-]\s*\d+)?\s*(s|min)/);
+    if (!m) return 0;
+    return Number(m[1]) * (m[2] === "min" ? 60 : 1);
+}
+
+/* =========================================================
+   FEATURE: Rest timer
+   Any button with data-rest="seconds" starts a countdown bar
+   at the bottom of the screen. It buzzes (on phones that allow
+   it) and beeps when rest is over.
+   ========================================================= */
+function setupRestTimer() {
+    if (!document.querySelector("#day-grid")) return;
+    document.body.insertAdjacentHTML("beforeend", `
+<div class="rest-timer" id="rest-timer" hidden>
+    <div class="rest-timer-inner">
+        <div class="rest-timer-text">
+            <span class="rest-timer-label" id="rest-timer-label">Rest</span>
+            <strong class="rest-timer-time" id="rest-timer-time" role="timer">0:00</strong>
+        </div>
+        <div class="rest-timer-bar" aria-hidden="true"><div id="rest-timer-fill"></div></div>
+        <div class="rest-timer-buttons">
+            <button type="button" class="chip" id="rest-plus">+15 s</button>
+            <button type="button" class="chip" id="rest-stop">Done resting</button>
+        </div>
+    </div>
+    <p class="visually-hidden" id="rest-timer-announce" aria-live="assertive"></p>
+</div>`);
+    const box = document.getElementById("rest-timer");
+    const time = document.getElementById("rest-timer-time");
+    const label = document.getElementById("rest-timer-label");
+    const fill = document.getElementById("rest-timer-fill");
+    const announce = document.getElementById("rest-timer-announce");
+    let endAt = 0, total = 0, tick = null, audio = null;
+    const show = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
+
+    function beep() {
+        try {
+            audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+            [0, 0.25, 0.5].forEach((t) => {
+                const o = audio.createOscillator(), g = audio.createGain();
+                o.frequency.value = 880;
+                g.gain.setValueAtTime(0.18, audio.currentTime + t);
+                g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + t + 0.18);
+                o.connect(g).connect(audio.destination);
+                o.start(audio.currentTime + t);
+                o.stop(audio.currentTime + t + 0.2);
+            });
+        } catch (e) { /* no sound available */ }
+    }
+
+    function update() {
+        const left = Math.max(0, Math.round((endAt - Date.now()) / 1000));
+        time.textContent = show(left);
+        fill.style.width = total ? `${(left / total) * 100}%` : "0";
+        if (left === 0) finish();
+    }
+    function finish() {
+        clearInterval(tick);
+        tick = null;
+        box.classList.add("is-done");
+        label.textContent = "Rest over";
+        time.textContent = "Go!";
+        announce.textContent = "Rest over. Time for your next set.";
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        beep();
+        setTimeout(() => { if (!tick) box.hidden = true; }, 6000);
+    }
+    function start(seconds, name) {
+        total = seconds;
+        endAt = Date.now() + seconds * 1000;
+        label.textContent = name ? `Rest · ${name}` : "Rest";
+        box.hidden = false;
+        box.classList.remove("is-done");
+        announce.textContent = "";
+        clearInterval(tick);
+        tick = setInterval(update, 250);
+        update();
+        // Unlock audio on phones while we still have the tap
+        try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === "suspended") audio.resume(); } catch (e) { /* ignore */ }
+    }
+
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-rest]");
+        if (btn) start(Number(btn.dataset.rest), btn.dataset.restName);
+    });
+    document.getElementById("rest-plus").addEventListener("click", () => {
+        if (!tick) return;
+        endAt += 15000;
+        total += 15;
+        update();
+    });
+    document.getElementById("rest-stop").addEventListener("click", () => {
+        clearInterval(tick);
+        tick = null;
+        box.hidden = true;
+    });
 }
 
 /* =========================================================

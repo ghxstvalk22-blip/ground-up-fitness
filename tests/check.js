@@ -134,6 +134,13 @@ async function openPage(browser, file, viewport, hash = "") {
             check((await page.locator(".howto-demo").getAttribute("href")).startsWith("https://www.youtube.com/results?search_query="), "guide has a YouTube demo search");
             await page.locator("#howto-close").click();
 
+            // Rest timer starts from the rest time on an exercise
+            await page.locator("[data-rest]").first().click();
+            check(await page.locator("#rest-timer").isVisible(), "tapping a rest time starts the rest timer");
+            check(/^\d:\d\d$/.test(await page.locator("#rest-timer-time").textContent()), "rest timer counts down in m:ss");
+            await page.locator("#rest-stop").click();
+            check(!(await page.locator("#rest-timer").isVisible()), "Done resting closes the timer");
+
             // Weekly rotation: the classic plan changes some accessories from week to week
             await page.locator('input[name="goal"][value="classic"]').check({ force: true });
             await page.locator('input[name="days"][value="4"]').check({ force: true });

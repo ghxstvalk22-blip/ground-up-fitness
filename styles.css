@@ -1195,6 +1195,65 @@ select, input, textarea {
 .btn-compact { padding: 10px 16px; font-size: 0.72rem; }
 .log-status { margin: 6px 0 0; font-size: 0.8rem; color: var(--bad); min-height: 0; }
 
+.rest-btn {
+    align-self: flex-start;
+    font: inherit;
+    font-size: 0.82rem;
+    color: var(--muted);
+    background: none;
+    border: 0;
+    padding: 2px 0;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+.rest-btn:hover { color: var(--ink); }
+.rest-btn span[aria-hidden] { font-size: 0.65rem; color: var(--accent); }
+
+/* Rest timer bar */
+.rest-timer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    background-color: #000000;
+    color: #ffffff;
+    border-top: 3px solid var(--volt);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
+}
+.rest-timer-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px 24px calc(12px + env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px 20px;
+}
+.rest-timer-text { display: flex; flex-direction: column; }
+.rest-timer-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #bdbdbd; }
+.rest-timer-time {
+    font-family: var(--display);
+    font-size: 2.2rem;
+    font-weight: 900;
+    font-stretch: 75%;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.rest-timer-bar { height: 6px; background-color: #333333; }
+.rest-timer-bar div { height: 100%; width: 100%; background-color: var(--volt); transition: width 0.25s linear; }
+.rest-timer-buttons { display: flex; gap: 8px; }
+.rest-timer .chip { color: #ffffff; border-color: #555555; }
+.rest-timer .chip:hover { border-color: #ffffff; }
+.rest-timer.is-done { background-color: var(--volt); color: #000000; }
+.rest-timer.is-done .rest-timer-label { color: #000000; }
+.rest-timer.is-done .chip { color: #000000; border-color: #000000; }
+@media (max-width: 600px) {
+    .rest-timer-inner { grid-template-columns: 1fr auto; padding-left: 16px; padding-right: 16px; }
+    .rest-timer-bar { grid-column: 1 / -1; grid-row: 2; }
+}
+
 /* Week bar */
 .week-bar {
     display: grid;
