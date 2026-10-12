@@ -56,6 +56,7 @@ const FEATURES = [
     setupRestTimer,
     setupLibrary,
     setupMuscleMap,
+    setupLevelBar,
     setupWeightTrend,
     setupDashboard,
     setupAccount,
@@ -247,7 +248,7 @@ function setupLayout() {
             `programs.html#program-${key}`
         ]),
         "divider",
-        [`All ${Object.keys(PROGRAMS).length} plans`, "Home, dumbbells, cardio, running, and more", "programs.html#all-plans"]
+        [`More plans by level`, "Intermediate, Advanced, and Expert", "programs.html#all-plans"]
     ];
 
     const menuItem = (item) => item === "divider"
@@ -832,7 +833,7 @@ const PROGRAMS = {
     },
 
     strength: {
-        level: "Beginner", main: true,
+        level: "Intermediate",
         name: "Get stronger",
         tagline: "squat, bench, deadlift",
         summary: "Barbell training built around the squat, bench press, deadlift, and overhead press. Best once you're comfortable with the basic movements.",
@@ -897,7 +898,7 @@ const PROGRAMS = {
     },
 
     build: {
-        level: "Beginner", main: true,
+        level: "Intermediate",
         name: "Build muscle",
         tagline: "full body",
         summary: "Three full-body sessions a week built for muscle: moderate weights, 8 to 15 reps, and every muscle trained three times a week. A great next step after the beginner plan, and before a bodybuilding split like Classic Physique.",
@@ -938,7 +939,7 @@ const PROGRAMS = {
     },
 
     glutes: {
-        level: "Beginner",
+        level: "Advanced",
         name: "Glutes & legs focus",
         tagline: "lower body first",
         summary: "For anyone, man or woman, who wants stronger, more shapely glutes and legs. Hip thrusts, hinges, and single-leg work come first each lower day, and upper body still gets trained so you stay balanced.",
@@ -1013,7 +1014,7 @@ const PROGRAMS = {
     },
 
     upper: {
-        level: "Beginner",
+        level: "Advanced",
         name: "Upper body focus",
         tagline: "chest, back, shoulders, arms",
         summary: "For anyone, man or woman, who wants a stronger, more defined upper body. Upper body gets trained more often, and legs still get a full session each week so nothing falls behind.",
@@ -1087,7 +1088,7 @@ const PROGRAMS = {
     },
 
     c25k: {
-        level: "Beginner",
+        level: "Beginner", main: true,
         name: "Couch to 5K",
         tagline: "from walking to a 30-minute run",
         summary: "Go from walking to running 30 minutes without stopping in 9 weeks, 3 runs a week. Each week steps up a little. This page shows that week's runs automatically.",
@@ -1134,7 +1135,7 @@ const PROGRAMS = {
     },
 
     gzclp: {
-        level: "Intermediate",
+        level: "Advanced",
         name: "Next-level strength",
         tagline: "squat, bench, deadlift, press",
         summary: "A popular free strength program in three tiers: a heavy main lift (Tier 1), a lighter second lift for more reps (Tier 2), and an accessory for high reps (Tier 3). Best after a few months of lifting, once you know the barbell lifts.",
@@ -1173,7 +1174,7 @@ const PROGRAMS = {
     },
 
     endurance: {
-        level: "Beginner",
+        level: "Advanced",
         name: "Light weights, high reps",
         tagline: "lighter weights, more reps",
         summary: "Lighter weights for 15 to 20 reps with short rest, done as a circuit. Builds muscles that keep going: great for fitness tests, hiking, sports, and anyone who prefers lighter weights to heavy ones.",
@@ -1212,7 +1213,7 @@ const PROGRAMS = {
     },
 
     cardio: {
-        level: "Beginner",
+        level: "Intermediate",
         name: "Cardio & conditioning",
         tagline: "heart, lungs, endurance",
         summary: "Cardio done the smart way: mostly easy sessions you could hold a conversation through, plus one harder interval day. Great on its own or added to a lifting plan. Use Swap to pick the machine or activity you like.",
@@ -1261,7 +1262,7 @@ const PROGRAMS = {
     },
 
     home: {
-        level: "Beginner",
+        level: "Beginner", main: true,
         name: "No gym needed",
         tagline: "bodyweight at home",
         kit: "none",
@@ -1301,7 +1302,7 @@ const PROGRAMS = {
     },
 
     busy: {
-        level: "Beginner",
+        level: "Beginner", main: true,
         name: "Short on time",
         tagline: "under 45 minutes a session",
         summary: "Two full-body gym sessions a week that hit everything. Short rests and no fluff, for weeks when life is busy. Two good sessions beat four you keep skipping.",
@@ -1332,7 +1333,7 @@ const PROGRAMS = {
     },
 
     dumbbell: {
-        level: "Beginner",
+        level: "Intermediate",
         name: "Dumbbells only",
         tagline: "home gym or crowded gym",
         kit: "db",
@@ -1408,8 +1409,73 @@ const PROGRAMS = {
         }
     },
 
+    ppl: {
+        level: "Expert",
+        name: "Push / pull / legs",
+        tagline: "6-day split for experienced lifters",
+        summary: "Each muscle twice a week across six hard sessions: push (chest, shoulders, triceps), pull (back, biceps), and legs, twice through. Only for lifters with a year or more of steady training who recover well.",
+        session: "60 to 75 minutes",
+        effort: "Main lifts: stop 1 or 2 reps short of failure. Isolation work can go to 0 or 1 reps left. Keep form strict when you're tired.",
+        progression: "Double progression on everything, plus the 4-week waves. If performance drops two weeks in a row, take the Recover week early.",
+        plans: {
+            6: {
+                schedule: "Push, pull, legs, push, pull, legs, rest. Like Mon to Sat with Sunday off.",
+                days: [
+                    { title: "Push A", items: [
+                        ex("Bench press", "4 × 5–7", "3 min"),
+                        ex("Overhead press", "3 × 6–8", "2–3 min"),
+                        ex("Incline dumbbell press", "3 × 8–10", "2 min"),
+                        ex("Cable lateral raise", "4 × 12–15", "60 s"),
+                        ex("Triceps pushdown", "3 × 10–12", "60 s"),
+                        ex("Overhead triceps extension", "3 × 12–15", "60 s")
+                    ] },
+                    { title: "Pull A", items: [
+                        ex("Deadlift", "3 × 4–6", "3 min"),
+                        ex("Pull-up", "4 × 6–10", "2 min", "Assisted pull-up"),
+                        ex("Barbell row", "3 × 6–8", "2 min"),
+                        ex("Face pull", "3 × 15", "60 s"),
+                        ex("Barbell curl", "3 × 8–10", "60 s"),
+                        ex("Hammer curl", "2 × 10–12", "60 s")
+                    ] },
+                    { title: "Legs A", items: [
+                        ex("Back squat", "4 × 5–7", "3 min"),
+                        ex("Romanian deadlift", "3 × 8–10", "2 min"),
+                        ex("Leg press", "3 × 10–12", "2 min"),
+                        ex("Lying hamstring curl", "3 × 10–12", "60 s"),
+                        ex("Standing calf raise", "4 × 10–15", "60 s"),
+                        ex("Hanging knee raise", "3 × 12", "60 s")
+                    ] },
+                    { title: "Push B", items: [
+                        ex("Incline barbell press", "4 × 6–8", "2–3 min"),
+                        ex("Seated dumbbell shoulder press", "3 × 8–10", "2 min"),
+                        ex("Machine chest press", "3 × 10–12", "90 s"),
+                        ex("Lateral raise", "4 × 15–20", "45 s"),
+                        ex("Skull crusher", "3 × 10–12", "60 s"),
+                        ex("Cable fly", "3 × 12–15", "60 s")
+                    ] },
+                    { title: "Pull B", items: [
+                        ex("Lat pulldown", "4 × 8–12", "90 s"),
+                        ex("Chest-supported row", "4 × 8–12", "90 s"),
+                        ex("Single-arm cable row", "3 × 10–12", "60 s"),
+                        ex("Reverse pec deck", "3 × 15–20", "45 s"),
+                        ex("Incline dumbbell curl", "3 × 10–12", "60 s"),
+                        ex("Cable curl", "2 × 12–15", "45 s")
+                    ] },
+                    { title: "Legs B", items: [
+                        ex("Front squat", "4 × 6–8", "2–3 min"),
+                        ex("Hip thrust", "3 × 8–10", "2 min"),
+                        ex("Bulgarian split squat", "3 × 8–10 per leg", "90 s"),
+                        ex("Leg extension", "3 × 12–15", "60 s"),
+                        ex("Seated hamstring curl", "3 × 12–15", "60 s"),
+                        ex("Seated calf raise", "4 × 12–15", "45 s")
+                    ] }
+                ]
+            }
+        }
+    },
+
     classic: {
-        level: "Advanced",
+        level: "Expert",
         name: "Classic Physique",
         tagline: "bodybuilding split",
         summary: "A bodybuilding split in the style many physique competitors favor: more weekly sets, every muscle trained hard, and extra work for the shoulders, upper back, and arms that build a V-taper. Best after six months of steady lifting.",
@@ -1633,6 +1699,32 @@ function getProfile() {
     };
 }
 
+/* ---------- Your level ----------
+   One setting for the whole site. The higher it is, the more plans you see and the more
+   detail the how-tos, plans, and muscle map show. Saved on this device as "gu-level". */
+const LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"];
+const LEVEL_INFO = {
+    Beginner: "New or coming back. Simple plans and the basics of every move.",
+    Intermediate: "Training steadily for a few months. More plans, plus the common mistakes and how to make moves harder.",
+    Advanced: "A year or more of lifting. Specialized plans, 4-week training waves, and form cues for each move.",
+    Expert: "Years of serious training. Every plan, including a 6-day split, with programming notes on every exercise."
+};
+function getLevel() {
+    const saved = store.get("gu-level");
+    return LEVELS.includes(saved) ? saved : "Beginner";
+}
+const levelRank = (l) => Math.max(0, LEVELS.indexOf(l));
+const levelAtLeast = (l) => levelRank(getLevel()) >= levelRank(l);
+function setLevel(l) {
+    if (!LEVELS.includes(l) || l === getLevel()) return;
+    store.set("gu-level", l);
+    // keep "Make it yours" in step with the level
+    const p = store.get(PROFILE_KEY, {}) || {};
+    p.experience = { Beginner: "new", Intermediate: "some", Advanced: "lots", Expert: "lots" }[l];
+    store.set(PROFILE_KEY, p);
+    window.dispatchEvent(new CustomEvent("levelchange", { detail: { level: l } }));
+}
+
 // Main muscle of an exercise, from the library ("Side shoulders" -> shoulders)
 function muscleGroup(name) {
     const m = ((typeof EXERCISES === "object" && EXERCISES[name]) ? EXERCISES[name].m : "").split(",")[0].toLowerCase();
@@ -1677,7 +1769,7 @@ function personalDose(program, item, slot, profile, week = 1) {
         if (profile.focus && muscleGroup(item.name) === profile.focus && d.sets < 5) { d.sets += 1; notes.push("+1 set for your focus"); changed = true; }
     }
     // ...then the week's wave changes it from there
-    if (plan.waves !== false) {
+    if (plan.waves !== false && levelAtLeast("Advanced")) {
         const phase = wavePhase(week).key;
         if (phase === "push" && slot > 0 && d.sets < 5) { d.sets += 1; notes.push("+1 set: Push week"); changed = true; }
         if (phase === "heavy" && slot === 0 && d.high >= 5) {
@@ -1983,8 +2075,7 @@ function setupPrograms() {
         const done = new Set(store.get(progressKey(), []));
 
         els.goalInputs.forEach((r) => { r.checked = r.value === state.goal; });
-        // The 4 main goals are always shown; the rest open with "More plans" (or when one of them is picked)
-        if (!p.main) showMorePlans(true);
+        showLevelPlans();
         els.dayInputs.forEach((r) => {
             const offered = available.includes(Number(r.value));
             r.disabled = !offered;
@@ -1999,7 +2090,8 @@ function setupPrograms() {
                 <p>${escapeHtml(p.summary)}</p>
                 ${p.source ? `<p class="plan-source">Based on <a href="${p.source[1]}" target="_blank" rel="noopener">${escapeHtml(p.source[0])}</a>. Adapted for this site; not affiliated.</p>` : ""}
             </div>
-            <details class="plan-details"${planDetailsOpen ? " open" : ""}>
+            ${!levelAtLeast("Intermediate") ? `<p class="plan-simple"><strong>When:</strong> ${escapeHtml(plan.schedule)} <strong>How hard:</strong> ${escapeHtml(p.effort)}</p>` : ""}
+            <details class="plan-details"${planDetailsOpen ? " open" : ""}${levelAtLeast("Intermediate") ? "" : " hidden"}>
                 <summary>How this plan works</summary>
                 <dl class="program-meta">
                     <div><dt>Schedule</dt><dd>${escapeHtml(plan.schedule)}</dd></div>
@@ -2020,11 +2112,13 @@ function setupPrograms() {
         els.weekToday.hidden = state.week === now;
         const combos = planCombinations(plan, state.goal);
         const phaseEl = document.getElementById("week-phase");
-        // Keep it simple at first: the training waves, variety count, and "why it changes" note
-        // appear once someone is past their first week or has logged a workout
-        const seasoned = state.week >= 2 || Object.keys(getLog()).length > 0 || getCardio().length > 0;
+        // Detail grows with your level: training waves, the variety count, and the "why it changes"
+        // note from Advanced up (and the research notes start open for Experts)
+        const seasoned = levelAtLeast("Advanced");
         const why = document.getElementById("why-rotate");
-        if (why) why.hidden = !seasoned;
+        if (why) { why.hidden = !seasoned; if (getLevel() === "Expert" && !why.dataset.touched) why.open = true; }
+        const prof = document.getElementById("profile-panel");
+        if (prof) prof.hidden = !levelAtLeast("Intermediate");
         if (phaseEl) {
             if (p.waves === false || !seasoned) { phaseEl.hidden = true; }
             else {
@@ -2083,7 +2177,7 @@ function setupPrograms() {
             else firstTipShown.add(di);
         }
         // Recover week: same exercise, about 10% lighter on purpose
-        if (target && target.weight > 0 && PROGRAMS[state.goal].waves !== false && wavePhase(state.week).key === "recover") {
+        if (target && target.weight > 0 && PROGRAMS[state.goal].waves !== false && levelAtLeast("Advanced") && wavePhase(state.week).key === "recover") {
             const w = roundWeight(target.weight * 0.9, profile.unit);
             target = { ...target, up: false, weight: w, text: `Recover week: about ${trimNum(w)} ${profile.unit}, roughly 10% lighter than usual. Easy on purpose.` };
         }
@@ -2392,20 +2486,25 @@ function setupPrograms() {
         if (copied) copyTimer = setTimeout(() => { els.copyStatus.textContent = ""; }, 4000);
     });
 
-    // "More plans": the other 10 plans, hidden until asked for
-    const moreBox = document.getElementById("all-plans"), moreBtn = document.getElementById("goal-more-toggle");
-    function showMorePlans(open) {
-        if (!moreBox) return;
-        els.goalInputs[0].closest("fieldset").classList.toggle("show-more", open);
-        moreBtn.setAttribute("aria-expanded", String(open));
-        moreBtn.textContent = open ? "Fewer plans" : `More plans (${moreBox.querySelectorAll("input").length})`;
+    // Plans above your level stay out of sight; a note says what the next level adds
+    function showLevelPlans() {
+        const rank = levelRank(getLevel());
+        els.goalInputs.forEach((r) => {
+            const label = r.closest("label");
+            const lvl = PROGRAMS[r.value] ? PROGRAMS[r.value].level : "Beginner";
+            label.hidden = levelRank(lvl) > rank && r.value !== state.goal;
+            label.classList.toggle("is-above", levelRank(lvl) > rank);
+        });
+        const note = document.getElementById("level-unlock");
+        const next = LEVELS[rank + 1];
+        if (!note) return;
+        const more = next ? Object.values(PROGRAMS).filter((p) => p.level === next).length : 0;
+        note.hidden = !next;
+        if (next) note.innerHTML = `${more} more plan${more === 1 ? "" : "s"} at ${next}. <button type="button" class="text-button" data-set-level="${next}">Show ${next} plans</button>`;
     }
-    if (moreBtn) moreBtn.addEventListener("click", () => {
-        const open = moreBtn.getAttribute("aria-expanded") !== "true";
-        if (!open && !PROGRAMS[state.goal].main) return; // keep the picked plan visible
-        showMorePlans(open);
-    });
-    addRoute(/^#all-plans$/, () => { showMorePlans(true); return { target: moreBox }; });
+    document.addEventListener("click", (e) => { const b = e.target.closest("[data-set-level]"); if (b) setLevel(b.dataset.setLevel); });
+    window.addEventListener("levelchange", () => render());
+    addRoute(/^#all-plans$/, () => ({ target: document.querySelector("[data-level-bar]") || document.getElementById("goal-picker") }));
 
     // Links like #program-fatloss or #program-strength-4
     addRoute(/^#program-([a-z0-9]+)(?:-(\d))?$/, (m) => {
@@ -2583,6 +2682,32 @@ function setupLibrary() {
     const match = radios.find((r) => r.value && r.value === fromHash);
     if (match) match.checked = true;
     render();
+}
+
+/* =========================================================
+   FEATURE: Level picker. Any element with data-level-bar gets the
+   Beginner / Intermediate / Advanced / Expert switch.
+   ========================================================= */
+function setupLevelBar() {
+    const bars = [...document.querySelectorAll("[data-level-bar]")];
+    if (!bars.length) return;
+    bars.forEach((bar, n) => {
+        const compact = bar.hasAttribute("data-compact");
+        bar.innerHTML = `
+            <fieldset class="segmented level-bar${compact ? " is-compact" : ""}">
+                <legend>${compact ? "Detail level" : "Your level"}</legend>
+                ${LEVELS.map((l) => `<label><input type="radio" name="level-${n}" value="${l}"><span>${l}</span></label>`).join("")}
+            </fieldset>
+            ${compact ? "" : `<p class="level-info" aria-live="polite"></p>`}`;
+        bar.addEventListener("change", (e) => { if (e.target.name === `level-${n}`) setLevel(e.target.value); });
+    });
+    const sync = () => {
+        const l = getLevel();
+        document.querySelectorAll(".level-bar input").forEach((r) => { r.checked = r.value === l; });
+        document.querySelectorAll(".level-info").forEach((p) => { p.textContent = LEVEL_INFO[l]; });
+    };
+    window.addEventListener("levelchange", sync);
+    sync();
 }
 
 /* =========================================================
@@ -2848,6 +2973,8 @@ function setupMuscleMap() {
     let sel = { group: null, part: null }, hover = null, partsOpen = false;
     const norm = (x) => ((x % 360) + 540) % 360 - 180;
     const facing = () => (Math.abs(norm(angle)) <= 90 ? "front" : "back");
+    window.addEventListener("levelchange", () => show());
+    document.addEventListener("click", (e) => { const b = e.target.closest("[data-set-level]"); if (b && root.contains(b)) setLevel(b.dataset.setLevel); });
     panel.addEventListener("toggle", (e) => { if (e.target.classList && e.target.classList.contains("mm-parts-wrap")) partsOpen = e.target.open; }, true);
 
     // Two faces on a card that turns in 3D: front at 0 degrees, back at 180
@@ -2921,18 +3048,21 @@ function setupMuscleMap() {
         // the top pick for each part, so one list covers the whole muscle
         const best = [...new Set(g.parts.flatMap((p) => p.ex.slice(0, single ? 4 : 2)))].slice(0, 5);
         const partWord = /delt|triceps|biceps|quad/.test(g.parts[0].id) ? "heads" : "parts";
+        // Beginner: just the muscle and its best exercises. Intermediate: each part. Advanced and up: anatomy names too
+        const lvl = levelRank(getLevel());
+        const aka = (p) => (lvl >= 2 ? ` <small>${escapeHtml(p.aka)}</small>` : "");
         panel.innerHTML = `
             <p class="mm-eyebrow">${MM_GROUP_LABEL[g.group]}</p>
             <h3 class="mm-title"><span class="mm-dot" aria-hidden="true"></span>${escapeHtml(picked && !single ? picked.name : g.name)}</h3>
-            ${picked && !single ? `<p class="mm-aka">${escapeHtml(picked.aka)} &middot; part of the ${escapeHtml(g.name.toLowerCase())}</p>` : ""}
+            ${picked && !single ? `<p class="mm-aka">${lvl >= 2 ? `${escapeHtml(picked.aka)} &middot; ` : ""}part of the ${escapeHtml(g.name.toLowerCase())}</p>` : ""}
             <p>${escapeHtml(g.does)}</p>
             <h4>Best exercises</h4>${exList(picked && !single ? picked.ex : best)}
-            ${single ? `<p class="mm-aka">${escapeHtml(g.parts[0].aka)}: ${escapeHtml(g.parts[0].where)}</p>` : `
-            <details class="mm-parts-wrap"${picked || partsOpen ? " open" : ""}>
+            ${single ? (lvl >= 2 ? `<p class="mm-aka">${escapeHtml(g.parts[0].aka)}: ${escapeHtml(g.parts[0].where)}</p>` : "") : lvl < 1 ? `<p class="mm-aka">Want to see its ${g.parts.length} ${partWord}? <button type="button" class="text-button" data-set-level="Intermediate">Switch to Intermediate</button></p>` : `
+            <details class="mm-parts-wrap"${picked || partsOpen || lvl >= 2 ? " open" : ""}>
             <summary>See each part (${g.parts.length} ${partWord})</summary>
             <ol class="mm-parts">${g.parts.map((p) => `
                 <li class="mm-part${sel.part === p.id ? " is-on" : ""}" data-part="${p.id}">
-                    <button type="button" class="mm-part-name" data-mm-part="${p.id}" aria-pressed="${sel.part === p.id}"><span class="mm-part-mark" aria-hidden="true"></span>${escapeHtml(p.name)} <small>${escapeHtml(p.aka)}</small></button>
+                    <button type="button" class="mm-part-name" data-mm-part="${p.id}" aria-pressed="${sel.part === p.id}"><span class="mm-part-mark" aria-hidden="true"></span>${escapeHtml(p.name)}${aka(p)}</button>
                     <p>${escapeHtml(p.where)}</p>
                     <p class="mm-best">Best for it:</p>${exList(p.ex)}
                 </li>`).join("")}</ol></details>`}
@@ -3462,16 +3592,45 @@ function setupExerciseGuide() {
             </div>
             <button type="button" class="howto-close" id="howto-close" aria-label="Close">&times;</button>
         </div>
+        <div class="howto-level" data-level-bar data-compact></div>
         <div class="howto-body" id="howto-body"></div>
     </div>
 </dialog>`);
     const dialog = document.getElementById("howto");
     if (typeof dialog.showModal !== "function") return;
-    let opener = null;
+    let opener = null, current = null;
+    window.addEventListener("levelchange", () => { if (dialog.open && current) open(current); });
+
+    // Extra coaching for Advanced and Expert, worked out from the kind of exercise
+    const COMPOUND = /press|squat|deadlift|row|pull-up|pulldown|lunge|thrust|dip|step-up|split squat|push-up|leg press|chin|carry/i;
+    function deeper(name, x) {
+        const cardio = isCardio(name);
+        const timed = /plank|carry|bird dog|dead bug|wall sit|hold/i.test(name) && !cardio;
+        const compound = !cardio && COMPOUND.test(name);
+        const cues = cardio
+            ? ["Most sessions should feel easy enough to talk in full sentences; save hard efforts for 1 or 2 interval days a week.", "Build time first, then speed: add about 10% a week at most."]
+            : timed
+                ? ["Brace like you're about to be poked in the stomach, and keep breathing in short breaths.", "Quality over time: stop the hold when your position starts to slip."]
+                : ["Lower for about 2 to 3 seconds, pause for a moment, then lift with control.", "Breathe in and brace before the hard part; breathe out as you finish it.", compound ? "On heavy sets, stop with 1 to 3 good reps left in the tank." : "On isolation moves you can train closer to failure, 0 to 2 reps left."];
+        const program = cardio
+            ? ["<strong>Easy days:</strong> 30 to 60 minutes at a conversational pace (roughly 60 to 70% of max heart rate).", "<strong>Hard days:</strong> intervals like 6 to 10 × 30 to 60 seconds hard, with equal or longer easy recovery.", "<strong>Weekly:</strong> mostly easy, about 1 in 5 sessions hard. Health guidelines suggest at least 150 minutes of moderate cardio a week."]
+            : timed
+                ? ["<strong>Sets:</strong> 2 to 4 holds of 20 to 60 seconds, or 6 to 10 slow reps per side.", "<strong>Progress by:</strong> adding time, then a harder version, rather than load.", "<strong>Rest:</strong> 30 to 60 seconds."]
+                : [`<strong>Strength:</strong> ${compound ? "3 to 6 reps, 3 to 5 sets, 2 to 4 minutes rest" : "not the best tool for max strength; use it for muscle"}.`,
+                   `<strong>Muscle:</strong> ${compound ? "6 to 12" : "8 to 15"} reps, 2 to 4 hard sets, ${compound ? "2 to 3 minutes" : "60 to 90 seconds"} rest. Aim for 10 to 20 hard sets a week per muscle.`,
+                   "<strong>Endurance:</strong> 15 or more reps with lighter weight and short rest (under 90 seconds).",
+                   "<strong>Progress by:</strong> double progression. Reach the top of the rep range on every set, then add the smallest weight jump.",
+                   `<strong>Advanced techniques:</strong> ${compound ? "pause reps (2 seconds at the hardest point) and slow 4-second lowering. Use them for a few weeks at a time, not all year." : "rest-pause (rest 15 seconds, then squeeze out a few more reps) and slow 4-second lowering on the last set."}`];
+        const adv = `<h3>Form cues</h3><ul class="howto-cues">${cues.map((c) => `<li>${escapeHtml(c)}</li>`).join("")}</ul>`;
+        const exp = `<h3>Programming notes</h3><ul class="howto-program">${program.map((c) => `<li>${c}</li>`).join("")}</ul>`;
+        return { adv, exp };
+    }
 
     function open(name) {
         const x = EXERCISES[name];
         if (!x) return;
+        current = name;
+        const lvl = levelRank(getLevel());
         const demo = `https://www.youtube.com/results?search_query=${encodeURIComponent(name + " proper form")}`;
         const fam = (familyFor(name) || []).filter((n) => n !== name);
         document.getElementById("howto-title").textContent = name;
@@ -3484,13 +3643,16 @@ function setupExerciseGuide() {
             <h3>The movement</h3>
             <ol class="howto-steps">${x.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
             <div class="howto-tip"><strong>The one thing to remember:</strong> ${escapeHtml(x.tip)}</div>
-            <h3>Avoid these</h3>
-            <ul class="howto-mistakes">${x.mistakes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
-            ${x.easier || x.harder ? `<dl class="howto-levels">
+            ${lvl >= 1 ? `<h3>Avoid these</h3>
+            <ul class="howto-mistakes">${x.mistakes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>` : ""}
+            ${x.easier || (x.harder && lvl >= 1) ? `<dl class="howto-levels">
                 ${x.easier ? `<div><dt>Too hard?</dt><dd>${escapeHtml(x.easier)}</dd></div>` : ""}
-                ${x.harder ? `<div><dt>Too easy?</dt><dd>${escapeHtml(x.harder)}</dd></div>` : ""}
+                ${x.harder && lvl >= 1 ? `<div><dt>Too easy?</dt><dd>${escapeHtml(x.harder)}</dd></div>` : ""}
             </dl>` : ""}
-            ${fam.length ? `<h3>Works the same muscles</h3><p class="howto-alts">${fam.map((n) => `<button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join(" ")}</p>` : ""}
+            ${lvl >= 2 ? deeper(name, x).adv : ""}
+            ${lvl >= 2 && fam.length ? `<h3>Works the same muscles</h3><p class="howto-alts">${fam.map((n) => `<button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join(" ")}</p>` : ""}
+            ${lvl >= 3 ? deeper(name, x).exp : ""}
+            ${lvl < 3 ? `<p class="howto-more">Want more detail? Switch the detail level above to ${LEVELS[lvl + 1]}.</p>` : ""}
             <p class="fine-print">Stop if something hurts (sharp or joint pain, not muscle burn). Form guides are general advice, not medical advice.</p>`;
         if (!dialog.open) dialog.showModal();
         dialog.querySelector(".howto-inner").scrollTop = 0;

@@ -55,9 +55,9 @@ function linkProblem(href, fromPage) {
 const FONT_FILE = path.join(ROOT, "node_modules/@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2");
 const FONT_CSS = `@font-face{font-family:"Archivo";src:url("https://fonts.gstatic.com/test/archivo.woff2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:block;}`;
 
-// Pick a plan on the Programs page, opening "More plans" if it's one of the extra ones
+// Pick a plan on the Programs page, switching to Expert first if the plan is above the current level
 async function pickGoal(page, value) {
-    if (!(await page.locator(`label:has(input[name="goal"][value="${value}"])`).isVisible())) await page.click("#goal-more-toggle");
+    if (!(await page.locator(`label:has(input[name="goal"][value="${value}"])`).isVisible())) await page.locator('.level-wrap input[value="Expert"]').check({ force: true });
     await page.locator(`input[name="goal"][value="${value}"]`).check({ force: true });
 }
 
@@ -387,16 +387,24 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.evaluate(() => localStorage.clear());
             await page.reload({ waitUntil: "load" });
             const visibleGoals = await page.locator('#goal-picker label:visible').count();
-            check(visibleGoals === 4, `Programs starts with 4 main goals (${visibleGoals} shown)`);
-            check(await page.locator("#week-phase").isHidden() && await page.locator("#week-variety").isHidden() && await page.locator("#why-rotate").isHidden(), "training waves and variety details wait until after week 1");
+            check(visibleGoals === 5, `Beginners see 5 plans (${visibleGoals} shown)`);
+            check(await page.locator("#week-phase").isHidden() && await page.locator("#week-variety").isHidden() && await page.locator("#why-rotate").isHidden() && await page.locator("#profile-panel").isHidden(), "beginners don't see training waves, variety details, or extra settings");
             check(/Beginner/.test(await page.locator(".level-tag").textContent()), "each plan shows its level");
-            await page.click("#goal-more-toggle");
-            check(await page.locator('#goal-picker label:visible').count() === 14, "More plans shows every plan");
+            const counts = [];
+            for (const lvl of ["Intermediate", "Advanced", "Expert"]) {
+                await page.locator(`.level-wrap input[value="${lvl}"]`).check({ force: true });
+                counts.push(await page.locator('#goal-picker label:visible').count());
+            }
+            check(counts.join() === "9,13,15", `each level up shows more plans (${counts.join()})`);
+            check(await page.locator("#week-variety").isVisible() && await page.locator("#profile-panel").isVisible(), "higher levels show the in-depth plan details");
+            await page.locator('.level-wrap input[value="Beginner"]').check({ force: true });
+            check(/4 more plans at Intermediate/.test(await page.locator("#level-unlock").textContent()), "beginners are told what the next level adds");
             const menuCounts = await page.evaluate(() => [...document.querySelectorAll("#site-nav .submenu")].map((m) => m.querySelectorAll("a").length));
             check(Math.max(...menuCounts) <= 6, `every menu has 6 links or fewer (${menuCounts.join(",")})`);
+            await page.evaluate(() => document.activeElement && document.activeElement.blur());
             await page.keyboard.press("/");
-            await page.fill("#jump-input", "couch");
-            check(/Couch to 5K/.test(await page.locator("#jump-list").textContent()), "search still finds plans that aren't in the menu");
+            await page.fill("#jump-input", "push pull");
+            check(/Push \/ pull \/ legs/.test(await page.locator("#jump-list").textContent()), "search still finds plans that aren't in the menu");
             await page.keyboard.press("Escape");
             await page.goto(url("me.html"), { waitUntil: "load" });
             check(/to start tracking streaks/.test(await page.locator("#milestones").textContent()) && await page.locator("#milestones-head").isHidden(), "milestones wait until a few workouts are logged");
@@ -404,9 +412,37 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // How-tos and the muscle map get more in-depth as the level goes up
+        {
+            const { page, errors } = await openPage(browser, "exercises.html", viewport);
+            await page.evaluate(() => localStorage.setItem("gu-level", JSON.stringify("Beginner")));
+            await page.reload({ waitUntil: "load" });
+            await page.locator(".library-card [data-howto]").first().click();
+            const body = () => page.locator("#howto-body").textContent();
+            const beginner = await body();
+            check(!/Avoid these/.test(beginner) && !/Programming notes/.test(beginner), "a beginner how-to keeps to the basics");
+            await page.locator('.howto-level input[value="Intermediate"]').check({ force: true });
+            check(/Avoid these/.test(await body()) && !/Form cues/.test(await body()), "Intermediate adds common mistakes");
+            await page.locator('.howto-level input[value="Advanced"]').check({ force: true });
+            check(/Form cues/.test(await body()) && !/Programming notes/.test(await body()), "Advanced adds form cues");
+            await page.locator('.howto-level input[value="Expert"]').check({ force: true });
+            check(/Programming notes/.test(await body()) && /Strength|Easy days|Sets:/.test(await body()), "Expert adds programming notes");
+            await page.keyboard.press("Escape");
+            check(await page.evaluate(() => JSON.parse(localStorage.getItem("gu-level"))) === "Expert" && await page.locator('.level-wrap input[value="Expert"]').isChecked(), "the level is one setting for the whole site");
+            await page.evaluate(() => localStorage.setItem("gu-level", JSON.stringify("Beginner")));
+            await page.reload({ waitUntil: "load" });
+            await page.click('[data-mm-pick="quads"]');
+            check(await page.locator("#mm-panel .mm-part").count() === 0 && /Switch to Intermediate/.test(await page.locator("#mm-panel").textContent()), "beginners see a muscle's best exercises without the head-by-head detail");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.evaluate(() => localStorage.removeItem("gu-level"));
+            await page.close();
+        }
+
         // Muscle map: every head of every muscle is on the body, lights up, and has real exercises
         {
             const { page, errors } = await openPage(browser, "exercises.html", viewport, "#muscle-map");
+            await page.evaluate(() => localStorage.setItem("gu-level", JSON.stringify("Advanced")));
+            await page.reload({ waitUntil: "load" });
             const stage = page.locator(".mm-stage");
             const data = await page.evaluate(() => MUSCLE_MAP.flatMap((g) => g.parts.map((p) => ({ id: p.id, missing: p.ex.filter((n) => !EXERCISES[n]),
                 male: muscleViews(p.id, "male").length, female: muscleViews(p.id, "female").length }))));

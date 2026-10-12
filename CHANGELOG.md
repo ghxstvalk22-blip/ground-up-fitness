@@ -2,6 +2,15 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (your level)
+
+- **One setting now shapes the whole site: Your level** (Beginner, Intermediate, Advanced, Expert). It's at the top of the Programs and Exercises pages and inside every how-to, and it's saved on your device. Everyone starts at Beginner.
+- **More plans as you go up:** Beginner shows 5 simple plans (New to lifting, Lose fat, No gym, Short on time, Couch to 5K). Intermediate adds 4, Advanced adds 4, and Expert adds Classic Physique and a new **Push / pull / legs** 6-day split, 15 in all.
+- **More detail as you go up:**
+  - How-tos: Beginner gets the setup, steps, one key tip, and an easier version. Intermediate adds common mistakes and a harder version. Advanced adds form cues and swaps. Expert adds programming notes (reps and rest for strength, muscle, or endurance, how to progress, and advanced techniques).
+  - Plans: Beginner sees when to train and how hard to push. Intermediate adds "How this plan works" and "Make it yours". Advanced turns on the 4-week training waves (Build, Push, Heavy, Recover).
+  - Muscle map: Beginner sees each muscle's best exercises. Intermediate adds each head and part. Advanced adds the anatomy names.
+
 ## 2026-10-12 (simpler for beginners)
 
 The site had grown a lot in one day, so this pass makes it calmer for someone brand new, without removing anything:

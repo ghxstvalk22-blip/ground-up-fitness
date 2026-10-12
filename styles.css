@@ -1787,6 +1787,21 @@ select, input, textarea {
 }
 .reality-check strong { color: var(--ink); }
 
+/* ---------- Your level (Programs, Exercises, how-to) ---------- */
+.level-wrap { margin-bottom: 18px; }
+.level-bar legend { font-weight: 800; }
+.level-info { margin: 8px 0 0; font-size: 0.9rem; color: var(--muted); max-width: 60ch; }
+.level-unlock { flex-basis: 100%; margin: 10px 0 0; font-size: 0.9rem; color: var(--muted); }
+.level-unlock .text-button { margin-left: 6px; }
+.segmented label[hidden] { display: none !important; }
+#days-picker label.is-off { display: none; }
+.plan-simple { margin-top: 10px !important; font-size: 0.95rem; }
+.howto-level { margin: 12px 0 0; }
+.level-bar.is-compact legend { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.level-bar.is-compact label span { padding: 6px 10px; font-size: 0.8rem; }
+.howto-cues li, .howto-program li { margin-bottom: 6px; }
+.howto-more { margin-top: 16px; font-size: 0.88rem; color: var(--muted); }
+
 /* ---------- Programs: main goals, "More plans", level tags ---------- */
 .goal-picker .goal-more { display: none; flex-basis: 100%; flex-wrap: wrap; gap: inherit; margin-top: 4px; }
 .goal-picker.show-more .goal-more { display: flex; }
@@ -1802,7 +1817,8 @@ select, input, textarea {
     font-family: var(--sans); font-size: 0.68rem; font-weight: 800; font-stretch: 100%; letter-spacing: 0.1em; text-transform: uppercase;
     border: 1px solid var(--ink); color: var(--ink);
 }
-.level-tag.level-advanced { background-color: var(--ink); color: var(--paper); }
+.level-tag.level-advanced, .level-tag.level-expert { background-color: var(--ink); color: var(--paper); }
+.level-tag.level-expert { box-shadow: inset 0 -3px 0 var(--volt); }
 .level-tag:empty { display: none; }
 
 /* ---------- Muscle map (Exercises page) ---------- */
@@ -2608,3 +2624,4 @@ main, .page-banner, .hero { animation: page-in 0.45s ease-out both; }
 .segmented label:last-of-type span, select, input, textarea, .jump, #jump-list li {
     border-radius: 0;
 }
+.howto-levels:has(> div:only-child) { grid-template-columns: 1fr; }

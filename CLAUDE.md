@@ -82,12 +82,16 @@ ships **one** focused improvement.
    into the page only through `escapeHtml` (or `textContent`), and check saved settings against a
    list of allowed values the way `getProfile` does. The test enforces most of this.
 
-10. **Don't overwhelm beginners.** The site's main visitor is nervous and new. Keep each page's first
-   view simple: menus have 6 links or fewer (put extras in `more` in `SITE_NAV`, which search still
-   finds), only plans marked `main: true` show before "More plans", every plan has a `level`, and
-   advanced extras (training waves, stats, milestones) appear only after someone has used the site.
-   A new feature that most beginners won't need goes lower on its page or behind a button. The test
-   enforces the menu and Programs limits.
+10. **Don't overwhelm beginners: everything follows "Your level".** One site-wide setting
+   (`getLevel()`, saved as `gu-level`): Beginner, Intermediate, Advanced, Expert. Beginner is the
+   default and must stay simple. Every plan has a `level` and only shows at that level or higher
+   (Beginner plans also get `main: true`, which puts them in the menu). Detail grows with the level:
+   use `levelAtLeast("Intermediate")` and friends to gate extra content. Today: Intermediate adds
+   common mistakes, harder versions, "How this plan works", and "Make it yours"; Advanced adds form
+   cues, swaps, the 4-week training waves, variety, and the muscle map's anatomy names; Expert adds
+   programming notes and research notes. New in-depth content goes at the level it suits, never at
+   Beginner by default. Menus have 6 links or fewer (extras go in `more` in `SITE_NAV`, which search
+   still finds). The test enforces the plan counts per level and the menu limit.
 
 ## The daily run, step by step
 
