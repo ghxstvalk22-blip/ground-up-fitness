@@ -2783,8 +2783,66 @@ const COACH_MUSCLE_TEXT = {
 };
 const COACH_COMPOUND = /press|squat|deadlift|row|pull-up|pulldown|lunge|thrust|dip|step-up|push-up|leg press|bridge|carry/i;
 
+// Words Coach knows, so small typos ("excerise", "sholders", "chalenging") still land
+const COACH_WORDS = ["shoulders", "shoulder", "chest", "triceps", "biceps", "forearms", "hamstrings", "glutes", "calves", "quads",
+    "obliques", "abdominals", "trapezius", "deltoids", "quadriceps", "adductors", "workout", "exercise", "exercises", "training",
+    "challenging", "challenge", "intermediate", "advanced", "expert", "beginner", "dumbbells", "dumbbell", "bodyweight", "equipment",
+    "minutes", "harder", "easier", "shorter", "longer", "different", "intense", "brutal", "difficult", "toughest", "hardest", "upper", "lower"];
+const COACH_KEEP = new Set(["gluten", "shorts", "lighter", "letter", "better", "glute", "should", "chests", "bicep", "tricep", "quad", "calf", "advance", "lowest", "upped", "expect", "export", "beginning", "experts", "loser", "lover", "easter", "power"]);
+function coachFixTypos(text) {
+    const near = (a, b, max) => {
+        if (Math.abs(a.length - b.length) > max) return false;
+        let prev = Array.from({ length: b.length + 1 }, (_, i) => i), prev2 = null;
+        for (let i = 1; i <= a.length; i++) {
+            const cur = [i];
+            for (let j = 1; j <= b.length; j++) {
+                cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+                if (prev2 && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) cur[j] = Math.min(cur[j], prev2[j - 2] + 1);
+            }
+            prev2 = prev; prev = cur;
+        }
+        return prev[b.length] <= max;
+    };
+    return text.replace(/[a-z]{5,}/g, (w) => {
+        if (COACH_WORDS.includes(w) || COACH_KEEP.has(w)) return w;
+        const max = w.length >= 8 ? 2 : 1;
+        return COACH_WORDS.find((v) => v[0] === w[0] && near(w, v, max)) || w;
+    });
+}
+
+// How hard someone wants it. "down"/"up" are relative ("easier", "harder"); the rest are absolute.
+function coachIntensity(t) {
+    if (/\b(too hard|easier|lighter|less intense|tone it down|dial it back|not so hard|calm(er)?)\b/.test(t)) return "down";
+    if (/\b(too easy|harder|tougher|more intense|step it up|kick it up|crank it|level up|more challenging)\b/.test(t)) return "up";
+    if (/\b(super|very|really|extremely|insanely|ultra|crazy|most|seriously)\s+(hard|challenging|tough|intense|difficult|heavy)\b|\b(hardest|toughest|brutal|savage|beast mode|no mercy|all out|max(imum)? effort|insane|put me (to|through) the test|test me|destroy me|kill me|wreck me|push me to my limit|to failure|leave nothing)\b/.test(t)) return "max";
+    if (/\b(hard|challenging|challenge|tough|intense|difficult|push me|heavy|beast|grind|serious)\b/.test(t)) return "hard";
+    if (/\b(easy|gentle|light|tired|beginner[- ]friendly|take it easy|go easy|recovery|low key|chill|relaxed|simple)\b/.test(t)) return "easy";
+    return null;
+}
+
+// A level named outright: "set it for expert", "make it advanced", "beginner friendly"
+function coachNamedLevel(t) {
+    if (/\b(expert|elite|pro level|professional level)\b/.test(t)) return "Expert";
+    if (/\badvanced\b/.test(t)) return "Advanced";
+    if (/\bintermediate\b/.test(t)) return "Intermediate";
+    if (/\b(beginners?|newbie|novice)\b/.test(t)) return "Beginner";
+    return null;
+}
+
+// Which level a workout should be built at, starting from "base" (the site level or the last workout's)
+function coachLevelFor(req, base) {
+    const i = levelRank(base);
+    if (req.level) return req.level;
+    if (req.intensity === "max") return "Expert";
+    if (req.intensity === "hard") return LEVELS[Math.max(2, i)];
+    if (req.intensity === "up") return LEVELS[Math.min(3, i + 1)];
+    if (req.intensity === "down") return LEVELS[Math.max(0, i - 1)];
+    if (req.intensity === "easy") return "Beginner";
+    return base;
+}
+
 function coachUnderstand(text) {
-    const t = ` ${text.toLowerCase().replace(/[’']/g, "'").replace(/&/g, " and ")} `;
+    const t = coachFixTypos(` ${text.toLowerCase().replace(/[’']/g, "'").replace(/&/g, " and ")} `);
     const groups = new Set(), parts = new Set(), labels = [];
     const where = (re) => { const m = t.match(re); return m ? m.index : -1; };
     const label = (pos, name) => { if (pos >= 0 && !labels.some((l) => l.name === name)) labels.push({ pos, name }); };
@@ -2808,10 +2866,26 @@ function coachUnderstand(text) {
     const minutes = min ? Math.min(120, Math.max(10, Number(min[1]))) : /\b(quick|short|fast|little time|busy)\b/.test(t) ? 25 : null;
     const pain = /\b(pain|hurts?|hurting|injur(y|ed|ies)|sprain|strain(ed)?|torn|tear|surgery|dizzy|chest pain|faint)\b/.test(t);
     const howto = /\bhow (do|should|can) (i|you)\b|\bhow to\b|\bform (for|on)\b|\bshow me how\b|\bwhat('s| is) the right way\b/.test(t);
+    // "without legs", "no abs", "skip arms": leave those out
+    const exclude = new Set();
+    for (const m of t.matchAll(/\b(?:without|no|skip|remove|minus|except|drop|leave out|take out|not|don't want|nothing for)\s+(?:my |the |any |doing |training )?([a-z-]+(?: [a-z-]+)?)/g)) {
+        const phrase = ` ${m[1]} `;
+        COACH_GROUPS.forEach(([id, re]) => { if (re.test(phrase)) exclude.add(id); });
+        COACH_COMBOS.forEach(([re, ids]) => { if (re.test(phrase) && !/\bfull/.test(phrase)) ids.forEach((g) => exclude.add(g)); });
+    }
+    exclude.forEach((g) => groups.delete(g));
+    const dropLabel = (l) => {
+        const g = MUSCLE_MAP.find((x) => x.name === l.name);
+        if (g) return exclude.has(g.id);
+        const ci = COMBO_NAMES.indexOf(l.name);
+        return ci >= 0 && ci > 0 && COACH_COMBOS[ci][1].every((x) => exclude.has(x));
+    };
     // keep the muscles in the order the person said them
     const order = (g) => { const m = COACH_GROUPS.find(([id]) => id === g); const i = m ? where(m[1]) : -1; return i < 0 ? 999 : i; };
     return { t, groups: [...groups].sort((a, b) => order(a) - order(b)), parts: [...parts], kit, minutes, pain, howto,
-        title: labels.sort((a, b) => a.pos - b.pos).map((l) => l.name) };
+        exclude: [...exclude], level: coachNamedLevel(t), intensity: coachIntensity(t),
+        add: /\b(add|also|plus|throw in|include|as well|and some)\b|\btoo\b(?! (hard|easy|long|short|much|heavy))/.test(t),
+        title: labels.filter((l) => !dropLabel(l)).sort((a, b) => a.pos - b.pos).map((l) => l.name) };
 }
 
 // Find an exercise named in the text (longest name wins)
@@ -2841,9 +2915,15 @@ function coachDose(name, compound, level) {
 }
 
 // Build a workout for some muscles, a kit ("none", "db", or the full gym), and a time budget
+// At Advanced and Expert, barbell and bodyweight strength moves come before machines
+const COACH_HEAVY = /^(Back squat|Front squat|Deadlift|Trap bar deadlift|Romanian deadlift|Bench press|Incline barbell press|Barbell row|Pull-up|Overhead press|Hip thrust|Bulgarian split squat|Skull crusher|Barbell curl|EZ-bar curl|Hanging knee raise|Ab wheel rollout|Arnold press|Walking lunge|Standing calf raise|Farmer carry)$/;
+const COACH_MACHINE = /machine|assisted|smith|pec deck/i;
+
 function coachBuild(req, level) {
-    const groups = req.groups.length ? req.groups : ["quads", "chest", "lats", "shoulders", "hamstrings", "abs"];
-    const count = req.minutes ? Math.min(9, Math.max(3, Math.round(req.minutes / 8))) : level === "Beginner" ? 5 : 6;
+    const groups = (req.groups.length ? req.groups : ["quads", "chest", "lats", "shoulders", "hamstrings", "abs"]).filter((g) => !(req.exclude || []).includes(g));
+    const count = req.minutes ? Math.min(9, Math.max(3, Math.round(req.minutes / 8))) : { Beginner: 5, Intermediate: 6, Advanced: 6, Expert: 7 }[level];
+    const strong = levelRank(level) >= levelRank("Advanced");
+    const rank = (n, main) => (strong ? (COACH_HEAVY.test(n) && main ? -2 : 0) + (COACH_MACHINE.test(n) ? 2 : 0) : 0);
     const kitOk = (n) => !req.kit || kitAllows(req.kit, EXERCISES[n] && EXERCISES[n].kit);
     const pool = groups.map((gid) => {
         const g = MUSCLE_MAP.find((x) => x.id === gid);
@@ -2854,10 +2934,12 @@ function coachBuild(req, level) {
             .filter((n) => !isCardio(n) && !/stretch|mobility/i.test(n) && COACH_MUSCLE_TEXT[gid].test((EXERCISES[n].m || "").split(",").slice(0, 2).join(",")))
             .sort((a, b) => Number(primary(b)) - Number(primary(a)));
         // beginners get the assisted version of pull-ups and dips
-        const easy = (n) => (level === "Beginner" && (n === "Pull-up" || n === "Dip") ? `Assisted ${n.toLowerCase()}` : n);
+        // and stronger lifters get the real thing
+        const easy = (n) => (level === "Beginner" && (n === "Pull-up" || n === "Dip") ? `Assisted ${n.toLowerCase()}`
+            : strong && n === "Assisted pull-up" ? "Pull-up" : n);
         const mapped = fromMap.map(easy).filter((n) => EXERCISES[n] && kitOk(n));
         const list = named.length && mapped.length ? mapped : [...new Set([...mapped, ...fromText.map(easy)])].filter((n) => EXERCISES[n] && kitOk(n));
-        return { gid, list: [...new Set(list)] };
+        return { gid, list: [...new Set(list)].map((n, i) => [n, i]).sort((a, b) => rank(a[0], primary(a[0])) - rank(b[0], primary(b[0])) || a[1] - b[1]).map((x) => x[0]) };
     }).filter((x) => x.list.length);
     const picked = [], used = new Set();
     for (let round = 0; picked.length < count && round < 6; round++) {
@@ -2876,7 +2958,16 @@ function coachBuild(req, level) {
     const names = req.title && req.title.length ? req.title : pool.map((p) => MUSCLE_MAP.find((x) => x.id === p.gid).name);
     const title = names.length > 1 ? `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}` : names[0] || "Full body";
     const minutes = Math.round(items.reduce((sum, x) => sum + (parseDose(x.d).sets || 3) * 2, 0) + 5);
-    return { title: req.groups.length ? title : "Full body", items, minutes, kit: req.kit, bumped, missing: req.groups.filter((g) => !pool.some((p) => p.gid === g)) };
+    // An all-out request gets a finisher on the last big lift and the last small move
+    let finisher = null;
+    if (req.intensity === "max" && items.length) {
+        const big = items.find((x) => COACH_COMPOUND.test(x.n) && !parseDose(x.d).timed);
+        const small = [...items].reverse().find((x) => !COACH_COMPOUND.test(x.n) && !parseDose(x.d).timed)
+            || [...items].reverse().find((x) => !parseDose(x.d).timed && (!big || x.n !== big.n));
+        finisher = { big: big ? big.n : null, small: small ? small.n : null };
+    }
+    return { title: req.groups.length ? title : "Full body", items, minutes, kit: req.kit, bumped, level, finisher,
+        missing: req.groups.filter((g) => !pool.some((p) => p.gid === g)) };
 }
 
 function setupCoach() {
@@ -2950,12 +3041,15 @@ function setupCoach() {
                 t: "", groups: s.lastReq.groups.filter(okGroup), parts: (s.lastReq.parts || []).filter((p) => mmPart(p)),
                 kit: ["none", "db"].includes(s.lastReq.kit) ? s.lastReq.kit : null,
                 minutes: Number(s.lastReq.minutes) > 0 ? Math.min(120, Number(s.lastReq.minutes)) : null,
-                title: (s.lastReq.title || []).filter((x) => typeof x === "string").map((x) => x.slice(0, 30)).slice(0, 6)
+                title: (s.lastReq.title || []).filter((x) => typeof x === "string").map((x) => x.slice(0, 30)).slice(0, 6),
+                level: LEVELS.includes(s.lastReq.level) ? s.lastReq.level : null,
+                intensity: ["max", "hard", "easy"].includes(s.lastReq.intensity) ? s.lastReq.intensity : null,
+                exclude: (s.lastReq.exclude || []).filter(okGroup)
             };
         }
         if (s.last && Array.isArray(s.last.items)) {
             const items = s.last.items.filter((x) => x && EXERCISES[x.n]).map((x) => ({ n: x.n, d: String(x.d || "").slice(0, 40), rest: String(x.rest || "").slice(0, 20) }));
-            if (items.length) last = { title: String(s.last.title || "Workout").replace(/[<>]/g, "").slice(0, 60), items, minutes: Number(s.last.minutes) || 30, kit: lastReq ? lastReq.kit : null, bumped: false, missing: [] };
+            if (items.length) last = { title: String(s.last.title || "Workout").replace(/[<>]/g, "").slice(0, 60), items, minutes: Number(s.last.minutes) || 30, kit: lastReq ? lastReq.kit : null, bumped: false, missing: [], level: (lastReq && lastReq.level) || getLevel(), finisher: null };
         }
     })();
     const suggest = (list) => { chips.innerHTML = list.map((s) => `<button type="button" class="chip" data-coach-say="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join(""); };
@@ -2975,7 +3069,7 @@ function setupCoach() {
                 if (focus && !phone()) setTimeout(() => input.focus(), 30);
                 return;
             }
-            say(`<p><strong>Hey, I'm your Fitness Coach.</strong> Tell me what you want to train and I'll build you a workout from this site's exercise guides. Try "<em>shoulders, back and abs</em>" or "<em>30 min legs, no equipment</em>".</p>
+            say(`<p><strong>Hey, I'm your Fitness Coach.</strong> Tell me what you want to train and I'll build you a workout from this site's exercise guides. Try "<em>shoulders, back and abs</em>", "<em>30 min legs, no equipment</em>", or "<em>a really hard chest and back workout</em>". You can also say how hard ("easy", "set it for expert") or change it after ("add abs", "without legs").</p>
                 <p class="coach-fine">I'm a simple built-in helper, not a person and not an AI service. Nothing you type leaves your phone.</p>`);
             suggest(DEFAULT_CHIPS);
         }
@@ -2990,10 +3084,13 @@ function setupCoach() {
     }
 
     function workoutCard(w) {
-        const lvl = getLevel();
+        const lvl = w.level || getLevel();
         const kitNote = w.kit === "none" ? " · no equipment" : w.kit === "db" ? " · dumbbells only" : "";
         return `<p>Here's your <strong>${escapeHtml(w.title)}</strong> workout: ${w.items.length} exercises, about ${w.minutes} minutes${kitNote}. Set for <strong>${lvl}</strong>.</p>
             <ol class="coach-workout">${w.items.map((x) => `<li><button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
+            ${w.finisher && (w.finisher.big || w.finisher.small) ? `<p><strong>Finisher:</strong> ${w.finisher.big ? `on ${escapeHtml(w.finisher.big)}, pause for 1 second at the hardest point of every rep` : ""}${w.finisher.big && w.finisher.small ? "; " : ""}${w.finisher.small ? `on your last set of ${escapeHtml(w.finisher.small)}, drop the weight by about a quarter when you can't do another clean rep, and keep going` : ""}.</p>` : ""}
+            ${lvl !== getLevel() ? `<p class="coach-fine">This one workout is set for ${lvl}. Your level for the rest of the site stays ${getLevel()}.</p>` : ""}
+            ${levelRank(lvl) >= 2 ? `<p class="coach-fine">Heavy day: warm up with 2 or 3 lighter sets of the first lift, use a spotter or safety pins on presses and squats, and end a set when your form slips.</p>` : ""}
             ${w.bumped ? `<p class="coach-fine">Only a few moves fit that, so each one gets an extra set.</p>` : ""}
             ${w.missing.length ? `<p class="coach-fine">I couldn't find ${escapeHtml(w.missing.join(", "))} exercises for that equipment, so I left them out.</p>` : ""}
             <div class="coach-actions"><button type="button" class="btn btn-primary btn-compact" data-coach-start>Start this workout</button></div>
@@ -3015,22 +3112,54 @@ function setupCoach() {
             return;
         }
         // Follow-ups to the last workout
+        // "add abs", "also arms": add muscles to the last workout
+        if (last && lastReq && req.groups.length && req.add && !req.exclude.length) {
+            const mod = { ...lastReq, groups: [...new Set([...lastReq.groups, ...req.groups])], parts: [...new Set([...lastReq.parts, ...req.parts])],
+                title: [...lastReq.title, ...req.title.filter((x) => !lastReq.title.includes(x))].slice(0, 6) };
+            if (req.kit) mod.kit = req.kit;
+            if (req.minutes) mod.minutes = req.minutes;
+            if (req.level || req.intensity) { mod.level = coachLevelFor(req, last.level || getLevel()); mod.intensity = req.intensity === "max" ? "max" : mod.intensity; }
+            if (!req.minutes && !mod.minutes) mod.minutes = null;
+            last = coachBuild(mod, mod.level || getLevel());
+            lastReq = mod;
+            saveState();
+            say(workoutCard(last));
+            suggest(["Make it harder", "Make it shorter", "Different exercises", "Start this workout"]);
+            return;
+        }
         if (last && lastReq && !req.groups.length) {
             const mod = { ...lastReq };
-            let changed = false;
+            let changed = false, note = "";
+            if (req.exclude.length) {
+                const left = mod.groups.filter((g) => !req.exclude.includes(g));
+                if (left.length) {
+                    mod.groups = left;
+                    mod.parts = mod.parts.filter((p) => left.includes(mmPart(p).g.id));
+                    const names = new Set(req.exclude.map((g) => MUSCLE_MAP.find((x) => x.id === g).name));
+                    ["Full body", "Upper body", "Lower body", "Legs", "Arms", "Back", "Push", "Pull"].forEach((n, i) => { if (i && COACH_COMBOS[i][1].every((g) => req.exclude.includes(g))) names.add(n); });
+                    mod.title = mod.title.filter((x) => !names.has(x));
+                    changed = true;
+                }
+            }
             if (/\b(shorter|less time|quicker|too long)\b/.test(t)) { mod.minutes = Math.max(15, (last.minutes || 45) - 15); changed = true; }
             if (/\b(longer|more exercises|more time|too short)\b/.test(t)) { mod.minutes = Math.min(90, (last.minutes || 45) + 15); changed = true; }
             if (req.kit) { mod.kit = req.kit; changed = true; }
             if (/\b(gym|machines|full gym)\b/.test(t) && !req.kit) { mod.kit = null; changed = true; }
-            if (/\b(harder|tougher|more intense|too easy)\b/.test(t)) { const i = levelRank(getLevel()); if (i < 3) setLevel(LEVELS[i + 1]); changed = true; }
-            if (/\b(easier|lighter|too hard)\b/.test(t)) { const i = levelRank(getLevel()); if (i > 0) setLevel(LEVELS[i - 1]); changed = true; }
+            // Harder, easier, or a named level changes this workout only, not the site level
+            if (req.level || req.intensity) {
+                // Already at the top? Then "harder" adds a finisher instead
+                if ((req.intensity === "up" || req.intensity === "hard") && !req.level && (last.level || getLevel()) === "Expert") { req.intensity = "max"; note = "That's already set for Expert, so I added a finisher."; }
+                mod.level = coachLevelFor(req, last.level || getLevel());
+                mod.intensity = req.intensity === "max" ? "max" : req.intensity === "down" || req.intensity === "easy" || (req.level && req.level !== "Expert") ? null : mod.intensity;
+                changed = true;
+            }
             if (/\b(different|other exercises|shuffle|new one)\b/.test(t)) { mod.shuffle = (mod.shuffle || 0) + 1; changed = true; }
             if (changed) {
-                last = coachBuild(mod, getLevel());
+                last = coachBuild(mod, mod.level || getLevel());
                 if (mod.shuffle) { const k = mod.shuffle % Math.max(1, last.items.length); last.items = [...last.items.slice(k), ...last.items.slice(0, k)]; }
                 lastReq = mod;
                 saveState();
-                say(workoutCard(last));
+                say((note ? `<p>${note}</p>` : "") + workoutCard(last));
                 suggest(["Make it shorter", "Make it harder", "No equipment", "Start this workout"]);
                 return;
             }
@@ -3067,7 +3196,8 @@ function setupCoach() {
             [/\b(build muscle|bulk|get big|bigger|size|gain muscle)\b/, "build"],
             [/\b(new|beginner|never|first time|scared|nervous)\b/, "beginner"]
         ];
-        const plan = !req.groups.length && plans.find(([re]) => re.test(t));
+        const workoutWords = /\b(workout|train|training|session|exercises?|lift|lifting|routine|something|give me|build me|make me)\b/;
+        const plan = !req.groups.length && plans.find(([re, id]) => re.test(t) && !(id === "beginner" && workoutWords.test(t)));
         if (plan) {
             const p = PROGRAMS[plan[1]];
             say(`<p>For that, I'd start with <strong>${escapeHtml(p.name)}</strong> (${escapeHtml(p.level)}): ${escapeHtml(p.summary)}</p>
@@ -3076,9 +3206,10 @@ function setupCoach() {
             return;
         }
         // Build a workout
-        if (req.groups.length || /\b(workout|train|session|exercise|lift|routine)\b/.test(t)) {
-            last = coachBuild(req, getLevel());
-            lastReq = { ...req, t: "" };
+        if (req.groups.length || workoutWords.test(t) || req.intensity || req.level || req.minutes) {
+            const level = coachLevelFor(req, getLevel());
+            last = coachBuild(req, level);
+            lastReq = { ...req, t: "", level: level !== getLevel() ? level : req.level };
             saveState();
             if (!last.items.length) {
                 say(`<p>I couldn't find exercises for that with ${req.kit === "none" ? "no equipment" : "dumbbells only"}. Want a gym version instead?</p>`);

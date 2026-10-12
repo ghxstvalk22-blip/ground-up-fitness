@@ -464,6 +464,18 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/doctor|physical therapist/.test(await ask("my knee hurts, can I do legs?")), "Coach sends pain and injury questions to a professional");
             await ask(`<img src=x onerror="window.__pwned=1">`);
             check(await page.evaluate(() => !window.__pwned && document.querySelectorAll(".coach-log img").length === 0), "typing code into Coach can't run it");
+            // How hard: "super challenging" builds a real Expert session without changing the site level
+            const hard = await ask("give me a super challenging excerise that will put me to the test for my chest and back");
+            const hardNames = await page.locator(".coach-msg.is-coach").last().locator(".coach-ex").allTextContents();
+            check(/Set for Expert/.test(hard) && /Finisher/.test(hard) && hardNames.some((n) => /^(Bench press|Incline barbell press|Barbell row|Pull-up)$/.test(n)) && !hardNames.some((n) => /Assisted|machine/i.test(n)),
+                `"super challenging" gets an Expert workout with free-weight lifts (${hardNames.join(", ")})`);
+            check(await page.evaluate(() => getLevel()) === "Beginner", "a hard workout doesn't change the site level");
+            check(/Set for Intermediate/.test(await ask("make it intermediate")) && /Set for Expert/.test(await ask("I want it set for expert")), "Coach changes the level when you name one");
+            check(/Set for Advanced/.test(await ask("a bit easier")), `"easier" steps the workout down one level`);
+            check(/Abs/.test(await ask("add abs")) && await page.evaluate(() => [...document.querySelectorAll(".coach-msg.is-coach:last-child .coach-ex")].some((b) => /abs|core/i.test(EXERCISES[b.textContent].m))), `"add abs" adds to the current workout`);
+            const noBack = await ask("without back");
+            check(/Chest & Abs/.test(noBack), `"without back" takes muscles out (${noBack.slice(0, 60)})`);
+            check(/Set for Beginner/.test(await ask("easy legs workout")), `"easy" builds a Beginner workout`);
             await ask("chest and triceps, 30 minutes");
             // The chat stays open, with its history, when you move to another page
             const before = await page.locator(".coach-msg").count();

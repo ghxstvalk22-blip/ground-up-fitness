@@ -2,6 +2,14 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Fitness Coach understands how hard you want it)
+
+- Fitness Coach now understands how hard you want to train. "Super challenging", "put me to the test", "brutal" or "beast mode" builds a real Expert session: barbell lifts and pull-ups instead of machines, heavier sets with longer rests, more exercises, and a finisher (pause reps and a drop set). "Easy", "gentle" or "I'm tired" builds a lighter one.
+- You can name a level ("set it for expert", "make it intermediate") or say "harder" or "easier", including after a workout is built. This only changes that one workout; your level for the rest of the site stays the same.
+- You can change a workout after it's built: "add abs" adds muscles, "without legs" takes them out.
+- Small typos ("excerise", "sholders") are understood, and "30 minutes" on its own builds a full-body workout.
+- Harder workouts include a short safety note: warm up, use a spotter or safety pins, and stop a set when your form slips.
+
 ## 2026-10-12 (Fitness Coach takes a moment)
 
 - Fitness Coach now shows a typing indicator and takes about 1 to 2 seconds to "read" your message before answering (longer messages take a little longer), so it feels like a conversation instead of an instant wall of text.
