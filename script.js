@@ -136,7 +136,9 @@ const PHOTO_CREDITS = [
     ["Anastase Maragos", "https://unsplash.com/@visualsbyroyalz"],
     ["Karsten Winegeart", "https://unsplash.com/@_karsten"],
     ["Tyler Raye", "https://unsplash.com/@tcraye"],
-    ["Ambitious Studio | Rick Barrett", "https://unsplash.com/@weareambitious"]
+    ["Ambitious Studio | Rick Barrett", "https://unsplash.com/@weareambitious"],
+    ["John Arano", "https://unsplash.com/@johnarano"],
+    ["John Fornander", "https://unsplash.com/@johnfo"]
 ];
 
 /* ---------- Shared app state and helpers ---------- */

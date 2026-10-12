@@ -118,7 +118,7 @@ async function openPage(browser, file, viewport, hash = "") {
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);
             check(Number(await page.locator('[data-stat="plans"]').textContent()) >= 8, "hero stats count the plans");
-            check(await page.locator("#ticker-track span").count() > 20, "ticker lists exercise names");
+            check(await page.locator(".ticker").count() === 0 && await page.locator(".promise-strip li").count() === 4, "no moving ticker; calm promise strip instead");
             await page.locator('#quickstart input[value="build"]').check({ force: true });
             check(await page.locator('#qs-days input').count() === 1, "quick start only offers the days a plan has");
             await Promise.all([page.waitForNavigation(), page.locator(".qs-go").click()]);
