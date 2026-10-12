@@ -52,15 +52,100 @@
 
             <div class="program-head" id="program-head" aria-live="polite"></div>
 
+            <details class="profile-panel" id="profile-panel">
+                <summary>
+                    <span class="profile-title">Make it yours</span>
+                    <span class="profile-sub" id="profile-summary">Add your experience and bodyweight for personal targets</span>
+                </summary>
+                <form id="profile-form" class="profile-form" novalidate>
+                    <div class="field">
+                        <label for="pf-experience">How long have you been lifting consistently?</label>
+                        <select id="pf-experience" name="experience">
+                            <option value="new">Less than 6 months</option>
+                            <option value="some">6 months to 2 years</option>
+                            <option value="lots">More than 2 years</option>
+                        </select>
+                    </div>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="pf-bodyweight">Bodyweight (optional)</label>
+                            <input id="pf-bodyweight" name="bodyweight" type="number" inputmode="decimal" min="0" placeholder="180">
+                        </div>
+                        <div class="field">
+                            <label for="pf-unit">Units</label>
+                            <select id="pf-unit" name="unit">
+                                <option value="lb">Pounds (lb)</option>
+                                <option value="kg">Kilograms (kg)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="pf-focus">Muscle you most want to bring up <span class="field-hint">(Classic Physique gets an extra set there)</span></label>
+                        <select id="pf-focus" name="focus">
+                            <option value="">No preference, keep it balanced</option>
+                            <option value="shoulders">Shoulders (the V-taper)</option>
+                            <option value="back">Back</option>
+                            <option value="chest">Chest</option>
+                            <option value="arms">Arms</option>
+                            <option value="legs">Legs</option>
+                        </select>
+                    </div>
+                    <p class="profile-note" id="profile-note"></p>
+                    <p class="fine-print">Saved only on this device. Nothing is sent anywhere.</p>
+                </form>
+            </details>
+
+            <div class="week-bar" id="week-bar">
+                <button class="week-step" type="button" id="week-prev" aria-label="Previous week">&larr;</button>
+                <div class="week-info">
+                    <strong id="week-label">Week 1</strong>
+                    <span id="week-dates"></span>
+                </div>
+                <button class="week-step" type="button" id="week-next" aria-label="Next week">&rarr;</button>
+                <button class="text-button" type="button" id="week-today" hidden>Back to this week</button>
+                <p class="week-variety" id="week-variety"></p>
+            </div>
+
+            <details class="why-rotate">
+                <summary>Why do some exercises change each week?</summary>
+                <div>
+                    <p><strong>Main lifts stay put. Accessories rotate.</strong> Your first exercise each day only changes every four weeks, and the big barbell lifts never change, because getting stronger at a lift is partly a skill you practice. The smaller exercises after it rotate weekly between moves that train the same muscles.</p>
+                    <p>Research backs this up: changing exercises at random every session doesn't build more muscle or strength, but swapping in a planned way keeps training interesting, can work a muscle from more angles, and people enjoy it more (Baz-Valle et al., 2019; Kassiano et al., 2022). If you'd rather keep an exercise, use <strong>Swap</strong> to put it back.</p>
+                    <p>New to lifting? The beginner plan changes every four weeks instead, so you get time to learn each movement.</p>
+                </div>
+            </details>
+
             <div class="week-progress">
                 <div class="progress-text">
                     <strong id="progress-label">0 of 0 exercises done this week</strong>
-                    <button class="text-button" type="button" id="reset-week">Start a new week</button>
+                    <button class="text-button" type="button" id="reset-week">Clear this week's checkmarks</button>
                 </div>
                 <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
             </div>
 
             <div class="day-grid" id="day-grid"></div>
+        </div>
+    </section>
+
+    <section id="my-progress" class="block my-progress">
+        <div class="container wide">
+            <p class="kicker">Your progress</p>
+            <h2>Where you're headed</h2>
+            <p class="section-lede">Log your sets with the <strong>Log</strong> button on any exercise. Each session updates your next target and projects where that lift could be in the coming weeks.</p>
+            <div class="progress-panel" id="progress-panel">
+                <div class="progress-controls">
+                    <label for="progress-exercise">Exercise</label>
+                    <select id="progress-exercise"></select>
+                </div>
+                <div class="progress-chart-wrap">
+                    <svg id="progress-chart" viewBox="0 0 720 300" role="img" aria-label="Chart of your estimated strength over time"></svg>
+                </div>
+                <div id="progress-summary" class="progress-summary" aria-live="polite"></div>
+                <div class="progress-actions">
+                    <button class="btn btn-small" type="button" id="export-log">Download my log (CSV)</button>
+                    <button class="text-button" type="button" id="clear-log">Delete my log</button>
+                </div>
+            </div>
         </div>
     </section>
 </main>

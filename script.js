@@ -36,7 +36,9 @@ const FEATURES = [
     setupMenu,
     setupDropdowns,
     setupActiveNav,
+    setupExerciseGuide,
     setupPrograms,
+    setupProgressPanel,
     setupHero,
     setupTools,
     setupContactForm,
@@ -559,6 +561,7 @@ const PROGRAMS = {
     beginner: {
         name: "New to lifting",
         tagline: "machines and dumbbells",
+        rotation: "block", // beginners keep the same exercises for 4 weeks so they can learn them
         summary: "Full-body sessions using machines and dumbbells, so you learn the basic movements without worrying about balance or heavy barbells.",
         session: "45 to 60 minutes",
         effort: "Stop each set with about 2 or 3 good reps left in the tank.",
@@ -777,7 +780,7 @@ const PROGRAMS = {
                     ] },
                     { title: "Upper B", items: [
                         ex("Pull-up", "3 × 6–10", "2 min", "Lat pulldown"),
-                        ex("Flat dumbbell press", "3 × 8–10", "2 min"),
+                        ex("Dumbbell bench press", "3 × 8–10", "2 min"),
                         ex("Seated cable row", "3 × 10–12", "90 s"),
                         ex("Cable fly", "2 × 12–15", "60 s"),
                         ex("Lateral raise", "3 × 15–20", "60 s"),
@@ -845,34 +848,270 @@ const PROGRAMS = {
 };
 
 /* =========================================================
+   TRAINING ENGINE: weekly rotation, your log, targets, projections
+   Plain functions (no page code), so they're easy to test and reuse.
+   ========================================================= */
+
+const ROTATION_BLOCK_WEEKS = 4;
+const LOG_KEY = "gu-log";
+const PROFILE_KEY = "gu-profile";
+
+// "3 × 8–10" -> { sets: 3, low: 8, high: 10 }. Timed or distance work is marked so it isn't weight-logged.
+function parseDose(dose) {
+    const m = String(dose).match(/^(\d+)\s*×\s*(\d+)(?:\s*[–-]\s*(\d+))?(.*)$/);
+    if (!m) return { sets: 1, low: null, high: null, timed: true, rest: dose };
+    const tail = m[4] || "";
+    const timed = /\bs\b|min|steps|hard|easy/.test(tail);
+    return { sets: Number(m[1]), low: Number(m[2]), high: Number(m[3] || m[2]), timed, rest: tail.trim() };
+}
+const formatDose = (d, original) => (d.timed ? original : original.replace(/^\d+/, String(d.sets)));
+
+// A small, stable hash so everyone sees the same rotation for the same week
+function hashString(str) {
+    let h = 2166136261;
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return h >>> 0;
+}
+
+function familyFor(name) {
+    if (typeof EXERCISE_FAMILIES === "undefined") return null;
+    return EXERCISE_FAMILIES.find((f) => f[0] === name) || EXERCISE_FAMILIES.find((f) => f.includes(name)) || null;
+}
+
+// Which version of a slot to show in a given week. It never repeats last week's choice.
+function rotatedName(name, ctx) {
+    const fam = familyFor(name);
+    if (!fam || fam.length < 2) return name;
+    const period = ctx.mode === "block" ? Math.floor((ctx.week - 1) / ROTATION_BLOCK_WEEKS) : ctx.week - 1;
+    let idx = Math.max(0, fam.indexOf(name));
+    for (let p = 1; p <= period; p++) {
+        idx = (idx + 1 + (hashString(`${ctx.program}|${ctx.days}|${ctx.day}|${ctx.slot}|${p}`) % (fam.length - 1))) % fam.length;
+    }
+    return fam[idx];
+}
+
+// Every exercise in a day for a given week, with swaps applied and no repeats within the day
+function dayLineup(program, days, dayIndex, items, week, swaps) {
+    const used = new Set();
+    return items.map((x, slot) => {
+        const mode = PROGRAMS[program].rotation === "block" || slot === 0 ? "block" : "weekly";
+        let name = rotatedName(x.n, { program, days, day: dayIndex, slot, week, mode });
+        const fam = familyFor(x.n);
+        if (fam && used.has(name)) name = fam.find((n) => !used.has(n)) || name;
+        const swapped = swaps[`w${week}:${dayIndex}-${slot}`];
+        if (swapped) name = swapped;
+        used.add(name);
+        return { ...x, name, mode, swapped: Boolean(swapped), canRotate: Boolean(fam && fam.length > 1) };
+    });
+}
+
+// How many different weekly versions a plan can produce
+function planCombinations(plan) {
+    return plan.days.reduce((total, day) => day.items.reduce((t, x) => {
+        const fam = familyFor(x.n);
+        return t * (fam ? fam.length : 1);
+    }, total), 1);
+}
+function bigNumber(n) {
+    if (n >= 1e9) return "over a billion";
+    if (n >= 1e6) return `over ${Math.floor(n / 1e6)} million`;
+    if (n >= 1e3) return `over ${fmt(Math.floor(n / 1000) * 1000)}`;
+    return fmt(n);
+}
+
+/* ---------- Weeks ---------- */
+function mondayOf(date) {
+    const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const shift = (d.getDay() + 6) % 7; // Monday = 0
+    d.setDate(d.getDate() - shift);
+    return d;
+}
+const isoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const parseIso = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const c = new Date(d); c.setDate(c.getDate() + n); return c; };
+const shortDate = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
+// The Monday a person started a program (saved the first time they open it)
+function programStart(program) {
+    const key = `gu-start-${program}`;
+    let start = store.get(key);
+    if (!start) { start = isoDate(mondayOf(new Date())); store.set(key, start); }
+    return parseIso(start);
+}
+const weekOf = (start, date = new Date()) => Math.floor((mondayOf(date) - start) / (7 * 864e5)) + 1;
+
+/* ---------- Profile ---------- */
+function getProfile() {
+    const p = store.get(PROFILE_KEY, {}) || {};
+    return {
+        experience: p.experience || "new",
+        bodyweight: p.bodyweight || "",
+        unit: p.unit || (store.get("gu-unit") === "kg" ? "kg" : "lb"),
+        focus: p.focus || ""
+    };
+}
+
+// Main muscle of an exercise, from the library ("Side shoulders" -> shoulders)
+function muscleGroup(name) {
+    const m = ((typeof EXERCISES === "object" && EXERCISES[name]) ? EXERCISES[name].m : "").split(",")[0].toLowerCase();
+    if (/shoulder|delt/.test(m)) return "shoulders";
+    if (/lat|back/.test(m)) return "back";
+    if (/chest/.test(m)) return "chest";
+    if (/biceps|triceps|forearm/.test(m)) return "arms";
+    if (/quad|glute|hamstring|calf|calves|adductor/.test(m)) return "legs";
+    return "";
+}
+
+// Classic Physique adapts to the person: fewer accessory sets for newer lifters, one extra set for their focus muscle
+function personalDose(program, item, slot, profile) {
+    const d = parseDose(item.d);
+    const notes = [];
+    if (program !== "classic" || d.timed) return { text: item.d, notes };
+    if (profile.experience === "new" && slot > 0 && d.sets > 2) { d.sets -= 1; notes.push("1 fewer set while you're new"); }
+    if (profile.focus && muscleGroup(item.name) === profile.focus && d.sets < 5) { d.sets += 1; notes.push("+1 set for your focus"); }
+    return { text: formatDose(d, item.d), notes };
+}
+
+/* ---------- Your log ----------
+   Saved on this device as { "Exercise name": [ { date, unit, sets: [{ w, r }] } ] } */
+const getLog = () => store.get(LOG_KEY, {}) || {};
+const toUnit = (w, from, to) => (from === to ? w : to === "kg" ? w / 2.20462 : w * 2.20462);
+const roundWeight = (w, unit) => { const step = unit === "kg" ? 1.25 : 2.5; return Math.round(w / step) * step; };
+const trimNum = (n) => String(Math.round(n * 100) / 100);
+
+function logFor(name) {
+    return (getLog()[name] || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+}
+function saveSession(name, date, unit, sets) {
+    const log = getLog();
+    const list = (log[name] || []).filter((e) => e.date !== date);
+    list.push({ date, unit, sets });
+    log[name] = list;
+    store.set(LOG_KEY, log);
+    window.dispatchEvent(new CustomEvent("logchange", { detail: { name } }));
+}
+
+// Estimated one-rep max (Epley). Very high-rep sets are capped so they don't inflate it.
+const e1rm = (w, r) => (r <= 1 ? w : w * (1 + Math.min(r, 15) / 30));
+const sessionBest = (entry, unit) => Math.max(...entry.sets.map((s) => e1rm(toUnit(s.w, entry.unit, unit), s.r)));
+
+// Weight jumps: bigger for leg compounds, smaller for everything else
+function weightStep(name, unit) {
+    const legCompound = muscleGroup(name) === "legs" && !/curl|extension|bridge|calf|raise/i.test(name);
+    return unit === "kg" ? (legCompound ? 5 : 2.5) : (legCompound ? 10 : 5);
+}
+
+// What to lift next time, based on last time (double progression)
+function nextTarget(name, dose, unit) {
+    const entries = logFor(name);
+    const d = parseDose(dose);
+    if (d.timed) return null;
+    if (!entries.length) {
+        return { first: true, text: `First time? Pick a weight you could do for about 2 more reps than ${d.high}. Log it and you'll get a target next time.` };
+    }
+    const last = entries[entries.length - 1];
+    const sets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, unit), unit), r: s.r }));
+    const lastText = sets.map((s) => (s.w ? `${trimNum(s.w)}×${s.r}` : `${s.r}`)).join(", ");
+    const top = Math.max(...sets.map((s) => s.w));
+    const working = sets.filter((s) => s.w === top);
+    const allTop = working.length >= Math.min(d.sets, sets.length) && working.every((s) => s.r >= d.high);
+    const anyLow = working.some((s) => s.r < d.low);
+
+    if (top === 0) {
+        return { weight: 0, lastText, text: allTop ? "You hit every rep. Add a rep or two, or try the harder version." : "Aim for one more rep than last time." };
+    }
+    if (allTop) {
+        const w = top + weightStep(name, unit);
+        return { weight: w, reps: d.low, lastText, up: true, text: `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You hit the top of the range on every set.` };
+    }
+    if (anyLow) {
+        const prev = entries[entries.length - 2];
+        const prevLow = prev && prev.sets.some((s) => roundWeight(toUnit(s.w, prev.unit, unit), unit) === top && s.r < d.low);
+        if (prevLow) {
+            const w = roundWeight(top * 0.9, unit);
+            return { weight: w, reps: d.high, lastText, text: `Two tough sessions in a row. Drop to ${trimNum(w)} ${unit} and build back up. That's normal.` };
+        }
+        return { weight: top, reps: d.low, lastText, text: `Stay at ${trimNum(top)} ${unit} and try to get ${d.low} reps on every set.` };
+    }
+    return { weight: top, reps: d.high, lastText, text: `Stay at ${trimNum(top)} ${unit}. Aim for one more rep on your hardest set.` };
+}
+
+// Typical weekly strength gain by experience. Conservative on purpose; progress slows over time.
+const WEEKLY_GAIN = { new: 0.015, some: 0.0075, lots: 0.0035 };
+
+// Project an exercise's estimated max forward, from its history and the person's experience
+function projectLift(name, unit, experience, weeksAhead = 8) {
+    const entries = logFor(name);
+    if (!entries.length) return null;
+    const points = entries.map((e) => ({ date: parseIso(e.date), value: sessionBest(e, unit) }));
+    const base = WEEKLY_GAIN[experience] || WEEKLY_GAIN.new;
+    let rate = base;
+    const first = points[0], last = points[points.length - 1];
+    const spanWeeks = (last.date - first.date) / (7 * 864e5);
+    if (points.length >= 3 && spanWeeks >= 2) {
+        // Least-squares slope, as a share of the starting value per week
+        const xs = points.map((p) => (p.date - first.date) / (7 * 864e5));
+        const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+        const my = points.reduce((a, p) => a + p.value, 0) / points.length;
+        const slope = xs.reduce((a, x, i) => a + (x - mx) * (points[i].value - my), 0) / xs.reduce((a, x) => a + (x - mx) ** 2, 0);
+        const observed = slope / my;
+        rate = Math.min(Math.max((observed + base) / 2, 0), base * 2);
+    }
+    const projection = [];
+    for (let w = 1; w <= weeksAhead; w++) {
+        projection.push({ date: addDays(last.date, w * 7), value: last.value * Math.pow(1 + rate, w) });
+    }
+    return { points, projection, rate };
+}
+
+/* =========================================================
    FEATURE: Program builder
+   Weekly rotation, week-by-week navigation, Swap, How-to,
+   set logging with next-session targets, and the personal
+   settings that tailor Classic Physique.
    ========================================================= */
 function setupPrograms() {
+    const $ = (id) => document.getElementById(id);
     const els = {
-        head: document.getElementById("program-head"),
-        grid: document.getElementById("day-grid"),
-        label: document.getElementById("progress-label"),
-        fill: document.getElementById("progress-fill"),
-        reset: document.getElementById("reset-week"),
-        copyBtn: document.getElementById("copy-plan"),
-        copyStatus: document.getElementById("copy-status"),
+        head: $("program-head"),
+        grid: $("day-grid"),
+        label: $("progress-label"),
+        fill: $("progress-fill"),
+        reset: $("reset-week"),
+        copyBtn: $("copy-plan"),
+        copyStatus: $("copy-status"),
         goalInputs: [...document.querySelectorAll('input[name="goal"]')],
-        dayInputs: [...document.querySelectorAll('input[name="days"]')]
+        dayInputs: [...document.querySelectorAll('input[name="days"]')],
+        weekLabel: $("week-label"),
+        weekDates: $("week-dates"),
+        weekPrev: $("week-prev"),
+        weekNext: $("week-next"),
+        weekToday: $("week-today"),
+        variety: $("week-variety"),
+        profileForm: $("profile-form"),
+        profileSummary: $("profile-summary"),
+        profileNote: $("profile-note")
     };
     if (!els.grid || !els.head) return; // not on the Programs page
 
-    const state = { goal: "beginner", days: 3 };
-    const progressKey = () => `gu-progress-${state.goal}-${state.days}`;
+    const state = { goal: "beginner", days: 3, week: null };
+    const swapsKey = () => `gu-swaps-${state.goal}-${state.days}`;
+    const progressKey = () => `gu-progress-${state.goal}-${state.days}-w${state.week}`;
     const viewHash = () => `#program-${state.goal}-${state.days}`;
+    const currentWeek = () => Math.max(1, weekOf(programStart(state.goal)));
+    let lineups = []; // what's on screen, per day
+    let firstTipShown = new Set();
 
     function render({ syncUrl = false } = {}) {
         const p = PROGRAMS[state.goal];
-        // Not every program offers every number of days; fall back to the closest one it has
         const available = Object.keys(p.plans).map(Number);
         if (!p.plans[state.days]) {
             state.days = available.reduce((best, d) => (Math.abs(d - state.days) < Math.abs(best - state.days) ? d : best));
         }
+        if (!state.week) state.week = currentWeek();
         const plan = p.plans[state.days];
+        const profile = getProfile();
+        const swaps = store.get(swapsKey(), {}) || {};
         const done = new Set(store.get(progressKey(), []));
 
         els.goalInputs.forEach((r) => { r.checked = r.value === state.goal; });
@@ -896,6 +1135,26 @@ function setupPrograms() {
                 <div><dt>Progress by</dt><dd>${escapeHtml(p.progression)}</dd></div>
             </dl>`;
 
+        // Week bar
+        const start = programStart(state.goal);
+        const monday = addDays(start, (state.week - 1) * 7);
+        const now = currentWeek();
+        els.weekLabel.textContent = `Week ${state.week}${state.week === now ? " · this week" : state.week > now ? " · preview" : ""}`;
+        els.weekDates.textContent = `${shortDate(monday)} – ${shortDate(addDays(monday, 6))}`;
+        els.weekPrev.disabled = state.week <= 1;
+        els.weekToday.hidden = state.week === now;
+        const combos = planCombinations(plan);
+        els.variety.textContent = combos > 1
+            ? `This plan can be put together ${bigNumber(combos)} different ways. ${p.rotation === "block" ? "Exercises change every 4 weeks." : "Accessories rotate weekly; main lifts every 4 weeks."}`
+            : "";
+
+        // Days
+        lineups = plan.days.map((day, di) => dayLineup(state.goal, state.days, di, day.items, state.week, swaps));
+        const lastWeek = state.week > 1
+            ? plan.days.map((day, di) => dayLineup(state.goal, state.days, di, day.items, state.week - 1, swaps))
+            : null;
+
+        firstTipShown = new Set();
         els.grid.innerHTML = plan.days.map((day, di) => `
             <article class="day-card" data-day="${di}">
                 <header>
@@ -903,43 +1162,113 @@ function setupPrograms() {
                     <h4>${escapeHtml(day.title)}</h4>
                 </header>
                 <ul class="ex-list">
-                    ${day.items.map((x, xi) => {
-                        const key = `${di}-${xi}`;
-                        const id = `ex-${key}`;
-                        return `
-                        <li>
-                            <input type="checkbox" id="${id}" data-key="${key}" ${done.has(key) ? "checked" : ""}>
-                            <label for="${id}">
-                                <span class="ex-name">${escapeHtml(x.n)}</span>
-                                <span class="ex-dose">${escapeHtml(x.d)}</span>
-                                ${x.rest ? `<span class="ex-rest">Rest ${escapeHtml(x.rest)}</span>` : ""}
-                                ${x.swap ? `<span class="ex-swap">Easier swap: ${escapeHtml(x.swap)}</span>` : ""}
-                            </label>
-                        </li>`;
-                    }).join("")}
+                    ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
                 </ul>
             </article>`).join("");
 
         updateProgress();
+        renderProfileNote(profile);
         if (syncUrl) history.replaceState(null, "", viewHash());
+    }
+
+    function exerciseRow(x, di, xi, done, profile, isNew) {
+        const key = `${di}-${xi}`;
+        const id = `ex-${key}`;
+        const dose = personalDose(state.goal, x, xi, profile);
+        const parsed = parseDose(x.d);
+        const info = typeof EXERCISES === "object" ? EXERCISES[x.name] : null;
+        const easier = x.name === x.n && x.swap ? x.swap : (info && info.easier) || "";
+        let target = nextTarget(x.name, dose.text, profile.unit);
+        // The "first time" tip shows once per day card, not on every exercise
+        if (target && target.first) {
+            if (firstTipShown.has(di)) target = null;
+            else firstTipShown.add(di);
+        }
+        const badges = [
+            xi === 0 && x.canRotate ? `<span class="badge">Main lift</span>` : "",
+            isNew && !x.swapped ? `<span class="badge badge-new">New this week</span>` : "",
+            x.swapped ? `<span class="badge">Swapped</span>` : "",
+            ...dose.notes.map((n) => `<span class="badge badge-you">${escapeHtml(n)}</span>`)
+        ].join("");
+        return `
+            <li class="ex-row" data-slot="${key}">
+                <input type="checkbox" id="${id}" data-key="${key}" ${done.has(key) ? "checked" : ""} aria-label="Done: ${escapeHtml(x.name)}">
+                <div class="ex-main">
+                    <label for="${id}" class="ex-name">${escapeHtml(x.name)}</label>
+                    <span class="ex-dose">${escapeHtml(dose.text)}</span>
+                    ${badges ? `<span class="ex-badges">${badges}</span>` : ""}
+                    ${x.rest ? `<span class="ex-rest">Rest ${escapeHtml(x.rest)}</span>` : ""}
+                    ${easier ? `<span class="ex-swap">Easier option: ${escapeHtml(easier)}</span>` : ""}
+                    ${target ? `<span class="ex-target${target.up ? " is-up" : ""}">${target.lastText ? `<span class="ex-last">Last time: ${escapeHtml(target.lastText)}</span>` : ""}${escapeHtml(target.text)}</span>` : ""}
+                    <span class="ex-actions">
+                        ${info ? `<button type="button" class="chip" data-howto="${escapeHtml(x.name)}">How to</button>` : ""}
+                        ${x.canRotate ? `<button type="button" class="chip" data-swap="${key}">Swap</button>` : ""}
+                        ${!parsed.timed ? `<button type="button" class="chip" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log sets</button>` : ""}
+                    </span>
+                    ${!parsed.timed ? logForm(x, key, parseDose(dose.text), target, profile.unit) : ""}
+                </div>
+            </li>`;
+    }
+
+    function logForm(x, key, dose, target, unit) {
+        const weight = target && target.weight ? trimNum(target.weight) : "";
+        const rows = Array.from({ length: dose.sets }, (_, i) => `
+            <div class="log-set">
+                <span class="log-set-num">Set ${i + 1}</span>
+                <label><span class="visually-hidden">Set ${i + 1} weight</span><input type="number" inputmode="decimal" min="0" step="any" name="w" value="${weight}" placeholder="0"><span class="log-unit">${unit}</span></label>
+                <label><span class="visually-hidden">Set ${i + 1} reps</span><input type="number" inputmode="numeric" min="0" step="1" name="r" placeholder="${dose.high || ""}"><span class="log-unit">reps</span></label>
+            </div>`).join("");
+        return `
+            <form class="log-form" id="log-${key}" data-exercise="${escapeHtml(x.name)}" hidden novalidate>
+                <div class="log-date"><label>Date <input type="date" name="date" value="${isoDate(new Date())}" max="${isoDate(new Date())}"></label></div>
+                ${rows}
+                <p class="log-help">Leave weight at 0 for bodyweight moves. Change the date to add a past workout.</p>
+                <div class="log-buttons">
+                    <button type="submit" class="btn btn-primary btn-compact">Save sets</button>
+                    <button type="button" class="text-button" data-log-cancel="${key}">Cancel</button>
+                </div>
+                <p class="log-status" role="status"></p>
+            </form>`;
+    }
+
+    function renderProfileNote(profile) {
+        if (!els.profileForm) return;
+        const levels = { new: "Newer lifter", some: "6 months to 2 years", lots: "2+ years" };
+        const bits = [levels[profile.experience]];
+        if (profile.bodyweight) bits.push(`${profile.bodyweight} ${profile.unit}`);
+        if (profile.focus) bits.push(`focus: ${profile.focus}`);
+        els.profileSummary.textContent = bits.join(" · ");
+        const notes = [];
+        if (profile.bodyweight) {
+            const kg = profile.unit === "kg" ? Number(profile.bodyweight) : Number(profile.bodyweight) / 2.20462;
+            if (kg > 30) notes.push(`A good daily protein target for you is about ${fmt(kg * 1.6)}–${fmt(kg * 2.2)} g.`);
+        }
+        if (state.goal === "classic") {
+            notes.push(profile.experience === "new"
+                ? "Classic Physique is set to 1 fewer set on accessories while you build up."
+                : "Classic Physique is using full volume for your experience.");
+            if (profile.focus) notes.push(`Exercises for your ${profile.focus} get one extra set.`);
+        } else {
+            notes.push("Your targets come from what you log. Pick Classic Physique to have the sets tailored too.");
+        }
+        els.profileNote.textContent = notes.join(" ");
     }
 
     function updateProgress() {
         const boxes = [...els.grid.querySelectorAll('input[type="checkbox"]')];
         const checked = boxes.filter((b) => b.checked).length;
         const total = boxes.length;
-
         els.label.textContent = checked === total && total > 0
-            ? "Week complete. Add weight where the plan says to, then start a new week."
+            ? `Week ${state.week} done. Nice work. Next week's plan is ready when you are.`
             : `${checked} of ${total} exercises done this week`;
         els.fill.style.width = total ? (checked / total) * 100 + "%" : "0";
-
         els.grid.querySelectorAll(".day-card").forEach((card) => {
             const dayBoxes = [...card.querySelectorAll('input[type="checkbox"]')];
             card.classList.toggle("complete", dayBoxes.length > 0 && dayBoxes.every((b) => b.checked));
         });
     }
 
+    /* ----- Events ----- */
     els.grid.addEventListener("change", (e) => {
         if (!e.target.matches('input[type="checkbox"]')) return;
         const keys = [...els.grid.querySelectorAll('input[type="checkbox"]:checked')].map((b) => b.dataset.key);
@@ -947,13 +1276,88 @@ function setupPrograms() {
         updateProgress();
     });
 
+    els.grid.addEventListener("click", (e) => {
+        const swapBtn = e.target.closest("[data-swap]");
+        if (swapBtn) {
+            const [di, xi] = swapBtn.dataset.swap.split("-").map(Number);
+            const current = lineups[di][xi];
+            const fam = familyFor(current.n) || [current.name];
+            const usedToday = new Set(lineups[di].map((x) => x.name));
+            let i = fam.indexOf(current.name);
+            let next = current.name;
+            for (let step = 1; step <= fam.length; step++) {
+                const candidate = fam[(i + step) % fam.length];
+                if (!usedToday.has(candidate)) { next = candidate; break; }
+            }
+            const swaps = store.get(swapsKey(), {}) || {};
+            swaps[`w${state.week}:${di}-${xi}`] = next;
+            store.set(swapsKey(), swaps);
+            render();
+            const again = els.grid.querySelector(`[data-swap="${di}-${xi}"]`);
+            if (again) again.focus();
+            return;
+        }
+        const logBtn = e.target.closest("[data-log]");
+        if (logBtn) {
+            const form = document.getElementById(`log-${logBtn.dataset.log}`);
+            const open = form.hidden;
+            form.hidden = !open;
+            logBtn.setAttribute("aria-expanded", String(open));
+            if (open) {
+                const firstEmpty = form.querySelector('input[name="r"]');
+                if (firstEmpty) firstEmpty.focus();
+            }
+            return;
+        }
+        const cancel = e.target.closest("[data-log-cancel]");
+        if (cancel) {
+            const key = cancel.dataset.logCancel;
+            document.getElementById(`log-${key}`).hidden = true;
+            const btn = els.grid.querySelector(`[data-log="${key}"]`);
+            btn.setAttribute("aria-expanded", "false");
+            btn.focus();
+        }
+    });
+
+    els.grid.addEventListener("submit", (e) => {
+        const form = e.target.closest(".log-form");
+        if (!form) return;
+        e.preventDefault();
+        const unit = getProfile().unit;
+        const ws = [...form.querySelectorAll('input[name="w"]')];
+        const rs = [...form.querySelectorAll('input[name="r"]')];
+        const sets = rs.map((r, i) => ({ w: Number(ws[i].value) || 0, r: Number(r.value) }))
+            .filter((s) => Number.isFinite(s.r) && s.r > 0);
+        const status = form.querySelector(".log-status");
+        if (!sets.length) { status.textContent = "Add the reps for at least one set."; rs[0].focus(); return; }
+        const date = form.elements.date.value || isoDate(new Date());
+        saveSession(form.dataset.exercise, date, unit, sets);
+        const slot = form.id.replace("log-", "");
+        const box = document.getElementById(`ex-${slot}`);
+        if (box && !box.checked && date === isoDate(new Date())) {
+            box.checked = true;
+            box.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        render();
+        const row = els.grid.querySelector(`[data-slot="${slot}"] .ex-target`);
+        if (row) row.classList.add("just-saved");
+        const btn = els.grid.querySelector(`[data-log="${slot}"]`);
+        if (btn) btn.focus();
+    });
+
     els.reset.addEventListener("click", () => {
         store.remove(progressKey());
         render();
     });
 
+    const goToWeek = (w) => { state.week = Math.max(1, w); render(); };
+    els.weekPrev.addEventListener("click", () => goToWeek(state.week - 1));
+    els.weekNext.addEventListener("click", () => goToWeek(state.week + 1));
+    els.weekToday.addEventListener("click", () => goToWeek(currentWeek()));
+
     els.goalInputs.forEach((r) => r.addEventListener("change", () => {
         state.goal = r.value;
+        state.week = null;
         render({ syncUrl: true });
     }));
     els.dayInputs.forEach((r) => r.addEventListener("change", () => {
@@ -961,11 +1365,37 @@ function setupPrograms() {
         render({ syncUrl: true });
     }));
 
+    // Personal settings
+    if (els.profileForm) {
+        const profile = getProfile();
+        const f = els.profileForm.elements;
+        f.experience.value = profile.experience;
+        f.bodyweight.value = profile.bodyweight;
+        f.unit.value = profile.unit;
+        f.focus.value = profile.focus;
+        els.profileForm.addEventListener("submit", (e) => e.preventDefault());
+        els.profileForm.addEventListener("change", () => {
+            const old = getProfile();
+            const next = { experience: f.experience.value, bodyweight: f.bodyweight.value, unit: f.unit.value, focus: f.focus.value };
+            // Switching units converts the bodyweight you typed
+            if (old.unit !== next.unit && next.bodyweight) {
+                next.bodyweight = trimNum(Math.round(toUnit(Number(next.bodyweight), old.unit, next.unit) * 10) / 10);
+                f.bodyweight.value = next.bodyweight;
+            }
+            store.set(PROFILE_KEY, next);
+            store.set("gu-unit", next.unit);
+            render();
+            window.dispatchEvent(new CustomEvent("logchange"));
+        });
+    }
+
+    window.addEventListener("logchange", (e) => { if (e.detail && e.detail.fromPanel) render(); });
+
     let copyTimer;
     els.copyBtn.addEventListener("click", async () => {
         const url = location.href.split("#")[0] + viewHash();
         let copied = false;
-        try { await navigator.clipboard.writeText(url); copied = true; } catch (e) { /* clipboard blocked */ }
+        try { await navigator.clipboard.writeText(url); copied = true; } catch (err) { /* clipboard blocked */ }
         els.copyStatus.textContent = copied
             ? `Link copied. It opens ${PROGRAMS[state.goal].name}, ${state.days} days a week.`
             : "Copy this link: " + url;
@@ -976,6 +1406,7 @@ function setupPrograms() {
     // Links like #program-fatloss or #program-strength-4
     addRoute(/^#program-([a-z]+)(?:-(\d))?$/, (m) => {
         if (!PROGRAMS[m[1]]) return null;
+        if (state.goal !== m[1]) state.week = null;
         state.goal = m[1];
         if (m[2] && PROGRAMS[m[1]].plans[m[2]]) state.days = Number(m[2]);
         render();
@@ -983,6 +1414,176 @@ function setupPrograms() {
     });
 
     render();
+}
+
+/* =========================================================
+   FEATURE: "How to" guide for any exercise
+   Any button with data-howto="Exercise name" opens it.
+   ========================================================= */
+function setupExerciseGuide() {
+    if (typeof EXERCISES !== "object") return;
+    document.body.insertAdjacentHTML("beforeend", `
+<dialog id="howto" class="howto" aria-labelledby="howto-title">
+    <div class="howto-inner">
+        <div class="howto-head">
+            <div>
+                <p class="kicker" id="howto-muscles"></p>
+                <h2 id="howto-title"></h2>
+                <p class="howto-eq" id="howto-eq"></p>
+            </div>
+            <button type="button" class="howto-close" id="howto-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="howto-body" id="howto-body"></div>
+    </div>
+</dialog>`);
+    const dialog = document.getElementById("howto");
+    if (typeof dialog.showModal !== "function") return;
+    let opener = null;
+
+    function open(name) {
+        const x = EXERCISES[name];
+        if (!x) return;
+        const demo = `https://www.youtube.com/results?search_query=${encodeURIComponent(name + " proper form")}`;
+        const fam = (familyFor(name) || []).filter((n) => n !== name);
+        document.getElementById("howto-title").textContent = name;
+        document.getElementById("howto-muscles").textContent = x.m;
+        document.getElementById("howto-eq").textContent = x.eq;
+        document.getElementById("howto-body").innerHTML = `
+            <a class="btn btn-primary howto-demo" href="${demo}" target="_blank" rel="noopener noreferrer">Watch a demo on YouTube <span aria-hidden="true">&nearr;</span><span class="visually-hidden">(opens in a new tab)</span></a>
+            <h3>Setup</h3>
+            <p>${escapeHtml(x.setup)}</p>
+            <h3>The movement</h3>
+            <ol class="howto-steps">${x.steps.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
+            <div class="howto-tip"><strong>The one thing to remember:</strong> ${escapeHtml(x.tip)}</div>
+            <h3>Avoid these</h3>
+            <ul class="howto-mistakes">${x.mistakes.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
+            ${x.easier || x.harder ? `<dl class="howto-levels">
+                ${x.easier ? `<div><dt>Too hard?</dt><dd>${escapeHtml(x.easier)}</dd></div>` : ""}
+                ${x.harder ? `<div><dt>Too easy?</dt><dd>${escapeHtml(x.harder)}</dd></div>` : ""}
+            </dl>` : ""}
+            ${fam.length ? `<h3>Works the same muscles</h3><p class="howto-alts">${fam.map((n) => `<button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join(" ")}</p>` : ""}
+            <p class="fine-print">Stop if something hurts (sharp or joint pain, not muscle burn). Form guides are general advice, not medical advice.</p>`;
+        if (!dialog.open) dialog.showModal();
+        dialog.querySelector(".howto-inner").scrollTop = 0;
+        document.getElementById("howto-close").focus();
+    }
+
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-howto]");
+        if (!btn) return;
+        if (!dialog.contains(btn)) opener = btn;
+        open(btn.dataset.howto);
+    });
+    document.getElementById("howto-close").addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (e) => { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener("close", () => { if (opener) opener.focus(); });
+}
+
+/* =========================================================
+   FEATURE: My progress (chart + projection) on the Programs page
+   ========================================================= */
+function setupProgressPanel() {
+    const select = document.getElementById("progress-exercise");
+    const svg = document.getElementById("progress-chart");
+    const summary = document.getElementById("progress-summary");
+    if (!select || !svg) return;
+
+    function exercisesWithLogs() {
+        const log = getLog();
+        return Object.keys(log)
+            .filter((n) => log[n] && log[n].length)
+            .sort((a, b) => {
+                const la = log[a].map((e) => e.date).sort().pop();
+                const lb = log[b].map((e) => e.date).sort().pop();
+                return lb.localeCompare(la);
+            });
+    }
+
+    function fillSelect(preferred) {
+        const names = exercisesWithLogs();
+        const keep = preferred && names.includes(preferred) ? preferred : names.includes(select.value) ? select.value : names[0];
+        select.innerHTML = names.length
+            ? names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("")
+            : `<option value="">No sessions logged yet</option>`;
+        select.disabled = !names.length;
+        if (keep) select.value = keep;
+    }
+
+    function draw() {
+        const profile = getProfile();
+        const unit = profile.unit;
+        const name = select.value;
+        const result = name ? projectLift(name, unit, profile.experience) : null;
+        const W = 720, H = 300, pad = { l: 56, r: 20, t: 20, b: 36 };
+
+        if (!result) {
+            svg.innerHTML = `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" class="chart-empty">Your chart appears after your first logged session.</text>`;
+            summary.innerHTML = `<p>Open any exercise on your plan, tap <strong>Log sets</strong>, and save what you lifted. You can change the date to add workouts you've already done, so your history starts with what you've been doing.</p>`;
+            return;
+        }
+
+        const all = [...result.points, ...result.projection];
+        const t0 = all[0].date.getTime(), t1 = all[all.length - 1].date.getTime();
+        const vals = all.map((p) => p.value);
+        const lo = Math.min(...vals) * 0.92, hi = Math.max(...vals) * 1.05;
+        const x = (d) => pad.l + ((d.getTime() - t0) / Math.max(1, t1 - t0)) * (W - pad.l - pad.r);
+        const y = (v) => pad.t + (1 - (v - lo) / Math.max(1, hi - lo)) * (H - pad.t - pad.b);
+        const line = (pts) => pts.map((p, i) => `${i ? "L" : "M"}${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join("");
+
+        let out = "";
+        for (let i = 0; i <= 4; i++) {
+            const v = lo + ((hi - lo) * i) / 4;
+            out += `<line class="chart-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/>`;
+            out += `<text class="chart-label" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
+        }
+        const lastPoint = result.points[result.points.length - 1];
+        out += `<text class="chart-label" x="${pad.l}" y="${H - 10}">${shortDate(result.points[0].date)}</text>`;
+        out += `<text class="chart-label" x="${x(lastPoint.date)}" y="${H - 10}" text-anchor="middle">Last: ${shortDate(lastPoint.date)}</text>`;
+        out += `<text class="chart-label" x="${W - pad.r}" y="${H - 10}" text-anchor="end">${shortDate(result.projection[result.projection.length - 1].date)}</text>`;
+        out += `<path class="chart-proj" d="${line([lastPoint, ...result.projection])}"/>`;
+        out += `<path class="chart-line" d="${line(result.points)}"/>`;
+        out += result.points.map((p) => `<circle class="chart-dot" cx="${x(p.date)}" cy="${y(p.value)}" r="4.5"><title>${shortDate(p.date)}: about ${fmt(p.value)} ${unit}</title></circle>`).join("");
+        svg.innerHTML = out;
+
+        const end = result.projection[result.projection.length - 1];
+        const target8 = end.value / (1 + 10 / 30);
+        summary.innerHTML = `
+            <div class="progress-stats">
+                <div><span>Estimated max now</span><strong>${fmt(lastPoint.value)} ${unit}</strong></div>
+                <div><span>Projected by ${shortDate(end.date)}</span><strong>${fmt(end.value)} ${unit}</strong></div>
+                <div><span>Then you'd train with</span><strong>${trimNum(roundWeight(target8, unit))} ${unit} &times; 10</strong></div>
+            </div>
+            <p>Based on ${result.points.length} logged session${result.points.length === 1 ? "" : "s"}${result.points.length >= 3 ? " and your recent trend" : " and typical progress for your experience"} (about ${(result.rate * 100).toFixed(1)}% a week). This is a projection, not a promise: progress slows as you get stronger, and sleep, food, and stress all play a part. Solid line: what you did. Dashed: where you're headed.</p>`;
+    }
+
+    select.addEventListener("change", draw);
+    window.addEventListener("logchange", (e) => { fillSelect(e.detail && e.detail.name); draw(); });
+
+    document.getElementById("export-log").addEventListener("click", () => {
+        const log = getLog();
+        const rows = [["Date", "Exercise", "Set", "Weight", "Unit", "Reps"]];
+        Object.entries(log).forEach(([name, entries]) => entries.forEach((e) =>
+            e.sets.forEach((s, i) => rows.push([e.date, name, i + 1, s.w, e.unit, s.r]))));
+        rows.sort((a, b) => (a[0] === "Date" ? -1 : b[0] === "Date" ? 1 : a[0].localeCompare(b[0])));
+        const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = `ground-up-log-${isoDate(new Date())}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    });
+
+    document.getElementById("clear-log").addEventListener("click", () => {
+        if (!window.confirm("Delete every logged set on this device? This can't be undone. (Tip: download your log first.)")) return;
+        store.remove(LOG_KEY);
+        fillSelect();
+        draw();
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { fromPanel: true } }));
+    });
+
+    fillSelect();
+    draw();
 }
 
 /* =========================================================

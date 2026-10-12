@@ -128,6 +128,53 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator('input[name="goal"][value="beginner"]').check({ force: true });
             check(await page.locator('input[name="days"][value="5"]').isDisabled(), "unavailable day options are disabled");
             check(/New to lifting · 4 days/.test(await page.locator("#program-head h3").textContent()), "switching to a plan without 5 days picks the nearest");
+            // How-to guide opens with steps and a demo link
+            await page.locator("[data-howto]").first().click();
+            check(await page.locator("#howto[open] .howto-steps li").count() >= 3, "How to opens a step-by-step guide");
+            check((await page.locator(".howto-demo").getAttribute("href")).startsWith("https://www.youtube.com/results?search_query="), "guide has a YouTube demo search");
+            await page.locator("#howto-close").click();
+
+            // Weekly rotation: the classic plan changes some accessories from week to week
+            await page.locator('input[name="goal"][value="classic"]').check({ force: true });
+            await page.locator('input[name="days"][value="4"]').check({ force: true });
+            const namesNow = await page.locator(".ex-name").allTextContents();
+            await page.locator("#week-next").click();
+            const namesNext = await page.locator(".ex-name").allTextContents();
+            check(namesNow.length === namesNext.length && namesNow.some((n, i) => n !== namesNext[i]), "next week rotates some exercises");
+            check(namesNow[0] === namesNext[0], "the main lift stays the same week to week");
+            check(/over/.test(await page.locator("#week-variety").textContent()), "shows how many combinations the plan has");
+            await page.locator("#week-today").click();
+
+            // Swap changes just that exercise
+            const before = await page.locator(".ex-row").nth(1).locator(".ex-name").textContent();
+            await page.locator(".ex-row").nth(1).locator("[data-swap]").click();
+            const after = await page.locator(".ex-row").nth(1).locator(".ex-name").textContent();
+            check(before !== after, `Swap changes the exercise (${before} -> ${after})`);
+
+            // Logging sets gives a target next time, and the progress chart draws
+            const row = page.locator(".ex-row").nth(2);
+            const exName = await row.locator(".ex-name").textContent();
+            await row.locator("[data-log]").click();
+            const form = row.locator(".log-form");
+            const sets = await form.locator('input[name="r"]').count();
+            for (let i = 0; i < sets; i++) {
+                await form.locator('input[name="w"]').nth(i).fill("100");
+                await form.locator('input[name="r"]').nth(i).fill("12");
+            }
+            await form.locator('button[type="submit"]').click();
+            const target = await page.locator(".ex-row").nth(2).locator(".ex-target").textContent();
+            check(/Last time: 100×12/.test(target) && /Go up to/.test(target), `logging the top of the range suggests more weight next time`);
+            check(await page.locator(".ex-row").nth(2).locator('input[type="checkbox"]').isChecked(), "logging today's sets checks the exercise off");
+            check(await page.locator("#progress-exercise").inputValue() === exName, "progress panel picks up the logged exercise");
+            check(await page.locator("#progress-chart .chart-proj").count() === 1, "progress chart draws a projection");
+
+            // Personal settings: a focus muscle adds a set on Classic Physique
+            await page.locator("#profile-panel summary").click();
+            await page.selectOption("#pf-focus", "shoulders");
+            check(await page.locator(".badge-you", { hasText: "focus" }).count() > 0, "focus muscle adds an extra set");
+            await page.selectOption("#pf-experience", "new");
+            check(await page.locator(".badge-you", { hasText: "fewer" }).count() > 0, "newer lifters get fewer accessory sets");
+
             await page.locator(".theme-toggle").click();
             check(await page.evaluate(() => document.documentElement.dataset.theme === "dark"), "dark mode toggles");
             await page.screenshot({ path: path.join(SHOTS, `${name}-programs-dark.png`), fullPage: true });
