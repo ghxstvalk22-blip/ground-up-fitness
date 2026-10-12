@@ -2,11 +2,26 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (overnight, continued)
+
+Going through the site as different visitors and fixing what each one would want:
+
+- **A nervous first-timer:** the Start page now walks through your whole first gym visit (with a gym-bag checklist), a 5-minute warm-up, and a plain-English list of gym words.
+- **Someone mid-workout:** tap any rest time to start a countdown that buzzes and beeps when rest is over. A "Today's workout" button jumps straight to the day that's up next, and plan details fold away on phones so the workout is closer.
+- **Someone stuck on a movement:** a new Exercise library page lets you search all 103 exercises or filter by muscle, each with its how-to.
+- **Someone coming back:** the Programs page remembers your plan, marks the day that's up next, and the home page offers "Continue: your plan".
+- **Someone losing weight:** a weight trend tool shows your 7-day average and weekly change, with a gentle note if you're losing faster than recommended.
+- **More plans:** Build muscle (3-day full body), No gym needed (home, no equipment), Short on time (2 days), and Dumbbells only (3 or 4 days). Home and dumbbell plans only rotate into exercises you can do with that equipment.
+- **Getting around:** every page ends with "Where to next?", and the Gym basics answers link to the right plan or tool.
+- **Sharing the link:** links now show a title, description, and photo when you text them, and the site has its own icon.
+- **At the gym on paper:** "Print this week" makes a clean two-column sheet with blanks to write in your sets.
+- **Fixes:** the menu ran off the screen on some laptops once the real font loaded (fixed, and the tests now check with the real font); the contact form now says it's still being set up instead of failing when you press Send; corners and arrows are consistent everywhere. An accessibility check (axe) found no problems on any page in light or dark mode.
+
 ## 2026-10-12 (overnight rebuild)
 
 - **Every menu tab is now its own page.** Clicking Programs, Pros, Tools, and so on opens that page instead of scrolling down the home page.
 - **New look and front page.** Black, white, and bone with one orange accent, big condensed headlines, and black-and-white gym photos (free Unsplash photos, credited in the footer). The home page now speaks directly to people who are nervous about starting.
-- **"How to" for every exercise.** Tap How to on any exercise for setup, step-by-step form, the one cue that matters, common mistakes, easier and harder versions, and a button that opens YouTube demos. 97 exercises are covered.
+- **"How to" for every exercise.** Tap How to on any exercise for setup, step-by-step form, the one cue that matters, common mistakes, easier and harder versions, and a button that opens YouTube demos. 97 exercises were covered at first (103 now).
 - **Workouts change every week.** Accessory exercises rotate weekly between moves that train the same muscles, and main lifts change every 4 weeks (beginner plans change every 4 weeks). Each plan can be put together thousands to billions of ways. A Swap button changes any exercise on the spot, which helps when a machine is taken. This follows the research: planned variety keeps training fresh, but changing the main lifts too often slows strength gains.
 - **Three new plans:** No gym needed (3 days at home, no equipment), Short on time (2 gym days under 45 minutes), and Dumbbells only (3 or 4 days). Home and dumbbell plans only rotate into exercises you can actually do with that equipment. The quick start on the home page has two new choices: "Not ready for a gym" and "Short on time."
 - **Personal targets and projections.** Log your sets on any exercise, including past workouts, and the plan tells you what to lift next time. A new "Where you're headed" chart projects your progress over the next 8 weeks. "Make it yours" tailors Classic Physique to your experience and the muscle you want to bring up. Everything stays on your device, and you can download your log.
