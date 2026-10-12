@@ -175,6 +175,16 @@ async function openPage(browser, file, viewport, hash = "") {
             check(namesNow.length === namesNext.length && namesNow.some((n, i) => n !== namesNext[i]), "next week rotates some exercises");
             check(namesNow[0] === namesNext[0], "the main lift stays the same week to week");
             check(/over/.test(await page.locator("#week-variety").textContent()), "shows how many combinations the plan has");
+            // Waves: week 3 is Heavy (main lift fewer reps), week 4 is Recover (half the sets)
+            const doseWeek = async () => page.locator(".ex-row").first().locator(".ex-dose").textContent();
+            const accessoryDose = async () => page.locator(".ex-row").nth(1).locator(".ex-dose").textContent();
+            const w1Main = await (async () => { await page.locator("#week-today").click(); return doseWeek(); })();
+            const w1Acc = await accessoryDose();
+            await page.locator("#week-next").click(); await page.locator("#week-next").click();
+            check(/Heavy week/.test(await page.locator("#week-phase").textContent()) && (await doseWeek()) !== w1Main, `week 3 is a Heavy week with a heavier main-lift dose (${w1Main} -> ${await doseWeek()})`);
+            await page.locator("#week-next").click();
+            const setCount = (t) => Number(t.split("×")[0]);
+            check(/Recover week/.test(await page.locator("#week-phase").textContent()) && setCount(await accessoryDose()) < setCount(w1Acc), "week 4 is a Recover week with fewer sets");
             await page.locator("#week-today").click();
 
             // Swap changes just that exercise

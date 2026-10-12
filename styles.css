@@ -1386,6 +1386,12 @@ select, input, textarea {
 .week-bar #week-next { grid-column: 3; grid-row: 1; }
 .week-bar #week-today { grid-column: 2; grid-row: 2; justify-self: start; color: var(--paper); }
 .week-variety { grid-column: 1 / -1; margin: 0; font-size: 0.82rem; opacity: 0.8; }
+.week-phase { grid-column: 1 / -1; margin: 4px 0 0; font-size: 0.9rem; }
+.week-challenge { display: block; margin-top: 4px; color: var(--volt); font-weight: 700; }
+.wave-dots { display: inline-flex; gap: 4px; margin-right: 10px; vertical-align: 1px; }
+.wave-dots span { width: 18px; height: 6px; background-color: color-mix(in srgb, var(--paper) 25%, transparent); }
+.wave-dots span.done { background-color: color-mix(in srgb, var(--paper) 60%, transparent); }
+.wave-dots span.on { background-color: var(--volt); }
 
 .jump-today { margin: -8px 0 24px; }
 @media (max-width: 600px) { .jump-today { width: 100%; } }

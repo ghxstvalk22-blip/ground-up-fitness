@@ -1317,13 +1317,49 @@ function muscleGroup(name) {
 }
 
 // Classic Physique adapts to the person: fewer accessory sets for newer lifters, one extra set for their focus muscle
-function personalDose(program, item, slot, profile) {
+/* ---------- 4-week training waves ----------
+   Every plan cycles Build -> Push -> Heavy -> Recover, so each week asks
+   something a little different and the 4th week lets the body catch up.
+   Periodized training like this beats doing the same thing every week for
+   strength (ACSM position stand, 2009; Williams et al., 2017). */
+const WAVE = [
+    { key: "build", name: "Build week", tip: "Settle in and hit every set at the plan's numbers with clean form.", challenge: "Log every set you do this week." },
+    { key: "push", name: "Push week", tip: "One extra set on each accessory exercise.", challenge: "Beat last week's reps on at least one exercise." },
+    { key: "heavy", name: "Heavy week", tip: "Main lifts go heavier: more sets, fewer reps, a little more rest.", challenge: "Set a new personal record on a main lift." },
+    { key: "recover", name: "Recover week", tip: "Half the sets at about 10% lighter, so you come back stronger next week.", challenge: "Do the 5-minute warm-up before every session." }
+];
+const wavePhase = (week) => WAVE[(Math.max(1, week) - 1) % 4];
+
+// "3 × 8–10 per leg" from its parts
+function doseText(d) {
+    const reps = d.high && d.high !== d.low ? `${d.low}–${d.high}` : `${d.low}`;
+    return `${d.sets} × ${reps}${d.rest ? " " + d.rest : ""}`;
+}
+
+// The dose for this person this week: the wave first, then Classic Physique's personal tweaks
+function personalDose(program, item, slot, profile, week = 1) {
     const d = parseDose(item.d);
     const notes = [];
-    if (program !== "classic" || d.timed) return { text: item.d, notes };
-    if (profile.experience === "new" && slot > 0 && d.sets > 2) { d.sets -= 1; notes.push("1 fewer set while you're new"); }
-    if (profile.focus && muscleGroup(item.name) === profile.focus && d.sets < 5) { d.sets += 1; notes.push("+1 set for your focus"); }
-    return { text: formatDose(d, item.d), notes };
+    if (d.timed) return { text: item.d, notes };
+    const plan = PROGRAMS[program] || {};
+    let changed = false;
+    // Personal tweaks set this person's normal dose...
+    if (program === "classic") {
+        if (profile.experience === "new" && slot > 0 && d.sets > 2) { d.sets -= 1; notes.push("1 fewer set while you're new"); changed = true; }
+        if (profile.focus && muscleGroup(item.name) === profile.focus && d.sets < 5) { d.sets += 1; notes.push("+1 set for your focus"); changed = true; }
+    }
+    // ...then the week's wave changes it from there
+    if (plan.waves !== false) {
+        const phase = wavePhase(week).key;
+        if (phase === "push" && slot > 0 && d.sets < 5) { d.sets += 1; notes.push("+1 set: Push week"); changed = true; }
+        if (phase === "heavy" && slot === 0 && d.high >= 5) {
+            d.low = Math.max(3, d.low - 2); d.high = Math.max(d.low, d.high - 2);
+            if (d.sets < 5) d.sets += 1;
+            notes.push("Heavy week: more sets, fewer reps"); changed = true;
+        }
+        if (phase === "recover" && d.sets > 1) { d.sets = Math.max(1, Math.ceil(d.sets / 2)); notes.push("Recover week: half the sets"); changed = true; }
+    }
+    return { text: changed ? doseText(d) : item.d, notes };
 }
 
 /* ---------- Your log ----------
@@ -1542,6 +1578,18 @@ function setupPrograms() {
         els.weekPrev.disabled = state.week <= 1;
         els.weekToday.hidden = state.week === now;
         const combos = planCombinations(plan, state.goal);
+        const phaseEl = document.getElementById("week-phase");
+        if (phaseEl) {
+            if (p.waves === false) { phaseEl.hidden = true; }
+            else {
+                const ph = wavePhase(state.week);
+                const idx = WAVE.indexOf(ph);
+                phaseEl.hidden = false;
+                phaseEl.innerHTML = `
+                    <span class="wave-dots" aria-hidden="true">${WAVE.map((w, i) => `<span class="${i === idx ? "on" : i < idx ? "done" : ""}"></span>`).join("")}</span>
+                    <strong>${ph.name}.</strong> ${ph.tip} <span class="week-challenge">This week's challenge: ${ph.challenge}</span>`;
+            }
+        }
         els.variety.textContent = combos > 1
             ? `This plan can be put together ${bigNumber(combos)} different ways. ${p.rotation === "block" ? "Exercises change every 4 weeks." : "Accessories rotate weekly; main lifts every 4 weeks."}`
             : "";
@@ -1573,7 +1621,7 @@ function setupPrograms() {
     function exerciseRow(x, di, xi, done, profile, isNew) {
         const key = `${di}-${xi}`;
         const id = `ex-${key}`;
-        const dose = personalDose(state.goal, x, xi, profile);
+        const dose = personalDose(state.goal, x, xi, profile, state.week);
         const parsed = parseDose(x.d);
         const info = typeof EXERCISES === "object" ? EXERCISES[x.name] : null;
         const easier = x.name === x.n && x.swap ? x.swap : (info && info.easier) || "";
@@ -1583,6 +1631,11 @@ function setupPrograms() {
         if (target && target.first) {
             if (firstTipShown.has(di)) target = null;
             else firstTipShown.add(di);
+        }
+        // Recover week: same exercise, about 10% lighter on purpose
+        if (target && target.weight > 0 && PROGRAMS[state.goal].waves !== false && wavePhase(state.week).key === "recover") {
+            const w = roundWeight(target.weight * 0.9, profile.unit);
+            target = { ...target, up: false, weight: w, text: `Recover week: about ${trimNum(w)} ${profile.unit}, roughly 10% lighter than usual. Easy on purpose.` };
         }
         const badges = [
             xi === 0 && x.canRotate ? `<span class="badge">Main lift</span>` : "",
