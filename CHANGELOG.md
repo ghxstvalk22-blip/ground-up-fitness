@@ -2,6 +2,16 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (simpler for beginners)
+
+The site had grown a lot in one day, so this pass makes it calmer for someone brand new, without removing anything:
+
+- **Programs:** starts with just 4 goals (New to lifting, Lose fat, Build muscle, Get stronger). The other 10 plans are behind "More plans", each tagged Beginner, Intermediate, or Advanced. Two plans got plainer names: "Next-level strength" (based on GZCLP) and "Light weights, high reps".
+- **Less on screen at first:** "How this plan works" is folded, and the training waves, weekly challenge, and variety count appear once you're past week 1 or have logged a workout.
+- **Menus:** every dropdown has 5 links or fewer. The Programs menu shows the 4 main plans plus "All 14 plans". Anything taken out of a menu is still in search (press /).
+- **Exercises:** the exercise library comes first; the muscle map sits below it ("Find exercises by muscle"). Picking a muscle shows its best exercises first, with the head-by-head breakdown one tap away.
+- **My progress:** streaks, personal records, and milestones appear after 3 logged workouts.
+
 ## 2026-10-12 (muscle map: every head)
 
 - **Every muscle now shows its heads and parts**, on the same body drawing. Pick a muscle and the panel lists each part with what it does and the best exercises for it; tap a part (on the body or in the list) and it lights up red while the rest of that muscle turns pink:

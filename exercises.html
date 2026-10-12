@@ -38,7 +38,31 @@
 </header>
 
 <main id="main">
-    <section id="muscle-map" class="block muscle-map" aria-labelledby="mm-heading">
+    <section id="library" class="block">
+        <div class="container wide">
+            <div class="library-tools">
+                <div class="library-search">
+                    <label for="library-search">Search exercises</label>
+                    <input id="library-search" type="search" placeholder="Try squat, curl, or cable" autocomplete="off">
+                </div>
+                <fieldset class="segmented compact library-filter" id="library-filter">
+                    <legend>Muscle</legend>
+                    <label><input type="radio" name="muscle" value="" checked><span>All</span></label>
+                    <label><input type="radio" name="muscle" value="legs"><span>Legs</span></label>
+                    <label><input type="radio" name="muscle" value="chest"><span>Chest</span></label>
+                    <label><input type="radio" name="muscle" value="back"><span>Back</span></label>
+                    <label><input type="radio" name="muscle" value="shoulders"><span>Shoulders</span></label>
+                    <label><input type="radio" name="muscle" value="arms"><span>Arms</span></label>
+                    <label><input type="radio" name="muscle" value="core"><span>Core</span></label>
+                    <label><input type="radio" name="muscle" value="cardio"><span>Cardio</span></label>
+                </fieldset>
+            </div>
+            <p class="library-count" id="library-count" role="status"></p>
+            <p class="mm-teaser"><a class="text-link" href="#muscle-map">Not sure what to train? Find exercises by muscle</a></p>
+            <ul class="library-grid" id="library-grid"></ul>
+        </div>
+    </section>
+    <section id="muscle-map" class="block muscle-map muscle-map-below" aria-labelledby="mm-heading">
         <div class="container wide">
             <div class="mm-head">
                 <p class="kicker">Pick a muscle</p>
@@ -69,30 +93,6 @@
                     <ul class="mm-picks" aria-label="All muscles"></ul>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section id="library" class="block">
-        <div class="container wide">
-            <div class="library-tools">
-                <div class="library-search">
-                    <label for="library-search">Search exercises</label>
-                    <input id="library-search" type="search" placeholder="Try squat, curl, or cable" autocomplete="off">
-                </div>
-                <fieldset class="segmented compact library-filter" id="library-filter">
-                    <legend>Muscle</legend>
-                    <label><input type="radio" name="muscle" value="" checked><span>All</span></label>
-                    <label><input type="radio" name="muscle" value="legs"><span>Legs</span></label>
-                    <label><input type="radio" name="muscle" value="chest"><span>Chest</span></label>
-                    <label><input type="radio" name="muscle" value="back"><span>Back</span></label>
-                    <label><input type="radio" name="muscle" value="shoulders"><span>Shoulders</span></label>
-                    <label><input type="radio" name="muscle" value="arms"><span>Arms</span></label>
-                    <label><input type="radio" name="muscle" value="core"><span>Core</span></label>
-                    <label><input type="radio" name="muscle" value="cardio"><span>Cardio</span></label>
-                </fieldset>
-            </div>
-            <p class="library-count" id="library-count" role="status"></p>
-            <ul class="library-grid" id="library-grid"></ul>
         </div>
     </section>
 </main>

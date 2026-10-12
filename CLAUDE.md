@@ -82,6 +82,13 @@ ships **one** focused improvement.
    into the page only through `escapeHtml` (or `textContent`), and check saved settings against a
    list of allowed values the way `getProfile` does. The test enforces most of this.
 
+10. **Don't overwhelm beginners.** The site's main visitor is nervous and new. Keep each page's first
+   view simple: menus have 6 links or fewer (put extras in `more` in `SITE_NAV`, which search still
+   finds), only plans marked `main: true` show before "More plans", every plan has a `level`, and
+   advanced extras (training waves, stats, milestones) appear only after someone has used the site.
+   A new feature that most beginners won't need goes lower on its page or behind a button. The test
+   enforces the menu and Programs limits.
+
 ## The daily run, step by step
 
 1. Read `ROADMAP.md`. Take the first unchecked item under **Up next**. If that list is

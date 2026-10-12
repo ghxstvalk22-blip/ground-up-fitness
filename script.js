@@ -76,22 +76,23 @@ const SITE_NAV = [
         ["I want to lose weight", "Eat a little less, keep your muscle", "start.html#path-lose"],
         ["I want to get stronger", "Barbell basics and steady progress", "start.html#path-strength"],
         "divider",
-        ["Your first day", "What to bring, what to do, start to finish", "start.html#first-day"],
+        ["Your first day", "What to bring, what to do, start to finish", "start.html#first-day"]
+    ], more: [
         ["The 5-minute warm-up", "Do this before every workout", "start.html#warm-up"],
         ["Gym words, decoded", "Sets, reps, failure, deload, and more", "start.html#glossary"]
     ] },
     { label: "Programs", href: "programs.html", page: "programs", items: "programs" },
     { label: "Exercises", href: "exercises.html", page: "exercises", items: [
-        ["Muscle map", "Spin the body, pick a muscle to train", "exercises.html#muscle-map"],
-        ["Exercise library", "Every exercise, with form guides and demos", "exercises.html#library"],
-        "divider",
-        ["Legs", "Squats, lunges, hinges, calves", "exercises.html#legs"],
-        ["Chest", "Presses and flys", "exercises.html#chest"],
-        ["Back", "Pulldowns, pull-ups, rows", "exercises.html#back"],
-        ["Shoulders", "Presses and raises", "exercises.html#shoulders"],
-        ["Arms", "Curls and triceps", "exercises.html#arms"],
-        ["Core", "Planks, carries, crunches", "exercises.html#core"],
-        ["Cardio", "Intervals and steady work", "exercises.html#cardio"]
+        ["Find by muscle", "Tap a muscle, see how to train it", "exercises.html#muscle-map"],
+        ["Exercise library", "Every exercise, with form guides and demos", "exercises.html#library"]
+    ], more: [
+        ["Leg exercises", "Squats, lunges, hinges, calves", "exercises.html#legs"],
+        ["Chest exercises", "Presses and flys", "exercises.html#chest"],
+        ["Back exercises", "Pulldowns, pull-ups, rows", "exercises.html#back"],
+        ["Shoulder exercises", "Presses and raises", "exercises.html#shoulders"],
+        ["Arm exercises", "Curls and triceps", "exercises.html#arms"],
+        ["Core exercises", "Planks, carries, crunches", "exercises.html#core"],
+        ["Cardio exercises", "Intervals and steady work", "exercises.html#cardio"]
     ] },
     { label: "Pros", href: "pros.html", page: "pros", items: [
         ["Train like a pro", "Six habits every champion shares", "pros.html"],
@@ -108,12 +109,13 @@ const SITE_NAV = [
     { label: "Gym basics", href: "basics.html", page: "basics", also: ["supplements"], items: [
         ["What weight should I use?", "", "basics.html#faq-weight"],
         ["How often should I train?", "", "basics.html#faq-often"],
-        ["Will lifting make me bulky?", "", "basics.html#faq-bulky"],
-        ["Cardio or weights for fat loss?", "", "basics.html#faq-cardio"],
         ["I'm sore. Should I skip?", "", "basics.html#faq-sore"],
         ["The unwritten gym rules", "", "basics.html#faq-etiquette"],
+        ["Do I need supplements?", "", "supplements.html"]
+    ], more: [
+        ["Will lifting make me bulky?", "", "basics.html#faq-bulky"],
+        ["Cardio or weights for fat loss?", "", "basics.html#faq-cardio"],
         ["How much protein do I need?", "", "basics.html#faq-protein"],
-        ["Do I need supplements?", "", "supplements.html"],
         ["Should women train differently?", "", "basics.html#faq-women"]
     ] },
     { label: "Contact", href: "contact.html", page: "contact", items: [
@@ -237,11 +239,16 @@ function setupLayout() {
     const footerSlot = document.getElementById("site-footer");
     const page = currentPage();
 
-    const programItems = () => Object.entries(PROGRAMS).map(([key, p]) => [
-        p.name,
-        `${Object.keys(p.plans).join(" or ")} days · ${p.tagline || ""}`.replace(/ · $/, ""),
-        `programs.html#program-${key}`
-    ]);
+    // The menu lists the main plans; the rest are one click away on the Programs page (and in search)
+    const programItems = () => [
+        ...Object.entries(PROGRAMS).filter(([, p]) => p.main).map(([key, p]) => [
+            p.name,
+            `${Object.keys(p.plans).join(" or ")} days · ${p.tagline || ""}`.replace(/ · $/, ""),
+            `programs.html#program-${key}`
+        ]),
+        "divider",
+        [`All ${Object.keys(PROGRAMS).length} plans`, "Home, dumbbells, cardio, running, and more", "programs.html#all-plans"]
+    ];
 
     const menuItem = (item) => item === "divider"
         ? `<li class="divider" role="separator"></li>`
@@ -600,6 +607,14 @@ function setupJump() {
             : "Page";
         destinations.push({ href, title, group });
     });
+    // Links trimmed from the menus, and every plan, are still searchable
+    SITE_NAV.forEach((entry) => (entry.more || []).forEach(([title, , href]) => {
+        if (!seen.has(href)) { seen.add(href); destinations.push({ href, title, group: entry.label }); }
+    }));
+    Object.entries(PROGRAMS).forEach(([key, p]) => {
+        const href = `programs.html#program-${key}`;
+        if (!seen.has(href)) { seen.add(href); destinations.push({ href, title: p.name, group: `Programs · ${p.level}` }); }
+    });
 
     let matches = destinations;
     let selected = 0;
@@ -687,6 +702,7 @@ const BEGINNER_A = [
 
 const PROGRAMS = {
     beginner: {
+        level: "Beginner", main: true,
         name: "New to lifting",
         tagline: "machines and dumbbells",
         rotation: "block", // beginners keep the same exercises for 4 weeks so they can learn them
@@ -746,6 +762,7 @@ const PROGRAMS = {
     },
 
     fatloss: {
+        level: "Beginner", main: true,
         name: "Lose fat",
         tagline: "lifting plus conditioning",
         summary: "Lifting keeps the muscle you have while you eat a little less. Short finishers and daily walking add to what you burn. The scale moves because of your eating; the training decides whether you lose fat or muscle.",
@@ -815,6 +832,7 @@ const PROGRAMS = {
     },
 
     strength: {
+        level: "Beginner", main: true,
         name: "Get stronger",
         tagline: "squat, bench, deadlift",
         summary: "Barbell training built around the squat, bench press, deadlift, and overhead press. Best once you're comfortable with the basic movements.",
@@ -879,6 +897,7 @@ const PROGRAMS = {
     },
 
     build: {
+        level: "Beginner", main: true,
         name: "Build muscle",
         tagline: "full body",
         summary: "Three full-body sessions a week built for muscle: moderate weights, 8 to 15 reps, and every muscle trained three times a week. A great next step after the beginner plan, and before a bodybuilding split like Classic Physique.",
@@ -919,6 +938,7 @@ const PROGRAMS = {
     },
 
     glutes: {
+        level: "Beginner",
         name: "Glutes & legs focus",
         tagline: "lower body first",
         summary: "For anyone, man or woman, who wants stronger, more shapely glutes and legs. Hip thrusts, hinges, and single-leg work come first each lower day, and upper body still gets trained so you stay balanced.",
@@ -993,6 +1013,7 @@ const PROGRAMS = {
     },
 
     upper: {
+        level: "Beginner",
         name: "Upper body focus",
         tagline: "chest, back, shoulders, arms",
         summary: "For anyone, man or woman, who wants a stronger, more defined upper body. Upper body gets trained more often, and legs still get a full session each week so nothing falls behind.",
@@ -1066,6 +1087,7 @@ const PROGRAMS = {
     },
 
     c25k: {
+        level: "Beginner",
         name: "Couch to 5K",
         tagline: "from walking to a 30-minute run",
         summary: "Go from walking to running 30 minutes without stopping in 9 weeks, 3 runs a week. Each week steps up a little. This page shows that week's runs automatically.",
@@ -1112,7 +1134,8 @@ const PROGRAMS = {
     },
 
     gzclp: {
-        name: "Tiered strength (GZCLP)",
+        level: "Intermediate",
+        name: "Next-level strength",
         tagline: "squat, bench, deadlift, press",
         summary: "A popular free strength program in three tiers: a heavy main lift (Tier 1), a lighter second lift for more reps (Tier 2), and an accessory for high reps (Tier 3). Best after a few months of lifting, once you know the barbell lifts.",
         session: "60 to 75 minutes",
@@ -1150,7 +1173,8 @@ const PROGRAMS = {
     },
 
     endurance: {
-        name: "Muscular endurance circuit",
+        level: "Beginner",
+        name: "Light weights, high reps",
         tagline: "lighter weights, more reps",
         summary: "Lighter weights for 15 to 20 reps with short rest, done as a circuit. Builds muscles that keep going: great for fitness tests, hiking, sports, and anyone who prefers lighter weights to heavy ones.",
         session: "35 to 45 minutes",
@@ -1188,6 +1212,7 @@ const PROGRAMS = {
     },
 
     cardio: {
+        level: "Beginner",
         name: "Cardio & conditioning",
         tagline: "heart, lungs, endurance",
         summary: "Cardio done the smart way: mostly easy sessions you could hold a conversation through, plus one harder interval day. Great on its own or added to a lifting plan. Use Swap to pick the machine or activity you like.",
@@ -1236,6 +1261,7 @@ const PROGRAMS = {
     },
 
     home: {
+        level: "Beginner",
         name: "No gym needed",
         tagline: "bodyweight at home",
         kit: "none",
@@ -1275,6 +1301,7 @@ const PROGRAMS = {
     },
 
     busy: {
+        level: "Beginner",
         name: "Short on time",
         tagline: "under 45 minutes a session",
         summary: "Two full-body gym sessions a week that hit everything. Short rests and no fluff, for weeks when life is busy. Two good sessions beat four you keep skipping.",
@@ -1305,6 +1332,7 @@ const PROGRAMS = {
     },
 
     dumbbell: {
+        level: "Beginner",
         name: "Dumbbells only",
         tagline: "home gym or crowded gym",
         kit: "db",
@@ -1381,6 +1409,7 @@ const PROGRAMS = {
     },
 
     classic: {
+        level: "Advanced",
         name: "Classic Physique",
         tagline: "bodybuilding split",
         summary: "A bodybuilding split in the style many physique competitors favor: more weekly sets, every muscle trained hard, and extra work for the shoulders, upper back, and arms that build a V-taper. Best after six months of steady lifting.",
@@ -1939,7 +1968,7 @@ function setupPrograms() {
     let lineups = []; // what's on screen, per day
     let firstTipShown = new Set();
     // Plan details start open on big screens, folded on phones so the workout is closer
-    let planDetailsOpen = window.matchMedia("(min-width: 761px)").matches;
+    let planDetailsOpen = false;
 
     function render({ syncUrl = false } = {}) {
         const p = PROGRAMS[state.goal];
@@ -1954,6 +1983,8 @@ function setupPrograms() {
         const done = new Set(store.get(progressKey(), []));
 
         els.goalInputs.forEach((r) => { r.checked = r.value === state.goal; });
+        // The 4 main goals are always shown; the rest open with "More plans" (or when one of them is picked)
+        if (!p.main) showMorePlans(true);
         els.dayInputs.forEach((r) => {
             const offered = available.includes(Number(r.value));
             r.disabled = !offered;
@@ -1964,7 +1995,7 @@ function setupPrograms() {
 
         els.head.innerHTML = `
             <div>
-                <h3>${escapeHtml(p.name)} &middot; ${state.days} days</h3>
+                <h3>${escapeHtml(p.name)} &middot; ${state.days} days <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
                 <p>${escapeHtml(p.summary)}</p>
                 ${p.source ? `<p class="plan-source">Based on <a href="${p.source[1]}" target="_blank" rel="noopener">${escapeHtml(p.source[0])}</a>. Adapted for this site; not affiliated.</p>` : ""}
             </div>
@@ -1989,8 +2020,13 @@ function setupPrograms() {
         els.weekToday.hidden = state.week === now;
         const combos = planCombinations(plan, state.goal);
         const phaseEl = document.getElementById("week-phase");
+        // Keep it simple at first: the training waves, variety count, and "why it changes" note
+        // appear once someone is past their first week or has logged a workout
+        const seasoned = state.week >= 2 || Object.keys(getLog()).length > 0 || getCardio().length > 0;
+        const why = document.getElementById("why-rotate");
+        if (why) why.hidden = !seasoned;
         if (phaseEl) {
-            if (p.waves === false) { phaseEl.hidden = true; }
+            if (p.waves === false || !seasoned) { phaseEl.hidden = true; }
             else {
                 const ph = wavePhase(state.week);
                 const idx = WAVE.indexOf(ph);
@@ -2000,6 +2036,7 @@ function setupPrograms() {
                     <strong>${ph.name}.</strong> ${ph.tip} <span class="week-challenge">This week's challenge: ${ph.challenge}</span>`;
             }
         }
+        els.variety.hidden = !seasoned;
         els.variety.textContent = combos > 1
             ? `This plan can be put together ${bigNumber(combos)} different ways. ${p.rotation === "block" ? "Exercises change every 4 weeks." : "Accessories rotate weekly; main lifts every 4 weeks."}`
             : "";
@@ -2354,6 +2391,21 @@ function setupPrograms() {
         clearTimeout(copyTimer);
         if (copied) copyTimer = setTimeout(() => { els.copyStatus.textContent = ""; }, 4000);
     });
+
+    // "More plans": the other 10 plans, hidden until asked for
+    const moreBox = document.getElementById("all-plans"), moreBtn = document.getElementById("goal-more-toggle");
+    function showMorePlans(open) {
+        if (!moreBox) return;
+        els.goalInputs[0].closest("fieldset").classList.toggle("show-more", open);
+        moreBtn.setAttribute("aria-expanded", String(open));
+        moreBtn.textContent = open ? "Fewer plans" : `More plans (${moreBox.querySelectorAll("input").length})`;
+    }
+    if (moreBtn) moreBtn.addEventListener("click", () => {
+        const open = moreBtn.getAttribute("aria-expanded") !== "true";
+        if (!open && !PROGRAMS[state.goal].main) return; // keep the picked plan visible
+        showMorePlans(open);
+    });
+    addRoute(/^#all-plans$/, () => { showMorePlans(true); return { target: moreBox }; });
 
     // Links like #program-fatloss or #program-strength-4
     addRoute(/^#program-([a-z0-9]+)(?:-(\d))?$/, (m) => {
@@ -2793,9 +2845,10 @@ function setupMuscleMap() {
     let sex = store.get("gu-mm-body") || (getProfile().sex === "female" ? "female" : "male");
     if (!["male", "female"].includes(sex)) sex = "male";
     let angle = 0, anim = null, drag = null, suppressClick = false;
-    let sel = { group: null, part: null }, hover = null;
+    let sel = { group: null, part: null }, hover = null, partsOpen = false;
     const norm = (x) => ((x % 360) + 540) % 360 - 180;
     const facing = () => (Math.abs(norm(angle)) <= 90 ? "front" : "back");
+    panel.addEventListener("toggle", (e) => { if (e.target.classList && e.target.classList.contains("mm-parts-wrap")) partsOpen = e.target.open; }, true);
 
     // Two faces on a card that turns in 3D: front at 0 degrees, back at 180
     function build() {
@@ -2865,19 +2918,24 @@ function setupMuscleMap() {
         const exList = (ex) => `<ul class="mm-ex">${ex.map((n) => `<li><button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button></li>`).join("")}</ul>`;
         const single = g.parts.length === 1;
         const picked = sel.part ? g.parts.find((p) => p.id === sel.part) : null;
+        // the top pick for each part, so one list covers the whole muscle
+        const best = [...new Set(g.parts.flatMap((p) => p.ex.slice(0, single ? 4 : 2)))].slice(0, 5);
+        const partWord = /delt|triceps|biceps|quad/.test(g.parts[0].id) ? "heads" : "parts";
         panel.innerHTML = `
             <p class="mm-eyebrow">${MM_GROUP_LABEL[g.group]}</p>
             <h3 class="mm-title"><span class="mm-dot" aria-hidden="true"></span>${escapeHtml(picked && !single ? picked.name : g.name)}</h3>
             ${picked && !single ? `<p class="mm-aka">${escapeHtml(picked.aka)} &middot; part of the ${escapeHtml(g.name.toLowerCase())}</p>` : ""}
             <p>${escapeHtml(g.does)}</p>
-            ${single ? `<p class="mm-aka">${escapeHtml(g.parts[0].aka)}: ${escapeHtml(g.parts[0].where)}</p><h4>Best exercises</h4>${exList(g.parts[0].ex)}` : `
-            <h4>${g.parts.length} ${/delt|triceps|biceps|quad/.test(g.parts[0].id) ? "heads" : "parts"} &middot; tap one to light it up</h4>
+            <h4>Best exercises</h4>${exList(picked && !single ? picked.ex : best)}
+            ${single ? `<p class="mm-aka">${escapeHtml(g.parts[0].aka)}: ${escapeHtml(g.parts[0].where)}</p>` : `
+            <details class="mm-parts-wrap"${picked || partsOpen ? " open" : ""}>
+            <summary>See each part (${g.parts.length} ${partWord})</summary>
             <ol class="mm-parts">${g.parts.map((p) => `
                 <li class="mm-part${sel.part === p.id ? " is-on" : ""}" data-part="${p.id}">
                     <button type="button" class="mm-part-name" data-mm-part="${p.id}" aria-pressed="${sel.part === p.id}"><span class="mm-part-mark" aria-hidden="true"></span>${escapeHtml(p.name)} <small>${escapeHtml(p.aka)}</small></button>
                     <p>${escapeHtml(p.where)}</p>
                     <p class="mm-best">Best for it:</p>${exList(p.ex)}
-                </li>`).join("")}</ol>`}
+                </li>`).join("")}</ol></details>`}
             <h4>Beginner tip</h4>
             <p>${escapeHtml(g.tip)}</p>
             <a class="text-link" href="#${g.group}">All ${MM_GROUP_LABEL[g.group].toLowerCase()} exercises</a>`;
@@ -3148,16 +3206,22 @@ function setupDashboard() {
         const minutes = cardioMinutesInWeek();
         const weights = (store.get("gu-weights", []) || []).filter((w) => parseIso(w.date) >= addDays(new Date(), -7));
         const bw = weights.length ? weights.reduce((sum, w) => sum + toUnit(w.w, w.unit, profile.unit), 0) / weights.length : null;
+        // Streaks, records, and milestones show up after a few workouts, so day one stays simple
+        const hooked = activeDates().size >= 3;
         stats.innerHTML = `
             <div><span>Workout days</span><strong>${days.size}</strong></div>
             <div><span>Sets logged</span><strong>${sets}</strong></div>
             <div><span>Cardio minutes</span><strong>${minutes}<small> / 150</small></strong>
                 <div class="mini-bar" aria-hidden="true"><div style="width:${Math.min(100, (minutes / 150) * 100)}%"></div></div></div>
             <div><span>Bodyweight (7-day avg)</span><strong>${bw ? `${trimNum(Math.round(bw * 10) / 10)}<small> ${profile.unit}</small>` : `<a href="tools.html#tool-weight">Add one</a>`}</strong></div>
-            <div><span>Streak</span><strong>${weekStreak()}<small> week${weekStreak() === 1 ? "" : "s"}</small></strong></div>
-            <div><span>Personal records</span><strong>${getPRs().length}</strong></div>`;
+            ${hooked ? `<div><span>Streak</span><strong>${weekStreak()}<small> week${weekStreak() === 1 ? "" : "s"}</small></strong></div>
+            <div><span>Personal records</span><strong>${getPRs().length}</strong></div>` : ""}`;
         const ms = document.getElementById("milestones");
-        if (ms) {
+        const msHead = document.getElementById("milestones-head");
+        if (msHead) msHead.hidden = !hooked;
+        if (ms && !hooked) {
+            ms.innerHTML = `<p class="me-unlock">Log ${3 - activeDates().size === 1 ? "1 more workout" : `${3 - activeDates().size} workouts`} to start tracking streaks, personal records, and milestones.</p>`;
+        } else if (ms) {
             const list = milestones();
             const earned = list.filter((m) => m.done).length;
             ms.innerHTML = `<p class="milestone-count">${earned} of ${list.length} earned</p>

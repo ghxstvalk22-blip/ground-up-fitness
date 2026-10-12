@@ -41,22 +41,26 @@
         <div class="container wide">
 
             <div class="controls">
-                <fieldset class="segmented" id="goal-picker">
-                    <legend>Goal</legend>
+                <fieldset class="segmented goal-picker" id="goal-picker">
+                    <legend>What's your goal?</legend>
                     <label><input type="radio" name="goal" value="beginner" checked><span>New to lifting</span></label>
                     <label><input type="radio" name="goal" value="fatloss"><span>Lose fat</span></label>
-                    <label><input type="radio" name="goal" value="strength"><span>Get stronger</span></label>
-                    <label><input type="radio" name="goal" value="gzclp"><span>Tiered strength</span></label>
                     <label><input type="radio" name="goal" value="build"><span>Build muscle</span></label>
-                    <label><input type="radio" name="goal" value="endurance"><span>Muscle endurance</span></label>
-                    <label><input type="radio" name="goal" value="glutes"><span>Glutes &amp; legs</span></label>
-                    <label><input type="radio" name="goal" value="upper"><span>Upper body</span></label>
-                    <label><input type="radio" name="goal" value="classic"><span>Classic Physique</span></label>
-                    <label><input type="radio" name="goal" value="cardio"><span>Cardio</span></label>
-                    <label><input type="radio" name="goal" value="c25k"><span>Couch to 5K</span></label>
-                    <label><input type="radio" name="goal" value="home"><span>No gym</span></label>
-                    <label><input type="radio" name="goal" value="busy"><span>Short on time</span></label>
-                    <label><input type="radio" name="goal" value="dumbbell"><span>Dumbbells only</span></label>
+                    <label><input type="radio" name="goal" value="strength"><span>Get stronger</span></label>
+                    <div class="goal-more" id="all-plans">
+                        <p class="goal-more-head">More plans</p>
+                        <label><input type="radio" name="goal" value="home"><span>No gym <small>Beginner</small></span></label>
+                        <label><input type="radio" name="goal" value="dumbbell"><span>Dumbbells only <small>Beginner</small></span></label>
+                        <label><input type="radio" name="goal" value="busy"><span>Short on time <small>Beginner</small></span></label>
+                        <label><input type="radio" name="goal" value="cardio"><span>Cardio <small>Beginner</small></span></label>
+                        <label><input type="radio" name="goal" value="c25k"><span>Couch to 5K <small>Beginner</small></span></label>
+                        <label><input type="radio" name="goal" value="glutes"><span>Glutes &amp; legs <small>Beginner</small></span></label>
+                        <label><input type="radio" name="goal" value="upper"><span>Upper body <small>Beginner</small></span></label>
+                        <label><input type="radio" name="goal" value="endurance"><span>Light weights, high reps <small>Beginner</small></span></label>
+                        <label><input type="radio" name="goal" value="gzclp"><span>Next-level strength <small>Intermediate</small></span></label>
+                        <label><input type="radio" name="goal" value="classic"><span>Classic Physique <small>Advanced</small></span></label>
+                    </div>
+                    <button type="button" class="goal-more-toggle" id="goal-more-toggle" aria-expanded="false" aria-controls="all-plans">More plans (10)</button>
                 </fieldset>
                 <fieldset class="segmented" id="days-picker">
                     <legend>Days per week</legend>
@@ -138,7 +142,7 @@
                 <p class="week-variety" id="week-variety"></p>
             </div>
 
-            <details class="why-rotate">
+            <details class="why-rotate" id="why-rotate" hidden>
                 <summary>Why do some exercises change each week?</summary>
                 <div>
                     <p><strong>Main lifts stay put. Accessories rotate.</strong> Your first exercise each day only changes every four weeks, and the big barbell lifts never change, because getting stronger at a lift is partly a skill you practice. The smaller exercises after it rotate weekly between moves that train the same muscles.</p>

@@ -55,6 +55,12 @@ function linkProblem(href, fromPage) {
 const FONT_FILE = path.join(ROOT, "node_modules/@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2");
 const FONT_CSS = `@font-face{font-family:"Archivo";src:url("https://fonts.gstatic.com/test/archivo.woff2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:block;}`;
 
+// Pick a plan on the Programs page, opening "More plans" if it's one of the extra ones
+async function pickGoal(page, value) {
+    if (!(await page.locator(`label:has(input[name="goal"][value="${value}"])`).isVisible())) await page.click("#goal-more-toggle");
+    await page.locator(`input[name="goal"][value="${value}"]`).check({ force: true });
+}
+
 async function openPage(browser, file, viewport, hash = "") {
     const page = await browser.newPage({ viewport });
     if (fs.existsSync(FONT_FILE)) {
@@ -167,10 +173,10 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator("#day-grid input[type=checkbox]").first().check({ force: true });
             check(/^1 of/.test(await page.locator("#progress-label").textContent()), "checking an exercise updates progress");
             await page.locator("#reset-week").click();
-            await page.locator('input[name="goal"][value="classic"]').check({ force: true });
+            await pickGoal(page, "classic");
             await page.locator('input[name="days"][value="5"]').check({ force: true });
             check(await page.locator(".day-card").count() === 5, "5-day plan shows 5 day cards");
-            await page.locator('input[name="goal"][value="beginner"]').check({ force: true });
+            await pickGoal(page, "beginner");
             check(await page.locator('input[name="days"][value="5"]').isDisabled(), "unavailable day options are disabled");
             check(/New to lifting · 4 days/.test(await page.locator("#program-head h3").textContent()), "switching to a plan without 5 days picks the nearest");
             // How-to guide opens with steps and a demo link
@@ -187,7 +193,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(!(await page.locator("#rest-timer").isVisible()), "Done resting closes the timer");
 
             // Weekly rotation: the classic plan changes some accessories from week to week
-            await page.locator('input[name="goal"][value="classic"]').check({ force: true });
+            await pickGoal(page, "classic");
             await page.locator('input[name="days"][value="4"]').check({ force: true });
             const namesNow = await page.locator(".ex-name").allTextContents();
             await page.locator("#week-next").click();
@@ -242,7 +248,7 @@ async function openPage(browser, file, viewport, hash = "") {
             const steps = await page.evaluate(() => [weightStep("Lateral raise", "lb", 15), weightStep("Lateral raise", "lb", 60), weightStep("Leg press", "lb", 200)]);
             check(steps.join() === "2.5,5,10", `light upper-body lifts move up in smaller steps (${steps.join()})`);
             // Couch to 5K changes every week; sourced plans credit their source
-            await page.locator('input[name="goal"][value="c25k"]').check({ force: true });
+            await pickGoal(page, "c25k");
             check(/Based on/.test(await page.locator(".plan-source").textContent()), "sourced plans show where they come from");
             const c25kW1 = await page.locator(".day-card").first().textContent();
             await page.locator("#week-next").click();
@@ -251,7 +257,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator("#week-today").click();
             check(await page.evaluate(() => PROGRAMS.c25k.plans[3].weeks.length === 9 && PROGRAMS.gzclp.plans[4].days.length === 4), "Couch to 5K has 9 weeks and GZCLP 4 workouts");
             for (const goal of ["glutes", "upper", "gzclp", "endurance"]) {
-                await page.locator(`input[name="goal"][value="${goal}"]`).check({ force: true });
+                await pickGoal(page, goal);
                 check(await page.locator(".day-card").count() >= 3, `${goal} plan shows its days`);
             }
 
@@ -274,7 +280,7 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             check(kitProblems.length === 0, `home and dumbbell plans only use their equipment ${kitProblems.slice(0, 3).join("; ")}`);
             // Cardio plan: log a cardio session and get a next-time suggestion
-            await page.locator('input[name="goal"][value="cardio"]').check({ force: true });
+            await pickGoal(page, "cardio");
             const cardioRow = page.locator(".ex-row").first();
             await cardioRow.locator("[data-log]").click();
             await cardioRow.locator('input[name="minutes"]').fill("30");
@@ -284,7 +290,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/30 min/.test(cardioTarget) && /try about 35 minutes/.test(cardioTarget), `logging cardio suggests a little more next time`);
             check(await page.locator(".ex-row").first().locator("[data-swap]").count() === 1, "cardio activities can be swapped");
 
-            await page.locator('input[name="goal"][value="busy"]').check({ force: true });
+            await pickGoal(page, "busy");
             check(await page.locator(".day-card").count() === 2 && await page.locator('input[name="days"][value="2"]').isChecked(), "Short on time shows 2 days");
 
             await page.locator(".theme-toggle").click();
@@ -371,6 +377,29 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator(".library-card").count() >= 2, "searching finds exercises");
             await page.locator(".library-card [data-howto]").first().click();
             check(await page.locator("#howto[open]").count() === 1, "How to works from the library");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Not too much at once: a first-time visitor sees a simple version of each page
+        {
+            const { page, errors } = await openPage(browser, "programs.html", viewport);
+            await page.evaluate(() => localStorage.clear());
+            await page.reload({ waitUntil: "load" });
+            const visibleGoals = await page.locator('#goal-picker label:visible').count();
+            check(visibleGoals === 4, `Programs starts with 4 main goals (${visibleGoals} shown)`);
+            check(await page.locator("#week-phase").isHidden() && await page.locator("#week-variety").isHidden() && await page.locator("#why-rotate").isHidden(), "training waves and variety details wait until after week 1");
+            check(/Beginner/.test(await page.locator(".level-tag").textContent()), "each plan shows its level");
+            await page.click("#goal-more-toggle");
+            check(await page.locator('#goal-picker label:visible').count() === 14, "More plans shows every plan");
+            const menuCounts = await page.evaluate(() => [...document.querySelectorAll("#site-nav .submenu")].map((m) => m.querySelectorAll("a").length));
+            check(Math.max(...menuCounts) <= 6, `every menu has 6 links or fewer (${menuCounts.join(",")})`);
+            await page.keyboard.press("/");
+            await page.fill("#jump-input", "couch");
+            check(/Couch to 5K/.test(await page.locator("#jump-list").textContent()), "search still finds plans that aren't in the menu");
+            await page.keyboard.press("Escape");
+            await page.goto(url("me.html"), { waitUntil: "load" });
+            check(/to start tracking streaks/.test(await page.locator("#milestones").textContent()) && await page.locator("#milestones-head").isHidden(), "milestones wait until a few workouts are logged");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }
