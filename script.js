@@ -43,6 +43,7 @@ const FEATURES = [
     setupChecklists,
     setupRestTimer,
     setupLibrary,
+    setupWeightTrend,
     setupTools,
     setupContactForm,
     setupLinks,      // keep after features that add routes
@@ -84,7 +85,8 @@ const SITE_NAV = [
     { label: "Tools", href: "tools.html", page: "tools", items: [
         ["Calorie estimator", "Daily calories and protein", "tools.html#tool-calories"],
         ["One-rep max", "Estimate your max and working weights", "tools.html#tool-1rm"],
-        ["Plate loader", "Which plates go on the bar", "tools.html#tool-plates"]
+        ["Plate loader", "Which plates go on the bar", "tools.html#tool-plates"],
+        ["Weight trend", "Your 7-day average, not daily noise", "tools.html#tool-weight"]
     ] },
     { label: "Gym basics", href: "basics.html", page: "basics", items: [
         ["What weight should I use?", "", "basics.html#faq-weight"],
@@ -1617,6 +1619,115 @@ function setupLibrary() {
 }
 
 /* =========================================================
+   FEATURE: Weight trend (Tools page)
+   Saved on this device as [{ date, w, unit }]. Shows daily weigh-ins,
+   the 7-day average, and the weekly rate of change, with a gentle
+   note if loss is faster than generally recommended.
+   ========================================================= */
+function setupWeightTrend() {
+    const form = document.getElementById("weight-form");
+    if (!form) return;
+    const KEY = "gu-weights";
+    const list = document.getElementById("weight-list");
+    const svg = document.getElementById("weight-chart");
+    const out = document.getElementById("weight-results");
+    const status = document.getElementById("weight-status");
+    const unit = () => (store.get("gu-unit") === "kg" ? "kg" : "lb");
+    form.elements.date.value = isoDate(new Date());
+    form.elements.date.max = isoDate(new Date());
+
+    const entries = () => (store.get(KEY, []) || [])
+        .map((e) => ({ date: e.date, w: toUnit(e.w, e.unit, unit()) }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+    // Average of the weigh-ins in the 7 days ending on each date
+    function averages(items) {
+        return items.map((e) => {
+            const end = parseIso(e.date);
+            const start = addDays(end, -6);
+            const win = items.filter((x) => { const d = parseIso(x.date); return d >= start && d <= end; });
+            return { date: end, value: win.reduce((s, x) => s + x.w, 0) / win.length };
+        });
+    }
+
+    function render() {
+        const items = entries();
+        const u = unit();
+        list.innerHTML = items.slice(-7).reverse().map((e) => `
+            <li><span>${shortDate(parseIso(e.date))}</span><strong>${trimNum(Math.round(e.w * 10) / 10)} ${u}</strong>
+                <button type="button" class="text-button" data-remove-weight="${e.date}" aria-label="Remove ${shortDate(parseIso(e.date))}">Remove</button></li>`).join("");
+
+        if (!items.length) {
+            svg.innerHTML = `<text x="260" y="120" text-anchor="middle" class="chart-empty">Add a weigh-in to start your chart.</text>`;
+            out.innerHTML = `<p class="result-empty">Add at least a week of weigh-ins to see your trend.</p>`;
+            return;
+        }
+
+        const avg = averages(items);
+        const W = 520, H = 240, pad = { l: 44, r: 14, t: 14, b: 28 };
+        const t0 = parseIso(items[0].date).getTime(), t1 = Math.max(parseIso(items[items.length - 1].date).getTime(), t0 + 6 * 864e5);
+        const vals = items.map((e) => e.w);
+        const lo = Math.min(...vals) - 1, hi = Math.max(...vals) + 1;
+        const x = (d) => pad.l + ((d.getTime() - t0) / (t1 - t0)) * (W - pad.l - pad.r);
+        const y = (v) => pad.t + (1 - (v - lo) / (hi - lo)) * (H - pad.t - pad.b);
+        let g = "";
+        for (let i = 0; i <= 3; i++) {
+            const v = lo + ((hi - lo) * i) / 3;
+            g += `<line class="chart-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/><text class="chart-label" x="${pad.l - 6}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
+        }
+        g += items.map((e) => `<circle class="weight-dot" cx="${x(parseIso(e.date))}" cy="${y(e.w)}" r="3.5"><title>${shortDate(parseIso(e.date))}: ${trimNum(e.w)} ${u}</title></circle>`).join("");
+        g += `<path class="chart-line" d="${avg.map((p, i) => `${i ? "L" : "M"}${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join("")}"/>`;
+        g += `<text class="chart-label" x="${pad.l}" y="${H - 8}">${shortDate(parseIso(items[0].date))}</text>`;
+        svg.innerHTML = g;
+
+        const now = avg[avg.length - 1].value;
+        const spanDays = (parseIso(items[items.length - 1].date) - parseIso(items[0].date)) / 864e5;
+        let trend = `<p class="result-note">Keep logging. Your weekly trend shows up after about a week.</p>`;
+        if (spanDays >= 7 && items.length >= 4) {
+            // Compare today's 7-day average with the one from about two weeks (or as far as we have) back
+            const back = Math.min(14, spanDays);
+            const target = addDays(avg[avg.length - 1].date, -back);
+            const earlier = avg.reduce((best, p) => (Math.abs(p.date - target) < Math.abs(best.date - target) ? p : best));
+            const weeks = Math.max(1, (avg[avg.length - 1].date - earlier.date) / (7 * 864e5));
+            const perWeek = (now - earlier.value) / weeks;
+            const pct = (perWeek / now) * 100;
+            const dir = perWeek < -0.05 ? "losing" : perWeek > 0.05 ? "gaining" : "holding steady at";
+            trend = `<div class="result-grid">
+                    <div class="result"><span class="result-label">7-day average</span><span class="result-value">${trimNum(Math.round(now * 10) / 10)}<span class="result-unit">${u}</span></span></div>
+                    <div class="result"><span class="result-label">Weekly change</span><span class="result-value">${perWeek > 0 ? "+" : ""}${trimNum(Math.round(perWeek * 10) / 10)}<span class="result-unit">${u} / week</span></span></div>
+                </div>
+                <p class="result-note">You're ${dir} ${dir === "holding steady at" ? "your weight" : `about ${trimNum(Math.abs(Math.round(perWeek * 10) / 10))} ${u} a week (${Math.abs(pct).toFixed(1)}% of your bodyweight)`}.</p>
+                ${pct < -1 ? `<p class="result-note warn">That's faster than the 0.5 to 1% a week most experts suggest. Eating a little more can help you keep your muscle and energy. If you're worried about how you're eating, a doctor or registered dietitian can help.</p>` : ""}`;
+        } else {
+            trend = `<div class="result"><span class="result-label">7-day average</span><span class="result-value">${trimNum(Math.round(now * 10) / 10)}<span class="result-unit">${u}</span></span></div>` + trend;
+        }
+        out.innerHTML = trend;
+    }
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const w = Number(form.elements.weight.value);
+        const date = form.elements.date.value || isoDate(new Date());
+        const kg = unit() === "kg" ? w : w / 2.20462;
+        if (!w || kg < 30 || kg > 350) { status.textContent = "Enter your weight to save it."; form.elements.weight.focus(); return; }
+        status.textContent = "";
+        const all = (store.get(KEY, []) || []).filter((x) => x.date !== date);
+        all.push({ date, w, unit: unit() });
+        store.set(KEY, all);
+        form.elements.weight.value = "";
+        render();
+    });
+    list.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-remove-weight]");
+        if (!btn) return;
+        store.set(KEY, (store.get(KEY, []) || []).filter((x) => x.date !== btn.dataset.removeWeight));
+        render();
+    });
+    document.querySelectorAll('input[name="unit"]').forEach((r) => r.addEventListener("change", () => setTimeout(render, 0)));
+    render();
+}
+
+/* =========================================================
    FEATURE: Saved checklists
    Any <div data-checklist="name"> full of checkboxes remembers
    what's ticked on this device.
@@ -1811,7 +1922,7 @@ function setupHero() {
     const counts = {
         goals: Object.keys(PROGRAMS).length,
         plans: Object.values(PROGRAMS).reduce((n, p) => n + Object.keys(p.plans).length, 0),
-        tools: 3,
+        tools: 4,
         exercises: typeof EXERCISES === "object" ? Object.keys(EXERCISES).length : 0
     };
     document.querySelectorAll("[data-stat]").forEach((el) => {

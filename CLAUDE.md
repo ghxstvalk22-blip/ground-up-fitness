@@ -12,8 +12,8 @@ ships **one** focused improvement.
 | File | What it holds |
 | --- | --- |
 | `index.html` | Home page: photo hero, "Nervous about starting?", quick-start plan picker, program tiles, how it works, pro band, tools teaser. |
-| `start.html`, `programs.html`, `pros.html`, `tools.html`, `basics.html`, `contact.html` | One page per menu tab. Each has a photo banner and its own `<body data-page="...">`. |
-| `exercises.js` | The exercise library: how-to guides for every exercise (loaded before `script.js`). |
+| `start.html`, `programs.html`, `exercises.html`, `pros.html`, `tools.html`, `basics.html`, `contact.html` | One page per menu tab. Each has a photo banner and its own `<body data-page="...">`. |
+| `exercises.js` | `EXERCISES` (a how-to guide for every exercise) and `EXERCISE_FAMILIES` (exercises that can swap for each other, used by the weekly rotation and Swap). Loaded before `script.js`. Every exercise used in a plan must have an entry; the test checks this. |
 | `styles.css` | All styles. Colors are tokens on `:root`, with dark mode overrides. |
 | `script.js` | All behavior, organized as independent feature blocks. |
 | `ROADMAP.md` | The idea backlog. The owner adds ideas here. |
@@ -30,6 +30,9 @@ ships **one** focused improvement.
 - The header, menus, footer, and search dialog are built by `setupLayout()` from `SITE_NAV`.
   Edit menus there, not in the HTML files. New menu links show up in search automatically.
 - Each feature must check for its own elements and return quietly on pages without them.
+- The "training engine" helpers (rotation, weeks, log, targets, projections) are plain functions
+  above `setupPrograms`. Reuse them instead of writing new versions.
+- Saved data lives in the visitor's browser only (`store`). Keys start with `gu-`. Never send it anywhere.
 - Links between pages use the page name: `tools.html#tool-1rm`, `programs.html#program-classic-5`.
   A new page needs: the same `<head>`, `<div id="site-header">`, a banner, `<main id="main">`,
   `<div id="site-footer">`, an entry in `SITE_NAV`, and a line in `PAGES` in `tests/check.js`.
@@ -69,7 +72,8 @@ ships **one** focused improvement.
    empty, pick the most useful item from **Ideas**, or invent a small, clearly useful
    improvement that fits the rules above.
 2. Build it with targeted edits.
-3. Run the test: `npm install --no-audit --no-fund && node tests/check.js`.
+3. Run the test: `npm install --no-audit --no-fund && node tests/check.js`. It checks desktop
+   (1280px), laptop (1100px), and phone (390px) using the real Archivo font.
    If it fails, fix the problem and run it again. If you can't make it pass,
    **do not push**. Instead, add a note under **Blocked** in `ROADMAP.md`, commit only
    that note, and stop.

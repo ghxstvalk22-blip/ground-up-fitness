@@ -136,6 +136,37 @@
                 </div>
             </div>
 
+            <div class="panel tool" id="tool-weight">
+                <div class="tool-title">
+                    <h3>Weight trend</h3>
+                    <p>Your weight jumps around day to day with water, salt, and food. The 7-day average shows what's really happening.</p>
+                </div>
+                <div class="split-tool">
+                    <div>
+                        <form id="weight-form" class="tool-form weight-form" novalidate>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label for="wt-date">Date</label>
+                                    <input id="wt-date" name="date" type="date">
+                                </div>
+                                <div class="field">
+                                    <label for="wt-value">Weight (<span class="unit-w">lb</span>)</label>
+                                    <input id="wt-value" name="weight" type="number" inputmode="decimal" step="0.1" min="0" placeholder="180.4">
+                                </div>
+                            </div>
+                            <button class="btn btn-primary btn-compact" type="submit">Add weigh-in</button>
+                            <p class="log-status" id="weight-status" role="status"></p>
+                        </form>
+                        <p class="result-note">Best habit: weigh yourself in the morning, after the bathroom, before eating, a few times a week.</p>
+                        <ul class="weight-list" id="weight-list"></ul>
+                    </div>
+                    <div class="tool-results">
+                        <svg id="weight-chart" viewBox="0 0 520 240" role="img" aria-label="Chart of your daily weigh-ins and 7-day average"></svg>
+                        <div id="weight-results" aria-live="polite"></div>
+                    </div>
+                </div>
+            </div>
+
             <p class="fine-print">These tools give estimates for healthy adults. They aren't medical advice. If you have a health condition, are pregnant, or have struggled with eating in the past, talk with a doctor or registered dietitian before changing how you eat.</p>
         </div>
     </section>

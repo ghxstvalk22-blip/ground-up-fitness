@@ -74,6 +74,15 @@ async function openPage(browser, file, viewport, hash = "") {
     return { page, errors };
 }
 
+// Every exercise in every plan needs a how-to guide in exercises.js
+{
+    const src = fs.readFileSync(path.join(ROOT, "script.js"), "utf8");
+    const lib = fs.readFileSync(path.join(ROOT, "exercises.js"), "utf8");
+    const names = [...new Set([...src.matchAll(/ex\("([^"]+)"/g)].map((m) => m[1]))];
+    const missing = names.filter((n) => !lib.includes(`"${n}": {`));
+    check(missing.length === 0, `every plan exercise has a how-to guide ${missing.length ? JSON.stringify(missing) : ""}`);
+}
+
 (async () => {
     fs.mkdirSync(SHOTS, { recursive: true });
     const browser = await chromium.launch({ executablePath: findChromium(), args: ["--headless=new"] });
@@ -237,6 +246,22 @@ async function openPage(browser, file, viewport, hash = "") {
             check((await page.locator("#rm-results .result-value").textContent().catch(() => "")).startsWith("215"), "one-rep max math is right (185 x 5 = 215)");
             await page.fill("#plate-target", "225");
             check((await page.locator(".plate-list").textContent().catch(() => "")).includes("45 + 45"), "plate loader math is right (225 = 45 + 45 per side)");
+            // Weight trend: two weeks of weigh-ins show a weekly change, and fast loss gets a caution
+            await page.evaluate(() => {
+                const days = []; const today = new Date();
+                for (let i = 14; i >= 0; i--) {
+                    const d = new Date(today); d.setDate(d.getDate() - i);
+                    days.push({ date: d.toISOString().slice(0, 10), w: 200 - (14 - i) * 0.6, unit: "lb" });
+                }
+                localStorage.setItem("gu-weights", JSON.stringify(days));
+            });
+            await page.reload();
+            await page.waitForTimeout(250);
+            check(/Weekly change/.test(await page.locator("#weight-results").textContent()), "weight trend shows the weekly change");
+            check(await page.locator("#weight-results .warn").count() === 1, "fast weight loss gets a gentle caution");
+            await page.fill("#wt-value", "190");
+            await page.locator("#weight-form button[type=submit]").click();
+            check(await page.locator("#weight-list li").count() >= 1, "adding a weigh-in shows it in the list");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }
