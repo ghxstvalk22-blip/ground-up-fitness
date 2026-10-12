@@ -12,6 +12,10 @@
    The demo button searches YouTube for "<name> proper form", so it
    never points at a video that has been taken down.
 
+   kit: what you need. "none" = bodyweight at home, "db" = dumbbells and a
+   bench, missing = a regular gym. Home and dumbbell plans only rotate
+   into exercises their kit allows.
+
    EXERCISE_FAMILIES: exercises that train the same thing and can be
    swapped for each other. The weekly rotation and the Swap button pick
    from these. The first name in each family is the "default".
@@ -43,7 +47,7 @@ const EXERCISES = {
         easier: "Goblet squat", harder: "Pause front squat"
     },
     "Goblet squat": {
-        m: "Quads, glutes, core", eq: "One dumbbell or kettlebell",
+        kit: "db", m: "Quads, glutes, core", eq: "One dumbbell or kettlebell",
         setup: "Hold one end of a dumbbell against your chest with both hands, elbows tucked. Feet a little wider than shoulder-width, toes slightly out.",
         steps: ["Take a breath and brace.", "Sit down between your heels, keeping the weight close to your chest.", "Let your elbows slide inside your knees at the bottom.", "Push the floor away to stand back up."],
         tip: "The weight in front helps you stay upright. Let it pull you into a deep, tall squat.",
@@ -85,7 +89,7 @@ const EXERCISES = {
 
     /* ---------- Single leg ---------- */
     "Walking lunge": {
-        m: "Quads, glutes, balance", eq: "Bodyweight or dumbbells",
+        kit: "none", m: "Quads, glutes, balance", eq: "Bodyweight or dumbbells",
         setup: "Stand tall with dumbbells at your sides, or no weight to start.",
         steps: ["Take a long step forward.", "Lower your back knee toward the floor, front shin roughly vertical.", "Push through your front foot and bring your back leg forward into the next step.", "Keep walking, alternating legs."],
         tip: "Step long enough that your front knee doesn't shoot way past your toes.",
@@ -93,7 +97,7 @@ const EXERCISES = {
         easier: "Split squat holding a rail", harder: "Hold heavier dumbbells, or a pause at the bottom"
     },
     "Reverse lunge": {
-        m: "Quads, glutes", eq: "Bodyweight or dumbbells",
+        kit: "none", m: "Quads, glutes", eq: "Bodyweight or dumbbells",
         setup: "Stand tall, feet hip-width, holding dumbbells at your sides if you're using them.",
         steps: ["Step one foot back about two feet.", "Lower your back knee toward the floor.", "Push through your front heel to return to standing.", "Finish all reps on one side, or alternate."],
         tip: "Stepping back is easier on the knees than stepping forward. Most of your weight stays on the front foot.",
@@ -101,7 +105,7 @@ const EXERCISES = {
         easier: "Hold a rail or bench for balance", harder: "Deficit reverse lunge (front foot on a small plate)"
     },
     "Bulgarian split squat": {
-        m: "Quads, glutes", eq: "Bench, optional dumbbells",
+        kit: "db", m: "Quads, glutes", eq: "Bench, optional dumbbells",
         setup: "Stand about two feet in front of a bench, facing away. Rest the top of your back foot on the bench.",
         steps: ["Lower straight down by bending your front knee.", "Go until your back knee is a few inches off the floor.", "Drive up through your front foot.", "Do all reps on one leg, then switch."],
         tip: "A slight forward lean works your glutes more; staying upright works your quads more.",
@@ -109,7 +113,7 @@ const EXERCISES = {
         easier: "Split squat with both feet on the floor, holding a rail", harder: "Hold dumbbells, or slow 3-second lowering"
     },
     "Step-up": {
-        m: "Quads, glutes, balance", eq: "Box or bench, optional dumbbells",
+        kit: "none", m: "Quads, glutes, balance", eq: "Box or bench, optional dumbbells",
         setup: "Stand facing a sturdy box or bench, about knee height or lower.",
         steps: ["Put your whole foot on the box.", "Push through that foot to stand up on top. Don't push off the floor leg.", "Step down slowly with the other leg.", "Do all reps on one leg, then switch."],
         tip: "Let the top leg do all the work. Your back foot just comes along for the ride.",
@@ -117,7 +121,7 @@ const EXERCISES = {
         easier: "Use a lower step", harder: "Hold dumbbells or use a higher box"
     },
     "Split squat": {
-        m: "Quads, glutes", eq: "Bodyweight, optional dumbbells",
+        kit: "none", m: "Quads, glutes", eq: "Bodyweight, optional dumbbells",
         setup: "Take a long stance, one foot forward and one back, like the bottom of a lunge. Hold a rail if you need balance.",
         steps: ["Lower straight down by bending both knees.", "Back knee goes toward the floor.", "Push up through the front foot.", "Finish one side, then switch."],
         tip: "Your feet don't move. It's a lunge without the step, which makes it great for learning.",
@@ -135,7 +139,7 @@ const EXERCISES = {
         easier: "Trap bar deadlift or Romanian deadlift", harder: "Pause just off the floor"
     },
     "Dumbbell or trap bar deadlift": {
-        m: "Glutes, hamstrings, quads, back", eq: "Dumbbells or a trap (hex) bar",
+        kit: "db", m: "Glutes, hamstrings, quads, back", eq: "Dumbbells or a trap (hex) bar",
         setup: "Stand inside a trap bar, or with a dumbbell at each side. Feet hip-width.",
         steps: ["Push your hips back and bend your knees to grip the handles, back flat.", "Brace your stomach.", "Stand up by pushing through the floor.", "Lower under control the same way."],
         tip: "The weight sits at your sides instead of in front of you, which makes it friendlier on the lower back than a barbell deadlift.",
@@ -159,7 +163,7 @@ const EXERCISES = {
         easier: "Dumbbell Romanian deadlift", harder: "Pause at the bottom"
     },
     "Dumbbell Romanian deadlift": {
-        m: "Hamstrings, glutes", eq: "Two dumbbells",
+        kit: "db", m: "Hamstrings, glutes", eq: "Two dumbbells",
         setup: "Stand holding a dumbbell in each hand in front of your thighs, knees soft.",
         steps: ["Push your hips back, sliding the dumbbells down the front of your legs.", "Keep your back flat and chest proud.", "Stop at the stretch, around your knees or mid-shin.", "Squeeze your glutes to stand up."],
         tip: "Keep the dumbbells close to your legs the whole way.",
@@ -183,7 +187,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause at the top for 2 seconds"
     },
     "Glute bridge": {
-        m: "Glutes, hamstrings", eq: "Floor, optional weight",
+        kit: "none", m: "Glutes, hamstrings", eq: "Floor, optional weight",
         setup: "Lie on your back, knees bent, feet flat and hip-width, heels about a hand's length from your butt.",
         steps: ["Push through your heels and lift your hips.", "Squeeze your glutes hard at the top. Your body forms a straight line from knees to shoulders.", "Hold for a second.", "Lower slowly."],
         tip: "Tuck your ribs down so your glutes do the work, not your lower back.",
@@ -191,7 +195,7 @@ const EXERCISES = {
         easier: "Smaller range of motion", harder: "Single-leg glute bridge or hip thrust"
     },
     "Hip thrust": {
-        m: "Glutes, hamstrings", eq: "Bench and barbell or dumbbell",
+        kit: "db", m: "Glutes, hamstrings", eq: "Bench and barbell or dumbbell",
         setup: "Sit on the floor with your upper back against a bench. Roll a padded bar over your hips (or hold a dumbbell there). Feet flat, hip-width.",
         steps: ["Drive through your heels to lift your hips until your thighs are level with the floor.", "Keep your chin tucked and ribs down.", "Squeeze your glutes for a second at the top.", "Lower under control."],
         tip: "At the top, your shins should be vertical. Move your feet until they are.",
@@ -199,7 +203,7 @@ const EXERCISES = {
         easier: "Glute bridge", harder: "Single-leg hip thrust or a heavier load"
     },
     "Single-leg glute bridge": {
-        m: "Glutes, hamstrings", eq: "Floor",
+        kit: "none", m: "Glutes, hamstrings", eq: "Floor",
         setup: "Lie on your back with one knee bent and that foot flat. Lift the other leg straight, or hug that knee to your chest.",
         steps: ["Push through the planted heel to lift your hips.", "Keep your hips level, not tilting to one side.", "Squeeze at the top.", "Lower slowly. Finish one side, then switch."],
         tip: "Hugging your other knee in keeps your lower back from arching.",
@@ -241,7 +245,7 @@ const EXERCISES = {
 
     /* ---------- Calves ---------- */
     "Standing calf raise": {
-        m: "Calves", eq: "Calf raise machine, step, or Smith machine",
+        kit: "db", m: "Calves", eq: "Calf raise machine, step, or Smith machine",
         setup: "Stand with the balls of your feet on the edge of a step or platform, heels hanging off.",
         steps: ["Lower your heels as far as you can for a full stretch.", "Pause for a second at the bottom.", "Rise up as high as you can onto your toes.", "Squeeze for a second at the top."],
         tip: "The pause at the bottom matters. Bouncing lets your tendons do the work instead of your calves.",
@@ -265,7 +269,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause at both ends"
     },
     "Single-leg calf raise": {
-        m: "Calves, balance", eq: "Step, optional dumbbell",
+        kit: "none", m: "Calves, balance", eq: "Step, optional dumbbell",
         setup: "Stand on one foot on the edge of a step, holding a rail or wall for balance.",
         steps: ["Lower your heel for a full stretch.", "Rise up as high as you can.", "Pause at the top.", "Finish one side, then switch."],
         tip: "Use the rail for balance only, not to pull yourself up.",
@@ -283,7 +287,7 @@ const EXERCISES = {
         easier: "Dumbbell bench press", harder: "Pause bench press (1 second on the chest)"
     },
     "Dumbbell bench press": {
-        m: "Chest, front shoulders, triceps", eq: "Two dumbbells and a flat bench",
+        kit: "db", m: "Chest, front shoulders, triceps", eq: "Two dumbbells and a flat bench",
         setup: "Sit on the bench with the dumbbells on your thighs. Lie back and use your knees to help bring them up over your chest. Shoulder blades pinched.",
         steps: ["Start with the dumbbells over your chest, palms facing your feet.", "Lower them to the sides of your chest, elbows at about 45 degrees.", "Feel a stretch in your chest at the bottom.", "Press up until your arms are straight."],
         tip: "Bring the dumbbells down to your chest level, not your neck.",
@@ -299,7 +303,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "3-second lowering"
     },
     "Push-up": {
-        m: "Chest, shoulders, triceps, core", eq: "Bodyweight",
+        kit: "none", m: "Chest, shoulders, triceps, core", eq: "Bodyweight",
         setup: "Hands slightly wider than your shoulders, arms straight, body in a straight line from head to heels.",
         steps: ["Brace your stomach and squeeze your glutes.", "Lower your chest toward the floor, elbows at about 45 degrees.", "Go until your chest is a fist's height from the floor.", "Push back up as one solid piece."],
         tip: "If your hips sag, make it easier rather than doing sloppy reps.",
@@ -307,7 +311,7 @@ const EXERCISES = {
         easier: "Hands on a bench or wall", harder: "Feet elevated, or a slow 3-second lowering"
     },
     "Incline dumbbell press": {
-        m: "Upper chest, front shoulders, triceps", eq: "Two dumbbells, incline bench",
+        kit: "db", m: "Upper chest, front shoulders, triceps", eq: "Two dumbbells, incline bench",
         setup: "Set the bench to a low incline, about 30 degrees. Sit back with the dumbbells and kick them up to your shoulders.",
         steps: ["Press the dumbbells up over your upper chest.", "Lower them to the top of your chest, elbows at about 45 degrees.", "Feel the stretch.", "Press back up."],
         tip: "A lower incline (around 30 degrees) hits the upper chest without turning it into a shoulder press.",
@@ -347,7 +351,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause at the squeeze"
     },
     "Dumbbell fly": {
-        m: "Chest", eq: "Two dumbbells, flat bench",
+        kit: "db", m: "Chest", eq: "Two dumbbells, flat bench",
         setup: "Lie on a flat bench holding dumbbells over your chest, palms facing each other, elbows slightly bent.",
         steps: ["Lower the dumbbells out to your sides in a wide arc.", "Stop when you feel a good stretch, with elbows around chest level.", "Bring them back up the same arc.", "Squeeze at the top."],
         tip: "Use lighter weights than you'd press. The stretch is the point.",
@@ -421,7 +425,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause at the top"
     },
     "Chest-supported dumbbell row": {
-        m: "Upper back, lats, rear shoulders", eq: "Two dumbbells and an incline bench",
+        kit: "db", m: "Upper back, lats, rear shoulders", eq: "Two dumbbells and an incline bench",
         setup: "Set a bench to a low incline. Lie face down on it holding a dumbbell in each hand, arms hanging straight down.",
         steps: ["Row the dumbbells up toward your hips.", "Squeeze your shoulder blades together.", "Pause at the top.", "Lower slowly."],
         tip: "Keep your chest on the bench and your neck relaxed.",
@@ -429,7 +433,7 @@ const EXERCISES = {
         easier: "Lighter dumbbells", harder: "Pause 2 seconds at the top"
     },
     "Single-arm dumbbell row": {
-        m: "Lats, upper back, biceps", eq: "Dumbbell and bench",
+        kit: "db", m: "Lats, upper back, biceps", eq: "Dumbbell and bench",
         setup: "Put one knee and the same-side hand on a bench, back flat. Hold a dumbbell in the other hand, arm hanging straight.",
         steps: ["Row the dumbbell up toward your hip.", "Keep your elbow close to your body.", "Squeeze at the top.", "Lower until your arm is straight. Finish one side, then switch."],
         tip: "Pull toward your hip, not your armpit, to hit your lats.",
@@ -463,7 +467,7 @@ const EXERCISES = {
         easier: "Seated dumbbell shoulder press", harder: "Pause at the bottom of each rep"
     },
     "Seated dumbbell shoulder press": {
-        m: "Shoulders, triceps", eq: "Two dumbbells, bench with back support",
+        kit: "db", m: "Shoulders, triceps", eq: "Two dumbbells, bench with back support",
         setup: "Set the bench upright or one notch back. Sit with dumbbells at shoulder height, palms forward.",
         steps: ["Press the dumbbells up until your arms are straight.", "Don't clank them together at the top.", "Lower them back to about ear height.", "Keep your back against the pad."],
         tip: "Elbows slightly in front of your body, not straight out to the sides, is easier on the shoulders.",
@@ -471,7 +475,7 @@ const EXERCISES = {
         easier: "Machine shoulder press", harder: "Standing dumbbell shoulder press"
     },
     "Dumbbell shoulder press": {
-        m: "Shoulders, triceps, core", eq: "Two dumbbells",
+        kit: "db", m: "Shoulders, triceps, core", eq: "Two dumbbells",
         setup: "Stand (or sit) with dumbbells at shoulder height, palms forward, stomach braced.",
         steps: ["Press the dumbbells up overhead.", "Finish with your arms straight, near your ears.", "Lower under control to shoulder height.", "Keep your ribs down."],
         tip: "If you're leaning back to finish reps, go lighter.",
@@ -487,7 +491,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "3-second lowering"
     },
     "Arnold press": {
-        m: "Shoulders, triceps", eq: "Two dumbbells",
+        kit: "db", m: "Shoulders, triceps", eq: "Two dumbbells",
         setup: "Sit with the dumbbells in front of your shoulders, palms facing you, like the top of a curl.",
         steps: ["As you press up, rotate your palms to face forward.", "Finish with your arms straight overhead.", "Reverse the rotation on the way down.", "End with your palms facing you again."],
         tip: "Move smoothly. The rotation should happen during the press, not before it.",
@@ -495,7 +499,7 @@ const EXERCISES = {
         easier: "Seated dumbbell shoulder press", harder: "Slow 3-second lowering"
     },
     "Lateral raise": {
-        m: "Side shoulders", eq: "Two light dumbbells",
+        kit: "db", m: "Side shoulders", eq: "Two light dumbbells",
         setup: "Stand holding light dumbbells at your sides, slight bend in your elbows, leaning a little forward.",
         steps: ["Raise your arms out to your sides.", "Lead with your elbows, and stop at shoulder height.", "Pause for a second.", "Lower slowly."],
         tip: "Go lighter than you think. Swinging heavy dumbbells shifts the work to your traps.",
@@ -527,7 +531,7 @@ const EXERCISES = {
         easier: "Regular lateral raise", harder: "Pause at the top"
     },
     "Rear delt fly": {
-        m: "Rear shoulders, upper back", eq: "Two light dumbbells",
+        kit: "db", m: "Rear shoulders, upper back", eq: "Two light dumbbells",
         setup: "Hinge forward at the hips with your back flat, or lie face down on an incline bench. Let light dumbbells hang below your chest.",
         steps: ["Raise your arms out to the sides, elbows slightly bent.", "Squeeze between your shoulder blades.", "Pause.", "Lower slowly."],
         tip: "Think 'arms out wide', not 'squeeze shoulder blades hard'. That keeps it on the rear shoulders.",
@@ -561,7 +565,7 @@ const EXERCISES = {
 
     /* ---------- Arms ---------- */
     "Dumbbell curl": {
-        m: "Biceps", eq: "Two dumbbells",
+        kit: "db", m: "Biceps", eq: "Two dumbbells",
         setup: "Stand holding dumbbells at your sides, palms facing forward.",
         steps: ["Curl the dumbbells up, keeping your elbows by your sides.", "Squeeze your biceps at the top.", "Lower slowly until your arms are straight.", "Don't swing."],
         tip: "Elbows stay pinned to your sides the whole time.",
@@ -585,7 +589,7 @@ const EXERCISES = {
         easier: "EZ-bar curl", harder: "Slow 3-second lowering"
     },
     "Incline dumbbell curl": {
-        m: "Biceps (long head)", eq: "Two dumbbells, incline bench",
+        kit: "db", m: "Biceps (long head)", eq: "Two dumbbells, incline bench",
         setup: "Set a bench to about 45 to 60 degrees. Sit back with the dumbbells hanging straight down behind your body.",
         steps: ["Curl the dumbbells up without moving your upper arms.", "Squeeze at the top.", "Lower all the way down for a full stretch.", "Keep your back on the bench."],
         tip: "The stretch at the bottom is what makes this one work. Use lighter weight than a regular curl.",
@@ -593,7 +597,7 @@ const EXERCISES = {
         easier: "Dumbbell curl", harder: "Slow 3-second lowering"
     },
     "Hammer curl": {
-        m: "Biceps, forearms (brachialis)", eq: "Two dumbbells",
+        kit: "db", m: "Biceps, forearms (brachialis)", eq: "Two dumbbells",
         setup: "Stand holding dumbbells at your sides with your palms facing each other.",
         steps: ["Curl the dumbbells up, keeping your palms facing in.", "Elbows stay at your sides.", "Squeeze at the top.", "Lower slowly."],
         tip: "Great for thicker-looking arms and a stronger grip.",
@@ -633,7 +637,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause at the bottom"
     },
     "Overhead triceps extension": {
-        m: "Triceps (long head)", eq: "Dumbbell or cable with a rope",
+        kit: "db", m: "Triceps (long head)", eq: "Dumbbell or cable with a rope",
         setup: "Hold one dumbbell overhead with both hands (or face away from a cable with a rope). Elbows point forward.",
         steps: ["Lower the weight behind your head by bending your elbows.", "Feel a stretch in the back of your arms.", "Extend your arms back overhead.", "Keep your elbows close together."],
         tip: "Training triceps with your arms overhead hits the biggest part of the muscle.",
@@ -659,7 +663,7 @@ const EXERCISES = {
 
     /* ---------- Core ---------- */
     "Plank": {
-        m: "Core", eq: "Floor",
+        kit: "none", m: "Core", eq: "Floor",
         setup: "Forearms on the floor, elbows under your shoulders, legs straight behind you.",
         steps: ["Lift your hips so your body is a straight line from head to heels.", "Squeeze your glutes and brace your stomach.", "Breathe normally.", "Hold for the time listed."],
         tip: "Squeeze your glutes. It instantly makes the plank harder and protects your lower back.",
@@ -667,7 +671,7 @@ const EXERCISES = {
         easier: "Plank on your knees", harder: "Lift one foot off the floor"
     },
     "Dead bug": {
-        m: "Core", eq: "Floor",
+        kit: "none", m: "Core", eq: "Floor",
         setup: "Lie on your back with your arms pointing straight up and your knees bent at 90 degrees over your hips.",
         steps: ["Press your lower back into the floor.", "Slowly lower your opposite arm and leg toward the floor.", "Stop before your back starts to arch.", "Return, and switch sides."],
         tip: "Your lower back stays glued to the floor. Go only as far as you can keep it there.",
@@ -683,7 +687,7 @@ const EXERCISES = {
         easier: "Plank, or roll toward a wall to limit the distance", harder: "Roll out farther"
     },
     "Bird dog": {
-        m: "Core, lower back, glutes", eq: "Floor",
+        kit: "none", m: "Core, lower back, glutes", eq: "Floor",
         setup: "Get on your hands and knees, hands under shoulders, knees under hips, back flat.",
         steps: ["Reach one arm forward and the opposite leg back at the same time.", "Hold for 2 seconds without your hips tipping.", "Return.", "Switch sides."],
         tip: "Pretend there's a glass of water on your lower back. Don't spill it.",
@@ -691,7 +695,7 @@ const EXERCISES = {
         easier: "Move only an arm or only a leg", harder: "Hold 5 seconds per rep"
     },
     "Side plank": {
-        m: "Obliques, core, hips", eq: "Floor",
+        kit: "none", m: "Obliques, core, hips", eq: "Floor",
         setup: "Lie on your side with your elbow under your shoulder and your legs stacked.",
         steps: ["Lift your hips so your body forms a straight line.", "Don't let your hips sag.", "Hold for the time listed.", "Switch sides."],
         tip: "Push your top hip toward the ceiling.",
@@ -707,7 +711,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Hold the press out for 5 seconds"
     },
     "Suitcase carry": {
-        m: "Obliques, core, grip", eq: "One dumbbell or kettlebell",
+        kit: "db", m: "Obliques, core, grip", eq: "One dumbbell or kettlebell",
         setup: "Stand holding a heavy dumbbell in one hand at your side.",
         steps: ["Walk tall without leaning toward the weight.", "Keep your shoulders level.", "Walk the distance listed.", "Switch hands and walk back."],
         tip: "Stay perfectly upright. The weight is trying to tip you over, and your core says no.",
@@ -715,7 +719,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Heavier weight or a longer walk"
     },
     "Farmer carry": {
-        m: "Grip, traps, core", eq: "Two heavy dumbbells or kettlebells",
+        kit: "db", m: "Grip, traps, core", eq: "Two heavy dumbbells or kettlebells",
         setup: "Stand between two heavy dumbbells, deadlift them up, and stand tall.",
         steps: ["Walk with short, quick steps.", "Keep your shoulders back and down.", "Brace your stomach.", "Set the weights down safely at the end."],
         tip: "Pick weights heavy enough that your grip is the challenge by the end.",
@@ -739,7 +743,7 @@ const EXERCISES = {
         easier: "Lying leg raise", harder: "Straight-leg raise"
     },
     "Lying leg raise": {
-        m: "Abs, hip flexors", eq: "Floor",
+        kit: "none", m: "Abs, hip flexors", eq: "Floor",
         setup: "Lie on your back, hands under your hips or at your sides, legs straight.",
         steps: ["Press your lower back into the floor.", "Raise your legs until they point up.", "Lower slowly, stopping before your back arches.", "Repeat."],
         tip: "Bend your knees if your lower back lifts off the floor.",
@@ -747,7 +751,7 @@ const EXERCISES = {
         easier: "Bent-knee leg raise", harder: "Hanging knee raise"
     },
     "Reverse crunch": {
-        m: "Abs (lower)", eq: "Floor or bench",
+        kit: "none", m: "Abs (lower)", eq: "Floor or bench",
         setup: "Lie on your back with your knees bent and feet off the floor, hands at your sides.",
         steps: ["Curl your hips up off the floor, bringing your knees toward your chest.", "Squeeze your abs.", "Lower slowly.", "Repeat."],
         tip: "A small hip curl done right beats a big swing.",
@@ -813,12 +817,62 @@ const EXERCISES = {
         easier: "Slower pace", harder: "Faster pace"
     },
     "Stretching or mobility": {
-        m: "Hips, shoulders, back", eq: "Floor or mat",
+        kit: "none", m: "Hips, shoulders, back", eq: "Floor or mat",
         setup: "Find some open floor. Go easy. Stretching should never hurt.",
         steps: ["Hip flexor stretch: 30 seconds per side.", "Hamstring stretch: 30 seconds per side.", "Chest stretch in a doorway: 30 seconds.", "Cat-cow on hands and knees: 10 slow reps."],
         tip: "Breathe slowly and relax into each stretch.",
         mistakes: ["Bouncing.", "Forcing a stretch until it hurts."],
         easier: "Shorter holds", harder: "Add a few minutes"
+    },
+
+    /* ---------- At home, no equipment ---------- */
+    "Bodyweight squat": {
+        kit: "none", m: "Quads, glutes", eq: "Bodyweight",
+        setup: "Stand with your feet a little wider than your shoulders, toes turned out slightly. Arms out in front for balance.",
+        steps: ["Sit down and back like there's a chair behind you.", "Keep your chest up and your heels on the floor.", "Go as low as is comfortable, ideally thighs parallel to the floor.", "Stand back up by pushing the floor away."],
+        tip: "Too easy? Slow down: 3 seconds down, 1 second pause, then stand.",
+        mistakes: ["Heels lifting.", "Knees caving in.", "Rushing through tiny half reps."],
+        easier: "Squat down to a chair and stand back up", harder: "Pause squat, or hold a heavy backpack"
+    },
+    "Incline push-up": {
+        kit: "none", m: "Chest, shoulders, triceps, core", eq: "A sturdy table, counter, or bench",
+        setup: "Put your hands on the edge of a sturdy counter or bench, slightly wider than your shoulders. Walk your feet back until your body is a straight line.",
+        steps: ["Brace your stomach and squeeze your glutes.", "Lower your chest to the edge.", "Push back up as one solid piece.", "Keep your elbows at about 45 degrees."],
+        tip: "The higher your hands, the easier it is. Go lower over the weeks until you can do regular push-ups.",
+        mistakes: ["Hips sagging.", "Using something that can slide or tip."],
+        easier: "Hands on a wall", harder: "Push-up on the floor"
+    },
+    "Pike push-up": {
+        kit: "none", m: "Shoulders, triceps", eq: "Bodyweight",
+        setup: "Start in a push-up position, then walk your feet in and lift your hips high so your body makes an upside-down V.",
+        steps: ["Bend your elbows and lower the top of your head toward the floor between your hands.", "Keep your hips high.", "Push back up.", "Move slowly."],
+        tip: "This is the home version of a shoulder press. The more upright your body, the harder it gets.",
+        mistakes: ["Dropping your hips into a regular push-up.", "Flaring your elbows straight out."],
+        easier: "Smaller range, or hands on a low step", harder: "Feet up on a chair"
+    },
+    "Backpack row": {
+        kit: "none", m: "Upper back, lats, biceps", eq: "A backpack loaded with books or water bottles",
+        setup: "Hold a loaded backpack by the top handle or both straps. Hinge forward at your hips with a flat back and soft knees, arms hanging down.",
+        steps: ["Pull the backpack up to your stomach, driving your elbows back.", "Squeeze your shoulder blades together.", "Lower it slowly.", "Keep your back flat the whole set."],
+        tip: "Load the bag so the last few reps are hard. Books and water bottles both work.",
+        mistakes: ["Rounding your back.", "Jerking the bag up with your hips."],
+        easier: "Lighter bag, or support one hand on a table and row one side at a time", harder: "Heavier bag, or pause at the top"
+    },
+    "Wall sit": {
+        kit: "none", m: "Quads", eq: "A wall",
+        setup: "Lean your back against a wall and walk your feet out about two feet.",
+        steps: ["Slide down until your knees are bent to about 90 degrees.", "Keep your back flat against the wall.", "Hold for the time listed.", "Breathe normally."],
+        tip: "Not as low as 90 degrees yet? Hold higher. It still works.",
+        mistakes: ["Knees drifting in front of your toes.", "Holding your breath."],
+        easier: "Hold higher on the wall", harder: "Hold longer, or hold a backpack on your lap"
+    },
+    "Brisk walk": {
+        kit: "none", m: "Heart and lungs, legs", eq: "Shoes",
+        setup: "Head outside or onto a treadmill. Start easy for a couple of minutes.",
+        steps: ["Walk fast enough that you could talk, but not sing.", "Swing your arms.", "Keep the pace for the time listed.", "Slow down for the last couple of minutes."],
+        tip: "A daily walk is one of the best habits for fat loss and general health. Make it a routine.",
+        mistakes: ["Strolling too slowly to raise your heart rate."],
+        easier: "Shorter walk", harder: "Find some hills"
     }
 };
 
@@ -852,6 +906,9 @@ const EXERCISE_FAMILIES = [
     ["Side plank", "Pallof press", "Suitcase carry"],
     ["Cable crunch", "Hanging knee raise", "Lying leg raise", "Reverse crunch"],
     ["Farmer carry", "Suitcase carry"],
+    // At home
+    ["Bodyweight squat", "Split squat", "Reverse lunge", "Step-up"],
+    ["Push-up", "Incline push-up"],
     // Conditioning
     ["Bike intervals", "Rower intervals", "Sled push", "Incline walk intervals"],
     ["Incline treadmill walk", "Stair climber", "Incline walk or easy bike"]

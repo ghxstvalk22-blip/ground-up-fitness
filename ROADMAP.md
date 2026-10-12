@@ -10,9 +10,6 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 - [ ] New program "Build muscle" (hypertrophy) for 3 days a week: a gentler full-body muscle plan for people who aren't ready for the 4- and 5-day Classic Physique split. Add its radio button, quick-start tile, home program tile, and use exercises that are already in `exercises.js` (or add guides for new ones).
 - [ ] "Where to next?" row at the bottom of every page (above the footer) with 2 or 3 buttons to the most useful related pages, so nobody hits a dead end.
-- [ ] New program "No gym / bodyweight" for 3 days a week: push-ups, squats, lunges, glute bridges, rows with a table or backpack, planks. Add any new exercises to `exercises.js` with full guides, and a family so they rotate.
-- [ ] New program "Busy schedule" for 2 days a week: two full-body sessions in under 45 minutes. Add a "2 days" option to the days picker (it greys out automatically for plans without it).
-- [ ] New program "Dumbbells only" for 3 and 4 days a week, for home gyms or crowded gyms.
 - [ ] Program links inside content: in the Gym basics answers, link to the specific plan, tool, or exercise guide that fits (for example the protein answer links to the calorie estimator).
 - [ ] Pro principles deep dives: turn each of the six "Train like a pro" habits into a short expandable guide with practical steps for beginners.
 
@@ -30,6 +27,7 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 ## Done
 
+- [x] 2026-10-12 (overnight): three new plans: No gym needed (home, bodyweight, 3 days), Short on time (2 days), and Dumbbells only (3 or 4 days). Home and dumbbell plans only rotate into exercises their equipment allows. 6 new exercise guides (103 total).
 - [x] 2026-10-12 (overnight): weight trend tracker on the Tools page (7-day average, weekly change, gentle caution on fast loss).
 - [x] 2026-10-12 (overnight): Programs page remembers your plan, marks the day that's up next, and the home page offers "Continue".
 - [x] 2026-10-12 (overnight): exercise library page with search and muscle filters; Exercises menu.

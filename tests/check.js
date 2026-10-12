@@ -208,6 +208,24 @@ async function openPage(browser, file, viewport, hash = "") {
 
             check(await page.locator(".day-card.is-next").count() === 1, "the next unfinished day is marked Up next");
 
+            // Home and dumbbell plans never rotate into equipment they don't have, over 30 weeks
+            const kitProblems = await page.evaluate(() => {
+                const bad = [];
+                for (const [program, allowed] of [["home", ["none"]], ["dumbbell", ["none", "db"]]]) {
+                    for (const [days, plan] of Object.entries(PROGRAMS[program].plans)) {
+                        for (let week = 1; week <= 30; week++) {
+                            plan.days.forEach((day, di) => dayLineup(program, Number(days), di, day.items, week, {}).forEach((x) => {
+                                if (!allowed.includes((EXERCISES[x.name] || {}).kit)) bad.push(`${program} w${week}: ${x.name}`);
+                            }));
+                        }
+                    }
+                }
+                return bad;
+            });
+            check(kitProblems.length === 0, `home and dumbbell plans only use their equipment ${kitProblems.slice(0, 3).join("; ")}`);
+            await page.locator('input[name="goal"][value="busy"]').check({ force: true });
+            check(await page.locator(".day-card").count() === 2 && await page.locator('input[name="days"][value="2"]').isChecked(), "Short on time shows 2 days");
+
             await page.locator(".theme-toggle").click();
             check(await page.evaluate(() => document.documentElement.dataset.theme === "dark"), "dark mode toggles");
             await page.screenshot({ path: path.join(SHOTS, `${name}-programs-dark.png`), fullPage: true });
@@ -215,10 +233,10 @@ async function openPage(browser, file, viewport, hash = "") {
             // Coming back: the Programs page reopens the last plan, and home offers to continue it
             await page.goto(url("programs.html"));
             await page.waitForTimeout(200);
-            check(/Classic Physique/.test(await page.locator("#program-head h3").textContent()), "Programs reopens the plan you used last");
+            check(/Short on time/.test(await page.locator("#program-head h3").textContent()), "Programs reopens the plan you used last");
             await page.goto(url("index.html"));
             await page.waitForTimeout(200);
-            check(/Continue: Classic Physique/.test(await page.locator(".hero-actions").textContent()), "home page offers to continue your plan");
+            check(/Continue: Short on time/.test(await page.locator(".hero-actions").textContent()), "home page offers to continue your plan");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

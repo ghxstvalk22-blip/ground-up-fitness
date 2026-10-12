@@ -774,6 +774,151 @@ const PROGRAMS = {
         }
     },
 
+    home: {
+        name: "No gym needed",
+        tagline: "bodyweight at home",
+        kit: "none",
+        summary: "Three short full-body workouts you can do in your living room with no equipment, just a backpack and a sturdy counter. A great way to build the habit and some strength before you ever set foot in a gym.",
+        session: "30 to 40 minutes",
+        effort: "Stop each set with 2 or 3 good reps left. Move slowly and with control; that's what makes bodyweight work hard.",
+        progression: "When you can do the top of the rep range on every set, make it harder: slow the lowering to 3 seconds, add a pause, use the harder version, or add books to the backpack.",
+        plans: {
+            3: {
+                schedule: "Any 3 days with a rest day between. A daily walk is a great bonus.",
+                days: [
+                    { title: "Full body A", items: [
+                        ex("Bodyweight squat", "3 × 12–15", "60 s", "Squat down to a chair"),
+                        ex("Incline push-up", "3 × 8–12", "60 s", "Hands on a wall"),
+                        ex("Backpack row", "3 × 10–12", "60 s"),
+                        ex("Glute bridge", "3 × 15", "45 s"),
+                        ex("Plank", "3 × 20–40 s", "45 s", "Plank on your knees")
+                    ] },
+                    { title: "Full body B", items: [
+                        ex("Split squat", "3 × 8–10 per leg", "60 s", "Hold a chair for balance"),
+                        ex("Pike push-up", "3 × 6–10", "60 s"),
+                        ex("Backpack row", "3 × 12", "60 s"),
+                        ex("Single-leg glute bridge", "2 × 10 per leg", "45 s"),
+                        ex("Dead bug", "3 × 8 per side", "45 s")
+                    ] },
+                    { title: "Full body C", items: [
+                        ex("Step-up", "3 × 10 per leg", "60 s", "Use a lower step"),
+                        ex("Push-up", "3 × 5–10", "60 s", "Hands on a counter"),
+                        ex("Backpack row", "3 × 10–12", "60 s"),
+                        ex("Wall sit", "3 × 20–40 s", "45 s"),
+                        ex("Side plank", "2 × 20 s per side", "45 s", "Side plank on your knees"),
+                        ex("Brisk walk", "20 min", "")
+                    ] }
+                ]
+            }
+        }
+    },
+
+    busy: {
+        name: "Short on time",
+        tagline: "2 gym days, under 45 min",
+        summary: "Two full-body gym sessions a week that hit everything. Short rests and no fluff, for weeks when life is busy. Two good sessions beat four you keep skipping.",
+        session: "Under 45 minutes",
+        effort: "Stop each set with 1 or 2 good reps left. Keep rests short and stay off your phone between sets.",
+        progression: "When you hit the top of the rep range on every set, add the smallest weight jump next time.",
+        plans: {
+            2: {
+                schedule: "Two days with at least two days between, like Monday and Thursday.",
+                days: [
+                    { title: "Full body A", items: [
+                        ex("Goblet squat", "3 × 8–10", "75 s", "Squat down to a bench"),
+                        ex("Dumbbell bench press", "3 × 8–10", "75 s", "Push-ups with hands on a bench"),
+                        ex("Lat pulldown", "3 × 10–12", "75 s"),
+                        ex("Dumbbell Romanian deadlift", "2 × 10", "75 s"),
+                        ex("Plank", "2 × 30 s", "45 s", "Plank on your knees")
+                    ] },
+                    { title: "Full body B", items: [
+                        ex("Leg press", "3 × 10–12", "75 s"),
+                        ex("Seated dumbbell shoulder press", "3 × 8–10", "75 s"),
+                        ex("Seated cable row", "3 × 10–12", "75 s"),
+                        ex("Hip thrust", "2 × 10–12", "75 s", "Glute bridge"),
+                        ex("Cable crunch", "2 × 12–15", "45 s", "Dead bug")
+                    ] }
+                ]
+            }
+        }
+    },
+
+    dumbbell: {
+        name: "Dumbbells only",
+        tagline: "home gym or crowded gym",
+        kit: "db",
+        summary: "A full plan using only a pair of dumbbells and a bench. Works in a garage gym, a hotel gym, or when every machine is taken.",
+        session: "45 to 60 minutes",
+        effort: "Stop each set with about 2 good reps left. If the dumbbells get too light, slow down the lowering or add reps before buying heavier ones.",
+        progression: "When you hit the top of the rep range on every set, move up to the next dumbbell (usually 5 lb or 2 kg).",
+        plans: {
+            3: {
+                schedule: "Any 3 days with a rest day between, like Mon, Wed, Fri.",
+                days: [
+                    { title: "Full body A", items: [
+                        ex("Goblet squat", "3 × 8–12", "90 s", "Squat down to a bench"),
+                        ex("Dumbbell bench press", "3 × 8–12", "90 s", "Push-ups with hands on a bench"),
+                        ex("Single-arm dumbbell row", "3 × 10 per side", "60 s"),
+                        ex("Dumbbell Romanian deadlift", "3 × 10", "90 s"),
+                        ex("Lateral raise", "2 × 12–15", "60 s"),
+                        ex("Dead bug", "2 × 8 per side", "45 s")
+                    ] },
+                    { title: "Full body B", items: [
+                        ex("Bulgarian split squat", "3 × 8–10 per leg", "90 s", "Split squat holding a rail"),
+                        ex("Seated dumbbell shoulder press", "3 × 8–10", "90 s"),
+                        ex("Chest-supported dumbbell row", "3 × 10–12", "60 s"),
+                        ex("Hip thrust", "3 × 10", "90 s", "Glute bridge"),
+                        ex("Dumbbell curl", "2 × 10–12", "60 s"),
+                        ex("Overhead triceps extension", "2 × 10–12", "60 s")
+                    ] },
+                    { title: "Full body C", items: [
+                        ex("Goblet squat", "3 × 10–12", "90 s", "Squat down to a bench"),
+                        ex("Incline dumbbell press", "3 × 8–10", "90 s"),
+                        ex("Single-arm dumbbell row", "3 × 10 per side", "60 s"),
+                        ex("Dumbbell Romanian deadlift", "3 × 10", "90 s"),
+                        ex("Rear delt fly", "2 × 15", "60 s"),
+                        ex("Farmer carry", "3 × 40 steps", "60 s")
+                    ] }
+                ]
+            },
+            4: {
+                schedule: "Upper and lower days, like Mon, Tue, Thu, Fri.",
+                days: [
+                    { title: "Upper A", items: [
+                        ex("Dumbbell bench press", "3 × 8–10", "90 s", "Push-ups with hands on a bench"),
+                        ex("Single-arm dumbbell row", "3 × 10 per side", "60 s"),
+                        ex("Seated dumbbell shoulder press", "3 × 8–10", "90 s"),
+                        ex("Lateral raise", "3 × 12–15", "60 s"),
+                        ex("Dumbbell curl", "2 × 10–12", "60 s"),
+                        ex("Overhead triceps extension", "2 × 10–12", "60 s")
+                    ] },
+                    { title: "Lower A", items: [
+                        ex("Goblet squat", "3 × 8–12", "90 s", "Squat down to a bench"),
+                        ex("Dumbbell Romanian deadlift", "3 × 10", "90 s"),
+                        ex("Reverse lunge", "2 × 10 per leg", "60 s"),
+                        ex("Single-leg calf raise", "3 × 12 per leg", "45 s"),
+                        ex("Plank", "3 × 30 s", "45 s", "Plank on your knees")
+                    ] },
+                    { title: "Upper B", items: [
+                        ex("Incline dumbbell press", "3 × 8–10", "90 s"),
+                        ex("Chest-supported dumbbell row", "3 × 10–12", "60 s"),
+                        ex("Arnold press", "3 × 8–10", "90 s"),
+                        ex("Rear delt fly", "3 × 15", "60 s"),
+                        ex("Hammer curl", "2 × 10–12", "60 s"),
+                        ex("Dumbbell fly", "2 × 12", "60 s")
+                    ] },
+                    { title: "Lower B", items: [
+                        ex("Bulgarian split squat", "3 × 8–10 per leg", "90 s", "Split squat holding a rail"),
+                        ex("Hip thrust", "3 × 10", "90 s", "Glute bridge"),
+                        ex("Step-up", "2 × 10 per leg", "60 s", "Use a lower step"),
+                        ex("Standing calf raise", "3 × 12", "45 s"),
+                        ex("Dead bug", "3 × 8 per side", "45 s")
+                    ] }
+                ]
+            }
+        }
+    },
+
     classic: {
         name: "Classic Physique",
         tagline: "bodybuilding split",
@@ -897,14 +1042,26 @@ function hashString(str) {
     return h >>> 0;
 }
 
-function familyFor(name) {
+// Equipment: "none" (home) plans only use bodyweight moves; "db" plans also allow dumbbells
+function kitAllows(planKit, exerciseKit) {
+    const k = exerciseKit || "gym";
+    if (planKit === "none") return k === "none";
+    if (planKit === "db") return k === "none" || k === "db";
+    return true;
+}
+
+// Exercises that can stand in for this one, limited to the program's equipment
+function familyFor(name, program) {
     if (typeof EXERCISE_FAMILIES === "undefined") return null;
-    return EXERCISE_FAMILIES.find((f) => f[0] === name) || EXERCISE_FAMILIES.find((f) => f.includes(name)) || null;
+    const base = EXERCISE_FAMILIES.find((f) => f[0] === name) || EXERCISE_FAMILIES.find((f) => f.includes(name)) || null;
+    const kit = program && PROGRAMS[program] ? PROGRAMS[program].kit : null;
+    if (!base || !kit) return base;
+    return base.filter((n) => n === name || kitAllows(kit, typeof EXERCISES === "object" && EXERCISES[n] ? EXERCISES[n].kit : null));
 }
 
 // Which version of a slot to show in a given week. It never repeats last week's choice.
 function rotatedName(name, ctx) {
-    const fam = familyFor(name);
+    const fam = familyFor(name, ctx.program);
     if (!fam || fam.length < 2) return name;
     const period = ctx.mode === "block" ? Math.floor((ctx.week - 1) / ROTATION_BLOCK_WEEKS) : ctx.week - 1;
     let idx = Math.max(0, fam.indexOf(name));
@@ -920,7 +1077,7 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
     return items.map((x, slot) => {
         const mode = PROGRAMS[program].rotation === "block" || slot === 0 ? "block" : "weekly";
         let name = rotatedName(x.n, { program, days, day: dayIndex, slot, week, mode });
-        const fam = familyFor(x.n);
+        const fam = familyFor(x.n, program);
         if (fam && used.has(name)) name = fam.find((n) => !used.has(n)) || name;
         const swapped = swaps[`w${week}:${dayIndex}-${slot}`];
         if (swapped) name = swapped;
@@ -930,9 +1087,9 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
 }
 
 // How many different weekly versions a plan can produce
-function planCombinations(plan) {
+function planCombinations(plan, program) {
     return plan.days.reduce((total, day) => day.items.reduce((t, x) => {
-        const fam = familyFor(x.n);
+        const fam = familyFor(x.n, program);
         return t * (fam ? fam.length : 1);
     }, total), 1);
 }
@@ -1169,7 +1326,7 @@ function setupPrograms() {
         els.weekDates.textContent = `${shortDate(monday)} – ${shortDate(addDays(monday, 6))}`;
         els.weekPrev.disabled = state.week <= 1;
         els.weekToday.hidden = state.week === now;
-        const combos = planCombinations(plan);
+        const combos = planCombinations(plan, state.goal);
         els.variety.textContent = combos > 1
             ? `This plan can be put together ${bigNumber(combos)} different ways. ${p.rotation === "block" ? "Exercises change every 4 weeks." : "Accessories rotate weekly; main lifts every 4 weeks."}`
             : "";
@@ -1321,7 +1478,7 @@ function setupPrograms() {
         if (swapBtn) {
             const [di, xi] = swapBtn.dataset.swap.split("-").map(Number);
             const current = lineups[di][xi];
-            const fam = familyFor(current.n) || [current.name];
+            const fam = familyFor(current.n, state.goal) || [current.name];
             const usedToday = new Set(lineups[di].map((x) => x.name));
             let i = fam.indexOf(current.name);
             let next = current.name;

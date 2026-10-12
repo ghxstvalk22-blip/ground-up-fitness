@@ -58,7 +58,9 @@ ships **one** focused improvement.
    or registered dietitian when appropriate.
 6. **Never** put passwords, API keys, or personal information in the repo. The contact
    form key stays an empty string unless the owner fills it in.
-7. **Hero counts update themselves** from `PROGRAMS` and `.tool` panels. When you add a
+7. **Hero counts update themselves** from `PROGRAMS`. A program can set `kit: "none"` (home,
+   bodyweight) or `kit: "db"` (dumbbells); the rotation and Swap then only use exercises whose
+   `kit` in `exercises.js` fits. `rotation: "block"` makes a plan change every 4 weeks instead of weekly. When you add a
    program, also add its radio button in the program builder, a tile in the quick-start
    card if it's a main goal, and a link in the Programs menu.
 8. **Real people:** never write quotes, tips, testimonials, or endorsements attributed to
