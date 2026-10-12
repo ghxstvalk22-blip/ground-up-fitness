@@ -216,6 +216,15 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator(".badge-you", { hasText: "focus" }).count() > 0, "focus muscle adds an extra set");
             await page.selectOption("#pf-experience", "new");
             check(await page.locator(".badge-you", { hasText: "fewer" }).count() > 0, "newer lifters get fewer accessory sets");
+            await page.selectOption("#pf-sex", "female");
+            check(/men and women/.test(await page.locator("#profile-note").textContent()), "choosing a sex explains the plans work for everyone");
+            check(await page.evaluate(() => (getProfile().sex === "female")), "sex is saved in the profile");
+            const steps = await page.evaluate(() => [weightStep("Lateral raise", "lb", 15), weightStep("Lateral raise", "lb", 60), weightStep("Leg press", "lb", 200)]);
+            check(steps.join() === "2.5,5,10", `light upper-body lifts move up in smaller steps (${steps.join()})`);
+            for (const goal of ["glutes", "upper"]) {
+                await page.locator(`input[name="goal"][value="${goal}"]`).check({ force: true });
+                check(await page.locator(".day-card").count() >= 3, `${goal} plan shows its days`);
+            }
 
             check(await page.locator(".day-card.is-next").count() === 1, "the next unfinished day is marked Up next");
             check(/today's workout/i.test(await page.locator("#jump-today").textContent()) && await page.locator("#jump-today").isVisible(), "a button jumps to today's workout");
@@ -358,6 +367,7 @@ async function openPage(browser, file, viewport, hash = "") {
         {
             const { page } = await openPage(browser, "basics.html", viewport, "#faq-protein");
             check(await page.locator("#faq-protein").evaluate((d) => d.open), "linking to a question opens its answer");
+            check(await page.locator("#faq-women a[href='programs.html#program-glutes']").count() === 1, "men and women answer links to the focus plans");
             await page.close();
         }
     }

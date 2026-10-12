@@ -97,7 +97,8 @@ const SITE_NAV = [
         ["Cardio or weights for fat loss?", "", "basics.html#faq-cardio"],
         ["I'm sore. Should I skip?", "", "basics.html#faq-sore"],
         ["The unwritten gym rules", "", "basics.html#faq-etiquette"],
-        ["How much protein do I need?", "", "basics.html#faq-protein"]
+        ["How much protein do I need?", "", "basics.html#faq-protein"],
+        ["Should women train differently?", "", "basics.html#faq-women"]
     ] },
     { label: "Contact", href: "contact.html", page: "contact", items: [
         ["Send a message", "Any question at all", "contact.html#contact-general"],
@@ -898,6 +899,153 @@ const PROGRAMS = {
         }
     },
 
+    glutes: {
+        name: "Glutes & legs focus",
+        tagline: "lower body first, 3 or 4 days",
+        summary: "For anyone, man or woman, who wants stronger, more shapely glutes and legs. Hip thrusts, hinges, and single-leg work come first each lower day, and upper body still gets trained so you stay balanced.",
+        session: "50 to 60 minutes",
+        effort: "Stop most sets with 1 or 2 good reps left. On hip thrusts and kickbacks, pause and squeeze at the top of every rep.",
+        progression: "Double progression: reach the top of the rep range on every set, then add the smallest weight jump. Single-leg moves: add reps before weight.",
+        plans: {
+            3: {
+                schedule: "Any 3 days with a rest day between, like Mon, Wed, Fri.",
+                days: [
+                    { title: "Glutes & hamstrings", items: [
+                        ex("Hip thrust", "4 × 8–12", "2 min", "Glute bridge"),
+                        ex("Romanian deadlift", "3 × 8–10", "2 min", "Dumbbell Romanian deadlift"),
+                        ex("Hip abduction machine", "3 × 15–20", "60 s"),
+                        ex("Lat pulldown", "3 × 10–12", "90 s"),
+                        ex("Seated dumbbell shoulder press", "2 × 10–12", "90 s"),
+                        ex("Dead bug", "2 × 8 per side", "45 s")
+                    ] },
+                    { title: "Quads & glutes", items: [
+                        ex("Leg press", "3 × 10–12", "2 min", "Goblet squat"),
+                        ex("Bulgarian split squat", "3 × 8–10 per leg", "90 s", "Split squat holding a rail"),
+                        ex("Cable glute kickback", "3 × 12–15 per leg", "45 s"),
+                        ex("Machine chest press", "3 × 10–12", "90 s"),
+                        ex("Seated cable row", "3 × 10–12", "90 s"),
+                        ex("Standing calf raise", "3 × 12–15", "60 s")
+                    ] },
+                    { title: "Glutes & full body", items: [
+                        ex("Hip thrust", "3 × 10–12", "2 min", "Glute bridge"),
+                        ex("Step-up", "3 × 10 per leg", "90 s", "Use a lower step"),
+                        ex("Seated hamstring curl", "3 × 10–12", "60 s"),
+                        ex("Incline dumbbell press", "3 × 10–12", "90 s"),
+                        ex("Single-arm dumbbell row", "3 × 10 per side", "60 s"),
+                        ex("Hip abduction machine", "2 × 15–20", "60 s")
+                    ] }
+                ]
+            },
+            4: {
+                schedule: "Lower and upper days, like Mon, Tue, Thu, Fri.",
+                days: [
+                    { title: "Lower A: glutes", items: [
+                        ex("Hip thrust", "4 × 8–12", "2 min", "Glute bridge"),
+                        ex("Romanian deadlift", "3 × 8–10", "2 min", "Dumbbell Romanian deadlift"),
+                        ex("Bulgarian split squat", "3 × 8–10 per leg", "90 s", "Split squat holding a rail"),
+                        ex("Seated hamstring curl", "3 × 10–12", "60 s"),
+                        ex("Hip abduction machine", "3 × 15–20", "60 s")
+                    ] },
+                    { title: "Upper A", items: [
+                        ex("Lat pulldown", "3 × 10–12", "90 s"),
+                        ex("Machine chest press", "3 × 10–12", "90 s"),
+                        ex("Seated cable row", "3 × 10–12", "90 s"),
+                        ex("Lateral raise", "3 × 12–15", "60 s"),
+                        ex("Triceps pushdown", "2 × 12–15", "60 s")
+                    ] },
+                    { title: "Lower B: quads & glutes", items: [
+                        ex("Leg press", "3 × 10–12", "2 min", "Goblet squat"),
+                        ex("Cable pull-through", "3 × 12–15", "90 s"),
+                        ex("Walking lunge", "3 × 10 per leg", "90 s", "Reverse lunge"),
+                        ex("Cable glute kickback", "3 × 12–15 per leg", "45 s"),
+                        ex("Standing calf raise", "3 × 12–15", "60 s")
+                    ] },
+                    { title: "Upper B", items: [
+                        ex("Incline dumbbell press", "3 × 10–12", "90 s"),
+                        ex("Chest-supported row", "3 × 10–12", "90 s"),
+                        ex("Seated dumbbell shoulder press", "3 × 10–12", "90 s"),
+                        ex("Face pull", "2 × 15", "60 s"),
+                        ex("Dumbbell curl", "2 × 10–12", "60 s"),
+                        ex("Plank", "3 × 30 s", "45 s", "Plank on your knees")
+                    ] }
+                ]
+            }
+        }
+    },
+
+    upper: {
+        name: "Upper body focus",
+        tagline: "chest, back, shoulders, arms",
+        summary: "For anyone, man or woman, who wants a stronger, more defined upper body. Upper body gets trained more often, and legs still get a full session each week so nothing falls behind.",
+        session: "45 to 60 minutes",
+        effort: "Stop most sets with 1 or 2 good reps left. Upper-body lifts move in small jumps, so be patient: an extra rep counts as progress.",
+        progression: "Double progression: reach the top of the rep range on every set, then add the smallest weight jump (often 2.5 lb or 1 kg on lighter lifts).",
+        plans: {
+            3: {
+                schedule: "Any 3 days with a rest day between, like Mon, Wed, Fri.",
+                days: [
+                    { title: "Upper A: push focus", items: [
+                        ex("Dumbbell bench press", "3 × 8–12", "2 min", "Push-up"),
+                        ex("Seated dumbbell shoulder press", "3 × 8–12", "90 s"),
+                        ex("Lat pulldown", "3 × 10–12", "90 s"),
+                        ex("Cable fly", "2 × 12–15", "60 s"),
+                        ex("Lateral raise", "3 × 12–15", "60 s"),
+                        ex("Triceps pushdown", "2 × 12–15", "60 s")
+                    ] },
+                    { title: "Legs & core", items: [
+                        ex("Leg press", "3 × 10–12", "2 min", "Goblet squat"),
+                        ex("Dumbbell Romanian deadlift", "3 × 10", "2 min"),
+                        ex("Walking lunge", "2 × 10 per leg", "90 s", "Reverse lunge"),
+                        ex("Standing calf raise", "3 × 12–15", "60 s"),
+                        ex("Dead bug", "3 × 8 per side", "45 s")
+                    ] },
+                    { title: "Upper B: pull focus", items: [
+                        ex("Chest-supported row", "3 × 8–12", "90 s"),
+                        ex("Assisted pull-up", "3 × 6–10", "2 min", "Lat pulldown"),
+                        ex("Incline dumbbell press", "3 × 8–12", "2 min"),
+                        ex("Face pull", "3 × 15", "60 s"),
+                        ex("Dumbbell curl", "3 × 10–12", "60 s"),
+                        ex("Overhead triceps extension", "2 × 10–12", "60 s")
+                    ] }
+                ]
+            },
+            4: {
+                schedule: "Like Mon, Tue, Thu, Fri. Legs get one full day; upper body gets three.",
+                days: [
+                    { title: "Chest & back", items: [
+                        ex("Dumbbell bench press", "3 × 8–12", "2 min", "Push-up"),
+                        ex("Lat pulldown", "3 × 10–12", "90 s"),
+                        ex("Incline machine press", "3 × 10–12", "90 s"),
+                        ex("Seated cable row", "3 × 10–12", "90 s"),
+                        ex("Cable fly", "2 × 12–15", "60 s")
+                    ] },
+                    { title: "Legs & core", items: [
+                        ex("Leg press", "3 × 10–12", "2 min", "Goblet squat"),
+                        ex("Romanian deadlift", "3 × 8–10", "2 min", "Dumbbell Romanian deadlift"),
+                        ex("Bulgarian split squat", "2 × 8–10 per leg", "90 s", "Split squat holding a rail"),
+                        ex("Standing calf raise", "3 × 12–15", "60 s"),
+                        ex("Plank", "3 × 30 s", "45 s", "Plank on your knees")
+                    ] },
+                    { title: "Shoulders & arms", items: [
+                        ex("Seated dumbbell shoulder press", "3 × 8–12", "90 s"),
+                        ex("Lateral raise", "4 × 12–15", "60 s"),
+                        ex("Rear delt fly", "3 × 15", "60 s"),
+                        ex("Dumbbell curl", "3 × 10–12", "60 s"),
+                        ex("Triceps pushdown", "3 × 12–15", "60 s")
+                    ] },
+                    { title: "Back & chest", items: [
+                        ex("Chest-supported row", "3 × 8–12", "90 s"),
+                        ex("Assisted pull-up", "3 × 6–10", "2 min", "Lat pulldown"),
+                        ex("Incline dumbbell press", "3 × 8–12", "2 min"),
+                        ex("Face pull", "2 × 15", "60 s"),
+                        ex("Hammer curl", "2 × 10–12", "60 s"),
+                        ex("Overhead triceps extension", "2 × 10–12", "60 s")
+                    ] }
+                ]
+            }
+        }
+    },
+
     cardio: {
         name: "Cardio & conditioning",
         tagline: "heart, lungs, endurance",
@@ -1301,6 +1449,7 @@ function getProfile() {
         bodyweight: p.bodyweight || "",
         unit: p.unit || (store.get("gu-unit") === "kg" ? "kg" : "lb"),
         focus: p.focus || "",
+        sex: p.sex || "",
         trainFor: p.trainFor || "both"
     };
 }
@@ -1492,8 +1641,11 @@ const e1rm = (w, r) => (r <= 1 ? w : w * (1 + Math.min(r, 15) / 30));
 const sessionBest = (entry, unit) => Math.max(...entry.sets.map((s) => e1rm(toUnit(s.w, entry.unit, unit), s.r)));
 
 // Weight jumps: bigger for leg compounds, smaller for everything else
-function weightStep(name, unit) {
-    const legCompound = muscleGroup(name) === "legs" && !/curl|extension|bridge|calf|raise/i.test(name);
+function weightStep(name, unit, current = Infinity) {
+    const legCompound = muscleGroup(name) === "legs" && !/curl|extension|bridge|calf|raise|kickback|abduction/i.test(name);
+    // Lighter upper-body lifts use the smallest jump: 5 lb on a 15 lb lift is a 33% jump (common for newer lifters, often women)
+    const light = !legCompound && current < (unit === "kg" ? 20 : 45);
+    if (light) return unit === "kg" ? 1.25 : 2.5;
     return unit === "kg" ? (legCompound ? 5 : 2.5) : (legCompound ? 10 : 5);
 }
 
@@ -1517,7 +1669,7 @@ function nextTarget(name, dose, unit) {
         return { weight: 0, lastText, text: allTop ? "You hit every rep. Add a rep or two, or try the harder version." : "Aim for one more rep than last time." };
     }
     if (allTop) {
-        const w = top + weightStep(name, unit);
+        const w = top + weightStep(name, unit, top);
         return { weight: w, reps: d.low, lastText, up: true, text: `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You hit the top of the range on every set.` };
     }
     if (anyLow) {
@@ -1839,6 +1991,9 @@ function setupPrograms() {
             const kg = profile.unit === "kg" ? Number(profile.bodyweight) : Number(profile.bodyweight) / 2.20462;
             if (kg > 30) notes.push(`A good daily protein target for you is about ${fmt(kg * 1.6)}–${fmt(kg * 2.2)} g.`);
         }
+        if (profile.sex) {
+            notes.push("Every plan here works the same for men and women: research finds both build muscle and strength at similar rates, so you don't need a separate \"women's\" or \"men's\" program. Lighter upper-body lifts move up in smaller steps.");
+        }
         if (state.goal === "classic") {
             notes.push(profile.experience === "new"
                 ? "Classic Physique is set to 1 fewer set on accessories while you build up."
@@ -2015,10 +2170,11 @@ function setupPrograms() {
         f.bodyweight.value = profile.bodyweight;
         f.unit.value = profile.unit;
         f.focus.value = profile.focus;
+        if (f.sex) f.sex.value = profile.sex;
         els.profileForm.addEventListener("submit", (e) => e.preventDefault());
         els.profileForm.addEventListener("change", () => {
             const old = getProfile();
-            const next = { ...old, experience: f.experience.value, bodyweight: f.bodyweight.value, unit: f.unit.value, focus: f.focus.value };
+            const next = { ...old, experience: f.experience.value, bodyweight: f.bodyweight.value, unit: f.unit.value, focus: f.focus.value, sex: f.sex ? f.sex.value : old.sex };
             // Switching units converts the bodyweight you typed
             if (old.unit !== next.unit && next.bodyweight) {
                 next.bodyweight = trimNum(Math.round(toUnit(Number(next.bodyweight), old.unit, next.unit) * 10) / 10);
@@ -2925,6 +3081,12 @@ function setupTools() {
     if (!els.calForm || !els.rmForm || !els.plateForm) return; // not on the Tools page
 
     let unit = store.get("gu-unit") === "kg" ? "kg" : "lb";
+    // Fill in what "Make it yours" already knows
+    const known = store.get(PROFILE_KEY, {}) || {};
+    if (known.sex) {
+        const r = els.calForm.querySelector(`input[name="sex"][value="${known.sex}"]`);
+        if (r) r.checked = true;
+    }
     const num = (el) => (el.value === "" ? NaN : Number(el.value));
     const roundTo = (n, step) => Math.round(n / step) * step;
     const trim = (n) => String(Math.round(n * 100) / 100);

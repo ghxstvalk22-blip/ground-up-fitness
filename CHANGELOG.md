@@ -8,6 +8,7 @@ Newest changes first. Each daily update adds an entry here.
 - **Cardio:** a new Cardio plan, more cardio exercises, and a cardio log (minutes, distance, pace) that counts toward the 150 minutes a week health guidelines recommend.
 - **My progress page:** pick "strength" or "endurance" and it projects where each lift should go next, with charts for lifts, cardio, and bodyweight.
 - **Plans change every month too:** training runs in 4-week waves (Build, Push, Heavy, Recover) based on research showing planned variation beats doing the same thing every week.
+- **For men and women:** two new plans anyone can use, **Glutes & legs focus** and **Upper body focus** (3 or 4 days), plus two new glute exercises. "Make it yours" has an optional sex setting that fills in the calorie estimator. Lighter upper-body lifts now go up in smaller steps (2.5 lb instead of 5), which matters most for newer lifters. A new Gym basics answer explains, with a research link, why men and women can follow the same plans.
 - **Rewards:** beating your best lift or cardio session pops up a "New personal record" message, your weekly streak (2+ active days a week) is counted, and 12 milestones can be earned on My progress.
 
 ## 2026-10-12 (overnight, continued)

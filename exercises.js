@@ -210,6 +210,22 @@ const EXERCISES = {
         mistakes: ["Hips twisting.", "Pushing through your toes."],
         easier: "Two-leg glute bridge", harder: "Single-leg hip thrust off a bench"
     },
+    "Hip abduction machine": {
+        m: "Glutes (side), hips", eq: "Hip abduction machine",
+        setup: "Sit with your back against the pad and the outside of your knees against the leg pads. Pick a weight you can move smoothly.",
+        steps: ["Push your knees out as far as is comfortable.", "Pause for a second at the widest point.", "Bring your legs back in slowly, without letting the weights touch.", "Leaning forward a little shifts more of the work to your glutes."],
+        tip: "Slow and controlled beats heavy here. Feel the side of your hips doing the work.",
+        mistakes: ["Letting the weight slam back together.", "Using momentum to bounce your knees out."],
+        easier: "Lighter weight or a smaller range", harder: "Pause for 3 seconds at the widest point"
+    },
+    "Cable glute kickback": {
+        m: "Glutes", eq: "Cable machine with an ankle strap",
+        setup: "Put the ankle strap on one leg and face the cable machine. Hold the frame, hinge forward slightly, and keep a soft bend in your standing knee.",
+        steps: ["Push the strapped leg back and slightly up, leading with your heel.", "Squeeze your glute at the end without arching your lower back.", "Bring the leg forward slowly.", "Finish all reps on one side, then switch."],
+        tip: "Think \"push the floor away behind you,\" not \"swing the leg up.\"",
+        mistakes: ["Arching your lower back to get the leg higher.", "Swinging the weight with momentum."],
+        easier: "Donkey kicks on your hands and knees with no weight", harder: "Pause for 2 seconds at the top"
+    },
     "Hamstring curl machine": {
         m: "Hamstrings", eq: "Seated or lying leg curl machine",
         setup: "Adjust the machine so your knees line up with its pivot and the pad sits just above your heels.",
@@ -919,6 +935,7 @@ const EXERCISE_FAMILIES = [
     ["Walking lunge", "Reverse lunge", "Bulgarian split squat", "Step-up", "Split squat"],
     ["Romanian deadlift", "Dumbbell Romanian deadlift", "Back extension", "Cable pull-through"],
     ["Glute bridge", "Hip thrust", "Single-leg glute bridge", "Cable pull-through"],
+    ["Hip abduction machine", "Cable glute kickback", "Single-leg glute bridge"],
     ["Hamstring curl machine", "Seated hamstring curl", "Lying hamstring curl", "Stability ball leg curl"],
     ["Standing calf raise", "Seated calf raise", "Leg press calf raise", "Single-leg calf raise"],
     // Chest
