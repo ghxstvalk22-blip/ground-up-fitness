@@ -207,6 +207,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator(".badge-you", { hasText: "fewer" }).count() > 0, "newer lifters get fewer accessory sets");
 
             check(await page.locator(".day-card.is-next").count() === 1, "the next unfinished day is marked Up next");
+            check(/today's workout/.test(await page.locator("#jump-today").textContent()) && await page.locator("#jump-today").isVisible(), "a button jumps to today's workout");
 
             // Home and dumbbell plans never rotate into equipment they don't have, over 30 weeks
             const kitProblems = await page.evaluate(() => {

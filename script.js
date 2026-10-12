@@ -1321,6 +1321,8 @@ function setupPrograms() {
     const currentWeek = () => Math.max(1, weekOf(programStart(state.goal)));
     let lineups = []; // what's on screen, per day
     let firstTipShown = new Set();
+    // Plan details start open on big screens, folded on phones so the workout is closer
+    let planDetailsOpen = window.matchMedia("(min-width: 761px)").matches;
 
     function render({ syncUrl = false } = {}) {
         const p = PROGRAMS[state.goal];
@@ -1348,12 +1350,16 @@ function setupPrograms() {
                 <h3>${escapeHtml(p.name)} &middot; ${state.days} days</h3>
                 <p>${escapeHtml(p.summary)}</p>
             </div>
-            <dl class="program-meta">
-                <div><dt>Schedule</dt><dd>${escapeHtml(plan.schedule)}</dd></div>
-                <div><dt>Session</dt><dd>${escapeHtml(p.session)}</dd></div>
-                <div><dt>How hard</dt><dd>${escapeHtml(p.effort)}</dd></div>
-                <div><dt>Progress by</dt><dd>${escapeHtml(p.progression)}</dd></div>
-            </dl>`;
+            <details class="plan-details"${planDetailsOpen ? " open" : ""}>
+                <summary>How this plan works</summary>
+                <dl class="program-meta">
+                    <div><dt>Schedule</dt><dd>${escapeHtml(plan.schedule)}</dd></div>
+                    <div><dt>Session</dt><dd>${escapeHtml(p.session)}</dd></div>
+                    <div><dt>How hard</dt><dd>${escapeHtml(p.effort)}</dd></div>
+                    <div><dt>Progress by</dt><dd>${escapeHtml(p.progression)}</dd></div>
+                </dl>
+            </details>`;
+        els.head.querySelector(".plan-details").addEventListener("toggle", (e) => { planDetailsOpen = e.target.open; });
 
         // Week bar
         const start = programStart(state.goal);
@@ -1499,7 +1505,14 @@ function setupPrograms() {
             card.classList.toggle("is-next", isNext);
             const tag = card.querySelector(".day-status");
             if (tag) tag.textContent = complete ? "Done" : isNext ? "Up next" : "";
+            if (isNext) card.id = "up-next"; else if (card.id === "up-next") card.removeAttribute("id");
         });
+        const jump = document.getElementById("jump-today");
+        if (jump) {
+            const next = els.grid.querySelector(".day-card.is-next");
+            jump.hidden = !next;
+            if (next) jump.textContent = `Today's workout: Day ${Number(next.dataset.day) + 1}`;
+        }
     }
 
     /* ----- Events ----- */
@@ -1577,6 +1590,15 @@ function setupPrograms() {
         if (row) row.classList.add("just-saved");
         const btn = els.grid.querySelector(`[data-log="${slot}"]`);
         if (btn) btn.focus();
+    });
+
+    const jumpToday = document.getElementById("jump-today");
+    if (jumpToday) jumpToday.addEventListener("click", () => {
+        const next = els.grid.querySelector(".day-card.is-next");
+        if (!next) return;
+        next.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+        next.setAttribute("tabindex", "-1");
+        next.focus({ preventScroll: true });
     });
 
     const printBtn = document.getElementById("print-week");
