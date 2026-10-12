@@ -2,6 +2,14 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (A clearer front cover)
+
+- The front cover keeps its photo and big headline, but now gets people going in one tap. **What do you want to do?** offers six choices (Brand new, Lose fat, Build muscle, Get stronger, Train at home, Not sure?) that open the right plan or guide.
+- **Or just ask the Fitness Coach:** a box right on the cover. Type something like "legs, 30 minutes" and the coach opens with the answer.
+- On computers the headline sits on the left and the choices on the right, so everything fits on the first screen. On phones they stack, with big tap targets.
+- Returning visitors still get their **Continue** button at the top. The plan and how-to counts moved to the strip under the cover.
+- Works the same in the phone app added to the home screen; it picks up the change on the next open.
+
 ## 2026-10-12 (Fitness Coach AI costs less)
 
 - Fitness Coach now uses Claude Haiku, Anthropic's low-cost model: about a twentieth of a cent per answer instead of about a cent. Its instructions now tell it to answer exactly what was asked first, stick to well-established advice, say so when something depends on the person, and keep answers focused. It also sends less of the past conversation with each question, which saves more.

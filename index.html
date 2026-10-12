@@ -24,9 +24,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261012-12">
-    <script src="exercises.js?v=20261012-12" defer></script>
-    <script src="script.js?v=20261012-12" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261012-13">
+    <script src="exercises.js?v=20261012-13" defer></script>
+    <script src="script.js?v=20261012-13" defer></script>
 </head>
 
 <body data-page="home">
@@ -41,24 +41,38 @@
                  https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=70&w=2600 2600w"
          sizes="100vw" alt="" aria-hidden="true" fetchpriority="high">
     <div class="hero-inner">
-        <p class="eyebrow">Free plans &middot; No sign-up &middot; Beginners welcome</p>
+        <div class="hero-copy">
+        <p class="eyebrow">Free &middot; No sign-up &middot; Made for beginners</p>
         <h1>Nobody walks in <span class="hl">ready.</span></h1>
-        <p class="hero-lede">Workout plans that tell you exactly what to do, how to do it, and what to lift next time. Built for your first day at the gym, and your hundredth.</p>
-        <div class="hero-actions">
-            <a class="btn btn-light" href="#get-plan">Get my free plan</a>
-            <a class="btn btn-outline-light" href="start.html">I've never lifted before</a>
+        <p class="hero-lede">Pick what you want. We'll show you exactly what to do, how to do it, and what to lift next time.</p>
+        <div class="hero-actions"></div>
         </div>
-        <ul class="hero-stats">
-            <li><strong data-stat="goals">4</strong> programs</li>
-            <li><strong data-stat="plans">8</strong> ready-made plans</li>
-            <li><strong data-stat="exercises">60</strong> exercises with how-tos</li>
-        </ul>
+        <div class="hero-pick">
+        <nav class="hero-goals" aria-label="Pick your goal">
+            <p class="hero-label" id="hero-goals-label">What do you want to do?</p>
+            <ul aria-labelledby="hero-goals-label">
+                <li><a href="start.html#path-new"><strong>Brand new</strong><span>Never lifted before</span></a></li>
+                <li><a href="programs.html#program-fatloss"><strong>Lose fat</strong><span>Keep your muscle</span></a></li>
+                <li><a href="programs.html#program-build"><strong>Build muscle</strong><span>3 days a week</span></a></li>
+                <li><a href="programs.html#program-strength"><strong>Get stronger</strong><span>Squat, bench, deadlift</span></a></li>
+                <li><a href="programs.html#program-home"><strong>Train at home</strong><span>No equipment</span></a></li>
+                <li><a href="#get-plan"><strong>Not sure?</strong><span>Answer 2 quick questions</span></a></li>
+            </ul>
+        </nav>
+        <form class="hero-ask" id="hero-ask" autocomplete="off">
+            <label for="hero-ask-input" class="hero-label">Or just ask the Fitness Coach</label>
+            <div class="hero-ask-row">
+                <input id="hero-ask-input" type="text" maxlength="200" placeholder="e.g. legs, 30 minutes" enterkeyhint="send">
+                <button type="submit" class="btn btn-light">Ask</button>
+            </div>
+        </form>
+        </div>
     </div>
     <ul class="promise-strip" aria-label="What you get">
         <li><strong>Free</strong> No sign-up, no paywall</li>
-        <li><strong>Step by step</strong> A how-to for every exercise</li>
-        <li><strong>Built in</strong> Rest timer and workout log</li>
-        <li><strong>Personal</strong> Targets based on what you lift</li>
+        <li><strong><span data-stat="plans">8</span> plans</strong> For every goal and level</li>
+        <li><strong><span data-stat="exercises">60</span> how-tos</strong> Tap any exercise to learn it</li>
+        <li><strong>Your coach</strong> Ask anything, get a workout</li>
     </ul>
 </section>
 

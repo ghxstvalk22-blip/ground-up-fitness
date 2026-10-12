@@ -167,6 +167,19 @@ async function openPage(browser, file, viewport, hash = "") {
             const { page, errors } = await openPage(browser, "index.html", viewport);
             check(Number(await page.locator('[data-stat="plans"]').textContent()) >= 8, "hero stats count the plans");
             check(await page.locator(".ticker").count() === 0 && await page.locator(".promise-strip li").count() === 4, "no moving ticker; calm promise strip instead");
+            // The cover: one-tap goals and a box that asks the Fitness Coach
+            const goalLinks = await page.locator(".hero-goals a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+            check(goalLinks.length === 6 && goalLinks.includes("programs.html#program-fatloss") && await page.locator(".hero-goals a").first().isVisible(), "the cover offers one-tap goals");
+            const coverFits = await page.evaluate(() => { const r = document.querySelector(".hero-ask").getBoundingClientRect(); return r.bottom <= document.querySelector(".hero").getBoundingClientRect().bottom + 1; });
+            check(coverFits, "the ask box sits inside the cover");
+            await page.fill("#hero-ask-input", "chest and triceps, 30 minutes");
+            await page.press("#hero-ask-input", "Enter");
+            await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
+            await page.waitForTimeout(300);
+            check(await page.locator("#coach").isVisible() && /Chest & Triceps/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "asking from the cover opens the Fitness Coach with an answer");
+            await page.click("#coach-clear");
+            await page.click("#coach-close");
+            await page.evaluate(() => ["gu-coach-history", "gu-coach-state", "gu-coach-open"].forEach((k) => localStorage.removeItem(k)));
             await page.locator('#quickstart input[value="build"]').check({ force: true });
             check(await page.locator('#qs-days input').count() === 1, "quick start only offers the days a plan has");
             await Promise.all([page.waitForNavigation(), page.locator(".qs-go").click()]);
@@ -438,6 +451,10 @@ async function openPage(browser, file, viewport, hash = "") {
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);
             await page.evaluate(() => { localStorage.removeItem("gu-custom"); localStorage.removeItem("gu-level"); });
+            // On phones the coach button steps aside while the cover's ask box is showing; it's back once you scroll
+            check(viewport.width > 760 || !(await page.locator("#coach-fab").isVisible()), "on phones the coach button hides behind the cover's own ask box");
+            await page.evaluate(() => window.scrollTo(0, document.querySelector("#get-plan").offsetTop));
+            await page.waitForTimeout(200);
             await page.click("#coach-fab");
             check(await page.locator("#coach").isVisible() && /Fitness Coach/.test(await page.locator("#coach-title").textContent()), "the Fitness Coach button opens the chat");
             await page.fill("#coach-input", "legs");
@@ -537,7 +554,7 @@ async function openPage(browser, file, viewport, hash = "") {
                 await new Promise((res) => setTimeout(res, 300));
                 return r.fulfill({ headers: { "Access-Control-Allow-Origin": "*" }, contentType: "application/json", body: JSON.stringify({ text }) });
             });
-            await page.goto(url("index.html"), { waitUntil: "load" });
+            await page.goto(url("tools.html"), { waitUntil: "load" });
             await page.evaluate(() => { saveSession("Squat secret", "2026-10-01", "lb", [{ w: 999, r: 1 }]); });
             await page.click("#coach-fab");
             check(/Ask anything/.test(await page.locator(".coach-head p").textContent()) && /Claude, an AI made by Anthropic/.test(await page.locator(".coach-log").textContent()), "with AI on, Coach says answers come from Claude and what is sent");

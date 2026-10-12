@@ -3641,6 +3641,15 @@ function setupCoach() {
         setTimeout(() => { location.assign(`programs.html?w=${Date.now()}#program-custom-1`); }, 350);
     }
 
+    // Questions typed somewhere else on the page (like the home page cover)
+    window.addEventListener("coach-ask", (e) => {
+        const text = String((e.detail && e.detail.text) || "").trim().slice(0, 200);
+        if (!text) return;
+        if (panel.hidden) open(false);
+        say(`<p>${escapeHtml(text)}</p>`, "you");
+        think(text);
+        if (!phone()) input.focus();
+    });
     fab.addEventListener("click", () => (panel.hidden ? open() : close()));
     document.getElementById("coach-close").addEventListener("click", close);
     panel.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
@@ -4849,6 +4858,21 @@ function setupHero() {
             if (PROGRAMS[goal()]) navigate(`programs.html#program-${goal()}-${days}`);
         });
         renderDays();
+    }
+
+    // The cover's "Ask the Fitness Coach" box hands the question to the coach
+    const ask = document.getElementById("hero-ask");
+    if (ask) ask.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("hero-ask-input");
+        const text = input.value.trim();
+        if (!text) { input.focus(); return; }
+        input.value = "";
+        window.dispatchEvent(new CustomEvent("coach-ask", { detail: { text } }));
+    });
+
+    if (ask && "IntersectionObserver" in window) {
+        new IntersectionObserver((entries) => entries.forEach((en) => document.body.classList.toggle("hero-ask-visible", en.isIntersecting)), { threshold: 0.2 }).observe(ask);
     }
 
     // Returning visitors get a shortcut back to their plan
