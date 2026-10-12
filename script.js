@@ -42,6 +42,7 @@ const FEATURES = [
     setupHero,
     setupChecklists,
     setupRestTimer,
+    setupLibrary,
     setupTools,
     setupContactForm,
     setupLinks,      // keep after features that add routes
@@ -63,6 +64,17 @@ const SITE_NAV = [
         ["Gym words, decoded", "Sets, reps, failure, deload, and more", "start.html#glossary"]
     ] },
     { label: "Programs", href: "programs.html", page: "programs", items: "programs" },
+    { label: "Exercises", href: "exercises.html", page: "exercises", items: [
+        ["Exercise library", "Every exercise, with form guides and demos", "exercises.html"],
+        "divider",
+        ["Legs", "Squats, lunges, hinges, calves", "exercises.html#legs"],
+        ["Chest", "Presses and flys", "exercises.html#chest"],
+        ["Back", "Pulldowns, pull-ups, rows", "exercises.html#back"],
+        ["Shoulders", "Presses and raises", "exercises.html#shoulders"],
+        ["Arms", "Curls and triceps", "exercises.html#arms"],
+        ["Core", "Planks, carries, crunches", "exercises.html#core"],
+        ["Cardio", "Intervals and steady work", "exercises.html#cardio"]
+    ] },
     { label: "Pros", href: "pros.html", page: "pros", items: [
         ["Train like a pro", "Six habits every champion shares", "pros.html"],
         ["Learn from the pros", "Olympia champions and record holders", "pros.html#pro-links"],
@@ -224,6 +236,7 @@ function setupLayout() {
         <nav class="footer-nav" aria-label="Footer">
             <a href="start.html">Start here</a>
             <a href="programs.html">Programs</a>
+            <a href="exercises.html">Exercise library</a>
             <a href="pros.html">Train like a pro</a>
             <a href="tools.html">Tools</a>
             <a href="basics.html">Gym basics</a>
@@ -269,7 +282,10 @@ function setupTheme() {
             : window.matchMedia("(prefers-color-scheme: dark)").matches;
 
     const updateLabel = () => {
-        button.textContent = isDark() ? "Light mode" : "Dark mode";
+        // A sun or moon keeps the header compact; the label says what it does
+        button.innerHTML = isDark() ? '<span aria-hidden="true">&#9728;</span>' : '<span aria-hidden="true">&#9790;</span>';
+        button.setAttribute("aria-label", isDark() ? "Switch to light mode" : "Switch to dark mode");
+        button.title = isDark() ? "Light mode" : "Dark mode";
         button.setAttribute("aria-pressed", String(isDark()));
     };
 
@@ -1523,6 +1539,70 @@ function setupRestTimer() {
         tick = null;
         box.hidden = true;
     });
+}
+
+/* =========================================================
+   FEATURE: Exercise library page
+   Search and filter every exercise; links like exercises.html#back
+   open with that muscle picked.
+   ========================================================= */
+function libraryGroup(name) {
+    const x = EXERCISES[name];
+    const m = x.m.split(",")[0].toLowerCase();
+    if (/heart|lungs/.test(x.m.toLowerCase()) || name === "Stretching or mobility") return "cardio";
+    if (/core|abs|oblique/.test(m) || /carry/i.test(name)) return "core";
+    return muscleGroup(name) || "core";
+}
+
+function setupLibrary() {
+    const grid = document.getElementById("library-grid");
+    if (!grid || typeof EXERCISES !== "object") return;
+    const search = document.getElementById("library-search");
+    const count = document.getElementById("library-count");
+    const radios = [...document.querySelectorAll('input[name="muscle"]')];
+    const names = Object.keys(EXERCISES).sort((a, b) => a.localeCompare(b));
+    const group = Object.fromEntries(names.map((n) => [n, libraryGroup(n)]));
+    const label = { legs: "Legs", chest: "Chest", back: "Back", shoulders: "Shoulders", arms: "Arms", core: "Core", cardio: "Cardio" };
+
+    function render() {
+        const q = search.value.trim().toLowerCase();
+        const muscle = (radios.find((r) => r.checked) || {}).value || "";
+        const shown = names.filter((n) => (!muscle || group[n] === muscle)
+            && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq}`.toLowerCase().includes(q)));
+        count.textContent = shown.length
+            ? `${shown.length} exercise${shown.length === 1 ? "" : "s"}${muscle ? ` for ${label[muscle].toLowerCase()}` : ""}`
+            : `No exercises match "${search.value}". Try a simpler word, like press or row.`;
+        grid.innerHTML = shown.map((n) => {
+            const x = EXERCISES[n];
+            return `
+                <li class="library-card">
+                    <span class="library-tag">${label[group[n]]}</span>
+                    <h3>${escapeHtml(n)}</h3>
+                    <p class="library-muscles">${escapeHtml(x.m)}</p>
+                    <p class="library-eq">${escapeHtml(x.eq)}</p>
+                    <p class="library-tip">${escapeHtml(x.tip)}</p>
+                    <button type="button" class="btn btn-small" data-howto="${escapeHtml(n)}">How to do it</button>
+                </li>`;
+        }).join("");
+    }
+
+    search.addEventListener("input", render);
+    radios.forEach((r) => r.addEventListener("change", () => {
+        history.replaceState(null, "", r.value ? `#${r.value}` : location.pathname);
+        render();
+    }));
+    // exercises.html#back opens with Back picked
+    radios.forEach((r) => {
+        addRoute(new RegExp(`^#${r.value || "all"}$`), () => {
+            r.checked = true;
+            render();
+            return { target: document.getElementById("library") };
+        });
+    });
+    const fromHash = location.hash.slice(1);
+    const match = radios.find((r) => r.value && r.value === fromHash);
+    if (match) match.checked = true;
+    render();
 }
 
 /* =========================================================

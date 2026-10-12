@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Exercise library | Ground Up Fitness</title>
+    <meta name="description" content="Every exercise on the site with step-by-step form, common mistakes, easier and harder versions, and a demo.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="exercises.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+
+<body data-page="exercises">
+<a class="skip-link" href="#main">Skip to content</a>
+<div id="site-header"><noscript><nav class="noscript-nav"><a href="index.html">Home</a> <a href="start.html">Start here</a> <a href="programs.html">Programs</a> <a href="pros.html">Pros</a> <a href="tools.html">Tools</a> <a href="basics.html">Gym basics</a> <a href="contact.html">Contact</a></nav></noscript></div>
+
+<header class="page-banner has-photo">
+    <img class="banner-photo" src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&q=70&w=1600" srcset="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&q=70&w=800 800w, https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&q=70&w=1600 1600w, https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&q=70&w=2400 2400w" sizes="100vw" alt="" aria-hidden="true" decoding="async">
+    <div class="page-banner-inner">
+        <p class="eyebrow">Stuck on a movement?</p>
+        <h1>Exercise library</h1>
+        <p class="page-banner-lede">Every exercise on the site, with setup, step-by-step form, the mistakes to avoid, and a demo. Search by name or pick a muscle.</p>
+    </div>
+</header>
+
+<main id="main">
+    <section id="library" class="block">
+        <div class="container wide">
+            <div class="library-tools">
+                <div class="library-search">
+                    <label for="library-search">Search exercises</label>
+                    <input id="library-search" type="search" placeholder="Try squat, curl, or cable" autocomplete="off">
+                </div>
+                <fieldset class="segmented compact library-filter" id="library-filter">
+                    <legend>Muscle</legend>
+                    <label><input type="radio" name="muscle" value="" checked><span>All</span></label>
+                    <label><input type="radio" name="muscle" value="legs"><span>Legs</span></label>
+                    <label><input type="radio" name="muscle" value="chest"><span>Chest</span></label>
+                    <label><input type="radio" name="muscle" value="back"><span>Back</span></label>
+                    <label><input type="radio" name="muscle" value="shoulders"><span>Shoulders</span></label>
+                    <label><input type="radio" name="muscle" value="arms"><span>Arms</span></label>
+                    <label><input type="radio" name="muscle" value="core"><span>Core</span></label>
+                    <label><input type="radio" name="muscle" value="cardio"><span>Cardio</span></label>
+                </fieldset>
+            </div>
+            <p class="library-count" id="library-count" role="status"></p>
+            <ul class="library-grid" id="library-grid"></ul>
+        </div>
+    </section>
+</main>
+
+<div id="site-footer"></div>
+</body>
+</html>

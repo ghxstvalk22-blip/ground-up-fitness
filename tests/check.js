@@ -25,7 +25,7 @@ function findChromium() {
 }
 
 const ROOT = path.resolve(__dirname, "..");
-const PAGES = ["index.html", "start.html", "programs.html", "pros.html", "tools.html", "basics.html", "contact.html"];
+const PAGES = ["index.html", "start.html", "programs.html", "exercises.html", "pros.html", "tools.html", "basics.html", "contact.html"];
 const url = (file, hash = "") => "file://" + path.join(ROOT, file) + hash;
 const SHOTS = path.join(__dirname, "screenshots");
 const failures = [];
@@ -37,7 +37,7 @@ for (const f of PAGES) {
     idsByPage[f] = new Set([...fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
 }
 // Addresses handled by the router instead of a plain id
-const ROUTES = { "programs.html": /^program-[a-z]+(-\d)?$/, "contact.html": /^contact-[a-z]+$/ };
+const ROUTES = { "programs.html": /^program-[a-z]+(-\d)?$/, "contact.html": /^contact-[a-z]+$/, "exercises.html": /^(legs|chest|back|shoulders|arms|core|cardio)$/ };
 
 function linkProblem(href, fromPage) {
     if (/^(https?:|mailto:)/.test(href)) return null;
@@ -50,8 +50,18 @@ function linkProblem(href, fromPage) {
     return `${href} (no #${hash} on ${target})`;
 }
 
+// The test machine can't reach Google Fonts, so serve the same Archivo font from npm.
+// That way the layout is checked with the real font widths, not a fallback.
+const FONT_FILE = path.join(ROOT, "node_modules/@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2");
+const FONT_CSS = `@font-face{font-family:"Archivo";src:url("https://fonts.local/archivo.woff2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:block;}`;
+
 async function openPage(browser, file, viewport, hash = "") {
     const page = await browser.newPage({ viewport });
+    if (fs.existsSync(FONT_FILE)) {
+        await page.route(/fonts\.googleapis\.com/, (r) => r.fulfill({ contentType: "text/css", body: FONT_CSS }));
+        await page.route(/fonts\.local/, (r) => r.fulfill({ contentType: "font/woff2", body: fs.readFileSync(FONT_FILE) }));
+    }
+    await page.route(/images\.unsplash\.com/, (r) => r.abort());
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => {
@@ -68,7 +78,7 @@ async function openPage(browser, file, viewport, hash = "") {
     fs.mkdirSync(SHOTS, { recursive: true });
     const browser = await chromium.launch({ executablePath: findChromium(), args: ["--headless=new"] });
 
-    for (const [name, viewport] of [["desktop", { width: 1280, height: 900 }], ["phone", { width: 390, height: 844 }]]) {
+    for (const [name, viewport] of [["desktop", { width: 1280, height: 900 }], ["laptop", { width: 1100, height: 800 }], ["phone", { width: 390, height: 844 }]]) {
         console.log(`\n=== ${name} (${viewport.width}px) ===`);
 
         // Checks every page gets
@@ -78,6 +88,11 @@ async function openPage(browser, file, viewport, hash = "") {
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             check(await page.locator(".site-header #site-nav").count() === 1, "shared header is built");
             check(await page.locator(".site-footer").count() === 1, "shared footer is built");
+            const headerFits = await page.evaluate(() => {
+                const inner = document.querySelector(".header-inner");
+                return [...inner.children].every((el) => el.offsetParent === null || el.getBoundingClientRect().right <= window.innerWidth + 1);
+            });
+            check(headerFits, "header fits on screen");
             const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
             check(overflow <= 0, `no sideways scrolling (overflow ${overflow}px)`);
             const hrefs = await page.evaluate(() => [...document.querySelectorAll("a[href]")].map((a) => a.getAttribute("href")));
@@ -108,7 +123,7 @@ async function openPage(browser, file, viewport, hash = "") {
         // Menu: clicking a tab opens that page
         {
             const { page } = await openPage(browser, "index.html", viewport);
-            if (viewport.width <= 1080) await page.locator(".menu-toggle").click();
+            if (await page.locator(".menu-toggle").isVisible()) await page.locator(".menu-toggle").click();
             await Promise.all([page.waitForNavigation(), page.locator('#site-nav .nav-link[href="tools.html"]').click()]);
             check(page.url().endsWith("tools.html"), "clicking the Tools tab opens tools.html");
             await page.close();
@@ -212,6 +227,21 @@ async function openPage(browser, file, viewport, hash = "") {
             check((await page.locator("#rm-results .result-value").textContent().catch(() => "")).startsWith("215"), "one-rep max math is right (185 x 5 = 215)");
             await page.fill("#plate-target", "225");
             check((await page.locator(".plate-list").textContent().catch(() => "")).includes("45 + 45"), "plate loader math is right (225 = 45 + 45 per side)");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Exercise library: search, filter, and how-to
+        {
+            const { page, errors } = await openPage(browser, "exercises.html", viewport, "#back");
+            const backCount = await page.locator(".library-card").count();
+            check(backCount >= 8 && await page.locator('input[name="muscle"][value="back"]').isChecked(), `exercises.html#back opens with Back picked (${backCount} exercises)`);
+            await page.locator('input[name="muscle"][value=""]').check({ force: true });
+            check(await page.locator(".library-card").count() >= 90, "the library lists every exercise");
+            await page.fill("#library-search", "split squat");
+            check(await page.locator(".library-card").count() >= 2, "searching finds exercises");
+            await page.locator(".library-card [data-howto]").first().click();
+            check(await page.locator("#howto[open]").count() === 1, "How to works from the library");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }
