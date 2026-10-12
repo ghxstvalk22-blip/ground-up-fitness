@@ -9,12 +9,10 @@ Owner priorities (2026-10-12): more workout plans, more ways to move around the 
 actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFYNE / Gold's Gym style.
 
 - [ ] New program "Build muscle" (hypertrophy) for 3 days a week: a gentler full-body muscle plan for people who aren't ready for the 4- and 5-day Classic Physique split. Add its radio button, quick-start tile, home program tile, and use exercises that are already in `exercises.js` (or add guides for new ones).
-- [ ] Program links inside content: in the Gym basics answers, link to the specific plan, tool, or exercise guide that fits (for example the protein answer links to the calorie estimator).
 - [ ] Pro principles deep dives: turn each of the six "Train like a pro" habits into a short expandable guide with practical steps for beginners.
 
 ## Ideas
 
-- [ ] Printable view of the current week's plan (clean black-and-white layout to take to the gym).
 - [ ] Protein food guide: common foods and roughly how much protein a typical serving has.
 - [ ] Import a downloaded workout log (CSV) so people can move to a new phone. Export already exists.
 - [ ] Deload week: a button on the Programs page that shows a lighter week (about half the sets) for when someone feels run down.
@@ -26,6 +24,7 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 ## Done
 
+- [x] 2026-10-12 (overnight): link previews and a site icon for sharing; Gym basics answers link to the right plan, tool, or guide; "Print this week" gives a two-column gym sheet with blanks to write in sets.
 - [x] 2026-10-12 (overnight): "Where to next?" row at the bottom of every page (set in `NEXT_STEPS` in script.js).
 - [x] 2026-10-12 (overnight): three new plans: No gym needed (home, bodyweight, 3 days), Short on time (2 days), and Dumbbells only (3 or 4 days). Home and dumbbell plans only rotate into exercises their equipment allows. 6 new exercise guides (103 total).
 - [x] 2026-10-12 (overnight): weight trend tracker on the Tools page (7-day average, weekly change, gentle caution on fast loss).

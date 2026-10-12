@@ -1579,6 +1579,9 @@ function setupPrograms() {
         if (btn) btn.focus();
     });
 
+    const printBtn = document.getElementById("print-week");
+    if (printBtn) printBtn.addEventListener("click", () => window.print());
+
     els.reset.addEventListener("click", () => {
         store.remove(progressKey());
         render();

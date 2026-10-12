@@ -2045,6 +2045,38 @@ select, input, textarea {
     color: var(--muted);
 }
 
+.progress-buttons { display: inline-flex; flex-wrap: wrap; gap: 6px 18px; }
+
+/* ---------- Printing ----------
+   "Print this week" on the Programs page gives a clean black-and-white
+   sheet: the plan header and the day cards, nothing else. */
+@media print {
+    :root, :root[data-theme="dark"] { --paper: #ffffff; --surface: #ffffff; --ink: #000000; --muted: #333333; --line: #bbbbbb; --accent: #000000; }
+    body { font-size: 11pt; background: #ffffff; }
+    .site-header, .site-footer, .next-steps, .page-banner, .controls, .profile-panel, .why-rotate,
+    .warmup-note, .week-progress, .ex-actions, .log-form, .ex-target, .my-progress, .rest-timer,
+    .skip-link, .ticker, #jump, #howto { display: none !important; }
+    body { font-size: 9.5pt; line-height: 1.35; }
+    .block { padding: 0; }
+    .container.wide { max-width: none; padding: 0; }
+    .program-head { display: block; margin-bottom: 6pt; }
+    .program-head h3 { font-size: 16pt; margin: 0; }
+    .program-head p, .program-meta, .week-variety, .day-status, .ex-badges, .ex-swap { display: none !important; }
+    .week-bar { display: block; background: #ffffff; color: #000000; border: 0; padding: 0; margin: 0 0 8pt; }
+    .week-info strong { font-size: 11pt; }
+    .week-step, #week-today { display: none !important; }
+    .day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; }
+    .day-card { break-inside: avoid; border: 1px solid #000000; padding: 8pt; box-shadow: none !important; }
+    .day-card h4 { font-size: 12pt; }
+    .ex-list li { padding: 4pt 0; grid-template-columns: 12pt 1fr; gap: 6pt; }
+    .ex-list li > input[type="checkbox"] { width: 10pt; height: 10pt; }
+    .ex-main::after { content: "Sets:  ______   ______   ______   ______"; margin-top: 3pt; color: #555555; font-size: 8.5pt; letter-spacing: 0.02em; }
+    .rest-btn { color: #000000; text-decoration: none; }
+    .rest-btn span[aria-hidden] { display: none; }
+    .badge { border-color: #000000; color: #000000; background: none; }
+    a { color: #000000; }
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
