@@ -1970,6 +1970,9 @@ function nextTarget(name, dose, unit) {
     const d = parseDose(dose);
     if (d.timed) return null;
     if (!entries.length) {
+        // Fitness Coach workouts can carry a starting weight ("3 × 5 at 230 lb")
+        const start = String(dose).match(/at (?:about )?(\d+(?:\.\d+)?) (lb|kg)/);
+        if (start) return { first: true, text: `First time? Start at about ${trimNum(roundWeight(toUnit(Number(start[1]), start[2], unit), unit))} ${unit}. Log it and you'll get a target next time.` };
         return { first: true, text: `First time? Pick a weight you could do for about 2 more reps than ${d.high}. Log it and you'll get a target next time.` };
     }
     const last = entries[entries.length - 1];
@@ -2787,7 +2790,7 @@ const COACH_COMPOUND = /press|squat|deadlift|row|pull-up|pulldown|lunge|thrust|d
 const COACH_WORDS = ["shoulders", "shoulder", "chest", "triceps", "biceps", "forearms", "hamstrings", "glutes", "calves", "quads",
     "obliques", "abdominals", "trapezius", "deltoids", "quadriceps", "adductors", "workout", "exercise", "exercises", "training",
     "challenging", "challenge", "intermediate", "advanced", "expert", "beginner", "dumbbells", "dumbbell", "bodyweight", "equipment",
-    "minutes", "harder", "easier", "shorter", "longer", "different", "intense", "brutal", "difficult", "toughest", "hardest", "upper", "lower"];
+    "minutes", "harder", "easier", "shorter", "longer", "different", "intense", "brutal", "difficult", "toughest", "hardest", "upper", "lower", "stronger", "strength", "deadlift", "hypertrophy", "endurance", "overhead"];
 const COACH_KEEP = new Set(["gluten", "shorts", "lighter", "letter", "better", "glute", "should", "chests", "bicep", "tricep", "quad", "calf", "advance", "lowest", "upped", "expect", "export", "beginning", "experts", "loser", "lover", "easter", "power"]);
 function coachFixTypos(text) {
     const near = (a, b, max) => {
@@ -2883,7 +2886,7 @@ function coachUnderstand(text) {
     // keep the muscles in the order the person said them
     const order = (g) => { const m = COACH_GROUPS.find(([id]) => id === g); const i = m ? where(m[1]) : -1; return i < 0 ? 999 : i; };
     return { t, groups: [...groups].sort((a, b) => order(a) - order(b)), parts: [...parts], kit, minutes, pain, howto,
-        exclude: [...exclude], level: coachNamedLevel(t), intensity: coachIntensity(t),
+        exclude: [...exclude], level: coachNamedLevel(t), intensity: coachIntensity(t), goal: coachGoal(t), ...coachLiftFocus(t),
         add: /\b(add|also|plus|throw in|include|as well|and some)\b|\btoo\b(?! (hard|easy|long|short|much|heavy))/.test(t),
         title: labels.filter((l) => !dropLabel(l)).sort((a, b) => a.pos - b.pos).map((l) => l.name) };
 }
@@ -2899,12 +2902,22 @@ function coachFindExercise(t) {
     return best;
 }
 
-function coachDose(name, compound, level) {
+function coachDose(name, compound, level, goal) {
     if (/plank|wall sit/i.test(name)) return ["3 × 30–45 s", "45 s"];
     if (/carry/i.test(name)) return ["3 × 40 steps", "60 s"];
     if (/dead bug|bird dog/i.test(name)) return ["3 × 8 per side", "45 s"];
     if (isCardio(name)) return ["10–15 min", ""];
     const per = /single|split squat|lunge|step-up|one-arm|single-arm/i.test(name) ? " per side" : "";
+    // A goal sets the reps: heavy and low for strength, moderate for muscle, light and high for endurance
+    if (goal) {
+        const newer = level === "Beginner", main = compound && COACH_HEAVY.test(name);
+        const g = {
+            strength: main ? (newer ? ["3 × 5", "2–3 min"] : ["4 × 4–6", "3 min"]) : compound ? ["3 × 6–8", "2 min"] : ["3 × 8–12", "90 s"],
+            muscle: compound ? (newer ? ["3 × 8–12", "90 s"] : ["4 × 8–10", "2 min"]) : ["3 × 10–15", "60–90 s"],
+            endurance: compound ? ["3 × 12–15", "60 s"] : ["2 × 15–20", "45 s"]
+        }[goal];
+        return [g[0] + per, g[1]];
+    }
     const table = {
         Beginner: compound ? ["3 × 8–12", "90 s"] : ["2 × 12–15", "60 s"],
         Intermediate: compound ? ["3 × 8–10", "2 min"] : ["3 × 10–15", "60 s"],
@@ -2915,6 +2928,178 @@ function coachDose(name, compound, level) {
 }
 
 // Build a workout for some muscles, a kit ("none", "db", or the full gym), and a time budget
+// What the training is for: "get stronger", "build muscle", "endurance / tone"
+function coachGoal(t) {
+    if (/\b(bigger|heavier|higher|better) (bench|squat|deadlift|lift|lifts|press|total|numbers|max)\b/.test(t)) return "strength";
+    if (/\b(stronger|strength|strong|powerlift(ing|er)?|heavier|max out|1 ?rm|one rep max|pr|prs|personal record|lift more)\b/.test(t)) return "strength";
+    if (/\b(build muscle|bigger|size|grow|growth|hypertrophy|bulk(ing)?|mass|gain muscle|get big|aesthetics?|muscle gain)\b/.test(t)) return "muscle";
+    if (/\b(tone|toned|toning|endurance|definition|more reps|stamina|conditioning|lean out)\b/.test(t)) return "endurance";
+    return null;
+}
+const COACH_GOAL_NAME = { strength: "Get stronger", muscle: "Build muscle", endurance: "Endurance" };
+
+// The big lifts people quote numbers for, most specific first
+const COACH_LIFTS = [
+    [/\bincline (barbell |bench )?(press|bench)(ing)?\b/, "Incline barbell press"],
+    [/\bbench(ing)?( press(ing)?)?\b|\bbp\b/, "Bench press"],
+    [/\bfront squats?\b/, "Front squat"],
+    [/\b(rdls?|romanian deadlifts?)\b/, "Romanian deadlift"],
+    [/\btrap bar deadlifts?\b/, "Trap bar deadlift"],
+    [/\b(back )?squat(s|ting)?\b/, "Back squat"],
+    [/\bdead ?lift(s|ing)?\b|\bdeads\b|\bpull from the floor\b/, "Deadlift"],
+    [/\b(ohp|overhead press(ing)?|military press|strict press)\b/, "Overhead press"],
+    [/\b(barbell|bent[- ]over|pendlay) rows?\b/, "Barbell row"],
+    [/\bhip thrust(s|ing)?\b/, "Hip thrust"],
+    [/\bleg press(ing)?\b/, "Leg press"]
+];
+// What helps each big lift move up
+const COACH_HELPERS = {
+    "Bench press": ["Incline dumbbell press", "Overhead press", "Barbell row", "Skull crusher"],
+    "Incline barbell press": ["Dumbbell bench press", "Seated dumbbell shoulder press", "Chest-supported row", "Triceps pushdown"],
+    "Back squat": ["Romanian deadlift", "Bulgarian split squat", "Leg press", "Plank"],
+    "Front squat": ["Back squat", "Bulgarian split squat", "Leg extension", "Plank"],
+    Deadlift: ["Romanian deadlift", "Barbell row", "Hip thrust", "Back extension"],
+    "Trap bar deadlift": ["Romanian deadlift", "Walking lunge", "Barbell row", "Farmer carry"],
+    "Romanian deadlift": ["Hip thrust", "Lying hamstring curl", "Back extension", "Plank"],
+    "Overhead press": ["Seated dumbbell shoulder press", "Lateral raise", "Pull-up", "Triceps pushdown"],
+    "Barbell row": ["Pull-up", "Chest-supported row", "Face pull", "Hammer curl"],
+    "Hip thrust": ["Romanian deadlift", "Bulgarian split squat", "Cable glute kickback", "Hip abduction machine"],
+    "Leg press": ["Bulgarian split squat", "Leg extension", "Lying hamstring curl", "Standing calf raise"]
+};
+
+// Find lifts and any numbers attached: "I bench 225 for 5", "my squat max is 315", "3x5 at 100kg on deadlift"
+function coachLiftFocus(t) {
+    const found = [];
+    let bare = t;
+    COACH_LIFTS.forEach(([re, name]) => {
+        bare = bare.replace(new RegExp(re.source, "g"), (m, ...a) => {
+            const pos = a[a.length - 2];
+            if (EXERCISES[name]) found.push({ name, pos });
+            return " ".repeat(m.length);
+        });
+    });
+    found.sort((a, b) => a.pos - b.pos);
+    const nums = [];
+    let rest = t;
+    // sets x reps at weight
+    rest = rest.replace(/\b(\d{1,2})\s*[x×]\s*(\d{1,2})\s*(?:@|at|with|of)\s*(\d{2,4}(?:\.\d+)?)\s*(lbs?|pounds?|kgs?|kilos?|kilograms?)?/g, (m, sets, r, w, u, pos) => {
+        nums.push({ w: Number(w), r: Number(r), u, pos }); return " ".repeat(m.length);
+    });
+    for (const m of rest.matchAll(/(\d{2,4}(?:\.\d+)?)\s*(lbs?|pounds?|kgs?|kilos?|kilograms?)?(?:\s*(?:for|x|×|by)\s*(\d{1,2})\b)?/g)) {
+        const after = rest.slice(m.index + m[0].length, m.index + m[0].length + 14);
+        const before = rest.slice(Math.max(0, m.index - 14), m.index);
+        if (/^\s*(min|mins|minutes|m\b|years?|yo\b|y\/o|sec|s\b|%|days?|weeks?|reps?|times a|lbs? (of )?body|pounds? (of )?body)/.test(after)) continue;
+        if (/\b(weigh|weight is|bodyweight( is)?|i'm|i am|age|aged|lose|lost|drop|down)\s*$/.test(before)) continue;
+        let r = m[3] ? Number(m[3]) : null;
+        if (!r) {
+            const near = rest.slice(Math.max(0, m.index - 16), m.index + m[0].length + 16).match(/\b(\d{1,2})\s*reps?\b/);
+            r = near ? Number(near[1]) : 1;
+        }
+        nums.push({ w: Number(m[1]), r, u: m[2], pos: m.index });
+    }
+    const lifts = [];
+    if (found.length) {
+        nums.forEach((n) => {
+            const lift = found.slice().sort((a, b) => Math.abs(a.pos - n.pos) - Math.abs(b.pos - n.pos))[0];
+            const u = /kg|kilo/.test(n.u || "") ? "kg" : /lb|pound/.test(n.u || "") ? "lb" : null;
+            const lbs = u === "kg" ? n.w * 2.20462 : n.w;
+            if (lbs < 20 || lbs > 1500 || n.r < 1 || n.r > 15 || lifts.some((l) => l.name === lift.name)) return;
+            lifts.push({ name: lift.name, w: n.w, r: n.r, u });
+        });
+    }
+    // Is the question about one lift? ("get stronger at bench", "how much should I squat")
+    const other = COACH_GROUPS.some(([, re]) => re.test(bare)) || COACH_COMBOS.some(([re]) => re.test(bare));
+    const asks = /\b(stronger|better|improve|increase|raise|boost|bring up|progress|stuck|plateau(ed)?|how much|what weight|how heavy|how many (sets|reps)|sets and reps|program for|plan for|get my|max|1 ?rm|pr)\b/.test(t);
+    const focus = found.length && !other && (asks || lifts.length) ? found[0].name : null;
+    return { lifts, focus, liftAsk: asks };
+}
+
+/* Numbers people tell Coach ("I bench 225 for 5") are saved on this device as estimated maxes,
+   so every workout after that can show real weights. Checked on the way back in. */
+const MAXES_KEY = "gu-coach-maxes";
+function coachMaxes() {
+    const raw = store.get(MAXES_KEY, {});
+    const out = {};
+    if (raw && typeof raw === "object") Object.keys(raw).forEach((k) => {
+        const v = raw[k];
+        if (EXERCISES[k] && v && Number(v.m) > 0 && Number(v.m) < 2000 && ["lb", "kg"].includes(v.u)) out[k] = { m: Number(v.m), u: v.u, w: Number(v.w) || 0, r: Number(v.r) || 1 };
+    });
+    return out;
+}
+function coachSaveLifts(lifts, unit) {
+    if (!lifts.length) return;
+    const all = coachMaxes();
+    lifts.forEach((l) => { const u = l.u || unit; all[l.name] = { m: Math.round(e1rm(l.w, l.r) * 10) / 10, u, w: l.w, r: l.r }; });
+    store.set(MAXES_KEY, all);
+}
+// Best estimate of someone's max on a lift: what they told Coach, or else their most recent logged session
+function coachKnownMax(name, unit) {
+    const said = coachMaxes()[name];
+    if (said) return { m: toUnit(said.m, said.u, unit), from: "you told me", w: said.w, r: said.r, u: said.u };
+    const entries = typeof logFor === "function" ? logFor(name) : [];
+    const lastEntry = entries[entries.length - 1];
+    if (lastEntry && lastEntry.sets && lastEntry.sets.some((x) => x.w > 0)) return { m: sessionBest(lastEntry, unit), from: "your log" };
+    return null;
+}
+/* Starting guesses for helper lifts, from a big lift we know: [known lift, share of its max, dumbbells?].
+   Typical ratios for people who train these lifts regularly; the card calls them guesses. */
+const COACH_RATIOS = {
+    "Incline barbell press": [["Bench press", 0.8]],
+    "Incline dumbbell press": [["Bench press", 0.32, true]],
+    "Dumbbell bench press": [["Bench press", 0.37, true]],
+    "Overhead press": [["Bench press", 0.62]],
+    "Seated dumbbell shoulder press": [["Overhead press", 0.42, true], ["Bench press", 0.26, true]],
+    "Barbell row": [["Bench press", 0.75], ["Deadlift", 0.5]],
+    "Skull crusher": [["Bench press", 0.33]],
+    "Bench press": [["Incline barbell press", 1.2]],
+    "Front squat": [["Back squat", 0.8]],
+    "Back squat": [["Front squat", 1.2]],
+    "Romanian deadlift": [["Deadlift", 0.7], ["Back squat", 0.75]],
+    "Bulgarian split squat": [["Back squat", 0.22, true]]
+};
+// Put a weight on each lift we have a number for, aiming to finish each set with 1 or 2 reps left
+function coachWeigh(w) {
+    const saidUnit = w.focus && coachMaxes()[w.focus] ? coachMaxes()[w.focus].u : null;
+    const unit = saidUnit || getProfile().unit;
+    const step = unit === "kg" ? 2.5 : 5;
+    w.unit = unit;
+    w.known = [];
+    const loadFor = (m, d, each) => { const st = each ? step / 2.5 * (unit === "kg" ? 1 : 2.5) : step; return Math.max(st, Math.round(m / (1 + (d.high + 1) / 30) / st) * st); };
+    const first = w.items.map((x) => {
+        const d = parseDose(x.d);
+        const max = d.timed ? null : coachKnownMax(x.n, unit);
+        if (!max) return { ...x, w: 0 };
+        w.known.push({ n: x.n, m: max.m, from: max.from });
+        return { ...x, w: loadFor(max.m, d) };
+    });
+    // Then fill in helper lifts from the big lifts we know
+    w.items = first.map((x) => {
+        const d = parseDose(x.d);
+        if (x.w || d.timed || !COACH_RATIOS[x.n]) return x;
+        for (const [from, share, each] of COACH_RATIOS[x.n]) {
+            const max = coachKnownMax(from, unit);
+            if (max) return { ...x, w: loadFor(max.m * share, d, each), guess: true, each: !!each };
+        }
+        return x;
+    });
+    return w;
+}
+// One lift, done right: the lift first with the goal's sets and reps, then what helps it move
+function coachFocusBuild(req, level) {
+    const lift = req.focus, goal = req.goal || "strength";
+    const names = [lift, ...(COACH_HELPERS[lift] || [])].filter((n) => EXERCISES[n] && (!req.kit || kitAllows(req.kit, EXERCISES[n].kit)));
+    const items = names.slice(0, level === "Beginner" ? 4 : 5).map((n, i) => {
+        const [d, rest] = coachDose(n, COACH_COMPOUND.test(n), level, i === 0 ? goal : goal === "strength" ? "muscle" : goal);
+        return { n, d, rest };
+    });
+    const minutes = Math.round(items.reduce((sum, x) => sum + (parseDose(x.d).sets || 3) * 2.5, 0) + 5);
+    return { title: `${lift} focus`, items, minutes, kit: req.kit, bumped: false, level, finisher: null, goal, focus: lift, missing: [] };
+}
+// Build whatever was asked for, then add weights where we know the numbers
+function coachMake(req, level) {
+    return coachWeigh(req.focus ? coachFocusBuild(req, level) : coachBuild(req, level));
+}
+
 // At Advanced and Expert, barbell and bodyweight strength moves come before machines
 const COACH_HEAVY = /^(Back squat|Front squat|Deadlift|Trap bar deadlift|Romanian deadlift|Bench press|Incline barbell press|Barbell row|Pull-up|Overhead press|Hip thrust|Bulgarian split squat|Skull crusher|Barbell curl|EZ-bar curl|Hanging knee raise|Ab wheel rollout|Arnold press|Walking lunge|Standing calf raise|Farmer carry)$/;
 const COACH_MACHINE = /machine|assisted|smith|pec deck/i;
@@ -2923,7 +3108,8 @@ function coachBuild(req, level) {
     const groups = (req.groups.length ? req.groups : ["quads", "chest", "lats", "shoulders", "hamstrings", "abs"]).filter((g) => !(req.exclude || []).includes(g));
     const count = req.minutes ? Math.min(9, Math.max(3, Math.round(req.minutes / 8))) : { Beginner: 5, Intermediate: 6, Advanced: 6, Expert: 7 }[level];
     const strong = levelRank(level) >= levelRank("Advanced");
-    const rank = (n, main) => (strong ? (COACH_HEAVY.test(n) && main ? -2 : 0) + (COACH_MACHINE.test(n) ? 2 : 0) : 0);
+    const pickStrong = strong || req.goal === "strength";
+    const rank = (n, main) => (pickStrong ? (COACH_HEAVY.test(n) && main ? -2 : 0) + (COACH_MACHINE.test(n) ? 2 : 0) : 0);
     const kitOk = (n) => !req.kit || kitAllows(req.kit, EXERCISES[n] && EXERCISES[n].kit);
     const pool = groups.map((gid) => {
         const g = MUSCLE_MAP.find((x) => x.id === gid);
@@ -2951,7 +3137,7 @@ function coachBuild(req, level) {
     }
     // Big lifts first, smaller moves after
     picked.sort((a, b) => Number(COACH_COMPOUND.test(b)) - Number(COACH_COMPOUND.test(a)));
-    let items = picked.map((n) => { const [d, rest] = coachDose(n, COACH_COMPOUND.test(n), level); return { n, d, rest }; });
+    let items = picked.map((n) => { const [d, rest] = coachDose(n, COACH_COMPOUND.test(n), level, req.goal); return { n, d, rest }; });
     // Only a couple of moves fit? Add a set to each so it's still a full session
     const bumped = items.length > 0 && items.length < 4;
     if (bumped) items = items.map((x) => ({ ...x, d: x.d.replace(/^(\d+)/, (s) => String(Math.min(5, Number(s) + 1))) }));
@@ -2966,7 +3152,7 @@ function coachBuild(req, level) {
             || [...items].reverse().find((x) => !parseDose(x.d).timed && (!big || x.n !== big.n));
         finisher = { big: big ? big.n : null, small: small ? small.n : null };
     }
-    return { title: req.groups.length ? title : "Full body", items, minutes, kit: req.kit, bumped, level, finisher,
+    return { title: req.groups.length ? title : "Full body", items, minutes, kit: req.kit, bumped, level, finisher, goal: req.goal || null,
         missing: req.groups.filter((g) => !pool.some((p) => p.gid === g)) };
 }
 
@@ -3044,12 +3230,16 @@ function setupCoach() {
                 title: (s.lastReq.title || []).filter((x) => typeof x === "string").map((x) => x.slice(0, 30)).slice(0, 6),
                 level: LEVELS.includes(s.lastReq.level) ? s.lastReq.level : null,
                 intensity: ["max", "hard", "easy"].includes(s.lastReq.intensity) ? s.lastReq.intensity : null,
-                exclude: (s.lastReq.exclude || []).filter(okGroup)
+                exclude: (s.lastReq.exclude || []).filter(okGroup),
+                goal: COACH_GOAL_NAME[s.lastReq.goal] ? s.lastReq.goal : null,
+                focus: COACH_LIFTS.some(([, n]) => n === s.lastReq.focus) ? s.lastReq.focus : null
             };
         }
         if (s.last && Array.isArray(s.last.items)) {
             const items = s.last.items.filter((x) => x && EXERCISES[x.n]).map((x) => ({ n: x.n, d: String(x.d || "").slice(0, 40), rest: String(x.rest || "").slice(0, 20) }));
-            if (items.length) last = { title: String(s.last.title || "Workout").replace(/[<>]/g, "").slice(0, 60), items, minutes: Number(s.last.minutes) || 30, kit: lastReq ? lastReq.kit : null, bumped: false, missing: [], level: (lastReq && lastReq.level) || getLevel(), finisher: null };
+            if (items.length) last = { title: String(s.last.title || "Workout").replace(/[<>]/g, "").slice(0, 60), items, minutes: Number(s.last.minutes) || 30, kit: lastReq ? lastReq.kit : null, bumped: false, missing: [], level: (lastReq && lastReq.level) || getLevel(), finisher: null,
+                goal: lastReq ? lastReq.goal : null, focus: lastReq ? lastReq.focus : null };
+            if (last) last = coachWeigh(last);
         }
     })();
     const suggest = (list) => { chips.innerHTML = list.map((s) => `<button type="button" class="chip" data-coach-say="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join(""); };
@@ -3086,8 +3276,19 @@ function setupCoach() {
     function workoutCard(w) {
         const lvl = w.level || getLevel();
         const kitNote = w.kit === "none" ? " · no equipment" : w.kit === "db" ? " · dumbbells only" : "";
-        return `<p>Here's your <strong>${escapeHtml(w.title)}</strong> workout: ${w.items.length} exercises, about ${w.minutes} minutes${kitNote}. Set for <strong>${lvl}</strong>.</p>
-            <ol class="coach-workout">${w.items.map((x) => `<li><button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
+        const unit = w.unit || getProfile().unit;
+        const known = w.known || [];
+        // Say back what was understood, so people can see it got their request right
+        const heard = [w.focus || w.title, w.goal ? COACH_GOAL_NAME[w.goal] : "", lvl, kitNote.replace(" · ", ""), ...known.map((k) => `${k.n.toLowerCase()} max about ${trimNum(Math.round(k.m / (unit === "kg" ? 2.5 : 5)) * (unit === "kg" ? 2.5 : 5))} ${unit}`)].filter(Boolean);
+        const weighable = w.items.filter((x) => !parseDose(x.d).timed && EXERCISES[x.n] && EXERCISES[x.n].kit !== "none");
+        const unweighed = weighable.filter((x) => !x.w);
+        const focusStep = w.focus ? weightStep(w.focus, unit) : 0;
+        return `<p class="coach-heard"><span>What I heard</span> ${escapeHtml(heard.join(" · "))}</p>
+            <p>Here's your <strong>${escapeHtml(w.title)}</strong> workout: ${w.items.length} exercises, about ${w.minutes} minutes${kitNote}. Set for <strong>${lvl}</strong>.</p>
+            <ol class="coach-workout">${w.items.map((x) => `<li><button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.w ? ` at <strong>${x.guess ? "about " : ""}${escapeHtml(trimNum(x.w))} ${unit}</strong>${x.each ? " each hand" : ""}` : ""}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
+            ${w.focus ? `<p><strong>How often:</strong> ${escapeHtml(w.focus.toLowerCase())} 2 times a week, with at least 2 days between. <strong>To keep improving:</strong> when you get the top of the rep range on every set, add ${trimNum(focusStep)} ${unit} next time. Miss the bottom of the range two sessions in a row? Drop about 10% and build back up.</p>` : ""}
+            ${known.length ? `<p class="coach-fine">Weights are worked out from ${escapeHtml(known.map((k) => `your ${k.n.toLowerCase()} (${k.from})`).join(" and "))} so each set ends with 1 or 2 reps left. ${lvl === "Beginner" ? "Start about 10% lighter the first week while you learn the movement." : "If the first set feels too heavy or your form slips, drop 5 to 10%."}${w.items.some((x) => x.guess) ? " Weights marked \"about\" are starting guesses from your main lift; adjust after the first set." : ""}</p>` : ""}
+            ${unweighed.length ? `<p class="coach-fine">${known.length ? "For the rest, pick" : "Pick"} a weight you can lift for the top of the rep range with 1 or 2 reps left.${!known.length && (w.focus || w.goal === "strength" || w.items.some((x) => COACH_LIFTS.some(([, n]) => n === x.n))) ? ` Tell me your numbers, like "I bench 185 for 5", and I'll put exact weights on these.` : ""}</p>` : ""}
             ${w.finisher && (w.finisher.big || w.finisher.small) ? `<p><strong>Finisher:</strong> ${w.finisher.big ? `on ${escapeHtml(w.finisher.big)}, pause for 1 second at the hardest point of every rep` : ""}${w.finisher.big && w.finisher.small ? "; " : ""}${w.finisher.small ? `on your last set of ${escapeHtml(w.finisher.small)}, drop the weight by about a quarter when you can't do another clean rep, and keep going` : ""}.</p>` : ""}
             ${lvl !== getLevel() ? `<p class="coach-fine">This one workout is set for ${lvl}. Your level for the rest of the site stays ${getLevel()}.</p>` : ""}
             ${levelRank(lvl) >= 2 ? `<p class="coach-fine">Heavy day: warm up with 2 or 3 lighter sets of the first lift, use a spotter or safety pins on presses and squats, and end a set when your form slips.</p>` : ""}
@@ -3111,6 +3312,36 @@ function setupCoach() {
             say(`<p>This site's plans are written for adults. If you're under 18, please train with a coach, PE teacher, or parent, and ask a doctor before starting a program.</p>`);
             return;
         }
+        // Numbers people tell us ("I bench 225 for 5") are saved for every workout after this
+        coachSaveLifts(req.lifts, getProfile().unit);
+        // Just telling us a number for a lift that's in the current workout: put weights on it
+        if (req.lifts.length && last && !req.liftAsk && !req.goal && last.items.some((x) => req.lifts.some((l) => l.name === x.n))) {
+            last = coachWeigh(last);
+            saveState();
+            say(`<p>Got it. Here's the same workout with your weights.</p>` + workoutCard(last));
+            suggest(["Make it harder", "Make it shorter", "Start this workout"]);
+            return;
+        }
+        // One lift: "I want to get stronger at bench", "how much should I squat? my max is 315"
+        if (req.focus && !req.howto) {
+            const mod = { ...req, t: "", groups: [], title: [], focus: req.focus, goal: req.goal || (lastReq && lastReq.focus === req.focus && lastReq.goal) || "strength", kit: req.kit };
+            const level = coachLevelFor(req, getLevel());
+            mod.level = level !== getLevel() ? level : req.level;
+            last = coachMake(mod, level);
+            lastReq = mod;
+            saveState();
+            say(workoutCard(last));
+            const verb = { "Bench press": "bench", "Back squat": "squat", Deadlift: "deadlift", "Overhead press": "overhead press" }[req.focus];
+            suggest(last.known && last.known.length ? ["Make it harder", "Build muscle instead", "Start this workout"] : [verb ? `I ${verb} 185 for 5` : "Make it easier", "Make it harder", "Start this workout"]);
+            return;
+        }
+        // "How much weight should I use?"
+        if (/\bhow (much|heavy)\b.*\b(weight|lift|use|go|load)\b|\bwhat weight\b|\bhow much should i\b/.test(t) && !req.groups.length) {
+            say(`<p>Pick a weight you can lift for the top of the rep range with 1 or 2 good reps left. If you get the top of the range on every set, go up next time (about 5 lb on upper-body lifts, 10 lb on squats and deadlifts).</p>
+                <p>Tell me a lift and what you can do now, like "<em>I bench 185 for 5</em>" or "<em>my squat max is 275</em>", and I'll work out exact weights and sets for you.</p>`);
+            suggest(["I want to get stronger at bench", "How much should I squat?", "Build muscle: chest and back"]);
+            return;
+        }
         // Follow-ups to the last workout
         // "add abs", "also arms": add muscles to the last workout
         if (last && lastReq && req.groups.length && req.add && !req.exclude.length) {
@@ -3120,7 +3351,8 @@ function setupCoach() {
             if (req.minutes) mod.minutes = req.minutes;
             if (req.level || req.intensity) { mod.level = coachLevelFor(req, last.level || getLevel()); mod.intensity = req.intensity === "max" ? "max" : mod.intensity; }
             if (!req.minutes && !mod.minutes) mod.minutes = null;
-            last = coachBuild(mod, mod.level || getLevel());
+            mod.focus = null;
+            last = coachMake(mod, mod.level || getLevel());
             lastReq = mod;
             saveState();
             say(workoutCard(last));
@@ -3146,6 +3378,7 @@ function setupCoach() {
             if (req.kit) { mod.kit = req.kit; changed = true; }
             if (/\b(gym|machines|full gym)\b/.test(t) && !req.kit) { mod.kit = null; changed = true; }
             // Harder, easier, or a named level changes this workout only, not the site level
+            if (req.goal && req.goal !== mod.goal) { mod.goal = req.goal; changed = true; }
             if (req.level || req.intensity) {
                 // Already at the top? Then "harder" adds a finisher instead
                 if ((req.intensity === "up" || req.intensity === "hard") && !req.level && (last.level || getLevel()) === "Expert") { req.intensity = "max"; note = "That's already set for Expert, so I added a finisher."; }
@@ -3155,7 +3388,7 @@ function setupCoach() {
             }
             if (/\b(different|other exercises|shuffle|new one)\b/.test(t)) { mod.shuffle = (mod.shuffle || 0) + 1; changed = true; }
             if (changed) {
-                last = coachBuild(mod, mod.level || getLevel());
+                last = coachMake(mod, mod.level || getLevel());
                 if (mod.shuffle) { const k = mod.shuffle % Math.max(1, last.items.length); last.items = [...last.items.slice(k), ...last.items.slice(0, k)]; }
                 lastReq = mod;
                 saveState();
@@ -3208,7 +3441,7 @@ function setupCoach() {
         // Build a workout
         if (req.groups.length || workoutWords.test(t) || req.intensity || req.level || req.minutes) {
             const level = coachLevelFor(req, getLevel());
-            last = coachBuild(req, level);
+            last = coachMake(req, level);
             lastReq = { ...req, t: "", level: level !== getLevel() ? level : req.level };
             saveState();
             if (!last.items.length) {
@@ -3249,7 +3482,8 @@ function setupCoach() {
 
     function startWorkout() {
         if (!last || !last.items.length) return;
-        store.set("gu-custom", { title: last.title, items: last.items });
+        const unit = last.unit || getProfile().unit;
+        store.set("gu-custom", { title: last.title, items: last.items.map((x) => ({ n: x.n, d: x.w ? `${x.d} at ${x.guess ? "about " : ""}${trimNum(x.w)} ${unit}${x.each ? " each" : ""}` : x.d, rest: x.rest })) });
         store.set("gu-last-plan", { goal: "custom", days: 1 });
         say(`<p>Saved as <strong>My workout</strong>. Opening it on the Plans page, where you can log your sets.</p>`);
         if (phone()) store.set(OPEN_KEY, false);

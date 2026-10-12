@@ -2,6 +2,14 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Fitness Coach gives sets, reps and weights)
+
+- Fitness Coach now works out what you're asking before it answers, and shows it at the top of each reply under **What I heard** (for example: Bench press · Get stronger · Beginner · bench max about 275 lb), so you can see it understood you.
+- It reads your goal. "Get stronger" gives heavy, low-rep sets (like 4 × 4–6 with 3 minutes rest), "build muscle" gives moderate sets (8–12 reps), and "tone" or "endurance" gives lighter, higher-rep sets.
+- Ask about one lift ("I want to get stronger at bench", "how much should I squat?") and you get that lift first with exact sets and reps, the exercises that help it most, how often to train it, and when to add weight.
+- Tell it your numbers ("I bench 275", "I can squat 315 for 3", "3x5 at 100kg on deadlift") and it works out your max and gives a weight for each set, for example **3 × 5 at 230 lb**. Helper lifts get a starting guess (like "about 60 lb each hand") that you can adjust after the first set. Your numbers are saved only on your device and are used in every workout after that, along with lifts you've logged.
+- When you tap Start, the weights carry over to My workout on the Plans page.
+
 ## 2026-10-12 (Fitness Coach understands how hard you want it)
 
 - Fitness Coach now understands how hard you want to train. "Super challenging", "put me to the test", "brutal" or "beast mode" builds a real Expert session: barbell lifts and pull-ups instead of machines, heavier sets with longer rests, more exercises, and a finisher (pause reps and a drop set). "Easy", "gentle" or "I'm tired" builds a lighter one.

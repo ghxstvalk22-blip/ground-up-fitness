@@ -476,6 +476,14 @@ async function openPage(browser, file, viewport, hash = "") {
             const noBack = await ask("without back");
             check(/Chest & Abs/.test(noBack), `"without back" takes muscles out (${noBack.slice(0, 60)})`);
             check(/Set for Beginner/.test(await ask("easy legs workout")), `"easy" builds a Beginner workout`);
+            // One lift and real weights: "get stronger at bench", then "I bench 275"
+            const focus = await ask("I want to get stronger in bench");
+            check(/What I heard/i.test(focus) && /Bench press focus/.test(focus) && /Get stronger/.test(focus) && /3 × 5/.test(focus) && /I bench 185 for 5/.test(focus), "Coach answers a one-lift strength question with sets, reps and how to progress");
+            const weighed = await ask("I bench 275");
+            check(/3 × 5 at 230 lb/.test(weighed) && /about \d+ lb each hand/.test(weighed) && /max about 275 lb/.test(weighed), `telling Coach your bench puts real weights on the workout (${(weighed.match(/Bench press[^·]*/) || [""])[0]})`);
+            check(/max about 345 lb/.test(await ask("how much should I squat? I can do 315 for 3")) && /Back squat focus/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "Coach works out a max from weight and reps");
+            check(/1 or 2 good reps left/.test(await ask("how much weight should I use")), "Coach explains how to pick a weight");
+            check(/Build muscle/.test(await ask("build muscle chest and back")) && /What I heard/i.test(await page.locator(".coach-msg.is-coach").last().textContent()), "Coach reads the goal from the request");
             await ask("chest and triceps, 30 minutes");
             // The chat stays open, with its history, when you move to another page
             const before = await page.locator(".coach-msg").count();
@@ -502,7 +510,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.click("#coach-clear");
             check(await page.locator(".coach-msg").count() === 1, "Clear chat starts a fresh conversation");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
-            await page.evaluate(() => { ["gu-custom", "gu-last-plan", "gu-coach-history", "gu-coach-state", "gu-coach-open"].forEach((k) => localStorage.removeItem(k)); });
+            await page.evaluate(() => { ["gu-custom", "gu-last-plan", "gu-coach-history", "gu-coach-state", "gu-coach-open", "gu-coach-maxes"].forEach((k) => localStorage.removeItem(k)); });
             await page.close();
         }
 
