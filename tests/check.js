@@ -503,7 +503,8 @@ async function openPage(browser, file, viewport, hash = "") {
         // Build your own workout: pick exercises, get a weight for each, save as My workout
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);
-            check(await page.locator('.hero-build-link[href="programs.html#build"]').count() === 1, "the cover links to Build your own workout");
+            check(await page.locator('.hero-build-link[href="programs.html#build"]').isVisible() && await page.locator('.tabbar a[href="programs.html#build"], .build-link').count() >= 1, "Build your own workout is easy to find (cover button, header button, phone tab)");
+            check(!/no sign-up|no paywall/i.test(await page.locator("body").textContent()), "no \"free / no sign-up\" wording");
             await page.evaluate(() => { localStorage.clear(); localStorage.setItem("gu-profile", JSON.stringify({ bodyweight: "180", unit: "lb", sex: "male" })); localStorage.setItem("gu-level", JSON.stringify("Intermediate")); });
             await page.goto(url("programs.html", "#build"), { waitUntil: "load" });
             await page.waitForTimeout(400);

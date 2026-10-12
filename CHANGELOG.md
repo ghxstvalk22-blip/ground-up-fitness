@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Easier to find Build your own workout)
+
+- **Build your own workout** is now easy to reach from anywhere: a big orange button on the front cover, an orange "+ Build a workout" button in the header on computers, and a new **Build** tab in the phone app's bottom bar.
+- Took out the "Free · No sign-up" wording across the site (cover, quick start, tools, footer, and page titles).
+
 ## 2026-10-12 (Build your own workout)
 
 - New **Build your own workout** on the Plans page (and linked from the front cover): search or filter the exercise library by muscle and equipment, tap **Add**, and set the sets, reps, and rest for each exercise. Reorder or remove anything, give it a name, then **Save and start**.

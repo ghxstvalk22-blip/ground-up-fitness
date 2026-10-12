@@ -158,17 +158,17 @@ const NEXT_STEPS = {
     pros: [["Try the Classic Physique plan", "A bodybuilding split, 4 or 5 days", "programs.html#program-classic"],
            ["Hit your protein", "Find your daily target", "tools.html#tool-calories"],
            ["Check your form", "Every exercise, step by step", "exercises.html"]],
-    tools: [["Get a plan that fits", "Free, takes 10 seconds", "index.html#get-plan"],
+    tools: [["Get a plan that fits", "Two quick questions", "index.html#get-plan"],
             ["Track your lifts", "Log sets on any program", "programs.html#my-progress"],
             ["Get weights that fit you", "Set your level and bodyweight", "index.html#setup"]],
     basics: [["Your first day", "What to bring and what to do", "start.html#first-day"],
-             ["Find your plan", "Free, takes 10 seconds", "index.html#get-plan"],
+             ["Find your plan", "Two quick questions", "index.html#get-plan"],
              ["Still have a question?", "Ask a real person", "contact.html#contact-general"]],
     me: [["Pick up where you left off", "Back to your plan", "programs.html"],
          ["How much should I eat?", "Calories and protein", "tools.html#tool-calories"],
          ["Track your bodyweight", "7-day average trend", "tools.html#tool-weight"]],
     supplements: [["Hit your protein with food first", "Find your daily target", "tools.html#tool-calories"],
-                  ["Get a plan that fits", "Free, takes 10 seconds", "index.html#get-plan"],
+                  ["Get a plan that fits", "Two quick questions", "index.html#get-plan"],
                   ["Browse every exercise", "With how-tos and demos", "exercises.html"]],
     contact: [["New here?", "Start with the basics", "start.html"],
               ["See the programs", "Pick one and start this week", "programs.html"]]
@@ -296,6 +296,7 @@ function setupLayout() {
         <nav id="site-nav" aria-label="Main">
             <ul class="nav-list">${navHtml}</ul>
         </nav>
+        <a class="me-link build-link" href="programs.html#build"><span class="build-plus" aria-hidden="true">+</span>Build a workout</a>
         <a class="me-link${page === "me" ? " active" : ""}" href="me.html"${page === "me" ? ' aria-current="page"' : ""}><span class="me-dot" aria-hidden="true"></span>My progress</a>
         <button class="jump-toggle" type="button" aria-haspopup="dialog" aria-controls="jump">Search <kbd>/</kbd></button>
         <button class="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
@@ -303,19 +304,29 @@ function setupLayout() {
 </header>`;
     }
 
-    // Phones: an app-style tab bar along the bottom with the four places people use most
+    // Phones: an app-style tab bar along the bottom with the places people use most
     const TABS = [
         ["home", "index.html", "Home", '<path d="M4 11.5 12 5l8 6.5V20h-5.5v-5h-5v5H4z"/>'],
         ["programs", "programs.html", "Plans", '<path d="M5 5h14v3H5zM5 10.5h14v3H5zM5 16h9v3H5z"/>'],
+        ["build", "programs.html#build", "Build", '<path d="M10.5 4h3v6.5H20v3h-6.5V20h-3v-6.5H4v-3h6.5z"/>'],
         ["exercises", "exercises.html", "Exercises", '<path d="M2 10h3V8h2v8H5v-2H2zM22 10h-3V8h-2v8h2v-2h3zM8 11h8v2H8z"/>'],
         ["me", "me.html", "Progress", '<path d="M4 19h16v2H4zM5 12h3v6H5zM10.5 8h3v10h-3zM16 4h3v14h-3z"/>']
     ];
     if (!document.querySelector(".tabbar")) {
         document.body.insertAdjacentHTML("beforeend", `
 <nav class="tabbar" aria-label="Quick links">
-    ${TABS.map(([key, href, label, icon]) => `<a href="${href}"${key === page ? ' aria-current="page"' : ""}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg><span>${label}</span></a>`).join("")}
+    ${TABS.map(([key, href, label, icon]) => `<a href="${href}"${key === page && !(key === "programs" && location.hash === "#build") || (key === "build" && page === "programs" && location.hash === "#build") ? ' aria-current="page"' : ""}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg><span>${label}</span></a>`).join("")}
 </nav>`);
         document.body.classList.add("has-tabbar");
+        // Plans vs Build share a page; keep the right tab lit when only the #build part changes
+        window.addEventListener("hashchange", () => {
+            if (page !== "programs") return;
+            const build = location.hash === "#build";
+            document.querySelectorAll(".tabbar a").forEach((a) => {
+                const on = a.getAttribute("href") === (build ? "programs.html#build" : "programs.html");
+                if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+            });
+        });
     }
 
     const next = NEXT_STEPS[page];
@@ -339,7 +350,7 @@ function setupLayout() {
     <div class="footer-inner">
         <div class="footer-brand">
             <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>Ground Up</a>
-            <p>Free plans for real people. Start where you are.</p>
+            <p>Plans for real people. Start where you are.</p>
         </div>
         <nav class="footer-nav" aria-label="Footer">
             <a href="start.html">Start here</a>
@@ -6175,7 +6186,7 @@ function setupAccount() {
             card.innerHTML = `
                 <div class="account-box">
                     <h2 class="me-h2">Save your progress to an account</h2>
-                    <p>Free. Sign in to keep your logs safe and see them on your phone and computer. Without an account, everything stays on this device.</p>
+                    <p>Sign in to keep your logs safe and see them on your phone and computer. Without an account, everything stays on this device.</p>
                     <div class="account-actions">
                         <button class="btn btn-primary btn-compact" type="button" id="acct-google">Continue with Google</button>
                     </div>
