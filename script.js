@@ -120,7 +120,8 @@ const SITE_NAV = [
         ["Cardio or weights for fat loss?", "", "basics.html#faq-cardio"],
         ["How much protein do I need?", "", "basics.html#faq-protein"],
         ["Should women train differently?", "", "basics.html#faq-women"],
-        ["Use it like an app on your phone", "", "basics.html#faq-app"]
+        ["Use it like an app on your phone", "", "basics.html#faq-app"],
+        ["Who can see my logs?", "", "basics.html#faq-privacy"]
     ] },
     { label: "Contact", href: "contact.html", page: "contact", items: [
         ["Send a message", "Any question at all", "contact.html#contact-general"],
@@ -3094,6 +3095,27 @@ function setupCoach() {
         suggest(DEFAULT_CHIPS);
     }
 
+    // Take a moment to "read" the message: a typing indicator for about 1 to 2 seconds
+    // (longer messages take a little longer), then the answer
+    let thinking = false;
+    function think(text) {
+        if (thinking) return;
+        thinking = true;
+        const sendBtn = form.querySelector("button[type=submit]");
+        sendBtn.disabled = true;
+        chips.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+        log.insertAdjacentHTML("beforeend", `<div class="coach-msg is-coach coach-typing" role="status"><span class="visually-hidden">Fitness Coach is typing</span><span class="coach-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>`);
+        log.scrollTop = log.scrollHeight;
+        const delay = Math.min(2000, 1000 + text.length * 15);
+        setTimeout(() => {
+            const typing = log.querySelector(".coach-typing");
+            if (typing) typing.remove();
+            thinking = false;
+            sendBtn.disabled = false;
+            reply(text);
+        }, delay);
+    }
+
     function startWorkout() {
         if (!last || !last.items.length) return;
         store.set("gu-custom", { title: last.title, items: last.items });
@@ -3112,14 +3134,14 @@ function setupCoach() {
         if (!text) return;
         say(`<p>${escapeHtml(text)}</p>`, "you");
         input.value = "";
-        reply(text);
+        think(text);
     });
     panel.addEventListener("click", (e) => {
         const c = e.target.closest("[data-coach-say]");
         if (c) {
             if (/^start this workout$/i.test(c.dataset.coachSay)) { startWorkout(); return; }
             say(`<p>${escapeHtml(c.dataset.coachSay)}</p>`, "you");
-            reply(c.dataset.coachSay);
+            think(c.dataset.coachSay);
         }
         if (e.target.closest("[data-coach-start]")) startWorkout();
     });

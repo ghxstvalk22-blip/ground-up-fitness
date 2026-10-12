@@ -438,9 +438,18 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.evaluate(() => { localStorage.removeItem("gu-custom"); localStorage.removeItem("gu-level"); });
             await page.click("#coach-fab");
             check(await page.locator("#coach").isVisible() && /Fitness Coach/.test(await page.locator("#coach-title").textContent()), "the Fitness Coach button opens the chat");
+            await page.fill("#coach-input", "legs");
+            await page.press("#coach-input", "Enter");
+            const typingShown = await page.locator(".coach-typing").isVisible();
+            const t0 = Date.now();
+            await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 4000 });
+            const waited = Date.now() - t0;
+            check(typingShown && waited > 700 && waited < 2600, `Fitness Coach takes a moment to read before answering (${waited} ms)`);
             const ask = async (text) => {
                 await page.fill("#coach-input", text);
                 await page.press("#coach-input", "Enter");
+                await page.locator(".coach-typing").waitFor({ state: "attached", timeout: 500 }).catch(() => {});
+                await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 4000 });
                 return page.locator(".coach-msg.is-coach").last().textContent();
             };
             const w = await ask("hey I wanna do shoulders back and abs");

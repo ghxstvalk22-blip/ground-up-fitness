@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Fitness Coach takes a moment)
+
+- Fitness Coach now shows a typing indicator and takes about 1 to 2 seconds to "read" your message before answering (longer messages take a little longer), so it feels like a conversation instead of an instant wall of text.
+- New Gym basics answer: **Who can see my workouts and logs?** Only you: everything is saved on your own device and never sent anywhere.
+
 ## 2026-10-12 (Fitness Coach keeps your chat)
 
 - Coach is now called **Fitness Coach**, with a barbell icon.
