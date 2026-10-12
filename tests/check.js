@@ -99,6 +99,10 @@ async function openPage(browser, file, viewport, hash = "") {
             `${file} has a strict security policy`);
         check(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html) && !/\son[a-z]+\s*=\s*["']/i.test(html), `${file} has no inline scripts or event handlers`);
     }
+    // Every page asks for the same version of the shared files, so browsers never mix old and new
+    const versions = new Set(PAGES.flatMap((f) => [...fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/(?:styles\.css|script\.js|exercises\.js|muscle-art\.js)\?v=([\w-]+)"/g)].map((m) => m[1])));
+    const unversioned = PAGES.filter((f) => /(?:href="styles\.css"|src="script\.js")/.test(fs.readFileSync(path.join(ROOT, f), "utf8")));
+    check(versions.size === 1 && unversioned.length === 0, `every page loads the same version of the shared files (${[...versions].join(", ")}) ${unversioned.join(", ")}`);
     const SECRET = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk-[A-Za-z0-9]{32,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|"?password"?\s*[:=]\s*"[^"]{4,}")/;
     const files = fs.readdirSync(ROOT).filter((f) => /\.(html|js|css|md|json)$/.test(f) && f !== "package-lock.json")
         .concat(fs.readdirSync(path.join(ROOT, "tests")).filter((f) => f.endsWith(".js")).map((f) => `tests/${f}`));

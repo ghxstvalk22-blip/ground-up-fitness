@@ -106,6 +106,9 @@ ships **one** focused improvement.
    that note, and stop.
 4. Check the item off in `ROADMAP.md` (move it to **Done** with today's date), and add 1 or 2
    new ideas to **Ideas** if any came up.
-5. Add an entry at the top of `CHANGELOG.md`: the date, what changed, and why, in plain
+5. If you changed `styles.css` or any `.js` file, bump the `?v=` number on their `<link>`/`<script>`
+   tags in **every** HTML page (same value everywhere, e.g. `?v=20261013-1`), so visitors' browsers
+   load the new files instead of old cached ones. The test checks all pages match.
+6. Add an entry at the top of `CHANGELOG.md`: the date, what changed, and why, in plain
    language for a non-programmer.
-6. Commit with a clear message and push to `main`.
+7. Commit with a clear message and push to `main`.

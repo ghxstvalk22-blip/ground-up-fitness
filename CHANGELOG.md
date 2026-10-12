@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (fresh files after updates)
+
+- Visitors' browsers now always load the newest version of the site's code after an update, instead of sometimes showing an old saved copy (or mixing old and new). Each update bumps a version number on the shared files.
+
 ## 2026-10-12 (your level)
 
 - **One setting now shapes the whole site: Your level** (Beginner, Intermediate, Advanced, Expert). It's at the top of the Programs and Exercises pages and inside every how-to, and it's saved on your device. Everyone starts at Beginner.
