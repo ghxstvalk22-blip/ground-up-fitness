@@ -892,6 +892,54 @@ const PROGRAMS = {
         }
     },
 
+    cardio: {
+        name: "Cardio & conditioning",
+        tagline: "heart, lungs, endurance",
+        summary: "Cardio done the smart way: mostly easy sessions you could hold a conversation through, plus one harder interval day. Great on its own or added to a lifting plan. Use Swap to pick the machine or activity you like.",
+        session: "30 to 60 minutes",
+        effort: "Easy days: you can talk in full sentences. Interval days: the hard parts are about an 8 out of 10, the easy parts are truly easy.",
+        progression: "Add about 5 minutes to your easy sessions each week, up to an hour. Most experts suggest at least 150 minutes of moderate cardio a week for health.",
+        plans: {
+            3: {
+                schedule: "Any 3 days. Easy days can be back to back; keep a rest day after intervals.",
+                days: [
+                    { title: "Steady and easy", items: [
+                        ex("Incline treadmill walk", "30–40 min", ""),
+                        ex("Stretching or mobility", "10 min", "")
+                    ] },
+                    { title: "Intervals", items: [
+                        ex("Bike intervals", "8 × 30 s hard, 90 s easy", "", "Brisk incline walk, 20 min"),
+                        ex("Plank", "3 × 30 s", "45 s", "Plank on your knees")
+                    ] },
+                    { title: "Long and easy", items: [
+                        ex("Incline walk or easy bike", "45–60 min", "")
+                    ] }
+                ]
+            },
+            4: {
+                schedule: "4 days, like Mon, Tue, Thu, Sat. Keep the interval and mixed days apart.",
+                days: [
+                    { title: "Steady and easy", items: [
+                        ex("Incline treadmill walk", "30–40 min", ""),
+                        ex("Stretching or mobility", "10 min", "")
+                    ] },
+                    { title: "Intervals", items: [
+                        ex("Bike intervals", "8 × 30 s hard, 90 s easy", "", "Brisk incline walk, 20 min"),
+                        ex("Plank", "3 × 30 s", "45 s", "Plank on your knees")
+                    ] },
+                    { title: "Steady and easy", items: [
+                        ex("Elliptical", "30–40 min", "")
+                    ] },
+                    { title: "Mixed conditioning", items: [
+                        ex("Rower intervals", "6 × 1 min hard, 1 min easy", ""),
+                        ex("Farmer carry", "4 × 40 steps", "60 s"),
+                        ex("Incline walk or easy bike", "20 min", "")
+                    ] }
+                ]
+            }
+        }
+    },
+
     home: {
         name: "No gym needed",
         tagline: "bodyweight at home",
@@ -1335,6 +1383,42 @@ function nextTarget(name, dose, unit) {
     return { weight: top, reps: d.high, lastText, text: `Stay at ${trimNum(top)} ${unit}. Aim for one more rep on your hardest set.` };
 }
 
+/* ---------- Cardio log ----------
+   Saved as [{ date, activity, minutes, distance, dunit, effort }] */
+const CARDIO_KEY = "gu-cardio";
+const getCardio = () => (store.get(CARDIO_KEY, []) || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+function saveCardio(entry) {
+    const all = store.get(CARDIO_KEY, []) || [];
+    all.push(entry);
+    store.set(CARDIO_KEY, all);
+    window.dispatchEvent(new CustomEvent("logchange", { detail: { cardio: true } }));
+}
+const distUnit = (unit) => (unit === "kg" ? "km" : "mi");
+const isCardio = (name) => typeof EXERCISES === "object" && EXERCISES[name] && /heart and lungs/i.test(EXERCISES[name].m);
+
+// Minutes of cardio in the Monday-to-Sunday week that contains `date`
+function cardioMinutesInWeek(date = new Date()) {
+    const start = mondayOf(date), end = addDays(start, 7);
+    return getCardio().filter((c) => { const d = parseIso(c.date); return d >= start && d < end; })
+        .reduce((sum, c) => sum + (Number(c.minutes) || 0), 0);
+}
+
+// A gentle next-time suggestion for a cardio activity
+function nextCardioTarget(activity, unit) {
+    const list = getCardio().filter((c) => c.activity === activity);
+    if (!list.length) return { first: true, text: "Log how long you went (and how far, if you know) to get a suggestion next time." };
+    const last = list[list.length - 1];
+    const du = distUnit(unit);
+    const dist = last.distance ? `${trimNum(Math.round(toDist(last.distance, last.dunit, du) * 100) / 100)} ${du}` : "";
+    const lastText = [`${last.minutes} min`, dist, last.effort ? `effort ${last.effort}/10` : ""].filter(Boolean).join(", ");
+    let text;
+    if (Number(last.effort) >= 9) text = "That was a hard one. Keep the same time next session and let it feel easier.";
+    else if (last.minutes < 60) text = `Next time, try about ${Math.min(60, Math.round(last.minutes * 1.1 / 5) * 5 || last.minutes + 5)} minutes at the same easy effort.`;
+    else text = "Great volume. Keep it here, or make one session a week a little faster.";
+    return { lastText, text };
+}
+const toDist = (d, from, to) => (from === to || !from ? Number(d) : to === "km" ? d * 1.60934 : d / 1.60934);
+
 // Typical weekly strength gain by experience. Conservative on purpose; progress slows over time.
 const WEEKLY_GAIN = { new: 0.015, some: 0.0075, lots: 0.0035 };
 
@@ -1486,7 +1570,8 @@ function setupPrograms() {
         const parsed = parseDose(x.d);
         const info = typeof EXERCISES === "object" ? EXERCISES[x.name] : null;
         const easier = x.name === x.n && x.swap ? x.swap : (info && info.easier) || "";
-        let target = nextTarget(x.name, dose.text, profile.unit);
+        const cardio = isCardio(x.name);
+        let target = cardio ? nextCardioTarget(x.name, profile.unit) : nextTarget(x.name, dose.text, profile.unit);
         // The "first time" tip shows once per day card, not on every exercise
         if (target && target.first) {
             if (firstTipShown.has(di)) target = null;
@@ -1514,8 +1599,10 @@ function setupPrograms() {
                         ${info ? `<button type="button" class="chip" data-howto="${escapeHtml(x.name)}">How to</button>` : ""}
                         ${x.canRotate ? `<button type="button" class="chip" data-swap="${key}">Swap</button>` : ""}
                         ${!parsed.timed ? `<button type="button" class="chip" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log sets</button>` : ""}
+                        ${cardio ? `<button type="button" class="chip" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log cardio</button>` : ""}
                     </span>
                     ${!parsed.timed ? logForm(x, key, parseDose(dose.text), target, profile.unit) : ""}
+                    ${cardio ? cardioForm(x, key, profile.unit) : ""}
                 </div>
             </li>`;
     }
@@ -1535,6 +1622,35 @@ function setupPrograms() {
                 <p class="log-help">Leave weight at 0 for bodyweight moves. Change the date to add a past workout.</p>
                 <div class="log-buttons">
                     <button type="submit" class="btn btn-primary btn-compact">Save sets</button>
+                    <button type="button" class="text-button" data-log-cancel="${key}">Cancel</button>
+                </div>
+                <p class="log-status" role="status"></p>
+            </form>`;
+    }
+
+    function cardioForm(x, key, unit) {
+        const options = (familyFor(x.n, state.goal) || [x.name]).filter(isCardio);
+        if (!options.includes(x.name)) options.unshift(x.name);
+        return `
+            <form class="log-form cardio-form" id="log-${key}" data-exercise="${escapeHtml(x.name)}" hidden novalidate>
+                <div class="cardio-grid">
+                    <label>Activity
+                        <select name="activity">${options.map((n) => `<option${n === x.name ? " selected" : ""}>${escapeHtml(n)}</option>`).join("")}<option>Other cardio</option></select>
+                    </label>
+                    <label>Date <input type="date" name="date" value="${isoDate(new Date())}" max="${isoDate(new Date())}"></label>
+                    <label>Minutes <input type="number" name="minutes" inputmode="numeric" min="1" max="600" placeholder="30"></label>
+                    <label>Distance (${distUnit(unit)}, optional) <input type="number" name="distance" inputmode="decimal" min="0" step="0.01" placeholder="2.0"></label>
+                    <label>How hard was it?
+                        <select name="effort">
+                            <option value="3">Easy: could chat the whole time</option>
+                            <option value="5" selected>Moderate: short sentences</option>
+                            <option value="7">Hard: a few words at a time</option>
+                            <option value="9">Very hard: couldn't talk</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="log-buttons">
+                    <button type="submit" class="btn btn-primary btn-compact">Save cardio</button>
                     <button type="button" class="text-button" data-log-cancel="${key}">Cancel</button>
                 </div>
                 <p class="log-status" role="status"></p>
@@ -1652,6 +1768,24 @@ function setupPrograms() {
         if (!form) return;
         e.preventDefault();
         const unit = getProfile().unit;
+        if (form.classList.contains("cardio-form")) {
+            const f = form.elements;
+            const minutes = Number(f.minutes.value);
+            const status = form.querySelector(".log-status");
+            if (!minutes || minutes < 1) { status.textContent = "Add how many minutes you did."; f.minutes.focus(); return; }
+            const date = f.date.value || isoDate(new Date());
+            saveCardio({ date, activity: f.activity.value, minutes, distance: Number(f.distance.value) || 0, dunit: distUnit(unit), effort: Number(f.effort.value) });
+            const slot = form.id.replace("log-", "");
+            const box = document.getElementById(`ex-${slot}`);
+            if (box && !box.checked && date === isoDate(new Date())) {
+                box.checked = true;
+                box.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            render();
+            const btn = els.grid.querySelector(`[data-log="${slot}"]`);
+            if (btn) btn.focus();
+            return;
+        }
         const ws = [...form.querySelectorAll('input[name="w"]')];
         const rs = [...form.querySelectorAll('input[name="r"]')];
         const sets = rs.map((r, i) => ({ w: Number(ws[i].value) || 0, r: Number(r.value) }))

@@ -1343,6 +1343,11 @@ select, input, textarea {
     .rest-timer-bar { grid-column: 1 / -1; grid-row: 2; }
 }
 
+.cardio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; margin-bottom: 10px; }
+.cardio-grid label { display: flex; flex-direction: column; gap: 3px; font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+.cardio-grid select, .cardio-grid input { width: 100%; min-width: 0; padding: 7px 8px; font-size: 0.88rem; font-weight: 400; color: var(--ink); }
+.cardio-grid label:first-child, .cardio-grid label:last-child { grid-column: 1 / -1; }
+
 /* Week bar */
 .week-bar {
     display: grid;

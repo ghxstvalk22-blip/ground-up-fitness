@@ -825,6 +825,40 @@ const EXERCISES = {
         easier: "Shorter holds", harder: "Add a few minutes"
     },
 
+    /* ---------- More cardio ---------- */
+    "Easy jog": {
+        kit: "none", m: "Heart and lungs, legs", eq: "Running shoes",
+        setup: "Start with 3 to 5 minutes of brisk walking to warm up.",
+        steps: ["Jog at a pace where you could still talk in short sentences.", "Land softly with your feet under you, not way out in front.", "Walk for a minute whenever you need to; that's normal.", "Walk for the last few minutes to cool down."],
+        tip: "New to running? Alternate 1 minute jogging with 2 minutes walking, and shift the balance over the weeks.",
+        mistakes: ["Starting too fast.", "Adding distance too quickly. Increase by about 10% a week at most."],
+        easier: "Walk-jog intervals", harder: "Longer jog, or add a few faster minutes"
+    },
+    "Elliptical": {
+        m: "Heart and lungs, legs", eq: "Elliptical machine",
+        setup: "Step on, hold the handles, and start at a low resistance.",
+        steps: ["Push and pull the handles while you stride.", "Keep your whole foot on the pedals.", "Stand tall rather than leaning on the handles.", "Hold a steady pace for the time listed."],
+        tip: "Very easy on the joints, which makes it a great choice on sore days or with achy knees.",
+        mistakes: ["Leaning your weight onto the console.", "Resistance so low you're just coasting."],
+        easier: "Lower resistance", harder: "Higher resistance or incline"
+    },
+    "Steady row": {
+        m: "Heart and lungs, legs, back", eq: "Rowing machine",
+        setup: "Strap your feet in, set the damper around 3 to 5, and sit tall.",
+        steps: ["Push with your legs, then lean back slightly, then pull the handle to your lower ribs.", "Reverse it: arms, body, then legs.", "Keep a steady, comfortable stroke rate (about 20 to 24 strokes a minute).", "Row for the time listed."],
+        tip: "Legs first, every stroke. It's mostly a leg exercise.",
+        mistakes: ["Pulling with your arms first.", "Damper set too high, which feels like rowing through mud."],
+        easier: "Shorter session", harder: "Longer session or a slightly higher stroke rate"
+    },
+    "Outdoor bike ride": {
+        m: "Heart and lungs, legs", eq: "Bike and helmet",
+        setup: "Check your tires and brakes and wear a helmet. Pick a route you know.",
+        steps: ["Ride at a pace where you can talk.", "Use easy gears on hills.", "Ride for the time listed.", "Spin easy for the last few minutes."],
+        tip: "Easy rides count. Not every session has to be hard.",
+        mistakes: ["Riding in gears so hard your knees ache.", "Skipping the helmet."],
+        easier: "Flat route", harder: "Add some hills"
+    },
+
     /* ---------- At home, no equipment ---------- */
     "Bodyweight squat": {
         kit: "none", m: "Quads, glutes", eq: "Bodyweight",
@@ -911,5 +945,5 @@ const EXERCISE_FAMILIES = [
     ["Push-up", "Incline push-up"],
     // Conditioning
     ["Bike intervals", "Rower intervals", "Sled push", "Incline walk intervals"],
-    ["Incline treadmill walk", "Stair climber", "Incline walk or easy bike"]
+    ["Incline treadmill walk", "Stair climber", "Incline walk or easy bike", "Elliptical", "Steady row", "Easy jog", "Brisk walk", "Outdoor bike ride"]
 ];

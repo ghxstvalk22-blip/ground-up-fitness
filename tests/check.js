@@ -225,6 +225,17 @@ async function openPage(browser, file, viewport, hash = "") {
                 return bad;
             });
             check(kitProblems.length === 0, `home and dumbbell plans only use their equipment ${kitProblems.slice(0, 3).join("; ")}`);
+            // Cardio plan: log a cardio session and get a next-time suggestion
+            await page.locator('input[name="goal"][value="cardio"]').check({ force: true });
+            const cardioRow = page.locator(".ex-row").first();
+            await cardioRow.locator("[data-log]").click();
+            await cardioRow.locator('input[name="minutes"]').fill("30");
+            await cardioRow.locator('input[name="distance"]').fill("1.8");
+            await cardioRow.locator(".cardio-form button[type=submit]").click();
+            const cardioTarget = await page.locator(".ex-row").first().locator(".ex-target").textContent();
+            check(/30 min/.test(cardioTarget) && /try about 35 minutes/.test(cardioTarget), `logging cardio suggests a little more next time`);
+            check(await page.locator(".ex-row").first().locator("[data-swap]").count() === 1, "cardio activities can be swapped");
+
             await page.locator('input[name="goal"][value="busy"]').check({ force: true });
             check(await page.locator(".day-card").count() === 2 && await page.locator('input[name="days"][value="2"]').isChecked(), "Short on time shows 2 days");
 
