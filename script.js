@@ -90,7 +90,7 @@ const SITE_NAV = [
         ["Plate loader", "Which plates go on the bar", "tools.html#tool-plates"],
         ["Weight trend", "Your 7-day average, not daily noise", "tools.html#tool-weight"]
     ] },
-    { label: "Gym basics", href: "basics.html", page: "basics", items: [
+    { label: "Gym basics", href: "basics.html", page: "basics", also: ["supplements"], items: [
         ["What weight should I use?", "", "basics.html#faq-weight"],
         ["How often should I train?", "", "basics.html#faq-often"],
         ["Will lifting make me bulky?", "", "basics.html#faq-bulky"],
@@ -98,6 +98,7 @@ const SITE_NAV = [
         ["I'm sore. Should I skip?", "", "basics.html#faq-sore"],
         ["The unwritten gym rules", "", "basics.html#faq-etiquette"],
         ["How much protein do I need?", "", "basics.html#faq-protein"],
+        ["Do I need supplements?", "", "supplements.html"],
         ["Should women train differently?", "", "basics.html#faq-women"]
     ] },
     { label: "Contact", href: "contact.html", page: "contact", items: [
@@ -130,6 +131,9 @@ const NEXT_STEPS = {
     me: [["Pick up where you left off", "Back to your plan", "programs.html"],
          ["How much should I eat?", "Calories and protein", "tools.html#tool-calories"],
          ["Track your bodyweight", "7-day average trend", "tools.html#tool-weight"]],
+    supplements: [["Hit your protein with food first", "Find your daily target", "tools.html#tool-calories"],
+                  ["Get a plan that fits", "Free, takes 10 seconds", "index.html#get-plan"],
+                  ["More straight answers", "Gym basics", "basics.html"]],
     contact: [["New here?", "Start with the basics", "start.html"],
               ["See the programs", "Pick one and start this week", "programs.html"]]
 };
@@ -231,7 +235,7 @@ function setupLayout() {
     const navHtml = SITE_NAV.map((entry) => {
         const items = entry.items === "programs" ? programItems() : entry.items;
         const id = `menu-${entry.page}`;
-        const here = entry.page === page;
+        const here = entry.page === page || (entry.also || []).includes(page);
         return `
             <li class="nav-item has-menu">
                 <a class="nav-link${here ? " active" : ""}" href="${entry.href}"${here ? ' aria-current="page"' : ""}>${escapeHtml(entry.label)}</a>

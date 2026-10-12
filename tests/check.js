@@ -25,7 +25,7 @@ function findChromium() {
 }
 
 const ROOT = path.resolve(__dirname, "..");
-const PAGES = ["index.html", "start.html", "programs.html", "me.html", "exercises.html", "pros.html", "tools.html", "basics.html", "contact.html"];
+const PAGES = ["index.html", "start.html", "programs.html", "me.html", "exercises.html", "pros.html", "tools.html", "basics.html", "supplements.html", "contact.html"];
 const url = (file, hash = "") => "file://" + path.join(ROOT, file) + hash;
 const SHOTS = path.join(__dirname, "screenshots");
 const failures = [];
@@ -108,7 +108,8 @@ async function openPage(browser, file, viewport, hash = "") {
             const bad = [...new Set(hrefs.map((h) => linkProblem(h, file)).filter(Boolean))];
             check(bad.length === 0, `every link has a real target ${bad.length ? JSON.stringify(bad) : ""}`);
             const key = file === "index.html" ? null : file.replace(".html", "");
-            if (key && key !== "me") check(await page.locator(`#site-nav .nav-link.active[href="${file}"]`).count() === 1, "this page's tab is marked as current");
+            const tab = key === "supplements" ? "basics.html" : file;
+            if (key && key !== "me") check(await page.locator(`#site-nav .nav-link.active[href="${tab}"]`).count() === 1, "this page's tab is marked as current");
             await page.screenshot({ path: path.join(SHOTS, `${name}-${file.replace(".html", "")}.png`), fullPage: true });
             await page.close();
         }

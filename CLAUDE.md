@@ -56,7 +56,8 @@ ships **one** focused improvement.
    is added to `PHOTO_CREDITS`. No frameworks, no trackers, no analytics, no ads.
 5. **Health content must be safe and mainstream:** evidence-based, beginner-friendly, and
    for healthy adults. No crash diets, no calorie targets below the existing floors
-   (1,500 for men and 1,200 for women), no supplements or drugs, no medical claims, and no
+   (1,500 for men and 1,200 for women), no supplements or drugs (except the owner-requested, evidence-based `supplements.html` guide:
+   keep it to well-researched basics, third-party testing, see-a-doctor notes, and no affiliate links), no medical claims, and no
    content aimed at minors. Anything about nutrition or injury points people to a doctor
    or registered dietitian when appropriate.
 6. **Never** put passwords, API keys, or personal information in the repo. The contact

@@ -1743,6 +1743,51 @@ select, input, textarea {
 }
 .reality-check strong { color: var(--ink); }
 
+/* ---------- Supplements guide ---------- */
+.supp-first { max-width: 760px; }
+.supp-first h2, .supp-h2 {
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.05;
+    margin: 0 0 14px;
+}
+.supp-h2 { margin-top: 56px; }
+.supp-grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    background-color: var(--line);
+    border: 1px solid var(--line);
+}
+.supp-card { background-color: var(--surface); padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+.supp-card h3 { margin: 0; font-size: 1.3rem; }
+.supp-card p { margin: 0; }
+.supp-tag {
+    align-self: flex-start;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border: 1px solid var(--ink);
+}
+.supp-how { font-size: 0.95rem; }
+.supp-src, .supp-note { color: var(--muted); font-size: 0.88rem; }
+.skip-list { margin: 0; padding-left: 1.2rem; max-width: 800px; }
+.skip-list li { margin-bottom: 10px; }
+.safe-grid, .store-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.safe-grid h3, .store h3 { margin: 0 0 8px; font-size: 1.15rem; }
+.safe-grid p { margin: 0; }
+.store { border: 1px solid var(--line); background-color: var(--surface); padding: 20px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+@media (max-width: 900px) {
+    .supp-grid, .safe-grid, .store-grid { grid-template-columns: 1fr; }
+}
+
 .pro-links { margin-top: 56px; }
 .pro-links h3 {
     font-family: var(--display);
