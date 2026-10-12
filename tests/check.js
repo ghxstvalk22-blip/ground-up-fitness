@@ -437,7 +437,7 @@ async function openPage(browser, file, viewport, hash = "") {
             const { page, errors } = await openPage(browser, "index.html", viewport);
             await page.evaluate(() => { localStorage.removeItem("gu-custom"); localStorage.removeItem("gu-level"); });
             await page.click("#coach-fab");
-            check(await page.locator("#coach").isVisible(), "the Coach button opens the chat");
+            check(await page.locator("#coach").isVisible() && /Fitness Coach/.test(await page.locator("#coach-title").textContent()), "the Fitness Coach button opens the chat");
             const ask = async (text) => {
                 await page.fill("#coach-input", text);
                 await page.press("#coach-input", "Enter");
@@ -456,13 +456,32 @@ async function openPage(browser, file, viewport, hash = "") {
             await ask(`<img src=x onerror="window.__pwned=1">`);
             check(await page.evaluate(() => !window.__pwned && document.querySelectorAll(".coach-log img").length === 0), "typing code into Coach can't run it");
             await ask("chest and triceps, 30 minutes");
+            // The chat stays open, with its history, when you move to another page
+            const before = await page.locator(".coach-msg").count();
+            await page.evaluate(() => { location.href = "tools.html"; });
+            await page.waitForURL(/tools\.html/);
+            await page.waitForTimeout(300);
+            check(await page.locator("#coach").isVisible() && await page.locator(".coach-msg").count() === before, `the chat and its history follow you to other pages (${before} messages)`);
+            check(/Chest & Triceps/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "the last workout is still there after changing pages");
             await page.locator(".coach-msg.is-coach").last().locator("[data-coach-start]").click();
             await page.waitForURL(/programs\.html/);
             await page.waitForTimeout(300);
             check(/My workout/.test(await page.locator(".program-head h3").textContent()) && /Chest & Triceps/.test(await page.locator(".day-card h4").first().textContent()), "Start this workout opens it as My workout on the Plans page");
             check(await page.locator(".day-card [data-log]").count() >= 3, "My workout can be logged like any plan");
+            // A tampered saved chat can't run code when it's loaded back
+            await page.evaluate(() => {
+                localStorage.setItem("gu-coach-history", JSON.stringify([{ who: "coach", html: `<img src=x onerror="window.__pwned=1"><p onclick="window.__pwned=1">hi</p><a href="javascript:window.__pwned=1">x</a><button data-howto="<script>">y</button>` }]));
+                localStorage.setItem("gu-coach-open", "true");
+            });
+            await page.reload({ waitUntil: "load" });
+            await page.waitForTimeout(300);
+            await page.locator(".coach-log a").first().click({ force: true }).catch(() => {});
+            await page.locator(".coach-log p").first().click({ force: true }).catch(() => {});
+            check(await page.evaluate(() => !window.__pwned && !document.querySelector(".coach-log img, .coach-log [onclick], .coach-log a[href^='javascript']")), "a tampered saved chat can't run code");
+            await page.click("#coach-clear");
+            check(await page.locator(".coach-msg").count() === 1, "Clear chat starts a fresh conversation");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
-            await page.evaluate(() => { localStorage.removeItem("gu-custom"); localStorage.removeItem("gu-last-plan"); });
+            await page.evaluate(() => { ["gu-custom", "gu-last-plan", "gu-coach-history", "gu-coach-state", "gu-coach-open"].forEach((k) => localStorage.removeItem(k)); });
             await page.close();
         }
 

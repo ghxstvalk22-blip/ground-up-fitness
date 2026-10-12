@@ -1758,9 +1758,9 @@ function loadCustomWorkout() {
         level: "Beginner",
         name: "My workout",
         tagline: title,
-        summary: `${title}: a session Coach built for you from this site's exercise guides. Do it once, or repeat it 1 to 3 times a week with a rest day between.`,
+        summary: `${title}: a session your Fitness Coach built from this site's exercise guides. Do it once, or repeat it 1 to 3 times a week with a rest day between.`,
         session: `About ${Math.max(15, Math.round(items.length * 7.5))} minutes`,
-        effort: "Stop most sets with 1 to 3 good reps left. Ask Coach to make it easier or harder any time.",
+        effort: "Stop most sets with 1 to 3 good reps left. Ask the Fitness Coach to make it easier or harder any time.",
         progression: "Log your sets. Next time you'll get a target for each exercise.",
         rotation: "none",
         waves: false,
@@ -2880,19 +2880,21 @@ function coachBuild(req, level) {
 
 function setupCoach() {
     if (typeof EXERCISES !== "object" || typeof MUSCLE_MAP !== "object") return;
-    const ROBOT = `<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="15" y="2" width="2" height="5" fill="currentColor"/><circle cx="16" cy="3" r="2" fill="var(--volt)"/><rect x="5" y="8" width="22" height="17" rx="2" fill="currentColor"/><rect x="9" y="13" width="4" height="4" fill="var(--volt)"/><rect x="19" y="13" width="4" height="4" fill="var(--volt)"/><rect x="11" y="20" width="10" height="2" fill="#000"/><rect x="2" y="13" width="3" height="7" fill="currentColor"/><rect x="27" y="13" width="3" height="7" fill="currentColor"/></svg>`;
+    // A loaded barbell
+    const ICON = `<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="1" y="15" width="30" height="2" fill="currentColor"/><rect x="5" y="8" width="3" height="16" fill="var(--volt)"/><rect x="8.5" y="10" width="2.5" height="12" fill="currentColor"/><rect x="11.5" y="13.5" width="1.5" height="5" fill="currentColor"/><rect x="24" y="8" width="3" height="16" fill="var(--volt)"/><rect x="21" y="10" width="2.5" height="12" fill="currentColor"/><rect x="19" y="13.5" width="1.5" height="5" fill="currentColor"/></svg>`;
     document.body.insertAdjacentHTML("beforeend", `
-<button type="button" class="coach-fab" id="coach-fab" aria-haspopup="dialog" aria-controls="coach" aria-expanded="false">${ROBOT}<span>Ask Coach</span></button>
+<button type="button" class="coach-fab" id="coach-fab" aria-haspopup="dialog" aria-controls="coach" aria-expanded="false">${ICON}<span>Fitness Coach</span></button>
 <section class="coach" id="coach" role="dialog" aria-modal="false" aria-labelledby="coach-title" hidden>
     <header class="coach-head">
-        <span class="coach-avatar">${ROBOT}</span>
-        <div><h2 id="coach-title">Coach</h2><p>Builds a workout for any muscles you want</p></div>
-        <button type="button" class="coach-close" id="coach-close" aria-label="Close Coach">&times;</button>
+        <span class="coach-avatar">${ICON}</span>
+        <div><h2 id="coach-title">Fitness Coach</h2><p>Builds a workout for any muscles you want</p></div>
+        <button type="button" class="coach-clear" id="coach-clear">Clear chat</button>
+        <button type="button" class="coach-close" id="coach-close" aria-label="Close Fitness Coach">&times;</button>
     </header>
     <div class="coach-log" id="coach-log" aria-live="polite"></div>
     <div class="coach-chips" id="coach-chips"></div>
     <form class="coach-form" id="coach-form" autocomplete="off">
-        <label for="coach-input" class="visually-hidden">Message Coach</label>
+        <label for="coach-input" class="visually-hidden">Message Fitness Coach</label>
         <input id="coach-input" type="text" maxlength="200" placeholder="e.g. shoulders, back and abs" enterkeyhint="send">
         <button type="submit" class="btn btn-primary btn-compact">Send</button>
     </form>
@@ -2901,31 +2903,89 @@ function setupCoach() {
     const log = document.getElementById("coach-log"), chips = document.getElementById("coach-chips");
     const form = document.getElementById("coach-form"), input = document.getElementById("coach-input");
     let last = null, lastReq = null, started = false;
+    const phone = () => window.matchMedia("(max-width: 760px)").matches;
 
-    const say = (html, who = "coach") => {
-        log.insertAdjacentHTML("beforeend", `<div class="coach-msg is-${who}">${html}</div>`);
+    /* The chat is saved on this device (last 40 messages) so it follows you from page to page.
+       Saved messages are cleaned on the way back in: only simple formatting, links to this
+       site's pages, and buttons for real exercises survive. */
+    const HISTORY_KEY = "gu-coach-history", STATE_KEY = "gu-coach-state", OPEN_KEY = "gu-coach-open";
+    const ALLOWED = { P: [], STRONG: [], EM: [], OL: [], UL: [], LI: [], SPAN: [], DIV: [], BR: [], A: ["href"], BUTTON: ["data-howto", "data-coach-start"] };
+    function cleanHtml(html) {
+        const tpl = document.createElement("template");
+        tpl.innerHTML = String(html).slice(0, 6000);
+        const walk = (node) => [...node.childNodes].forEach((el) => {
+            if (el.nodeType === 3) return;
+            if (el.nodeType !== 1 || !ALLOWED[el.tagName]) { el.remove(); return; }
+            [...el.attributes].forEach((a) => {
+                const keep = a.name === "class" ? /^[\w -]+$/.test(a.value)
+                    : a.name === "type" ? el.tagName === "BUTTON"
+                    : ALLOWED[el.tagName].includes(a.name);
+                if (!keep) el.removeAttribute(a.name);
+            });
+            if (el.tagName === "A" && !/^[a-z0-9-]+\.html(#[\w-]+)?$/.test(el.getAttribute("href") || "")) el.removeAttribute("href");
+            if (el.tagName === "BUTTON") {
+                el.setAttribute("type", "button");
+                if (el.hasAttribute("data-howto") && !EXERCISES[el.getAttribute("data-howto")]) el.removeAttribute("data-howto");
+            }
+            walk(el);
+        });
+        walk(tpl.content);
+        return tpl.innerHTML;
+    }
+    const history = () => { const h = store.get(HISTORY_KEY, []); return Array.isArray(h) ? h.filter((m) => m && (m.who === "you" || m.who === "coach") && typeof m.html === "string").slice(-40) : []; };
+    const say = (html, who = "coach", save = true) => {
+        log.insertAdjacentHTML("beforeend", `<div class="coach-msg is-${who}">${cleanHtml(html)}</div>`);
         log.scrollTop = log.scrollHeight;
+        if (save) store.set(HISTORY_KEY, [...history(), { who, html }].slice(-40));
     };
+    // The last workout, so "make it shorter" and "Start" still work on another page
+    function saveState() { store.set(STATE_KEY, { last, lastReq }); }
+    (function loadState() {
+        const s = store.get(STATE_KEY);
+        if (!s || typeof s !== "object") return;
+        const okGroup = (g) => MUSCLE_MAP.some((x) => x.id === g);
+        if (s.lastReq && typeof s.lastReq === "object" && Array.isArray(s.lastReq.groups)) {
+            lastReq = {
+                t: "", groups: s.lastReq.groups.filter(okGroup), parts: (s.lastReq.parts || []).filter((p) => mmPart(p)),
+                kit: ["none", "db"].includes(s.lastReq.kit) ? s.lastReq.kit : null,
+                minutes: Number(s.lastReq.minutes) > 0 ? Math.min(120, Number(s.lastReq.minutes)) : null,
+                title: (s.lastReq.title || []).filter((x) => typeof x === "string").map((x) => x.slice(0, 30)).slice(0, 6)
+            };
+        }
+        if (s.last && Array.isArray(s.last.items)) {
+            const items = s.last.items.filter((x) => x && EXERCISES[x.n]).map((x) => ({ n: x.n, d: String(x.d || "").slice(0, 40), rest: String(x.rest || "").slice(0, 20) }));
+            if (items.length) last = { title: String(s.last.title || "Workout").replace(/[<>]/g, "").slice(0, 60), items, minutes: Number(s.last.minutes) || 30, kit: lastReq ? lastReq.kit : null, bumped: false, missing: [] };
+        }
+    })();
     const suggest = (list) => { chips.innerHTML = list.map((s) => `<button type="button" class="chip" data-coach-say="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join(""); };
     const DEFAULT_CHIPS = ["Shoulders, back & abs", "Legs, 30 minutes", "Full body, no equipment", "How do I do a deadlift?"];
 
-    function open() {
+    function open(focus = true) {
         panel.hidden = false;
         fab.setAttribute("aria-expanded", "true");
         document.body.classList.add("coach-open");
+        store.set(OPEN_KEY, true);
         if (!started) {
             started = true;
-            say(`<p><strong>Hey, I'm Coach.</strong> Tell me what you want to train and I'll build you a workout from this site's exercise guides. Try "<em>shoulders, back and abs</em>" or "<em>30 min legs, no equipment</em>".</p>
+            const saved = history();
+            if (saved.length) {
+                saved.forEach((m) => say(m.html, m.who, false));
+                suggest(last ? ["Make it shorter", "Make it harder", "Start this workout"] : DEFAULT_CHIPS);
+                if (focus && !phone()) setTimeout(() => input.focus(), 30);
+                return;
+            }
+            say(`<p><strong>Hey, I'm your Fitness Coach.</strong> Tell me what you want to train and I'll build you a workout from this site's exercise guides. Try "<em>shoulders, back and abs</em>" or "<em>30 min legs, no equipment</em>".</p>
                 <p class="coach-fine">I'm a simple built-in helper, not a person and not an AI service. Nothing you type leaves your phone.</p>`);
             suggest(DEFAULT_CHIPS);
         }
-        setTimeout(() => input.focus(), 30);
+        if (focus) setTimeout(() => input.focus(), 30);
     }
-    function close() {
+    function close(moveFocus = true) {
         panel.hidden = true;
         fab.setAttribute("aria-expanded", "false");
         document.body.classList.remove("coach-open");
-        fab.focus();
+        store.set(OPEN_KEY, false);
+        if (moveFocus) fab.focus();
     }
 
     function workoutCard(w) {
@@ -2968,6 +3028,7 @@ function setupCoach() {
                 last = coachBuild(mod, getLevel());
                 if (mod.shuffle) { const k = mod.shuffle % Math.max(1, last.items.length); last.items = [...last.items.slice(k), ...last.items.slice(0, k)]; }
                 lastReq = mod;
+                saveState();
                 say(workoutCard(last));
                 suggest(["Make it shorter", "Make it harder", "No equipment", "Start this workout"]);
                 return;
@@ -3016,7 +3077,8 @@ function setupCoach() {
         // Build a workout
         if (req.groups.length || /\b(workout|train|session|exercise|lift|routine)\b/.test(t)) {
             last = coachBuild(req, getLevel());
-            lastReq = req;
+            lastReq = { ...req, t: "" };
+            saveState();
             if (!last.items.length) {
                 say(`<p>I couldn't find exercises for that with ${req.kit === "none" ? "no equipment" : "dumbbells only"}. Want a gym version instead?</p>`);
                 suggest(["Gym version", "Full body, no equipment"]);
@@ -3037,6 +3099,7 @@ function setupCoach() {
         store.set("gu-custom", { title: last.title, items: last.items });
         store.set("gu-last-plan", { goal: "custom", days: 1 });
         say(`<p>Saved as <strong>My workout</strong>. Opening it on the Plans page, where you can log your sets.</p>`);
+        if (phone()) store.set(OPEN_KEY, false);
         setTimeout(() => { location.assign(`programs.html?w=${Date.now()}#program-custom-1`); }, 350);
     }
 
@@ -3060,8 +3123,15 @@ function setupCoach() {
         }
         if (e.target.closest("[data-coach-start]")) startWorkout();
     });
-    // Links like #coach open it
-    if (location.hash === "#coach") open();
+    document.getElementById("coach-clear").addEventListener("click", () => {
+        store.remove(HISTORY_KEY); store.remove(STATE_KEY);
+        last = null; lastReq = null; started = false; log.innerHTML = "";
+        open();
+    });
+    // On phones the chat covers the page, so a link out of it closes the panel (the chat itself is kept)
+    log.addEventListener("click", (e) => { if (e.target.closest("a[href]") && phone()) store.set(OPEN_KEY, false); });
+    // Stay open from page to page; links like #coach open it too
+    if (location.hash === "#coach" || store.get(OPEN_KEY) === true) open(location.hash === "#coach");
 }
 
 /* =========================================================

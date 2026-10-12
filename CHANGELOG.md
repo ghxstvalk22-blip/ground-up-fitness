@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Fitness Coach keeps your chat)
+
+- Coach is now called **Fitness Coach**, with a barbell icon.
+- **Your chat is saved** on your device and comes back on every page, including the last workout it built, so "make it shorter" or "Start this workout" still work after you move around the site. A **Clear chat** button starts over.
+- **It stays open as you move around:** if the chat is open and you tap a link or a tab, it's still open on the next page. On phones, where the chat fills the screen, following a link from inside the chat (like a plan or Start this workout) closes it so you can see the page, and your conversation is kept.
+- Saved chats are checked when they're loaded back, so tampered data can't run code.
+
 ## 2026-10-12 (Coach)
 
 - **New: Coach**, a chat helper on every page (the robot button, bottom right). Tell it what you want to train in your own words, like "shoulders, back and abs", "30 min legs, no equipment", or "upper chest and side delts with dumbbells", and it builds a workout from the site's exercise guides, set for your level.
