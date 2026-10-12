@@ -25,7 +25,7 @@ function findChromium() {
 }
 
 const ROOT = path.resolve(__dirname, "..");
-const PAGES = ["index.html", "start.html", "programs.html", "exercises.html", "pros.html", "tools.html", "basics.html", "contact.html"];
+const PAGES = ["index.html", "start.html", "programs.html", "me.html", "exercises.html", "pros.html", "tools.html", "basics.html", "contact.html"];
 const url = (file, hash = "") => "file://" + path.join(ROOT, file) + hash;
 const SHOTS = path.join(__dirname, "screenshots");
 const failures = [];
@@ -108,7 +108,7 @@ async function openPage(browser, file, viewport, hash = "") {
             const bad = [...new Set(hrefs.map((h) => linkProblem(h, file)).filter(Boolean))];
             check(bad.length === 0, `every link has a real target ${bad.length ? JSON.stringify(bad) : ""}`);
             const key = file === "index.html" ? null : file.replace(".html", "");
-            if (key) check(await page.locator(`#site-nav .nav-link.active[href="${file}"]`).count() === 1, "this page's tab is marked as current");
+            if (key && key !== "me") check(await page.locator(`#site-nav .nav-link.active[href="${file}"]`).count() === 1, "this page's tab is marked as current");
             await page.screenshot({ path: path.join(SHOTS, `${name}-${file.replace(".html", "")}.png`), fullPage: true });
             await page.close();
         }
@@ -308,6 +308,33 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator(".library-card").count() >= 2, "searching finds exercises");
             await page.locator(".library-card [data-howto]").first().click();
             check(await page.locator("#howto[open]").count() === 1, "How to works from the library");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // My progress: pulls in logged lifts and cardio, and switches between strength and endurance
+        {
+            const { page, errors } = await openPage(browser, "me.html", viewport);
+            await page.evaluate(() => {
+                const d = (k) => { const x = new Date(); x.setDate(x.getDate() - k); return x.toISOString().slice(0, 10); };
+                localStorage.setItem("gu-log", JSON.stringify({ "Bench press": [
+                    { date: d(21), unit: "lb", sets: [{ w: 135, r: 6 }, { w: 135, r: 6 }, { w: 135, r: 5 }] },
+                    { date: d(14), unit: "lb", sets: [{ w: 135, r: 7 }, { w: 135, r: 6 }, { w: 135, r: 6 }] },
+                    { date: d(0), unit: "lb", sets: [{ w: 140, r: 6 }, { w: 140, r: 6 }, { w: 140, r: 5 }] }] }));
+                localStorage.setItem("gu-cardio", JSON.stringify([{ date: d(0), activity: "Easy jog", minutes: 25, distance: 2.5, dunit: "mi", effort: 5 }, { date: d(7), activity: "Easy jog", minutes: 25, distance: 2.4, dunit: "mi", effort: 5 }]));
+            });
+            await page.reload();
+            await page.waitForTimeout(300);
+            check(/max/.test(await page.locator("#lift-table tbody").textContent()), "progress page lists logged lifts with projections");
+            check(await page.locator("#lift-chart .chart-proj").count() === 1, "lift chart shows a projection");
+            await page.locator('input[name="trainfor"][value="endurance"]').check({ force: true });
+            check(/reps @ 140/.test(await page.locator("#lift-table tbody").textContent()), "endurance view shows reps at your working weight");
+            check(/25/.test(await page.locator("#me-stats").textContent()), "this week's cardio minutes are counted");
+            check(await page.locator("#cardio-chart rect").count() >= 8, "cardio chart shows weekly bars and projection");
+            check(/Pace/.test(await page.locator("#pace-panel").textContent()), "pace trend appears for runs with distance");
+            await page.fill('#quick-cardio input[name="minutes"]', "20");
+            await page.locator("#quick-cardio button[type=submit]").click();
+            check(/45/.test(await page.locator("#me-stats").textContent()), "logging cardio here updates the week");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

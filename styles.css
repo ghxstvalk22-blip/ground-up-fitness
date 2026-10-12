@@ -1913,6 +1913,58 @@ select, input, textarea {
 .library-tip { margin: 0 0 14px; color: var(--muted); font-size: 0.88rem; }
 .library-card .btn { margin-top: auto; align-self: flex-start; }
 
+/* ---------- My progress page ---------- */
+.me-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.me-link:hover, .me-link.active { border-color: var(--volt); }
+.me-dot { width: 9px; height: 9px; border-radius: 50%; background-color: var(--volt); }
+@media (max-width: 460px) { .me-link { font-size: 0; gap: 0; padding: 9px 11px; } .me-dot { width: 12px; height: 12px; } }
+
+.account-card { margin-bottom: 28px; }
+.train-for { margin-bottom: 8px; }
+.train-for-advice { margin: 0 0 32px; color: var(--muted); max-width: 70ch; }
+.me-h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
+.me-h3 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.06em; margin: 28px 0 10px; }
+.me-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background-color: var(--line); border: 1px solid var(--line); }
+.me-stats > div { background-color: var(--surface); padding: 18px; }
+.me-stats span { display: block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.me-stats strong { font-family: var(--display); font-size: 2.4rem; font-weight: 900; font-stretch: 75%; line-height: 1.1; }
+.me-stats small { font-family: var(--sans); font-size: 0.9rem; font-weight: 600; color: var(--muted); }
+.me-stats a { font-family: var(--sans); font-size: 1rem; color: var(--ink); }
+.mini-bar { height: 6px; margin-top: 8px; background-color: var(--line); }
+.mini-bar div { height: 100%; background-color: var(--volt); }
+@media (max-width: 760px) { .me-stats { grid-template-columns: 1fr 1fr; } }
+
+.table-scroll { position: relative; overflow-x: auto; }
+.lift-table { width: 100%; min-width: 560px; border-collapse: collapse; font-variant-numeric: tabular-nums; background-color: var(--surface); border: 1px solid var(--line); }
+.lift-table th, .lift-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); font-size: 0.92rem; vertical-align: top; }
+.lift-table thead th { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.lift-table tbody th { font-weight: 700; }
+.lift-table small { display: block; color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+.lift-table td { white-space: nowrap; }
+.lift-table .is-next { font-weight: 700; color: var(--accent); }
+.lift-table tr.is-selected { box-shadow: inset 4px 0 0 var(--volt); }
+.lift-table .empty-row td { text-align: left; color: var(--muted); }
+.me-chart-panel { margin-top: 18px; }
+.me-chart-panel h3, #cardio .panel h3 { margin: 0 0 12px; }
+#lift-chart, #cardio-chart { display: block; width: 100%; height: auto; }
+.chart-goal { stroke: var(--good); stroke-dasharray: 4 4; }
+.bar-done { fill: var(--ink); }
+.bar-proj { fill: none; stroke: var(--volt); stroke-width: 2; stroke-dasharray: 4 3; }
+.quick-cardio { border: 0; padding: 0; background: none; margin: 0 0 12px; }
+
 /* ---------- FAQ ---------- */
 .faq details {
     border-bottom: 1px solid var(--line);

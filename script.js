@@ -44,6 +44,7 @@ const FEATURES = [
     setupRestTimer,
     setupLibrary,
     setupWeightTrend,
+    setupDashboard,
     setupTools,
     setupContactForm,
     setupLinks,      // keep after features that add routes
@@ -125,6 +126,9 @@ const NEXT_STEPS = {
     basics: [["Your first day", "What to bring and what to do", "start.html#first-day"],
              ["Find your plan", "Free, takes 10 seconds", "index.html#get-plan"],
              ["Still have a question?", "Ask a real person", "contact.html#contact-general"]],
+    me: [["Pick up where you left off", "Back to your plan", "programs.html"],
+         ["How much should I eat?", "Calories and protein", "tools.html#tool-calories"],
+         ["Track your bodyweight", "7-day average trend", "tools.html#tool-weight"]],
     contact: [["New here?", "Start with the basics", "start.html"],
               ["See the programs", "Pick one and start this week", "programs.html"]]
 };
@@ -246,6 +250,7 @@ function setupLayout() {
         <nav id="site-nav" aria-label="Main">
             <ul class="nav-list">${navHtml}</ul>
         </nav>
+        <a class="me-link${page === "me" ? " active" : ""}" href="me.html"${page === "me" ? ' aria-current="page"' : ""}><span class="me-dot" aria-hidden="true"></span>My progress</a>
         <button class="jump-toggle" type="button" aria-haspopup="dialog" aria-controls="jump">Search <kbd>/</kbd></button>
         <button class="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
     </div>
@@ -278,6 +283,7 @@ function setupLayout() {
         <nav class="footer-nav" aria-label="Footer">
             <a href="start.html">Start here</a>
             <a href="programs.html">Programs</a>
+            <a href="me.html">My progress</a>
             <a href="exercises.html">Exercise library</a>
             <a href="pros.html">Train like a pro</a>
             <a href="tools.html">Tools</a>
@@ -296,7 +302,7 @@ function setupLayout() {
 
     // "You are here" trail at the top of inner pages
     const banner = document.querySelector(".page-banner-inner");
-    const here = SITE_NAV.find((n) => n.page === page);
+    const here = SITE_NAV.find((n) => n.page === page) || { me: { label: "My progress" }, supplements: { label: "Supplements" } }[page];
     if (banner && here && !banner.querySelector(".breadcrumbs")) {
         banner.insertAdjacentHTML("afterbegin", `
             <nav class="breadcrumbs" aria-label="You are here">
@@ -1294,7 +1300,8 @@ function getProfile() {
         experience: p.experience || "new",
         bodyweight: p.bodyweight || "",
         unit: p.unit || (store.get("gu-unit") === "kg" ? "kg" : "lb"),
-        focus: p.focus || ""
+        focus: p.focus || "",
+        trainFor: p.trainFor || "both"
     };
 }
 
@@ -1850,7 +1857,7 @@ function setupPrograms() {
         els.profileForm.addEventListener("submit", (e) => e.preventDefault());
         els.profileForm.addEventListener("change", () => {
             const old = getProfile();
-            const next = { experience: f.experience.value, bodyweight: f.bodyweight.value, unit: f.unit.value, focus: f.focus.value };
+            const next = { ...old, experience: f.experience.value, bodyweight: f.bodyweight.value, unit: f.unit.value, focus: f.focus.value };
             // Switching units converts the bodyweight you typed
             if (old.unit !== next.unit && next.bodyweight) {
                 next.bodyweight = trimNum(Math.round(toUnit(Number(next.bodyweight), old.unit, next.unit) * 10) / 10);
@@ -2162,6 +2169,274 @@ function setupWeightTrend() {
     });
     document.querySelectorAll('input[name="unit"]').forEach((r) => r.addEventListener("change", () => setTimeout(render, 0)));
     render();
+}
+
+/* =========================================================
+   Shared chart: solid line for what happened, dashed for the projection
+   ========================================================= */
+function drawTrendChart(svg, points, projection, { unit = "", W = 720, H = 300, label = (v) => fmt(v) } = {}) {
+    const pad = { l: 56, r: 20, t: 20, b: 36 };
+    const all = [...points, ...projection];
+    const t0 = all[0].date.getTime(), t1 = all[all.length - 1].date.getTime();
+    const vals = all.map((p) => p.value);
+    const lo = Math.min(...vals) * 0.92, hi = Math.max(...vals) * 1.06 + 0.01;
+    const x = (d) => pad.l + ((d.getTime() - t0) / Math.max(1, t1 - t0)) * (W - pad.l - pad.r);
+    const y = (v) => pad.t + (1 - (v - lo) / Math.max(0.01, hi - lo)) * (H - pad.t - pad.b);
+    const line = (pts) => pts.map((p, i) => `${i ? "L" : "M"}${x(p.date).toFixed(1)},${y(p.value).toFixed(1)}`).join("");
+    let out = "";
+    for (let i = 0; i <= 4; i++) {
+        const v = lo + ((hi - lo) * i) / 4;
+        out += `<line class="chart-grid" x1="${pad.l}" x2="${W - pad.r}" y1="${y(v)}" y2="${y(v)}"/><text class="chart-label" x="${pad.l - 8}" y="${y(v) + 4}" text-anchor="end">${label(v)}</text>`;
+    }
+    const last = points[points.length - 1];
+    out += `<text class="chart-label" x="${pad.l}" y="${H - 10}">${shortDate(points[0].date)}</text>`;
+    if (projection.length) {
+        out += `<text class="chart-label" x="${W - pad.r}" y="${H - 10}" text-anchor="end">${shortDate(projection[projection.length - 1].date)}</text>`;
+        out += `<path class="chart-proj" d="${line([last, ...projection])}"/>`;
+    }
+    out += `<path class="chart-line" d="${line(points)}"/>`;
+    out += points.map((p) => `<circle class="chart-dot" cx="${x(p.date)}" cy="${y(p.value)}" r="4.5"><title>${shortDate(p.date)}: ${label(p.value)} ${unit}</title></circle>`).join("");
+    svg.innerHTML = out;
+}
+
+// About how many reps someone could do at weight w, given an estimated max (Epley, turned around)
+const repsAt = (max, w) => (w > 0 ? Math.max(1, Math.floor(30 * (max / w - 1))) : 0);
+
+/* =========================================================
+   FEATURE: My progress page
+   Pulls together everything logged on this device (or in the
+   account, once signed in): lifts, cardio, and bodyweight.
+   ========================================================= */
+function setupDashboard() {
+    const $ = (id) => document.getElementById(id);
+    const stats = $("me-stats");
+    if (!stats) return;
+    const radios = [...document.querySelectorAll('input[name="trainfor"]')];
+    let selected = null;
+
+    const ADVICE = {
+        strength: "Strength: most of your main-lift sets in the 3 to 8 rep range with 2 to 3 minutes of rest. Your projections show your estimated one-rep max.",
+        endurance: "Endurance: sets of 12 to 20 reps with shorter rests (30 to 60 seconds), plus at least 150 minutes of cardio a week. Your projections show how many reps you could do at your working weight.",
+        both: "Both: keep lifting in the plan's rep ranges and add regular cardio. You'll see your estimated max and your reps at your working weight."
+    };
+
+    function saveTrainFor(v) {
+        const p = store.get(PROFILE_KEY, {}) || {};
+        p.trainFor = v;
+        store.set(PROFILE_KEY, p);
+    }
+    radios.forEach((r) => r.addEventListener("change", () => { saveTrainFor(r.value); renderAll(); }));
+
+    function weekBounds(date = new Date()) { const s0 = mondayOf(date); return [s0, addDays(s0, 7)]; }
+
+    function renderStats(profile) {
+        const [ws, we] = weekBounds();
+        const inWeek = (iso) => { const d = parseIso(iso); return d >= ws && d < we; };
+        const log = getLog();
+        const days = new Set();
+        let sets = 0;
+        Object.values(log).forEach((entries) => entries.forEach((e) => { if (inWeek(e.date)) { days.add(e.date); sets += e.sets.length; } }));
+        getCardio().forEach((c) => { if (inWeek(c.date)) days.add(c.date); });
+        const minutes = cardioMinutesInWeek();
+        const weights = (store.get("gu-weights", []) || []).filter((w) => parseIso(w.date) >= addDays(new Date(), -7));
+        const bw = weights.length ? weights.reduce((sum, w) => sum + toUnit(w.w, w.unit, profile.unit), 0) / weights.length : null;
+        stats.innerHTML = `
+            <div><span>Workout days</span><strong>${days.size}</strong></div>
+            <div><span>Sets logged</span><strong>${sets}</strong></div>
+            <div><span>Cardio minutes</span><strong>${minutes}<small> / 150</small></strong>
+                <div class="mini-bar" aria-hidden="true"><div style="width:${Math.min(100, (minutes / 150) * 100)}%"></div></div></div>
+            <div><span>Bodyweight (7-day avg)</span><strong>${bw ? `${trimNum(Math.round(bw * 10) / 10)}<small> ${profile.unit}</small>` : `<a href="tools.html#tool-weight">Add one</a>`}</strong></div>`;
+    }
+
+    function liftSummary(name, profile) {
+        const entries = logFor(name);
+        const proj = projectLift(name, profile.unit, profile.experience);
+        const last = entries[entries.length - 1];
+        const lastSets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, profile.unit), profile.unit), r: s.r }));
+        const top = Math.max(...lastSets.map((s) => s.w));
+        const nowMax = proj.points[proj.points.length - 1].value;
+        const laterMax = proj.projection[proj.projection.length - 1].value;
+        return { entries, proj, last, lastSets, top, nowMax, laterMax, nowReps: repsAt(nowMax, top), laterReps: repsAt(laterMax, top) };
+    }
+
+    function renderLifts(profile, mode) {
+        const tbody = document.querySelector("#lift-table tbody");
+        const log = getLog();
+        const names = Object.keys(log).filter((n) => log[n] && log[n].length)
+            .sort((a, b) => logFor(b).pop().date.localeCompare(logFor(a).pop().date));
+        $("th-now").textContent = mode === "endurance" ? "Reps now" : "Now";
+        $("th-next").textContent = mode === "endurance" ? "Reps in 8 weeks" : "In 8 weeks";
+        if (!names.length) {
+            tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Nothing logged yet. Open your <a href="programs.html">plan</a> and tap <strong>Log sets</strong> on any exercise. You can add past workouts by changing the date.</td></tr>`;
+            $("lift-chart").innerHTML = "";
+            $("lift-chart-title").textContent = "Your chart appears after you log a lift";
+            $("lift-chart-note").textContent = "";
+            return;
+        }
+        const u = profile.unit;
+        tbody.innerHTML = names.map((n) => {
+            const x = liftSummary(n, profile);
+            const lastText = x.lastSets.map((s) => (s.w ? `${trimNum(s.w)}×${s.r}` : `${s.r}`)).join(", ");
+            const strength = [`${fmt(x.nowMax)} ${u} max`, `${fmt(x.laterMax)} ${u} max`];
+            const endurance = x.top ? [`${x.nowReps} reps @ ${trimNum(x.top)}`, `${x.laterReps} reps @ ${trimNum(x.top)}`] : ["Bodyweight", "Bodyweight"];
+            const cells = mode === "strength" ? strength : mode === "endurance" ? endurance
+                : [`${strength[0]}<small>${endurance[0]}</small>`, `${strength[1]}<small>${endurance[1]}</small>`];
+            return `<tr${n === selected ? ' class="is-selected"' : ""}>
+                <th scope="row">${escapeHtml(n)}</th>
+                <td>${shortDate(parseIso(x.last.date))}<small>${escapeHtml(lastText)}</small></td>
+                <td>${cells[0]}</td>
+                <td class="is-next">${cells[1]}</td>
+                <td><button type="button" class="chip" data-chart="${escapeHtml(n)}">Chart</button></td>
+            </tr>`;
+        }).join("");
+        drawLift(selected && names.includes(selected) ? selected : names[0], profile, mode);
+    }
+
+    function drawLift(name, profile, mode) {
+        selected = name;
+        document.querySelectorAll("#lift-table tbody tr").forEach((tr) => tr.classList.toggle("is-selected", tr.querySelector("th").textContent === name));
+        const x = liftSummary(name, profile);
+        const svg = $("lift-chart");
+        const u = profile.unit;
+        if (mode === "endurance" && x.top) {
+            const pts = x.proj.points.map((p) => ({ date: p.date, value: repsAt(p.value, x.top) }));
+            const prj = x.proj.projection.map((p) => ({ date: p.date, value: repsAt(p.value, x.top) }));
+            $("lift-chart-title").textContent = `${name}: reps you could do at ${trimNum(x.top)} ${u}`;
+            drawTrendChart(svg, pts, prj, { unit: "reps", label: (v) => String(Math.round(v)) });
+            $("lift-chart-note").textContent = `About ${x.nowReps} reps at ${trimNum(x.top)} ${u} now, and about ${x.laterReps} by ${shortDate(prj[prj.length - 1].date)} on your current trend. For endurance, sets of 12 to 20 with short rests build this fastest.`;
+        } else {
+            $("lift-chart-title").textContent = `${name}: estimated one-rep max (${u})`;
+            drawTrendChart(svg, x.proj.points, x.proj.projection, { unit: u });
+            $("lift-chart-note").textContent = `Estimated max about ${fmt(x.nowMax)} ${u} now; about ${fmt(x.laterMax)} ${u} by ${shortDate(x.proj.projection[x.proj.projection.length - 1].date)} at roughly ${(x.proj.rate * 100).toFixed(1)}% a week, based on ${x.entries.length} session${x.entries.length === 1 ? "" : "s"}. A projection, not a promise: progress slows as you get stronger.${store.get(PROFILE_KEY) && store.get(PROFILE_KEY).experience ? "" : " Tip: set your experience under Make it yours on the Programs page for a more accurate estimate."}`;
+        }
+    }
+
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-chart]");
+        if (btn) drawLift(btn.dataset.chart, getProfile(), currentMode());
+    });
+
+    function renderCardio(profile) {
+        const svg = $("cardio-chart");
+        const W = 520, H = 240, pad = { l: 40, r: 10, t: 14, b: 30 };
+        const weeks = [];
+        for (let i = 7; i >= 0; i--) {
+            const d = addDays(mondayOf(new Date()), -7 * i);
+            weeks.push({ start: d, minutes: cardioMinutesInWeek(d) });
+        }
+        // Projection: recent trend, but never more than about 10% more per week
+        const recent = weeks.slice(-4).map((w) => w.minutes);
+        const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+        const slope = recent.length > 1 ? (recent[recent.length - 1] - recent[0]) / (recent.length - 1) : 0;
+        const ahead = [];
+        let m = weeks[weeks.length - 1].minutes || avg;
+        for (let i = 1; i <= 4; i++) {
+            m = Math.max(0, Math.min(m * 1.1 + 5, m + Math.max(slope, 0)));
+            ahead.push({ start: addDays(mondayOf(new Date()), 7 * i), minutes: Math.round(m), projected: true });
+        }
+        const bars = [...weeks, ...ahead];
+        const hi = Math.max(180, ...bars.map((b) => b.minutes)) * 1.1;
+        const bw = (W - pad.l - pad.r) / bars.length;
+        const y = (v) => pad.t + (1 - v / hi) * (H - pad.t - pad.b);
+        let g = `<line class="chart-goal" x1="${pad.l}" x2="${W - pad.r}" y1="${y(150)}" y2="${y(150)}"/><text class="chart-label" x="${W - pad.r}" y="${y(150) - 5}" text-anchor="end">150 min goal</text>`;
+        g += `<text class="chart-label" x="${pad.l - 6}" y="${y(0) + 4}" text-anchor="end">0</text>`;
+        bars.forEach((b, i) => {
+            const x0 = pad.l + i * bw + 4;
+            g += `<rect class="${b.projected ? "bar-proj" : "bar-done"}" x="${x0}" y="${y(b.minutes)}" width="${bw - 8}" height="${Math.max(0, y(0) - y(b.minutes))}"><title>Week of ${shortDate(b.start)}: ${b.minutes} min${b.projected ? " (projected)" : ""}</title></rect>`;
+            if (i % 2 === 0) g += `<text class="chart-label" x="${x0 + (bw - 8) / 2}" y="${H - 10}" text-anchor="middle">${shortDate(b.start)}</text>`;
+        });
+        svg.innerHTML = g;
+        const now = weeks[weeks.length - 1].minutes;
+        const reach = ahead.find((a) => a.minutes >= 150);
+        $("cardio-note").textContent = now >= 150
+            ? `${now} minutes this week. You're at or above the recommended 150. Nice.`
+            : getCardio().length
+                ? `${now} minutes so far this week.${reach ? ` Building gradually, you could reach 150 a week by the week of ${shortDate(reach.start)}.` : " Add a little each week (about 10%) to build up safely."} Dashed bars are a projection.`
+                : "No cardio logged yet. Use the form to add a walk, ride, or run.";
+
+        // Recent sessions
+        const list = $("cardio-list");
+        const du = distUnit(profile.unit);
+        list.innerHTML = getCardio().slice(-5).reverse().map((c) => `
+            <li><span>${shortDate(parseIso(c.date))}</span><strong>${escapeHtml(c.activity)}: ${c.minutes} min${c.distance ? `, ${trimNum(Math.round(toDist(c.distance, c.dunit, du) * 100) / 100)} ${du}` : ""}</strong>
+                <button type="button" class="text-button" data-remove-cardio="${c.date}|${escapeHtml(c.activity)}|${c.minutes}">Remove</button></li>`).join("");
+
+        // Pace trend for activities with distance
+        const byAct = {};
+        getCardio().filter((c) => c.distance > 0).forEach((c) => { (byAct[c.activity] = byAct[c.activity] || []).push(c); });
+        const rows = Object.entries(byAct).filter(([, l]) => l.length >= 2).map(([act, l]) => {
+            const pace = (c) => c.minutes / toDist(c.distance, c.dunit, du);
+            const first = l[0], last = l[l.length - 1];
+            const rate = WEEKLY_GAIN[profile.experience] * 0.7;
+            const later = pace(last) * Math.pow(1 - rate, 8);
+            const mmss = (v) => `${Math.floor(v)}:${String(Math.round((v % 1) * 60)).padStart(2, "0")}`;
+            return `<tr><th scope="row">${escapeHtml(act)}</th><td>${mmss(pace(first))} /${du}</td><td>${mmss(pace(last))} /${du}</td><td class="is-next">${mmss(later)} /${du}</td></tr>`;
+        });
+        $("pace-panel").innerHTML = rows.length ? `
+            <h3 class="me-h3">Pace</h3>
+            <div class="table-scroll"><table class="lift-table"><thead><tr><th scope="col">Activity</th><th scope="col">First</th><th scope="col">Latest</th><th scope="col">In 8 weeks</th></tr></thead><tbody>${rows.join("")}</tbody></table></div>
+            <p class="result-note">Pace is minutes per ${du === "mi" ? "mile" : "kilometer"} (lower is faster). The 8-week number assumes steady training and is only an estimate.</p>` : "";
+    }
+
+    const currentMode = () => (radios.find((r) => r.checked) || {}).value || "both";
+
+    // Quick cardio form
+    const qc = $("quick-cardio");
+    const acts = Object.keys(EXERCISES).filter(isCardio);
+    $("qc-activity").innerHTML = acts.map((n) => `<option>${escapeHtml(n)}</option>`).join("") + "<option>Other cardio</option>";
+    qc.elements.date.value = isoDate(new Date());
+    qc.elements.date.max = isoDate(new Date());
+    qc.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const f = qc.elements;
+        const minutes = Number(f.minutes.value);
+        const status = qc.querySelector(".log-status");
+        if (!minutes) { status.textContent = "Add how many minutes you did."; f.minutes.focus(); return; }
+        status.textContent = "";
+        saveCardio({ date: f.date.value || isoDate(new Date()), activity: f.activity.value, minutes, distance: Number(f.distance.value) || 0, dunit: distUnit(getProfile().unit), effort: Number(f.effort.value) });
+        f.minutes.value = ""; f.distance.value = "";
+    });
+    $("cardio-list").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-remove-cardio]");
+        if (!btn) return;
+        const [date, activity, minutes] = btn.dataset.removeCardio.split("|");
+        const all = store.get(CARDIO_KEY, []) || [];
+        const i = all.findIndex((c) => c.date === date && c.activity === activity && String(c.minutes) === minutes);
+        if (i >= 0) { all.splice(i, 1); store.set(CARDIO_KEY, all); renderAll(); }
+    });
+
+    $("export-all").addEventListener("click", () => {
+        const rows = [["Type", "Date", "Name", "Set", "Weight", "Unit", "Reps", "Minutes", "Distance", "Effort"]];
+        Object.entries(getLog()).forEach(([name, entries]) => entries.forEach((e) => e.sets.forEach((st, i) => rows.push(["lift", e.date, name, i + 1, st.w, e.unit, st.r, "", "", ""]))));
+        getCardio().forEach((c) => rows.push(["cardio", c.date, c.activity, "", "", c.dunit, "", c.minutes, c.distance || "", c.effort || ""]));
+        (store.get("gu-weights", []) || []).forEach((w) => rows.push(["bodyweight", w.date, "Bodyweight", "", w.w, w.unit, "", "", "", ""]));
+        const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = `ground-up-everything-${isoDate(new Date())}.csv`;
+        document.body.appendChild(a); a.click(); a.remove();
+    });
+    $("delete-all").addEventListener("click", () => {
+        if (!window.confirm("Delete all your logged lifts, cardio, bodyweight, and settings on this device? This can't be undone. (Tip: download everything first.)")) return;
+        try { Object.keys(localStorage).filter((k) => k.startsWith("gu-")).forEach((k) => localStorage.removeItem(k)); } catch (err) { /* ignore */ }
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { cleared: true } }));
+    });
+
+    function renderAll() {
+        const profile = getProfile();
+        if (!radios.some((r) => r.checked && r.value === profile.trainFor)) {
+            const r = radios.find((x) => x.value === profile.trainFor);
+            if (r) r.checked = true;
+        }
+        const mode = currentMode();
+        $("train-for-advice").textContent = ADVICE[mode];
+        document.querySelectorAll(".dist-unit").forEach((el) => { el.textContent = distUnit(profile.unit); });
+        renderStats(profile);
+        renderLifts(profile, mode);
+        renderCardio(profile);
+    }
+    window.addEventListener("logchange", renderAll);
+    renderAll();
 }
 
 /* =========================================================

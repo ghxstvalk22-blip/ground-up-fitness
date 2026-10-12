@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My progress | Ground Up Fitness</title>
+    <meta name="description" content="Everything you have logged in one place: strength and endurance projections, cardio minutes, and bodyweight trend.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 fill=%22%23000%22/%3E%3Crect x=%225%22 y=%2219%22 width=%226%22 height=%228%22 fill=%22%23fff%22/%3E%3Crect x=%2213%22 y=%2213%22 width=%226%22 height=%2214%22 fill=%22%23fff%22/%3E%3Crect x=%2221%22 y=%225%22 width=%226%22 height=%2222%22 fill=%22%23ff5a1f%22/%3E%3C/svg%3E">
+    <meta name="theme-color" content="#000000">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Ground Up Fitness">
+    <meta property="og:title" content="My progress | Ground Up Fitness">
+    <meta property="og:description" content="Everything you have logged in one place: strength and endurance projections, cardio minutes, and bodyweight trend.">
+    <meta property="og:image" content="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=70&w=1200&h=630">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="exercises.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+
+<body data-page="me">
+<a class="skip-link" href="#main">Skip to content</a>
+<div id="site-header"><noscript><nav class="noscript-nav"><a href="index.html">Home</a> <a href="start.html">Start here</a> <a href="programs.html">Programs</a> <a href="pros.html">Pros</a> <a href="tools.html">Tools</a> <a href="basics.html">Gym basics</a> <a href="contact.html">Contact</a></nav></noscript></div>
+
+<header class="page-banner">
+    <div class="page-banner-inner">
+        <p class="eyebrow">Everything you've logged</p>
+        <h1>My progress</h1>
+        <p class="page-banner-lede">Your lifts, cardio, and bodyweight in one place, and where they're headed based on what you've actually done.</p>
+    </div>
+</header>
+
+<main id="main">
+    <section class="block me-top">
+        <div class="container wide">
+            <div class="account-card" id="account-card"></div>
+
+            <fieldset class="segmented train-for" id="train-for">
+                <legend>What are you training for?</legend>
+                <label><input type="radio" name="trainfor" value="strength"><span>Strength</span></label>
+                <label><input type="radio" name="trainfor" value="endurance"><span>Endurance</span></label>
+                <label><input type="radio" name="trainfor" value="both" checked><span>Both</span></label>
+            </fieldset>
+            <p class="train-for-advice" id="train-for-advice"></p>
+
+            <h2 class="me-h2">This week</h2>
+            <div class="me-stats" id="me-stats"></div>
+        </div>
+    </section>
+
+    <section class="block" id="lifts">
+        <div class="container wide">
+            <p class="kicker">Lifting</p>
+            <h2>Your lifts</h2>
+            <p class="section-lede" id="lifts-lede">Every exercise you've logged, with where it's headed in 8 weeks if you keep training.</p>
+            <div class="table-scroll">
+                <table class="lift-table" id="lift-table">
+                    <thead><tr><th scope="col">Exercise</th><th scope="col">Last session</th><th scope="col" id="th-now">Now</th><th scope="col" id="th-next">In 8 weeks</th><th scope="col"><span class="visually-hidden">Chart</span></th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="panel me-chart-panel">
+                <h3 id="lift-chart-title">Pick an exercise to see its chart</h3>
+                <svg id="lift-chart" viewBox="0 0 720 300" role="img" aria-label="Chart of the selected lift over time"></svg>
+                <p class="result-note" id="lift-chart-note"></p>
+            </div>
+        </div>
+    </section>
+
+    <section class="block" id="cardio">
+        <div class="container wide">
+            <p class="kicker">Cardio</p>
+            <h2>Heart and lungs</h2>
+            <p class="section-lede">Most experts suggest at least 150 minutes of moderate cardio a week. Here's how you're tracking, and where you're headed.</p>
+            <div class="split-tool">
+                <div class="panel">
+                    <h3>Minutes per week</h3>
+                    <svg id="cardio-chart" viewBox="0 0 520 240" role="img" aria-label="Bar chart of cardio minutes per week"></svg>
+                    <p class="result-note" id="cardio-note"></p>
+                </div>
+                <div class="panel">
+                    <h3>Log cardio</h3>
+                    <form id="quick-cardio" class="log-form cardio-form quick-cardio" novalidate>
+                        <div class="cardio-grid">
+                            <label>Activity
+                                <select name="activity" id="qc-activity"></select>
+                            </label>
+                            <label>Date <input type="date" name="date"></label>
+                            <label>Minutes <input type="number" name="minutes" inputmode="numeric" min="1" max="600" placeholder="30"></label>
+                            <label><span>Distance (<span class="dist-unit">mi</span>, optional)</span> <input type="number" name="distance" inputmode="decimal" min="0" step="0.01" placeholder="2.0"></label>
+                            <label>How hard was it?
+                                <select name="effort">
+                                    <option value="3">Easy: could chat the whole time</option>
+                                    <option value="5" selected>Moderate: short sentences</option>
+                                    <option value="7">Hard: a few words at a time</option>
+                                    <option value="9">Very hard: couldn't talk</option>
+                                </select>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-compact">Save cardio</button>
+                        <p class="log-status" role="status"></p>
+                    </form>
+                    <ul class="weight-list" id="cardio-list"></ul>
+                </div>
+            </div>
+            <div id="pace-panel"></div>
+        </div>
+    </section>
+
+    <section class="block" id="my-data">
+        <div class="container wide">
+            <p class="kicker">Your data</p>
+            <h2>Keep it, move it, or delete it</h2>
+            <p class="section-lede" id="data-where">Right now everything is saved on this device only. Sign in above to keep it in your account and use it on any phone or computer.</p>
+            <div class="progress-actions">
+                <button class="btn btn-small" type="button" id="export-all">Download everything (CSV)</button>
+                <button class="text-button" type="button" id="delete-all">Delete everything on this device</button>
+            </div>
+        </div>
+    </section>
+</main>
+
+<div id="site-footer"></div>
+</body>
+</html>
