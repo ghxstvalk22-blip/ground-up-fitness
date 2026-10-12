@@ -197,9 +197,19 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.selectOption("#pf-experience", "new");
             check(await page.locator(".badge-you", { hasText: "fewer" }).count() > 0, "newer lifters get fewer accessory sets");
 
+            check(await page.locator(".day-card.is-next").count() === 1, "the next unfinished day is marked Up next");
+
             await page.locator(".theme-toggle").click();
             check(await page.evaluate(() => document.documentElement.dataset.theme === "dark"), "dark mode toggles");
             await page.screenshot({ path: path.join(SHOTS, `${name}-programs-dark.png`), fullPage: true });
+
+            // Coming back: the Programs page reopens the last plan, and home offers to continue it
+            await page.goto(url("programs.html"));
+            await page.waitForTimeout(200);
+            check(/Classic Physique/.test(await page.locator("#program-head h3").textContent()), "Programs reopens the plan you used last");
+            await page.goto(url("index.html"));
+            await page.waitForTimeout(200);
+            check(/Continue: Classic Physique/.test(await page.locator(".hero-actions").textContent()), "home page offers to continue your plan");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

@@ -1116,7 +1116,9 @@ function setupPrograms() {
     };
     if (!els.grid || !els.head) return; // not on the Programs page
 
-    const state = { goal: "beginner", days: 3, week: null };
+    // Open on the plan this person used last time
+    const last = store.get("gu-last-plan", {}) || {};
+    const state = { goal: PROGRAMS[last.goal] ? last.goal : "beginner", days: Number(last.days) || 3, week: null };
     const swapsKey = () => `gu-swaps-${state.goal}-${state.days}`;
     const progressKey = () => `gu-progress-${state.goal}-${state.days}-w${state.week}`;
     const viewHash = () => `#program-${state.goal}-${state.days}`;
@@ -1180,7 +1182,7 @@ function setupPrograms() {
         els.grid.innerHTML = plan.days.map((day, di) => `
             <article class="day-card" data-day="${di}">
                 <header>
-                    <span class="day-num">Day ${di + 1}</span>
+                    <span class="day-num">Day ${di + 1} <span class="day-status"></span></span>
                     <h4>${escapeHtml(day.title)}</h4>
                 </header>
                 <ul class="ex-list">
@@ -1190,6 +1192,7 @@ function setupPrograms() {
 
         updateProgress();
         renderProfileNote(profile);
+        store.set("gu-last-plan", { goal: state.goal, days: state.days });
         if (syncUrl) history.replaceState(null, "", viewHash());
     }
 
@@ -1286,9 +1289,17 @@ function setupPrograms() {
             ? `Week ${state.week} done. Nice work. Next week's plan is ready when you are.`
             : `${checked} of ${total} exercises done this week`;
         els.fill.style.width = total ? (checked / total) * 100 + "%" : "0";
+        let nextFound = false;
         els.grid.querySelectorAll(".day-card").forEach((card) => {
             const dayBoxes = [...card.querySelectorAll('input[type="checkbox"]')];
-            card.classList.toggle("complete", dayBoxes.length > 0 && dayBoxes.every((b) => b.checked));
+            const complete = dayBoxes.length > 0 && dayBoxes.every((b) => b.checked);
+            card.classList.toggle("complete", complete);
+            // The first unfinished day is "up next", so you know where to start at the gym
+            const isNext = !complete && !nextFound && state.week === currentWeek();
+            if (isNext) nextFound = true;
+            card.classList.toggle("is-next", isNext);
+            const tag = card.querySelector(".day-status");
+            if (tag) tag.textContent = complete ? "Done" : isNext ? "Up next" : "";
         });
     }
 
@@ -1835,6 +1846,19 @@ function setupHero() {
             if (PROGRAMS[goal()]) navigate(`programs.html#program-${goal()}-${days}`);
         });
         renderDays();
+    }
+
+    // Returning visitors get a shortcut back to their plan
+    const last = store.get("gu-last-plan");
+    const actions = document.querySelector(".hero-actions");
+    if (last && PROGRAMS[last.goal] && actions) {
+        const week = Math.max(1, weekOf(programStart(last.goal)));
+        actions.insertAdjacentHTML("afterbegin",
+            `<a class="btn btn-light" href="programs.html#program-${last.goal}-${last.days}">Continue: ${escapeHtml(PROGRAMS[last.goal].name)}, week ${week}</a>`);
+        const second = actions.querySelector('a[href="#get-plan"]');
+        if (second) { second.classList.remove("btn-light"); second.classList.add("btn-outline-light"); second.textContent = "Pick a different plan"; }
+        const never = actions.querySelector('a[href="start.html"]');
+        if (never) never.remove();
     }
 
     // Ticker: every exercise in every plan, listed twice so the loop is seamless

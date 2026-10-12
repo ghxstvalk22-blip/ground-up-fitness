@@ -1088,6 +1088,9 @@ select, input, textarea {
     padding: 18px;
 }
 .day-card.complete { border-color: var(--good); box-shadow: inset 0 3px 0 var(--good); }
+.day-card.is-next { border-color: var(--ink); box-shadow: inset 0 3px 0 var(--volt); }
+.day-status { margin-left: 6px; color: var(--accent); }
+.day-card.complete .day-status { color: var(--good); }
 
 .day-card header { margin-bottom: 10px; }
 .day-num {
