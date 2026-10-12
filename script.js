@@ -2755,8 +2755,23 @@ function restSeconds(text) {
    at the bottom of the screen. It buzzes (on phones that allow
    it) and beeps when rest is over.
    ========================================================= */
+/* The rest timer keeps going if you change pages or leave the app: its end time is saved
+   (gu-rest), and with notifications allowed it puts "next set at 7:42 PM" on the lock screen
+   and, where the phone lets the app run in the background, a "Rest over" alert. */
+const REST_KEY = "gu-rest";
+function restNotify(kind, info) {
+    if (!("Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return;
+    navigator.serviceWorker.ready.then((reg) => {
+        if (kind === "clear") { reg.getNotifications({ tag: "gu-rest" }).then((ns) => ns.forEach((n) => n.close())).catch(() => {}); return; }
+        const at = new Date(info.endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
+        const opts = kind === "done"
+            ? { body: info.name ? `Time for your next set of ${info.name}.` : "Time for your next set.", tag: "gu-rest", renotify: true, vibrate: [200, 100, 200], icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html" } }
+            : { body: `Next set at ${at}${info.name ? ` · ${info.name}` : ""}`, tag: "gu-rest", silent: true, icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html" } };
+        reg.showNotification(kind === "done" ? "Rest over. Go!" : `Resting${info.name ? `: ${info.name}` : ""}`, opts).catch(() => {});
+    }).catch(() => {});
+}
+
 function setupRestTimer() {
-    if (!document.querySelector("#day-grid")) return;
     document.body.insertAdjacentHTML("beforeend", `
 <div class="rest-timer" id="rest-timer" hidden>
     <div class="rest-timer-inner">
@@ -2769,6 +2784,8 @@ function setupRestTimer() {
             <button type="button" class="chip" id="rest-plus">+15 s</button>
             <button type="button" class="chip" id="rest-stop">Done resting</button>
         </div>
+        <p class="rest-timer-at" id="rest-timer-at"></p>
+        <button type="button" class="rest-timer-alerts" id="rest-alerts" hidden>Show the timer on my lock screen</button>
     </div>
     <p class="visually-hidden" id="rest-timer-announce" aria-live="assertive"></p>
 </div>`);
@@ -2777,7 +2794,12 @@ function setupRestTimer() {
     const label = document.getElementById("rest-timer-label");
     const fill = document.getElementById("rest-timer-fill");
     const announce = document.getElementById("rest-timer-announce");
-    let endAt = 0, total = 0, tick = null, audio = null;
+    const atEl = document.getElementById("rest-timer-at");
+    const alertsBtn = document.getElementById("rest-alerts");
+    let endAt = 0, total = 0, tick = null, audio = null, restName = "";
+    const save = () => store.set(REST_KEY, tick ? { endAt, total, name: restName } : null);
+    // Offer lock-screen alerts once: needs notifications, which iPhones allow for home-screen apps
+    const canAsk = () => "Notification" in window && Notification.permission === "default" && store.get("gu-rest-alerts-no") !== true;
     const show = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
 
     function beep() {
@@ -2808,19 +2830,27 @@ function setupRestTimer() {
         label.textContent = "Rest over";
         time.textContent = "Go!";
         announce.textContent = "Rest over. Time for your next set.";
+        atEl.textContent = "";
+        // Out of the app (where the phone lets it run): a lock-screen alert; in the app: clear it
+        if (document.visibilityState === "hidden") restNotify("done", { endAt, total, name: restName }); else restNotify("clear");
+        store.set(REST_KEY, null);
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
         beep();
         setTimeout(() => { if (!tick) box.hidden = true; }, 6000);
     }
-    function start(seconds, name) {
+    function start(seconds, name, resumeAt) {
         total = seconds;
-        endAt = Date.now() + seconds * 1000;
+        endAt = resumeAt || Date.now() + seconds * 1000;
+        restName = name || "";
         label.textContent = name ? `Rest · ${name}` : "Rest";
+        atEl.textContent = `Next set at ${new Date(endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
+        alertsBtn.hidden = !canAsk();
         box.hidden = false;
         box.classList.remove("is-done");
         announce.textContent = "";
         clearInterval(tick);
         tick = setInterval(update, 250);
+        save();
         update();
         // Unlock audio on phones while we still have the tap
         try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === "suspended") audio.resume(); } catch (e) { /* ignore */ }
@@ -2834,13 +2864,39 @@ function setupRestTimer() {
         if (!tick) return;
         endAt += 15000;
         total += 15;
+        atEl.textContent = `Next set at ${new Date(endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
+        save();
         update();
     });
     document.getElementById("rest-stop").addEventListener("click", () => {
         clearInterval(tick);
         tick = null;
         box.hidden = true;
+        save();
+        restNotify("clear");
     });
+    alertsBtn.addEventListener("click", () => {
+        Notification.requestPermission().then((p) => {
+            alertsBtn.hidden = true;
+            if (p === "granted") announce.textContent = "Lock-screen alerts are on. Leave the app while resting and you'll see when your next set starts.";
+            else store.set("gu-rest-alerts-no", true);
+        }).catch(() => { alertsBtn.hidden = true; });
+    });
+    // Coming back to the app or another page: pick the timer up where it is
+    const resume = () => {
+        const r = store.get(REST_KEY);
+        if (!r || typeof r !== "object" || !(Number(r.endAt) > 0) || !(Number(r.total) > 0)) return;
+        const name = typeof r.name === "string" ? r.name.slice(0, 60) : "";
+        if (Number(r.endAt) > Date.now()) { if (!tick || endAt !== Number(r.endAt)) start(Math.min(600, Number(r.total)), name, Number(r.endAt)); }
+        else if (Date.now() - Number(r.endAt) < 120000) { restName = name; endAt = Number(r.endAt); box.hidden = false; tick = 1; finish(); }
+        else store.set(REST_KEY, null);
+    };
+    // Leaving the app mid-rest: put "next set at ..." on the lock screen. Back in the app: tidy it away.
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") { if (tick && endAt > Date.now()) restNotify("start", { endAt, total, name: restName }); }
+        else { restNotify("clear"); resume(); }
+    });
+    resume();
 }
 
 /* =========================================================

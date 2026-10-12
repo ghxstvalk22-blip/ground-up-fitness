@@ -48,3 +48,13 @@ self.addEventListener("fetch", (event) => {
         }))));
     }
 });
+
+// Tapping a rest-timer alert opens the app (or brings it to the front)
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+    const url = (event.notification.data && event.notification.data.url) || "programs.html";
+    event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+        const open = list.find((c) => "focus" in c);
+        return open ? open.focus() : self.clients.openWindow(url);
+    }));
+});

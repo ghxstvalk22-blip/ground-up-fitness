@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Rest timer on your lock screen)
+
+- The rest timer now shows **"Next set at 7:42 PM"**, keeps running if you change pages, and picks up where it was when you come back to the app.
+- **Lock-screen alerts:** tap "Show the timer on my lock screen" once and allow notifications. When you leave the app mid-rest, your lock screen shows when your next set starts, and tapping it brings you back. On Android (and computers), you also get a "Rest over. Go!" alert. On iPhone, the home-screen app can't run in the background, so the alert shows the time your rest ends rather than a live countdown (a live lock-screen countdown needs an App Store app).
+
 ## 2026-10-12 (Your plan bar, edit your workout, and more gym machines)
 
 - **Your plan bar:** on every page (except Plans, where the plan already is), a bar along the bottom shows the plan you're on and today's workout, with how many exercises you've done. Tap it to see the exercises (with how-tos), or tap **Continue** to jump straight back in and log sets. On phones it sits just above the bottom tabs.

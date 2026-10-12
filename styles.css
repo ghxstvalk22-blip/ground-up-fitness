@@ -3088,3 +3088,9 @@ body.has-planbar .coach-fab { bottom: calc(var(--tabbar-h) + 20px); }
 @media print { .planbar { display: none !important; } }
 
 .library-aka { margin: -6px 0 10px; font-size: 0.8rem; color: var(--muted); font-style: italic; }
+
+.rest-timer-at { flex-basis: 100%; margin: 6px 0 0; font-size: 0.8rem; color: #bdbdbd; }
+.rest-timer-at:empty { display: none; }
+.rest-timer-alerts { flex-basis: 100%; margin-top: 6px; min-height: 44px; padding: 0 12px; border: 1px solid var(--volt); background: transparent; color: #ffffff; font: inherit; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+.rest-timer-alerts:hover, .rest-timer-alerts:focus-visible { background-color: var(--volt); color: #000000; }
+body:has(#rest-timer:not([hidden])) .planbar { display: none; }

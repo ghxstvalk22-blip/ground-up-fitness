@@ -226,6 +226,15 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator("[data-rest]").first().click();
             check(await page.locator("#rest-timer").isVisible(), "tapping a rest time starts the rest timer");
             check(/^\d:\d\d$/.test(await page.locator("#rest-timer-time").textContent()), "rest timer counts down in m:ss");
+            check(/Next set at/.test(await page.locator("#rest-timer-at").textContent()), "the rest timer shows when the next set starts");
+            // Change pages mid-rest: the timer keeps going
+            await page.goto(url("exercises.html"), { waitUntil: "load" });
+            await page.waitForTimeout(400);
+            check(await page.locator("#rest-timer").isVisible() && /^\d:\d\d$/.test(await page.locator("#rest-timer-time").textContent()), "the rest timer keeps running on another page");
+            await page.click("#rest-stop");
+            await page.goto(url("programs.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            await page.locator("[data-rest]").first().click();
             await page.locator("#rest-stop").click();
             check(!(await page.locator("#rest-timer").isVisible()), "Done resting closes the timer");
 
