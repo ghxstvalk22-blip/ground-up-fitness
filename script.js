@@ -55,6 +55,7 @@ const FEATURES = [
     setupChecklists,
     setupRestTimer,
     setupLibrary,
+    setupMuscleMap,
     setupWeightTrend,
     setupDashboard,
     setupAccount,
@@ -81,7 +82,8 @@ const SITE_NAV = [
     ] },
     { label: "Programs", href: "programs.html", page: "programs", items: "programs" },
     { label: "Exercises", href: "exercises.html", page: "exercises", items: [
-        ["Exercise library", "Every exercise, with form guides and demos", "exercises.html"],
+        ["Muscle map", "Spin the body, pick a muscle to train", "exercises.html#muscle-map"],
+        ["Exercise library", "Every exercise, with form guides and demos", "exercises.html#library"],
         "divider",
         ["Legs", "Squats, lunges, hinges, calves", "exercises.html#legs"],
         ["Chest", "Presses and flys", "exercises.html#chest"],
@@ -2525,6 +2527,324 @@ function setupLibrary() {
     const match = radios.find((r) => r.value && r.value === fromHash);
     if (match) match.checked = true;
     render();
+}
+
+/* =========================================================
+   FEATURE: Muscle map (Exercises page)
+   A body you can spin with a mouse, finger, or the buttons. Point at
+   or tap a muscle to see what it does and the best exercises for it.
+   Drawn as SVG front, side, and back views that blend as it turns
+   (no 3D library). Shapes are [x, y] points on a 200 x 445 canvas;
+   front and back shapes are drawn on the left and mirrored.
+   ========================================================= */
+const MUSCLE_MAP = [
+    { id: "chest-upper", name: "Upper chest", group: "chest",
+      does: "Lifts your arms forward and up. Builds the top of your chest, just under the collarbones.",
+      ex: ["Incline dumbbell press", "Incline machine press", "Low-to-high cable fly"],
+      tip: "Set the bench to about 30 degrees. Much higher and it turns into a shoulder press.",
+      front: [[98, 72], [86, 71], [76, 74], [72, 80], [74, 86], [86, 86], [98, 85]],
+      side: [[110, 70], [116, 74], [120, 82], [119, 88], [112, 86]] },
+    { id: "chest", name: "Chest", group: "chest",
+      does: "Pushes your arms forward and together: push-ups, pushing a door, getting up off the floor.",
+      ex: ["Bench press", "Dumbbell bench press", "Push-up", "Cable fly"],
+      tip: "Lower the weight slowly and keep your shoulder blades pinned back on the bench.",
+      front: [[98, 87], [86, 88], [74, 88], [70, 96], [74, 106], [86, 112], [98, 110]],
+      side: [[112, 88], [119, 89], [121, 98], [116, 108], [111, 104]] },
+    { id: "front-delts", name: "Front shoulders", group: "shoulders",
+      does: "Raises your arms in front of you and presses things overhead.",
+      ex: ["Overhead press", "Seated dumbbell shoulder press", "Machine shoulder press"],
+      tip: "Chest pressing already works these a lot. One overhead press a week is plenty to start.",
+      front: [[70, 73], [64, 76], [60, 86], [59, 98], [63, 103], [69, 94], [73, 82]] },
+    { id: "side-delts", name: "Side shoulders", group: "shoulders",
+      does: "Lifts your arms out to the sides. These are what make shoulders look wider.",
+      ex: ["Lateral raise", "Cable lateral raise", "Machine lateral raise"],
+      tip: "Go light and lead with your elbows. Swinging heavy dumbbells mostly works your traps.",
+      front: [[62, 74], [55, 80], [51, 92], [52, 104], [57, 100], [59, 88]],
+      back: [[62, 74], [55, 80], [51, 92], [52, 104], [57, 100], [59, 88]],
+      side: [[92, 72], [101, 67], [111, 72], [113, 86], [108, 98], [97, 99], [90, 88]], layer: 2 },
+    { id: "rear-delts", name: "Rear shoulders", group: "shoulders",
+      does: "Pulls your arms back. Strong rear shoulders help your posture and keep your shoulders healthy.",
+      ex: ["Face pull", "Rear delt fly", "Reverse pec deck"],
+      tip: "Most people under-train these. Add 2 or 3 sets a week and your posture will thank you.",
+      back: [[70, 73], [64, 76], [60, 86], [59, 98], [63, 103], [69, 94], [73, 82]] },
+    { id: "traps", name: "Traps", group: "back",
+      does: "Shrug and steady your shoulder blades. They run from your neck down the middle of your upper back.",
+      ex: ["Farmer carry", "Deadlift", "Face pull"],
+      tip: "Heavy carries and deadlifts work them hard, so most people don't need extra traps work.",
+      front: [[94, 57], [90, 64], [80, 69], [72, 71], [84, 72], [94, 68]],
+      back: [[100, 52], [94, 55], [88, 64], [74, 70], [70, 72], [82, 78], [94, 84], [100, 90]],
+      side: [[94, 52], [98, 60], [97, 68], [90, 72], [88, 64]] },
+    { id: "upper-back", name: "Upper back", group: "back",
+      does: "Squeezes your shoulder blades together. Gives your back thickness and helps you stand tall.",
+      ex: ["Seated cable row", "Chest-supported row", "Barbell row"],
+      tip: "Finish every row by pulling your shoulder blades together for a second.",
+      back: [[100, 92], [93, 86], [82, 81], [76, 90], [80, 104], [90, 114], [100, 120]] },
+    { id: "lats", name: "Lats", group: "back",
+      does: "Pull your arms down and back: pull-ups, climbing, starting a lawnmower. They create the V-shape.",
+      ex: ["Lat pulldown", "Pull-up", "Assisted pull-up", "Single-arm dumbbell row"],
+      tip: "Think about pulling your elbows down to your back pockets, not yanking with your hands.",
+      back: [[75, 94], [71, 108], [72, 130], [77, 152], [85, 168], [91, 160], [88, 138], [84, 118], [80, 102]] },
+    { id: "lower-back", name: "Lower back", group: "back",
+      does: "Holds your spine steady when you bend, lift, and carry.",
+      ex: ["Back extension", "Romanian deadlift", "Bird dog"],
+      tip: "These muscles keep your back flat. Train them by holding a neutral spine, not by rounding and arching.",
+      back: [[99, 128], [93, 132], [90, 155], [91, 180], [94, 198], [99, 204]] },
+    { id: "biceps", name: "Biceps", group: "arms",
+      does: "Bend your elbows and help every pulling exercise.",
+      ex: ["Dumbbell curl", "Hammer curl", "Cable curl"],
+      tip: "Keep your elbows still at your sides. If your body swings, the weight is too heavy.",
+      front: [[66, 104], [60, 110], [57, 128], [58, 148], [63, 160], [68, 150], [70, 128], [69, 110]],
+      side: [[105, 102], [111, 105], [112, 126], [109, 152], [104, 152], [103, 126]], layer: 2 },
+    { id: "triceps", name: "Triceps", group: "arms",
+      does: "Straighten your elbows. They're about two-thirds of your upper arm, and they help every press.",
+      ex: ["Triceps pushdown", "Overhead triceps extension", "Assisted dip"],
+      tip: "Overhead extensions stretch the long part of the triceps. Include one each week.",
+      back: [[66, 104], [60, 110], [57, 128], [58, 148], [63, 160], [68, 150], [70, 128], [69, 110]],
+      side: [[89, 100], [98, 102], [100, 126], [99, 154], [93, 154], [89, 126]], layer: 2 },
+    { id: "forearms", name: "Forearms", group: "arms",
+      does: "Grip and twist. Strong forearms mean you can hold on to heavier weights.",
+      ex: ["Farmer carry", "Hammer curl", "Suitcase carry"],
+      tip: "Carrying heavy things builds grip fast. Skip lifting straps for your first few months.",
+      front: [[59, 167], [53, 180], [49, 204], [48, 226], [53, 232], [58, 210], [62, 188], [65, 170]],
+      back: [[59, 167], [53, 180], [49, 204], [48, 226], [53, 232], [58, 210], [62, 188], [65, 170]],
+      side: [[94, 164], [106, 164], [110, 198], [109, 228], [99, 230], [96, 198]], layer: 2 },
+    { id: "abs", name: "Abs", group: "core",
+      does: "Brace your trunk and curl your ribs toward your hips. They protect your back when you lift.",
+      ex: ["Dead bug", "Plank", "Cable crunch", "Hanging knee raise"],
+      tip: "Training makes your abs stronger. Seeing them depends on body fat, which comes down to food.",
+      front: [[98.5, 116], [91, 117], [88, 140], [89, 168], [92, 192], [98.5, 204]],
+      side: [[115, 112], [118, 114], [117, 140], [118, 170], [118, 196], [114, 196], [113, 140]] },
+    { id: "obliques", name: "Obliques", group: "core",
+      does: "Twist and bend your trunk sideways, and stop it from twisting when you carry or press with one arm.",
+      ex: ["Side plank", "Pallof press", "Suitcase carry"],
+      tip: "Carrying a weight in one hand works them without any crunches.",
+      front: [[86, 116], [77, 121], [75, 145], [78, 172], [83, 194], [88, 190], [87, 162], [86, 136]] },
+    { id: "glutes", name: "Glutes", group: "legs",
+      does: "Drive your hips forward: standing up, climbing stairs, sprinting, lifting things off the floor.",
+      ex: ["Hip thrust", "Romanian deadlift", "Bulgarian split squat", "Glute bridge"],
+      tip: "Squeeze for a second at the top of hip thrusts and bridges. Feel them working, not your lower back.",
+      back: [[99, 206], [88, 204], [78, 210], [73, 226], [76, 242], [88, 249], [99, 245]],
+      side: [[79, 212], [89, 207], [96, 220], [95, 242], [85, 250], [79, 236]] },
+    { id: "abductors", name: "Outer hips", group: "legs",
+      does: "Move your legs out to the side and keep your knees from caving in when you squat or run.",
+      ex: ["Hip abduction machine", "Single-leg glute bridge", "Step-up"],
+      tip: "If your knees cave in on squats, a few sets of these each week can help.",
+      front: [[76, 204], [72, 214], [72, 230], [76, 234], [81, 220], [82, 208]],
+      back: [[80, 195], [74, 202], [71, 214], [76, 212], [85, 204]],
+      side: [[97, 206], [106, 207], [107, 228], [98, 224]] },
+    { id: "quads", name: "Quads", group: "legs",
+      does: "Straighten your knees. The biggest muscles on the front of your legs: squats, stairs, standing up.",
+      ex: ["Back squat", "Leg press", "Goblet squat", "Leg extension"],
+      tip: "Let your knees travel forward over your toes. That's safe, and it's how the quads get worked.",
+      front: [[84, 226], [75, 238], [72, 265], [74, 298], [80, 326], [89, 328], [92, 300], [92, 266], [93, 240]],
+      side: [[104, 232], [117, 240], [117, 280], [112, 322], [103, 320], [100, 280]] },
+    { id: "adductors", name: "Inner thighs", group: "legs",
+      does: "Pull your legs together and help you get out of the bottom of a squat.",
+      ex: ["Hip adduction machine", "Goblet squat", "Bulgarian split squat"],
+      tip: "Deep squats with your feet a little wider work your inner thighs well.",
+      front: [[98.5, 236], [95.5, 242], [94.5, 266], [95.5, 290], [98.5, 294]] },
+    { id: "hamstrings", name: "Hamstrings", group: "legs",
+      does: "Bend your knees and help your glutes drive your hips forward. Strong hamstrings protect your knees.",
+      ex: ["Romanian deadlift", "Seated hamstring curl", "Lying hamstring curl"],
+      tip: "On Romanian deadlifts, push your hips back until you feel a stretch, then stand up.",
+      back: [[96, 252], [85, 252], [77, 262], [75, 290], [78, 320], [86, 330], [94, 320], [96, 290]],
+      side: [[84, 252], [96, 250], [100, 282], [100, 320], [92, 330], [86, 300], [82, 266]] },
+    { id: "calves", name: "Calves", group: "legs",
+      does: "Push you up onto your toes for every step, jump, and stair.",
+      ex: ["Standing calf raise", "Seated calf raise", "Single-leg calf raise"],
+      tip: "Pause for a second at the bottom of every rep. Bouncing lets your tendons do the work.",
+      front: [[77, 350], [73, 364], [74, 388], [78, 402], [82, 390], [82, 362]],
+      back: [[79, 346], [74, 360], [73, 380], [77, 398], [85, 400], [92, 390], [94, 366], [90, 348]],
+      side: [[93, 346], [100, 345], [103, 374], [99, 400], [95, 396], [92, 370]] }
+];
+const MM_GROUP_LABEL = { chest: "Chest", shoulders: "Shoulders", back: "Back", arms: "Arms", core: "Core", legs: "Legs" };
+
+// A smooth closed path through points (Catmull-Rom curves)
+function smoothPath(pts) {
+    const n = pts.length;
+    const p = (i) => pts[(i + n) % n];
+    let d = `M${p(0)[0]},${p(0)[1]}`;
+    for (let i = 0; i < n; i++) {
+        const [p0, p1, p2, p3] = [p(i - 1), p(i), p(i + 1), p(i + 2)];
+        const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+        const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+        d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0]},${p2[1]}`;
+    }
+    return d + "Z";
+}
+const mirrorPts = (pts) => pts.map(([x, y]) => [200 - x, y]);
+
+// Left half of the front and back outline, from the neck down to between the legs
+const MM_HALF_OUTLINE = [[93, 50], [90, 62], [78, 68], [64, 71], [55, 78], [50, 92], [50, 108], [52, 130], [52, 152], [49, 168],
+    [45, 192], [44, 214], [45, 234], [43, 248], [46, 261], [52, 262], [55, 249], [55, 236], [59, 214], [64, 192], [68, 170],
+    [70, 150], [71, 128], [72, 110], [73, 124], [73, 146], [77, 170], [80, 190], [76, 205], [71, 220], [69, 246], [70, 276],
+    [73, 306], [76, 332], [74, 346], [71, 366], [72, 390], [77, 410], [78, 421], [70, 430], [72, 437], [92, 437], [94, 425],
+    [93, 410], [95, 386], [96, 362], [94, 346], [96, 332], [98, 302], [99, 266], [100, 240]];
+const MM_SIDE_OUTLINE = [[94, 50], [90, 62], [86, 76], [84, 100], [85, 130], [87, 160], [86, 185], [82, 200], [78, 215],
+    [78, 235], [82, 255], [84, 280], [88, 310], [92, 330], [92, 345], [91, 365], [95, 395], [96, 415], [96, 430], [98, 437],
+    [130, 437], [130, 430], [118, 424], [110, 415], [108, 395], [110, 370], [110, 345], [112, 330], [116, 300], [119, 260],
+    [119, 235], [117, 215], [116, 195], [115, 170], [113, 140], [114, 115], [120, 102], [121, 85], [116, 72], [109, 62], [108, 50]];
+const MM_SIDE_ARM = [[90, 72], [104, 67], [112, 74], [113, 92], [111, 122], [108, 160], [111, 200], [110, 232], [112, 250],
+    [104, 263], [97, 252], [97, 232], [95, 200], [92, 160], [88, 122], [87, 92]];
+
+function muscleMapSvg(view) {
+    const body = view === "side"
+        ? `<ellipse cx="104" cy="30" rx="17" ry="22"/><path d="${smoothPath(MM_SIDE_OUTLINE)}"/>`
+        : `<ellipse cx="100" cy="30" rx="17" ry="22"/><path d="${smoothPath([...MM_HALF_OUTLINE, ...mirrorPts(MM_HALF_OUTLINE).reverse().slice(1)])}"/>`;
+    const shapes = (layer) => MUSCLE_MAP.filter((m) => m[view] && (m.layer || 1) === layer).map((m) => {
+        const paths = view === "side"
+            ? `<path d="${smoothPath(m.side)}"/>`
+            : `<path d="${smoothPath(m[view])}"/><path d="${smoothPath(mirrorPts(m[view]))}"/>`;
+        return `<g class="mm-muscle" data-m="${m.id}" tabindex="-1" role="button" aria-label="${escapeHtml(m.name)}"><title>${escapeHtml(m.name)}</title>${paths}</g>`;
+    }).join("");
+    const arm = view === "side" ? `<path class="mm-body" d="${smoothPath(MM_SIDE_ARM)}"/>` : "";
+    // Widen the build (not the head) for a more athletic look
+    const head = view === "side" ? `<ellipse cx="104" cy="30" rx="17" ry="22"/>` : `<ellipse cx="100" cy="30" rx="17" ry="22"/>`;
+    return `<svg class="mm-svg" viewBox="-10 0 220 445" xmlns="http://www.w3.org/2000/svg" focusable="false">
+        <g class="mm-body">${head}</g>
+        <g transform="translate(100 0) scale(${view === "side" ? 1.45 : 1.2} 1) translate(-100 0)">
+        <g class="mm-body">${body.replace(/<ellipse[^>]*\/>/, "")}</g>
+        ${shapes(1)}${arm}${shapes(2)}</g></svg>`;
+}
+
+function setupMuscleMap() {
+    const root = document.getElementById("muscle-map");
+    if (!root) return;
+    const stage = root.querySelector(".mm-stage");
+    const panel = document.getElementById("mm-panel");
+    const viewBtns = [...root.querySelectorAll("[data-mm-view]")];
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    // Each view faces a direction: front 0, right side 90, back 180, left side 270
+    const FACES = [["front", 0], ["side", 90], ["back", 180], ["side-left", 270]];
+    stage.innerHTML = FACES.map(([v, a]) => `<div class="mm-face" data-face="${v}" data-at="${a}">${muscleMapSvg(v === "side-left" ? "side" : v)}</div>`).join("")
+        + `<div class="mm-floor" aria-hidden="true"></div>`;
+    const faces = [...stage.querySelectorAll(".mm-face")];
+    let angle = 0, pinned = null, anim = null;
+
+    const norm = (a) => ((a % 360) + 540) % 360 - 180; // -180..180
+    function draw() {
+        let best = null, bestW = -2;
+        faces.forEach((f) => {
+            const w = Math.cos((norm(angle - Number(f.dataset.at)) * Math.PI) / 180);
+            const o = Math.max(0, Math.min(1, (w - 0.45) / 0.4));
+            const flip = f.dataset.face === "side-left" ? -1 : 1;
+            f.style.opacity = o.toFixed(3);
+            f.style.transform = `scaleX(${(flip * (0.72 + 0.28 * Math.max(0, w))).toFixed(3)})`;
+            if (w > bestW) { bestW = w; best = f; }
+        });
+        faces.forEach((f) => {
+            const on = f === best;
+            f.classList.toggle("is-active", on);
+            f.setAttribute("aria-hidden", on ? "false" : "true");
+            f.querySelectorAll(".mm-muscle").forEach((g) => { g.setAttribute("tabindex", on ? "0" : "-1"); });
+        });
+        const shown = norm(angle);
+        const name = Math.abs(shown) <= 45 ? "front" : Math.abs(shown) >= 135 ? "back" : "side";
+        viewBtns.forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mmView === name)));
+        stage.dataset.angle = String(Math.round(norm(angle)));
+        root.querySelector(".mm-view-label").textContent = `${name[0].toUpperCase() + name.slice(1)} view`;
+    }
+
+    function turnTo(target) {
+        if (anim) cancelAnimationFrame(anim);
+        const from = angle, diff = norm(target - from);
+        if (reduce || Math.abs(diff) < 1) { angle = from + diff; draw(); return; }
+        const t0 = performance.now(), dur = 380;
+        const step = (now) => {
+            const t = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - t, 3);
+            angle = from + diff * e; draw();
+            if (t < 1) anim = requestAnimationFrame(step);
+        };
+        anim = requestAnimationFrame(step);
+    }
+
+    // Panel: what the muscle does and how to train it
+    function show(id, isPin) {
+        const m = MUSCLE_MAP.find((x) => x.id === id);
+        if (isPin) pinned = id;
+        root.querySelectorAll(".mm-muscle").forEach((g) => g.classList.toggle("is-on", g.dataset.m === id));
+        root.querySelectorAll("[data-mm-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mmPick === id)));
+        if (!m) { panel.innerHTML = panelIntro; return; }
+        panel.innerHTML = `
+            <p class="mm-eyebrow">${MM_GROUP_LABEL[m.group]}</p>
+            <h3 class="mm-title"><span class="mm-dot" aria-hidden="true"></span>${escapeHtml(m.name)}</h3>
+            <p>${escapeHtml(m.does)}</p>
+            <h4>Best exercises</h4>
+            <ul class="mm-ex">${m.ex.map((n) => `<li><button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button></li>`).join("")}</ul>
+            <h4>Beginner tip</h4>
+            <p>${escapeHtml(m.tip)}</p>
+            <a class="text-link" href="#${m.group}">All ${MM_GROUP_LABEL[m.group].toLowerCase()} exercises</a>`;
+    }
+    const panelIntro = panel.innerHTML;
+
+    // Hover previews; click, tap, or Enter picks
+    stage.addEventListener("pointerover", (e) => {
+        const g = e.target.closest(".mm-muscle");
+        if (g && e.pointerType === "mouse" && !drag) show(g.dataset.m, false);
+    });
+    stage.addEventListener("pointerout", (e) => {
+        const g = e.target.closest(".mm-muscle");
+        if (g && e.pointerType === "mouse" && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(`[data-m="${g.dataset.m}"]`))) show(pinned, false);
+    });
+    stage.addEventListener("focusin", (e) => { const g = e.target.closest(".mm-muscle"); if (g) show(g.dataset.m, true); });
+    stage.addEventListener("keydown", (e) => {
+        const g = e.target.closest(".mm-muscle");
+        if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); show(g.dataset.m, true); panel.focus({ preventScroll: false }); }
+    });
+
+    // Drag (mouse or finger) to spin
+    let drag = null, suppressClick = false;
+    stage.addEventListener("pointerdown", (e) => {
+        if (e.button !== 0) return;
+        drag = { x: e.clientX, start: angle, moved: false, id: e.pointerId };
+        if (anim) cancelAnimationFrame(anim);
+    });
+    stage.addEventListener("pointermove", (e) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const dx = e.clientX - drag.x;
+        if (!drag.moved && Math.abs(dx) > 6) {
+            drag.moved = true;
+            stage.classList.add("is-dragging");
+            try { stage.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        }
+        if (drag.moved) { angle = drag.start + dx * 0.6; draw(); }
+    });
+    const endDrag = (e) => {
+        if (!drag) return;
+        const wasMoved = drag.moved;
+        if (!wasMoved && e.type === "pointerup") {
+            const g = e.target.closest && e.target.closest(".mm-muscle");
+            if (g) show(g.dataset.m, true);
+        }
+        drag = null;
+        stage.classList.remove("is-dragging");
+        if (wasMoved) { suppressClick = true; turnTo(Math.round(angle / 90) * 90); }
+    };
+    stage.addEventListener("pointerup", endDrag);
+    stage.addEventListener("pointercancel", endDrag);
+    stage.addEventListener("click", (e) => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); suppressClick = false; } }, true);
+
+    // Buttons: views, turning, and the muscle list
+    root.addEventListener("click", (e) => {
+        const v = e.target.closest("[data-mm-view]");
+        if (v) turnTo({ front: 0, side: 90, back: 180 }[v.dataset.mmView]);
+        const t = e.target.closest("[data-mm-turn]");
+        if (t) turnTo(Math.round(angle / 90) * 90 + Number(t.dataset.mmTurn) * 90);
+        const p = e.target.closest("[data-mm-pick]");
+        if (p) {
+            const m = MUSCLE_MAP.find((x) => x.id === p.dataset.mmPick);
+            // Turn to a view that shows it
+            if (m && !m.front && !m.side) turnTo(180);
+            else if (m && !m.front && !m.back) turnTo(90);
+            else if (m && !m.front) turnTo(Math.abs(norm(angle)) >= 90 ? angle : 180);
+            else if (m && !m.back && Math.abs(norm(angle)) > 135) turnTo(0);
+            show(p.dataset.mmPick, true);
+        }
+    });
+    root.querySelector(".mm-picks").innerHTML = Object.keys(MM_GROUP_LABEL).map((grp) => `
+        <li><span class="mm-pick-group">${MM_GROUP_LABEL[grp]}</span>${MUSCLE_MAP.filter((m) => m.group === grp)
+            .map((m) => `<button type="button" class="chip" data-mm-pick="${m.id}" aria-pressed="false">${escapeHtml(m.name)}</button>`).join("")}</li>`).join("");
+    draw();
 }
 
 /* =========================================================

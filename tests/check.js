@@ -37,7 +37,7 @@ for (const f of PAGES) {
     idsByPage[f] = new Set([...fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
 }
 // Addresses handled by the router instead of a plain id
-const ROUTES = { "programs.html": /^program-[a-z0-9]+(-\d)?$/, "contact.html": /^contact-[a-z]+$/, "exercises.html": /^(legs|chest|back|shoulders|arms|core|cardio)$/ };
+const ROUTES = { "programs.html": /^program-[a-z0-9]+(-\d)?$/, "contact.html": /^contact-[a-z]+$/, "exercises.html": /^(legs|chest|back|shoulders|arms|core|cardio|muscle-map)$/ };
 
 function linkProblem(href, fromPage) {
     if (/^(https?:|mailto:)/.test(href)) return null;
@@ -337,6 +337,32 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator(".library-card").count() >= 2, "searching finds exercises");
             await page.locator(".library-card [data-howto]").first().click();
             check(await page.locator("#howto[open]").count() === 1, "How to works from the library");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Muscle map: spin it, point at a muscle, every muscle's exercises exist
+        {
+            const { page, errors } = await openPage(browser, "exercises.html", viewport, "#muscle-map");
+            const stage = page.locator(".mm-stage");
+            const data = await page.evaluate(() => MUSCLE_MAP.map((m) => ({ id: m.id, ex: m.ex, missing: m.ex.filter((n) => !EXERCISES[n]), views: ["front", "back", "side"].filter((v) => m[v]).length })));
+            check(data.length >= 20 && data.every((m) => m.views > 0 && m.ex.length >= 2 && m.missing.length === 0), `every muscle has a shape and real exercises ${JSON.stringify(data.filter((m) => m.missing.length || !m.views))}`);
+            await page.locator('.mm-face.is-active [data-m="quads"] path').first().hover();
+            check(/Quads/.test(await page.locator(".mm-title").textContent()) && await page.locator('.mm-face.is-active [data-m="quads"].is-on').count() === 1, "pointing at a muscle highlights it and names it");
+            const box = await stage.boundingBox();
+            await page.mouse.move(box.x + box.width / 2, box.y + 60);
+            await page.mouse.down();
+            await page.mouse.move(box.x + box.width / 2 + 120, box.y + 60, { steps: 8 });
+            const mid = Number(await stage.getAttribute("data-angle"));
+            await page.mouse.up();
+            await page.waitForTimeout(100);
+            check(mid > 30 && Math.abs(Number(await stage.getAttribute("data-angle"))) === 90, `dragging spins the body and it settles on a view (${mid})`);
+            await page.click('[data-mm-view="back"]');
+            check(await page.locator('.mm-face.is-active').getAttribute("data-face") === "back", "the Back button turns it around");
+            await page.click('[data-mm-pick="hamstrings"]');
+            check(/Hamstrings/.test(await page.locator(".mm-title").textContent()) && await page.locator("#mm-panel [data-howto]").count() >= 2, "picking from the list shows exercises with how-tos");
+            await page.locator('.mm-face.is-active [data-m="glutes"]').focus();
+            check(/Glutes/.test(await page.locator(".mm-title").textContent()), "muscles work with the keyboard");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

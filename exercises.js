@@ -218,6 +218,14 @@ const EXERCISES = {
         mistakes: ["Letting the weight slam back together.", "Using momentum to bounce your knees out."],
         easier: "Lighter weight or a smaller range", harder: "Pause for 3 seconds at the widest point"
     },
+    "Hip adduction machine": {
+        m: "Inner thighs (adductors)", eq: "Hip adduction machine",
+        setup: "Sit with your back against the pad and the inside of your knees against the leg pads. Start with your legs only as wide as is comfortable.",
+        steps: ["Squeeze your knees together in a smooth arc.", "Pause for a second when the pads meet.", "Let your legs open slowly to the start.", "Keep your back against the pad the whole time."],
+        tip: "Control the way out. That stretched part is where a lot of the work happens.",
+        mistakes: ["Starting with your legs stretched wider than is comfortable.", "Letting the weights slam."],
+        easier: "Lighter weight or a smaller range", harder: "Pause for 3 seconds with the pads together"
+    },
     "Cable glute kickback": {
         m: "Glutes", eq: "Cable machine with an ankle strap",
         setup: "Put the ankle strap on one leg and face the cable machine. Hold the frame, hinge forward slightly, and keep a soft bend in your standing knee.",

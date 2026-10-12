@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (muscle map)
+
+- **New: Muscle map** at the top of the Exercises page (also in the Exercises menu). Drag the body with your mouse or finger to spin it all the way around, or tap Front, Side, or Back. Point at or tap a muscle and it lights up red. Next to the body you'll see what that muscle does, the best exercises for it (tap one for the how-to), and a beginner tip. It covers 21 muscle groups: upper chest, chest, front/side/rear shoulders, traps, upper back, lats, lower back, biceps, triceps, forearms, abs, obliques, glutes, outer hips, quads, inner thighs, hamstrings, and calves. There's also a list of every muscle for people who prefer not to drag, and it works with a keyboard.
+- Added a how-to guide for the hip adduction (inner thigh) machine.
+
 ## 2026-10-12 (owner requests)
 
 - **Calmer page changes:** links fade between pages with a thin loading bar, and every inner page shows a "Home / Page" trail so nobody gets lost. The moving exercise bar on the home page was replaced with a calm, readable strip.

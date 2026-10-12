@@ -16,6 +16,7 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 - [ ] Import a downloaded workout log (CSV) so people can move to a new phone. Export already exists.
 - [ ] Deload week: a button on the Programs page that shows a lighter week (about half the sets) for when someone feels run down.
 - [ ] More exercise variety: add guides for more machine and cable variations so the weekly rotation has even more options.
+- [ ] Muscle map: link each muscle to a ready-made plan that focuses on it, and let people pick muscles to build a custom workout.
 - [ ] Couch to 5K: a "Repeat this week" button, since repeating a week is a normal part of the plan.
 - [ ] Tiered strength (GZCLP): a 3-day option that rotates through the 4 workouts, like the original.
 - [ ] Accounts: once Firebase is set up, show a small "Signed in" marker in the header on every page.
@@ -25,6 +26,8 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 (Nothing yet.)
 
 ## Done
+
+- [x] 2026-10-12: Muscle map on the Exercises page: spin the body by dragging (mouse or finger) or with Front / Side / Back buttons; point at or tap any of 21 muscles to highlight it in red and see what it does, the best exercises (with how-tos), and a beginner tip.
 
 - [x] 2026-10-12 (owner requests): accounts code (Firebase; switches on when the owner adds the config), supplements guide, Couch to 5K / Tiered strength (GZCLP) / Muscular endurance circuit plans with source credits, Glutes & legs and Upper body focus plans, sex setting and smaller jumps on light lifts, rewards (PRs, streaks, milestones), 4-week training waves, My progress page, cardio logging, calmer page transitions, and a calmer home page.
 

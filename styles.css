@@ -1744,6 +1744,128 @@ select, input, textarea {
 }
 .reality-check strong { color: var(--ink); }
 
+/* ---------- Muscle map (Exercises page) ---------- */
+.muscle-map {
+    --mm-skin: #ece8df;
+    --mm-line: #b9b1a2;
+    --mm-muscle: #d8d1c3;
+    --mm-hot: #d7263d;
+    --mm-hair: #2a2724;
+    border-bottom: 1px solid var(--line);
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .muscle-map { --mm-skin: #262626; --mm-line: #5c5c5c; --mm-muscle: #474747; --mm-hot: #e5394f; --mm-hair: #0d0d0d; }
+}
+:root[data-theme="dark"] .muscle-map { --mm-skin: #262626; --mm-line: #5c5c5c; --mm-muscle: #474747; --mm-hot: #e5394f; --mm-hair: #0d0d0d; }
+.mm-head { max-width: 640px; margin-bottom: 24px; }
+.mm-head h2 {
+    font-family: var(--display);
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    font-weight: 800;
+    font-stretch: 75%;
+    text-transform: uppercase;
+    line-height: 0.95;
+    margin: 4px 0 10px;
+}
+.mm-head p { margin: 0; color: var(--muted); }
+.mm-grid { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 40px; align-items: start; }
+.mm-viewer { border: 1px solid var(--line); background-color: var(--surface); padding: 16px; }
+.mm-controls { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.mm-view, .mm-turn {
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    background-color: transparent;
+    color: var(--ink);
+    cursor: pointer;
+}
+.mm-turn { font-size: 1.05rem; padding: 5px 12px; line-height: 1; }
+.mm-view[aria-pressed="true"] { background-color: var(--ink); color: var(--paper); border-color: var(--ink); }
+.mm-view:hover, .mm-turn:hover { border-color: var(--ink); }
+.mm-stage {
+    position: relative;
+    height: min(520px, 110vw);
+    margin-top: 12px;
+    touch-action: pan-y;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.mm-stage.is-dragging { cursor: grabbing; }
+.mm-face {
+    position: absolute;
+    inset: 0 0 18px;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    will-change: opacity, transform;
+}
+.mm-face.is-active { pointer-events: auto; }
+.mm-svg { height: 100%; width: auto; max-width: 100%; overflow: visible; }
+.mm-body, .mm-body path, .mm-body ellipse { fill: var(--mm-skin); stroke: var(--mm-line); stroke-width: 1; }
+.mm-hair { fill: var(--mm-hair); }
+.mm-muscle path {
+    fill: var(--mm-muscle);
+    stroke: var(--mm-line);
+    stroke-width: 0.8;
+    transition: fill 0.15s ease;
+    cursor: pointer;
+}
+.mm-muscle:hover path,
+.mm-muscle.is-on path { fill: var(--mm-hot); stroke: #7a1020; stroke-width: 1.4; }
+.mm-muscle:focus { outline: none; }
+.mm-muscle:focus-visible path { fill: var(--mm-hot); stroke: var(--ink); stroke-width: 2.2; }
+.mm-floor {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    width: 46%;
+    height: 22px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, 0.18), transparent);
+}
+.mm-hint { text-align: center; margin: 8px 0 0; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.mm-panel { border-top: 2px solid var(--ink); padding-top: 16px; min-height: 220px; }
+.mm-panel:focus { outline: none; }
+.mm-panel:focus-visible { outline: 2px solid var(--volt); outline-offset: 4px; }
+.mm-eyebrow { margin: 0 0 4px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.mm-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 10px;
+    font-family: var(--display);
+    font-size: 1.7rem;
+    font-weight: 800;
+    font-stretch: 80%;
+    text-transform: uppercase;
+    line-height: 1;
+}
+.mm-dot { width: 14px; height: 14px; flex: none; background-color: var(--mm-hot); }
+.mm-panel h4 { margin: 18px 0 8px; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; }
+.mm-panel p { margin: 0 0 8px; }
+.mm-ex { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.mm-picks { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 10px; }
+.mm-picks li { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.mm-pick-group { width: 92px; flex: none; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.mm-picks .chip[aria-pressed="true"] { background-color: var(--mm-hot); border-color: var(--mm-hot); color: #ffffff; }
+@media (max-width: 420px) {
+    .mm-controls { gap: 4px; }
+    .mm-view { padding: 9px 9px; letter-spacing: 0.06em; }
+    .mm-turn { padding: 5px 9px; }
+    .mm-viewer { padding: 12px 8px; }
+}
+@media (max-width: 860px) {
+    .mm-grid { grid-template-columns: 1fr; gap: 24px; }
+    .mm-viewer { max-width: 460px; width: 100%; margin: 0 auto; }
+    .mm-pick-group { width: 100%; }
+}
+
 /* ---------- Supplements guide ---------- */
 .supp-first { max-width: 760px; }
 .supp-first h2, .supp-h2 {

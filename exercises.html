@@ -35,6 +35,36 @@
 </header>
 
 <main id="main">
+    <section id="muscle-map" class="block muscle-map" aria-labelledby="mm-heading">
+        <div class="container wide">
+            <div class="mm-head">
+                <p class="kicker">Pick a muscle</p>
+                <h2 id="mm-heading">Muscle map</h2>
+                <p>Drag the body to spin it, or use the buttons. Point at or tap a muscle to see what it does and how to train it.</p>
+            </div>
+            <div class="mm-grid">
+                <div class="mm-viewer">
+                    <div class="mm-controls" role="group" aria-label="Turn the body">
+                        <button type="button" class="mm-turn" data-mm-turn="-1" aria-label="Turn left">&#8634;</button>
+                        <button type="button" class="mm-view" data-mm-view="front" aria-pressed="true">Front</button>
+                        <button type="button" class="mm-view" data-mm-view="side" aria-pressed="false">Side</button>
+                        <button type="button" class="mm-view" data-mm-view="back" aria-pressed="false">Back</button>
+                        <button type="button" class="mm-turn" data-mm-turn="1" aria-label="Turn right">&#8635;</button>
+                    </div>
+                    <div class="mm-stage" aria-label="Body model. Drag sideways to spin it. Tab to a muscle and press Enter to learn about it." role="group"></div>
+                    <p class="mm-hint"><span class="mm-view-label">Front view</span> &middot; drag to spin</p>
+                </div>
+                <div class="mm-side">
+                    <div class="mm-panel" id="mm-panel" tabindex="-1" aria-live="polite">
+                        <h3 class="mm-title">Which muscle do you want to hit?</h3>
+                        <p>Point at or tap any muscle on the body, or pick one from the list. You'll get what it does, the best exercises for it, and a tip for getting started.</p>
+                    </div>
+                    <ul class="mm-picks" aria-label="All muscles"></ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <section id="library" class="block">
         <div class="container wide">
             <div class="library-tools">
