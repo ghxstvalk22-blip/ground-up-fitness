@@ -262,6 +262,11 @@ async function openPage(browser, file, viewport, hash = "") {
             await row.locator("[data-log]").click();
             const form = row.locator(".log-form");
             const sets = await form.locator('input[name="r"]').count();
+            // Typos are caught before they're saved
+            await form.locator('input[name="w"]').nth(0).fill("-20");
+            await form.locator('input[name="r"]').nth(0).fill("999");
+            await form.locator('button[type="submit"]').click();
+            check(/Check set 1/.test(await form.locator(".log-status").textContent()) && await page.evaluate((n) => !getLog()[n], exName), "a negative weight or 999 reps isn't saved");
             for (let i = 0; i < sets; i++) {
                 await form.locator('input[name="w"]').nth(i).fill("100");
                 await form.locator('input[name="r"]').nth(i).fill("12");
@@ -529,6 +534,9 @@ async function openPage(browser, file, viewport, hash = "") {
             check(homeNames.length >= 3 && await page.evaluate((n) => n.every((x) => EXERCISES[x].kit === "none"), homeNames), `"no equipment" only uses bodyweight moves (${homeNames.join(", ")})`);
             check(/Deadlift/.test(await ask("how do I do a deadlift?")) && await page.locator('.coach-msg.is-coach').last().locator('[data-howto="Deadlift"]').count() === 1, "Coach answers how-to questions with a link to the full guide");
             check(/doctor|physical therapist/.test(await ask("my knee hurts, can I do legs?")), "Coach sends pain and injury questions to a professional");
+            check(/Back squat/.test(await ask("how do I do a squat?")) && /Push-up/.test(await ask("how do I do pushups")), "Coach understands everyday exercise names (squat, pushups)");
+            const homeDb = await ask("legs at home with dumbbells");
+            check(/dumbbells only/.test(homeDb), "\"at home with dumbbells\" uses dumbbells, not bodyweight only");
             await ask(`<img src=x onerror="window.__pwned=1">`);
             check(await page.evaluate(() => !window.__pwned && document.querySelectorAll(".coach-log img").length === 0), "typing code into Coach can't run it");
             // How hard: "super challenging" builds a real Expert session without changing the site level
@@ -557,7 +565,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.evaluate(() => { location.href = "tools.html"; });
             await page.waitForURL(/tools\.html/);
             await page.waitForTimeout(300);
-            check(await page.locator("#coach").isVisible() && await page.locator(".coach-msg").count() === before, `the chat and its history follow you to other pages (${before} messages)`);
+            check(await page.locator("#coach").isVisible() && await page.locator(".coach-msg").count() === Math.min(before, 40), `the chat and its history follow you to other pages (${before} messages)`);
             check(/Chest & Triceps/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "the last workout is still there after changing pages");
             await page.locator(".coach-msg.is-coach").last().locator("[data-coach-start]").click();
             await page.waitForURL(/programs\.html/);

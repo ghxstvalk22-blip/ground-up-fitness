@@ -2549,6 +2549,7 @@ function setupPrograms() {
             const minutes = Number(f.minutes.value);
             const status = form.querySelector(".log-status");
             if (!minutes || minutes < 1) { status.textContent = "Add how many minutes you did."; f.minutes.focus(); return; }
+            if (minutes > 600 || Number(f.distance.value) < 0) { status.textContent = "Check the numbers: up to 600 minutes, and distance can't be negative."; f.minutes.focus(); return; }
             const date = f.date.value || isoDate(new Date());
             saveCardio({ date, activity: f.activity.value, minutes, distance: Number(f.distance.value) || 0, dunit: distUnit(unit), effort: Number(f.effort.value) });
             const slot = form.id.replace("log-", "");
@@ -2568,6 +2569,10 @@ function setupPrograms() {
             .filter((s) => Number.isFinite(s.r) && s.r > 0);
         const status = form.querySelector(".log-status");
         if (!sets.length) { status.textContent = "Add the reps for at least one set."; rs[0].focus(); return; }
+        // Catch typos before they skew targets and records
+        const maxW = unit === "kg" ? 700 : 1500;
+        const odd = sets.findIndex((st) => st.w < 0 || st.w > maxW || st.r > 100 || !Number.isInteger(st.r));
+        if (odd >= 0) { status.textContent = `Check set ${odd + 1}: weight between 0 and ${maxW} ${unit}, and whole reps up to 100.`; rs[odd].focus(); return; }
         const date = form.elements.date.value || isoDate(new Date());
         saveSession(form.dataset.exercise, date, unit, sets);
         const slot = form.id.replace("log-", "");
@@ -3062,8 +3067,10 @@ function coachUnderstand(text) {
     if (/\b(lower|upper) back\b/.test(t) && !/\b(my|the|whole) back\b|\bback (and|,)|, back\b|\bback day\b/.test(t.replace(/\b(lower|upper) back\b/g, ""))) {
         if (!/\bback\b/.test(t.replace(/\b(lower|upper) back\b/g, ""))) { groups.delete("lats"); if (!/\bupper back\b/.test(t)) groups.delete("upper-back"); }
     }
-    const kit = /\b(no equipment|bodyweight|body weight|no gym|at home|home workout|from home|hotel|nothing)\b/.test(t) ? "none"
-        : /\bdumbbells?( only)?\b|\bdb\b/.test(t) ? "db" : null;
+    // Dumbbells win over "at home": plenty of people have a pair at home
+    const kit = /\b(no equipment|bodyweight|body weight|no weights|nothing)\b/.test(t) ? "none"
+        : /\bdumbbells?( only)?\b|\bdbs?\b/.test(t) ? "db"
+        : /\b(no gym|at home|home workout|from home|hotel)\b/.test(t) ? "none" : null;
     const min = t.match(/\b(\d{1,3})\s*(?:min|mins|minutes|m)\b/);
     const minutes = min ? Math.min(120, Math.max(10, Number(min[1]))) : /\b(quick|short|fast|little time|busy)\b/.test(t) ? 25 : null;
     const pain = /\b(pain|hurts?|hurting|injur(y|ed|ies)|sprain|strain(ed)?|torn|tear|surgery|dizzy|chest pain|faint)\b/.test(t);
@@ -3091,7 +3098,21 @@ function coachUnderstand(text) {
 }
 
 // Find an exercise named in the text (longest name wins)
+// Everyday names for exercises: "how do I do a squat?"
+const COACH_EX_ALIASES = [
+    [/\bsquats?\b/, "Back squat"], [/\bbench(ing)?\b/, "Bench press"], [/\bdead ?lifts?\b/, "Deadlift"], [/\b(rdls?)\b/, "Romanian deadlift"],
+    [/\b(ohp|overhead press|military press|shoulder press)\b/, "Overhead press"], [/\bpull[- ]?ups?\b|\bchin[- ]?ups?\b/, "Pull-up"],
+    [/\bpush[- ]?ups?\b/, "Push-up"], [/\blunges?\b/, "Walking lunge"], [/\bcurls?\b/, "Dumbbell curl"], [/\brows?\b/, "Barbell row"],
+    [/\bdips?\b/, "Assisted dip"], [/\bplanks?\b/, "Plank"], [/\bhip thrusts?\b/, "Hip thrust"], [/\bcalf raises?\b/, "Standing calf raise"],
+    [/\blat(eral)? raises?\b/, "Lateral raise"], [/\bpulldowns?\b/, "Lat pulldown"], [/\bcrunch(es)?\b/, "Cable crunch"], [/\bglute bridges?\b/, "Glute bridge"]
+];
 function coachFindExercise(t) {
+    const exact = coachFindExerciseExact(t);
+    if (exact) return exact;
+    const alias = COACH_EX_ALIASES.find(([re]) => re.test(t));
+    return alias && EXERCISES[alias[1]] ? alias[1] : null;
+}
+function coachFindExerciseExact(t) {
     let best = null;
     Object.keys(EXERCISES).forEach((name) => {
         const n = name.toLowerCase();
@@ -3669,6 +3690,11 @@ function setupCoach() {
                 <p><strong>Remember:</strong> ${escapeHtml(x.tip)}</p>
                 <div class="coach-actions"><button type="button" class="btn btn-compact" data-howto="${escapeHtml(exName)}">Full how-to and demo</button></div>`);
             suggest([`Workout with ${exName.toLowerCase()}`, "Shoulders, back & abs", "Legs, 30 minutes"]);
+            return;
+        }
+        if (req.howto && !req.groups.length) {
+            say(`<p>Which exercise? Ask like "<em>how do I do a squat?</em>" or "<em>how do I do a lat pulldown?</em>", or browse every move with steps and a demo in the <a href="exercises.html">exercise library</a>.</p>`);
+            suggest(["How do I do a squat?", "How do I do a push-up?", "How do I do a deadlift?"]);
             return;
         }
         // What does a muscle do?

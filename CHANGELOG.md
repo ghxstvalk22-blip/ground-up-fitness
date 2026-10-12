@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Full check-up fixes)
+
+- A full check-up of the site: every page on computer and phone, in light and dark mode, for accessibility problems, script errors, and sideways scrolling (all clear); every link and jump link (all work); offline use in the phone app (works); and real visitor journeys with odd inputs.
+- Fixed: the workout log no longer saves typos like a negative weight or 999 reps. It tells you which set to check instead. Cardio minutes over 600 or a negative distance are caught too.
+- Fixed: Fitness Coach (built-in answers) now understands everyday exercise names, so "how do I do a squat?" or "pushups" gets the how-to instead of "I didn't quite get that". A how-to question about an exercise it doesn't know now points to the exercise library.
+- Fixed: "legs at home with dumbbells" now builds a dumbbell workout instead of bodyweight only.
+
 ## 2026-10-12 (Exercise library pictures)
 
 - Every card in the exercise library now has a picture: the body zoomed in on the muscles that exercise works, with the main muscles in orange and the helpers in a lighter orange (front or back view, whichever shows them best). The muscle group sits on the picture, and the equipment icon and name sit right under it.
