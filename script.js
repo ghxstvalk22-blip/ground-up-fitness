@@ -1373,12 +1373,118 @@ function logFor(name) {
     return (getLog()[name] || []).slice().sort((a, b) => a.date.localeCompare(b.date));
 }
 function saveSession(name, date, unit, sets) {
+    const before = logFor(name);
     const log = getLog();
     const list = (log[name] || []).filter((e) => e.date !== date);
     list.push({ date, unit, sets });
     log[name] = list;
     store.set(LOG_KEY, log);
+    checkLiftRecord(name, before, { date, unit, sets });
     window.dispatchEvent(new CustomEvent("logchange", { detail: { name } }));
+}
+
+/* ---------- Rewards: personal records, streaks, milestones ---------- */
+const PR_KEY = "gu-prs";
+const getPRs = () => store.get(PR_KEY, []) || [];
+function addPR(pr) {
+    const all = getPRs();
+    all.push(pr);
+    store.set(PR_KEY, all);
+}
+
+// Did this session beat everything before it? (estimated max, or more reps at a weight used before)
+function checkLiftRecord(name, before, entry) {
+    if (!before.length) return; // the first session sets the baseline
+    const unit = entry.unit;
+    const bestBefore = Math.max(...before.map((e) => sessionBest(e, unit)));
+    const now = sessionBest(entry, unit);
+    if (now > bestBefore * 1.001 && entry.sets.some((st) => st.w > 0)) {
+        addPR({ date: entry.date, name, kind: "max", value: Math.round(now) });
+        showToast("New personal record!", `${name}: estimated max about ${fmt(now)} ${unit}, up ${fmt(now - bestBefore)} ${unit}. That's the work paying off.`);
+        return;
+    }
+    for (const st of entry.sets) {
+        const sameWeight = before.flatMap((e) => e.sets.filter((x) => Math.abs(toUnit(x.w, e.unit, unit) - st.w) < 0.6));
+        if (st.w > 0 && sameWeight.length && st.r > Math.max(...sameWeight.map((x) => x.r))) {
+            addPR({ date: entry.date, name, kind: "reps", value: st.r, weight: st.w });
+            showToast("Rep record!", `${name}: ${st.r} reps at ${trimNum(st.w)} ${unit}, your most ever at that weight.`);
+            return;
+        }
+    }
+}
+
+function checkCardioRecord(entry) {
+    const before = getCardio().filter((c) => c.activity === entry.activity);
+    if (!before.length) return;
+    if (entry.minutes > Math.max(...before.map((c) => c.minutes))) {
+        addPR({ date: entry.date, name: entry.activity, kind: "minutes", value: entry.minutes });
+        showToast("Longest session yet!", `${entry.activity}: ${entry.minutes} minutes. Your heart and lungs thank you.`);
+        return;
+    }
+    const pace = (c) => (c.distance ? c.minutes / toDist(c.distance, c.dunit, entry.dunit) : Infinity);
+    const withDist = before.filter((c) => c.distance);
+    if (entry.distance && withDist.length && pace(entry) < Math.min(...withDist.map(pace))) {
+        addPR({ date: entry.date, name: entry.activity, kind: "pace", value: pace(entry) });
+        showToast("Fastest pace yet!", `${entry.activity}: your quickest ${entry.dunit === "km" ? "kilometer" : "mile"} pace so far.`);
+    }
+}
+
+// Days with any logged lifting or cardio
+function activeDates() {
+    const dates = new Set();
+    Object.values(getLog()).forEach((entries) => entries.forEach((e) => dates.add(e.date)));
+    getCardio().forEach((c) => dates.add(c.date));
+    return dates;
+}
+
+// Weeks in a row (counting back from this week, or last week if this one has just started) with 2+ workout days
+function weekStreak() {
+    const dates = [...activeDates()].map(parseIso);
+    const count = (monday) => dates.filter((d) => d >= monday && d < addDays(monday, 7)).length;
+    let monday = mondayOf(new Date());
+    if (count(monday) < 2) monday = addDays(monday, -7); // this week isn't over yet
+    let streak = 0;
+    while (count(monday) >= 2) { streak += 1; monday = addDays(monday, -7); }
+    return streak;
+}
+
+function milestones() {
+    const days = activeDates().size;
+    const sets = Object.values(getLog()).reduce((n, entries) => n + entries.reduce((m, e) => m + e.sets.length, 0), 0);
+    const prs = getPRs().length;
+    const streak = weekStreak();
+    let bestCardioWeek = 0;
+    getCardio().forEach((c) => { bestCardioWeek = Math.max(bestCardioWeek, cardioMinutesInWeek(parseIso(c.date))); });
+    return [
+        { name: "First workout", detail: "Log your first session", done: days >= 1 },
+        { name: "10 workouts", detail: `${Math.min(days, 10)} of 10 days`, done: days >= 10 },
+        { name: "25 workouts", detail: `${Math.min(days, 25)} of 25 days`, done: days >= 25 },
+        { name: "50 workouts", detail: `${Math.min(days, 50)} of 50 days`, done: days >= 50 },
+        { name: "First personal record", detail: "Beat a past best", done: prs >= 1 },
+        { name: "10 personal records", detail: `${Math.min(prs, 10)} of 10`, done: prs >= 10 },
+        { name: "2-week streak", detail: "2+ workouts a week, 2 weeks running", done: streak >= 2 },
+        { name: "4-week streak", detail: "A full training wave", done: streak >= 4 },
+        { name: "12-week streak", detail: "Three months of showing up", done: streak >= 12 },
+        { name: "150-minute week", detail: "The recommended weekly cardio", done: bestCardioWeek >= 150 },
+        { name: "100 sets", detail: `${Math.min(sets, 100)} of 100 sets`, done: sets >= 100 },
+        { name: "1,000 sets", detail: `${fmt(Math.min(sets, 1000))} of 1,000 sets`, done: sets >= 1000 }
+    ];
+}
+
+// A short celebration in the corner of the screen
+function showToast(title, text) {
+    let box = document.getElementById("toast");
+    if (!box) {
+        document.body.insertAdjacentHTML("beforeend", '<div class="toast" id="toast" role="status" aria-live="polite" hidden><strong></strong><span></span><button type="button" class="toast-close" aria-label="Close">&times;</button></div>');
+        box = document.getElementById("toast");
+        box.querySelector(".toast-close").addEventListener("click", () => { box.hidden = true; });
+    }
+    box.querySelector("strong").textContent = title;
+    box.querySelector("span").textContent = text;
+    box.hidden = false;
+    box.classList.remove("pop"); void box.offsetWidth; box.classList.add("pop");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => { box.hidden = true; }, 7000);
 }
 
 // Estimated one-rep max (Epley). Very high-rep sets are capped so they don't inflate it.
@@ -1431,6 +1537,7 @@ function nextTarget(name, dose, unit) {
 const CARDIO_KEY = "gu-cardio";
 const getCardio = () => (store.get(CARDIO_KEY, []) || []).slice().sort((a, b) => a.date.localeCompare(b.date));
 function saveCardio(entry) {
+    checkCardioRecord(entry);
     const all = store.get(CARDIO_KEY, []) || [];
     all.push(entry);
     store.set(CARDIO_KEY, all);
@@ -1747,9 +1854,10 @@ function setupPrograms() {
         const boxes = [...els.grid.querySelectorAll('input[type="checkbox"]')];
         const checked = boxes.filter((b) => b.checked).length;
         const total = boxes.length;
-        els.label.textContent = checked === total && total > 0
+        const streak = weekStreak();
+        els.label.textContent = (checked === total && total > 0
             ? `Week ${state.week} done. Nice work. Next week's plan is ready when you are.`
-            : `${checked} of ${total} exercises done this week`;
+            : `${checked} of ${total} exercises done this week`) + (streak >= 2 ? ` · ${streak}-week streak` : "");
         els.fill.style.width = total ? (checked / total) * 100 + "%" : "0";
         let nextFound = false;
         els.grid.querySelectorAll(".day-card").forEach((card) => {
@@ -2298,7 +2406,24 @@ function setupDashboard() {
             <div><span>Sets logged</span><strong>${sets}</strong></div>
             <div><span>Cardio minutes</span><strong>${minutes}<small> / 150</small></strong>
                 <div class="mini-bar" aria-hidden="true"><div style="width:${Math.min(100, (minutes / 150) * 100)}%"></div></div></div>
-            <div><span>Bodyweight (7-day avg)</span><strong>${bw ? `${trimNum(Math.round(bw * 10) / 10)}<small> ${profile.unit}</small>` : `<a href="tools.html#tool-weight">Add one</a>`}</strong></div>`;
+            <div><span>Bodyweight (7-day avg)</span><strong>${bw ? `${trimNum(Math.round(bw * 10) / 10)}<small> ${profile.unit}</small>` : `<a href="tools.html#tool-weight">Add one</a>`}</strong></div>
+            <div><span>Streak</span><strong>${weekStreak()}<small> week${weekStreak() === 1 ? "" : "s"}</small></strong></div>
+            <div><span>Personal records</span><strong>${getPRs().length}</strong></div>`;
+        const ms = document.getElementById("milestones");
+        if (ms) {
+            const list = milestones();
+            const earned = list.filter((m) => m.done).length;
+            ms.innerHTML = `<p class="milestone-count">${earned} of ${list.length} earned</p>
+                <ul class="milestone-grid">${list.map((m) => `
+                    <li class="${m.done ? "is-done" : ""}"><span class="milestone-mark" aria-hidden="true">${m.done ? "&#10003;" : ""}</span>
+                        <strong>${escapeHtml(m.name)}</strong><small>${m.done ? "Earned" : escapeHtml(m.detail)}</small></li>`).join("")}</ul>`;
+        }
+        const recent = document.getElementById("recent-prs");
+        if (recent) {
+            const prs = getPRs().slice(-5).reverse();
+            recent.innerHTML = prs.length ? `<h3 class="me-h3">Latest personal records</h3><ul class="weight-list">${prs.map((r) => `
+                <li><span>${shortDate(parseIso(r.date))}</span><strong>${escapeHtml(r.name)}: ${r.kind === "max" ? `est. max ${fmt(r.value)}` : r.kind === "reps" ? `${r.value} reps at ${trimNum(r.weight)}` : r.kind === "minutes" ? `${r.value} min` : "fastest pace"}</strong><span></span></li>`).join("")}</ul>` : "";
+        }
     }
 
     function liftSummary(name, profile) {

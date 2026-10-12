@@ -2,6 +2,14 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (owner requests)
+
+- **Calmer page changes:** links fade between pages with a thin loading bar, and every inner page shows a "Home / Page" trail so nobody gets lost. The moving exercise bar on the home page was replaced with a calm, readable strip.
+- **Cardio:** a new Cardio plan, more cardio exercises, and a cardio log (minutes, distance, pace) that counts toward the 150 minutes a week health guidelines recommend.
+- **My progress page:** pick "strength" or "endurance" and it projects where each lift should go next, with charts for lifts, cardio, and bodyweight.
+- **Plans change every month too:** training runs in 4-week waves (Build, Push, Heavy, Recover) based on research showing planned variation beats doing the same thing every week.
+- **Rewards:** beating your best lift or cardio session pops up a "New personal record" message, your weekly streak (2+ active days a week) is counted, and 12 milestones can be earned on My progress.
+
 ## 2026-10-12 (overnight, continued)
 
 Going through the site as different visitors and fixing what each one would want:

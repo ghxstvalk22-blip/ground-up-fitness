@@ -345,6 +345,11 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.fill('#quick-cardio input[name="minutes"]', "20");
             await page.locator("#quick-cardio button[type=submit]").click();
             check(/45/.test(await page.locator("#me-stats").textContent()), "logging cardio here updates the week");
+            check(await page.locator(".milestone-grid li.is-done").count() >= 1, "milestones show what's been earned");
+            // A personal record pops a celebration
+            await page.evaluate(() => saveSession("Bench press", new Date().toISOString().slice(0, 10), "lb", [{ w: 160, r: 6 }]));
+            check(/personal record/i.test(await page.locator("#toast").textContent()) && await page.locator("#toast").isVisible(), "beating a best shows a personal-record celebration");
+            check(/Bench press/.test(await page.locator("#recent-prs").textContent()), "personal records are listed");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

@@ -1943,7 +1943,7 @@ select, input, textarea {
 .train-for-advice { margin: 0 0 32px; color: var(--muted); max-width: 70ch; }
 .me-h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
 .me-h3 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.06em; margin: 28px 0 10px; }
-.me-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background-color: var(--line); border: 1px solid var(--line); }
+.me-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background-color: var(--line); border: 1px solid var(--line); }
 .me-stats > div { background-color: var(--surface); padding: 18px; }
 .me-stats span { display: block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .me-stats strong { font-family: var(--display); font-size: 2.4rem; font-weight: 900; font-stretch: 75%; line-height: 1.1; }
@@ -1952,6 +1952,35 @@ select, input, textarea {
 .mini-bar { height: 6px; margin-top: 8px; background-color: var(--line); }
 .mini-bar div { height: 100%; background-color: var(--volt); }
 @media (max-width: 760px) { .me-stats { grid-template-columns: 1fr 1fr; } }
+.me-h2-gap { margin-top: 44px; }
+.milestone-count { margin: -4px 0 14px; color: var(--muted); font-weight: 600; }
+.milestone-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
+.milestone-grid li { display: grid; grid-template-columns: 34px 1fr; column-gap: 10px; align-items: center; padding: 12px; border: 1px dashed var(--line); background-color: var(--surface); color: var(--muted); }
+.milestone-grid li strong { color: var(--ink); font-size: 0.92rem; }
+.milestone-grid li small { grid-column: 2; font-size: 0.78rem; }
+.milestone-mark { grid-row: span 2; display: grid; place-items: center; width: 34px; height: 34px; border: 2px solid var(--line); font-weight: 900; }
+.milestone-grid li.is-done { border: 1px solid var(--ink); }
+.milestone-grid li.is-done .milestone-mark { background-color: var(--volt); border-color: var(--volt); color: #000000; }
+
+/* Celebration pop-up */
+.toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 90;
+    width: min(380px, calc(100% - 40px));
+    padding: 16px 44px 16px 18px;
+    background-color: #000000;
+    color: #ffffff;
+    border-left: 5px solid var(--volt);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+.toast strong { display: block; font-family: var(--display); font-size: 1.5rem; font-weight: 900; font-stretch: 80%; text-transform: uppercase; color: var(--volt); }
+.toast span { display: block; margin-top: 2px; font-size: 0.92rem; }
+.toast-close { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; font-size: 1.3rem; color: #ffffff; background: none; border: 0; cursor: pointer; }
+.toast.pop { animation: toast-in 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(16px) scale(0.96); } }
+.rest-timer:not([hidden]) ~ .toast { bottom: 110px; }
 
 .table-scroll { position: relative; overflow-x: auto; }
 .lift-table { width: 100%; min-width: 560px; border-collapse: collapse; font-variant-numeric: tabular-nums; background-color: var(--surface); border: 1px solid var(--line); }
@@ -2274,7 +2303,7 @@ main, .page-banner, .hero { animation: page-in 0.45s ease-out both; }
     .pro-card, .pro-card:hover { transition: none; transform: none; }
     .progress-fill { transition: none; }
     .submenu, .submenu-toggle::before { transition: none !important; }
-    .flash, .jump[open], .spinner, .ex-target.just-saved { animation: none; }
+    .flash, .jump[open], .spinner, .ex-target.just-saved, .toast.pop { animation: none; }
     .sent-check circle, .sent-check path { animation: none !important; stroke-dashoffset: 0; }
 }
 /* ---------- Sharp corners everywhere (brand style) ----------
