@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tools | Ground Up Fitness</title>
+    <meta name="description" content="Calories and protein, your one-rep max, and which plates go on the bar. Nothing you type leaves your device.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="exercises.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+
+<body data-page="tools">
+<a class="skip-link" href="#main">Skip to content</a>
+<div id="site-header"><noscript><nav class="noscript-nav"><a href="index.html">Home</a> <a href="start.html">Start here</a> <a href="programs.html">Programs</a> <a href="pros.html">Pros</a> <a href="tools.html">Tools</a> <a href="basics.html">Gym basics</a> <a href="contact.html">Contact</a></nav></noscript></div>
+
+<header class="page-banner has-photo">
+    <img class="banner-photo" src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=70&w=1600" srcset="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=70&w=800 800w, https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=70&w=1600 1600w, https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=70&w=2400 2400w" sizes="100vw" alt="" aria-hidden="true" decoding="async">
+    <div class="page-banner-inner">
+        <p class="eyebrow">Quick gym math</p>
+        <h1>Free tools</h1>
+        <p class="page-banner-lede">Calories and protein, your one-rep max, and which plates go on the bar. Nothing you type leaves your device.</p>
+    </div>
+</header>
+
+<main id="main">
+    <section id="tools" class="block">
+        <div class="container wide">
+            <div class="tools-head">
+                <p class="tools-note">Switch units any time. Anything you have typed converts automatically.</p>
+                <fieldset class="segmented compact" id="unit-picker">
+                    <legend>Units</legend>
+                    <label><input type="radio" name="unit" value="lb" checked><span>lb / ft</span></label>
+                    <label><input type="radio" name="unit" value="kg"><span>kg / cm</span></label>
+                </fieldset>
+            </div>
+
+            <div class="panel tool" id="tool-calories">
+                <div class="tool-title">
+                    <h3>Calorie estimator</h3>
+                    <p>An estimate of what you burn in a day, and a target for your goal.</p>
+                </div>
+                <div class="tool-body split-tool">
+                    <form id="cal-form" class="tool-form" novalidate>
+                        <fieldset class="segmented compact">
+                            <legend>Body type used by the formula</legend>
+                            <label><input type="radio" name="sex" value="male" checked><span>Male</span></label>
+                            <label><input type="radio" name="sex" value="female"><span>Female</span></label>
+                        </fieldset>
+                        <div class="field-row three">
+                            <div class="field">
+                                <label for="cal-age">Age</label>
+                                <input id="cal-age" name="age" type="number" inputmode="numeric" min="18" max="90" placeholder="30">
+                            </div>
+                            <div class="field imperial-only">
+                                <label for="cal-ft">Height</label>
+                                <div class="pair">
+                                    <input id="cal-ft" name="ft" type="number" inputmode="numeric" min="4" max="7" placeholder="5" aria-label="Height, feet"><span>ft</span>
+                                    <input id="cal-in" name="in" type="number" inputmode="numeric" min="0" max="11" placeholder="10" aria-label="Height, inches"><span>in</span>
+                                </div>
+                            </div>
+                            <div class="field metric-only" hidden>
+                                <label for="cal-cm">Height (cm)</label>
+                                <input id="cal-cm" name="cm" type="number" inputmode="numeric" min="120" max="230" placeholder="178">
+                            </div>
+                            <div class="field">
+                                <label for="cal-weight">Weight (<span class="unit-w">lb</span>)</label>
+                                <input id="cal-weight" name="weight" type="number" inputmode="decimal" placeholder="185">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="cal-activity">How active are you outside the gym?</label>
+                            <select id="cal-activity" name="activity">
+                                <option value="1.2">Mostly sitting, little exercise</option>
+                                <option value="1.375" selected>Lightly active, 1 to 3 workouts a week</option>
+                                <option value="1.55">Active, 3 to 5 workouts a week</option>
+                                <option value="1.725">Very active, 6 or 7 workouts or a physical job</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="cal-goal">Goal</label>
+                            <select id="cal-goal" name="goal">
+                                <option value="-250">Lose slowly (about 0.5 lb or 0.25 kg a week)</option>
+                                <option value="-500" selected>Lose steadily (about 1 lb or 0.5 kg a week)</option>
+                                <option value="0">Maintain my weight</option>
+                                <option value="250">Gain slowly while building muscle</option>
+                            </select>
+                        </div>
+                    </form>
+                    <div class="tool-results" id="cal-results" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <div class="tool-grid">
+                <div class="panel tool" id="tool-1rm">
+                    <div class="tool-title">
+                        <h3>One-rep max</h3>
+                        <p>Enter a recent hard set to estimate your max and pick working weights.</p>
+                    </div>
+                    <form id="rm-form" class="tool-form" novalidate>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="rm-weight">Weight lifted (<span class="unit-w">lb</span>)</label>
+                                <input id="rm-weight" name="weight" type="number" inputmode="decimal" placeholder="185">
+                            </div>
+                            <div class="field">
+                                <label for="rm-reps">Reps done</label>
+                                <input id="rm-reps" name="reps" type="number" inputmode="numeric" min="1" max="12" placeholder="5">
+                            </div>
+                        </div>
+                    </form>
+                    <div id="rm-results" aria-live="polite"></div>
+                </div>
+
+                <div class="panel tool" id="tool-plates">
+                    <div class="tool-title">
+                        <h3>Plate loader</h3>
+                        <p>Type the total weight you want. See what goes on each side.</p>
+                    </div>
+                    <form id="plate-form" class="tool-form" novalidate>
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="plate-target">Total weight (<span class="unit-w">lb</span>)</label>
+                                <input id="plate-target" name="target" type="number" inputmode="decimal" placeholder="225">
+                            </div>
+                            <div class="field">
+                                <label for="plate-bar">Bar</label>
+                                <select id="plate-bar" name="bar"></select>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="plate-results" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <p class="fine-print">These tools give estimates for healthy adults. They aren't medical advice. If you have a health condition, are pregnant, or have struggled with eating in the past, talk with a doctor or registered dietitian before changing how you eat.</p>
+        </div>
+    </section>
+</main>
+
+<div id="site-footer"></div>
+</body>
+</html>

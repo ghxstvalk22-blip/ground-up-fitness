@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Programs | Ground Up Fitness</title>
+    <meta name="description" content="Choose a goal and how many days you can train. Every exercise has sets, reps, rest, an easier swap, and a how-to.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="exercises.js" defer></script>
+    <script src="script.js" defer></script>
+</head>
+
+<body data-page="programs">
+<a class="skip-link" href="#main">Skip to content</a>
+<div id="site-header"><noscript><nav class="noscript-nav"><a href="index.html">Home</a> <a href="start.html">Start here</a> <a href="programs.html">Programs</a> <a href="pros.html">Pros</a> <a href="tools.html">Tools</a> <a href="basics.html">Gym basics</a> <a href="contact.html">Contact</a></nav></noscript></div>
+
+<header class="page-banner has-photo">
+    <img class="banner-photo" src="https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=70&w=1600" srcset="https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=70&w=800 800w, https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=70&w=1600 1600w, https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&q=70&w=2400 2400w" sizes="100vw" alt="" aria-hidden="true" decoding="async">
+    <div class="page-banner-inner">
+        <p class="eyebrow">Free training plans</p>
+        <h1>Programs</h1>
+        <p class="page-banner-lede">Choose a goal and how many days you can train. Every exercise has sets, reps, rest, an easier swap, and a how-to.</p>
+    </div>
+</header>
+
+<main id="main">
+    <section id="programs" class="block">
+        <div class="container wide">
+
+            <div class="controls">
+                <fieldset class="segmented" id="goal-picker">
+                    <legend>Goal</legend>
+                    <label><input type="radio" name="goal" value="beginner" checked><span>New to lifting</span></label>
+                    <label><input type="radio" name="goal" value="fatloss"><span>Lose fat</span></label>
+                    <label><input type="radio" name="goal" value="strength"><span>Get stronger</span></label>
+                    <label><input type="radio" name="goal" value="classic"><span>Classic Physique</span></label>
+                </fieldset>
+                <fieldset class="segmented" id="days-picker">
+                    <legend>Days per week</legend>
+                    <label><input type="radio" name="days" value="3" checked><span>3 days</span></label>
+                    <label><input type="radio" name="days" value="4"><span>4 days</span></label>
+                    <label><input type="radio" name="days" value="5"><span>5 days</span></label>
+                </fieldset>
+                <div class="share">
+                    <button id="copy-plan" class="btn btn-small" type="button">Copy link to this plan</button>
+                    <p class="share-status" id="copy-status" role="status"></p>
+                </div>
+            </div>
+
+            <div class="program-head" id="program-head" aria-live="polite"></div>
+
+            <div class="week-progress">
+                <div class="progress-text">
+                    <strong id="progress-label">0 of 0 exercises done this week</strong>
+                    <button class="text-button" type="button" id="reset-week">Start a new week</button>
+                </div>
+                <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progress-fill"></div></div>
+            </div>
+
+            <div class="day-grid" id="day-grid"></div>
+        </div>
+    </section>
+</main>
+
+<div id="site-footer"></div>
+</body>
+</html>

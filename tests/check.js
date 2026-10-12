@@ -24,88 +24,150 @@ function findChromium() {
     throw new Error("No Chromium found. Set CHROMIUM_PATH to a Chrome or Chromium binary.");
 }
 
-const SITE = "file://" + path.resolve(__dirname, "..", "index.html");
+const ROOT = path.resolve(__dirname, "..");
+const PAGES = ["index.html", "start.html", "programs.html", "pros.html", "tools.html", "basics.html", "contact.html"];
+const url = (file, hash = "") => "file://" + path.join(ROOT, file) + hash;
 const SHOTS = path.join(__dirname, "screenshots");
 const failures = [];
 const check = (ok, msg) => { if (!ok) failures.push(msg); console.log((ok ? "  ok   " : "  FAIL ") + msg); };
+
+// Every id on every page, so links like "tools.html#tool-1rm" can be checked
+const idsByPage = {};
+for (const f of PAGES) {
+    idsByPage[f] = new Set([...fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+}
+// Addresses handled by the router instead of a plain id
+const ROUTES = { "programs.html": /^program-[a-z]+(-\d)?$/, "contact.html": /^contact-[a-z]+$/ };
+
+function linkProblem(href, fromPage) {
+    if (/^(https?:|mailto:)/.test(href)) return null;
+    const [file, hash] = href.split("#");
+    const target = file === "" ? fromPage : file;
+    if (!PAGES.includes(target)) return `${href} (no such page)`;
+    if (!hash) return null;
+    if (idsByPage[target].has(hash) || (ROUTES[target] && ROUTES[target].test(hash))) return null;
+    if (["main", "top"].includes(hash)) return null;
+    return `${href} (no #${hash} on ${target})`;
+}
+
+async function openPage(browser, file, viewport, hash = "") {
+    const page = await browser.newPage({ viewport });
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    page.on("console", (m) => {
+        // Offline fonts and photos are fine in this test; real script errors are not
+        if (m.type() === "error" && !/Failed to load resource|ERR_|fonts\.g|unsplash/.test(m.text())) errors.push(m.text());
+    });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(url(file, hash), { waitUntil: "load" });
+    await page.waitForTimeout(250);
+    return { page, errors };
+}
 
 (async () => {
     fs.mkdirSync(SHOTS, { recursive: true });
     const browser = await chromium.launch({ executablePath: findChromium(), args: ["--headless=new"] });
 
     for (const [name, viewport] of [["desktop", { width: 1280, height: 900 }], ["phone", { width: 390, height: 844 }]]) {
-        console.log(`\n${name} (${viewport.width}px)`);
-        const page = await browser.newPage({ viewport });
-        const errors = [];
-        page.on("pageerror", (e) => errors.push(e.message));
-        page.on("console", (m) => {
-            // Offline font loads are fine; real script errors are not
-            if (m.type() === "error" && !/Failed to load resource|fonts\.g/.test(m.text())) errors.push(m.text());
-        });
+        console.log(`\n=== ${name} (${viewport.width}px) ===`);
 
-        await page.goto(SITE, { waitUntil: "load" });
-        await page.waitForTimeout(400);
+        // Checks every page gets
+        for (const file of PAGES) {
+            console.log(`\n${file}`);
+            const { page, errors } = await openPage(browser, file, viewport);
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            check(await page.locator(".site-header #site-nav").count() === 1, "shared header is built");
+            check(await page.locator(".site-footer").count() === 1, "shared footer is built");
+            const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+            check(overflow <= 0, `no sideways scrolling (overflow ${overflow}px)`);
+            const hrefs = await page.evaluate(() => [...document.querySelectorAll("a[href]")].map((a) => a.getAttribute("href")));
+            const bad = [...new Set(hrefs.map((h) => linkProblem(h, file)).filter(Boolean))];
+            check(bad.length === 0, `every link has a real target ${bad.length ? JSON.stringify(bad) : ""}`);
+            const key = file === "index.html" ? null : file.replace(".html", "");
+            if (key) check(await page.locator(`#site-nav .nav-link.active[href="${file}"]`).count() === 1, "this page's tab is marked as current");
+            await page.screenshot({ path: path.join(SHOTS, `${name}-${file.replace(".html", "")}.png`), fullPage: true });
+            await page.close();
+        }
 
-        check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
-        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-        check(overflow <= 0, `no sideways scrolling (overflow ${overflow}px)`);
+        // Home: quick start sends you to the right plan on the Programs page
+        console.log("\nhome features");
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            check(Number(await page.locator('[data-stat="plans"]').textContent()) >= 8, "hero stats count the plans");
+            check(await page.locator("#ticker-track span").count() > 20, "ticker lists exercise names");
+            await page.locator('#quickstart input[value="classic"]').check({ force: true });
+            await page.locator('#qs-days input[value="5"]').check({ force: true });
+            await Promise.all([page.waitForNavigation(), page.locator(".qs-go").click()]);
+            await page.waitForTimeout(250);
+            check(page.url().endsWith("programs.html#program-classic-5"), "quick start opens the Programs page");
+            check(/Classic Physique · 5 days/.test(await page.locator("#program-head h3").textContent()), "and shows Classic Physique, 5 days");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
 
-        // Every menu and footer link points at something real or a known route
-        const badLinks = await page.evaluate(() => [...document.querySelectorAll('a[href^="#"]')]
-            .map((a) => a.getAttribute("href"))
-            .filter((h) => h !== "#" && !document.getElementById(h.slice(1)) && !/^#(program|contact)-/.test(h)));
-        check(badLinks.length === 0, `all in-page links have a target ${badLinks.length ? JSON.stringify(badLinks) : ""}`);
+        // Menu: clicking a tab opens that page
+        {
+            const { page } = await openPage(browser, "index.html", viewport);
+            if (viewport.width <= 1080) await page.locator(".menu-toggle").click();
+            await Promise.all([page.waitForNavigation(), page.locator('#site-nav .nav-link[href="tools.html"]').click()]);
+            check(page.url().endsWith("tools.html"), "clicking the Tools tab opens tools.html");
+            await page.close();
+        }
 
-        // Program builder
-        check(await page.locator(".day-card").count() >= 3, "program builder shows day cards");
-        await page.locator("#day-grid input[type=checkbox]").first().check({ force: true });
-        check(/^1 of/.test(await page.locator("#progress-label").textContent()), "checking an exercise updates progress");
-        await page.locator("#reset-week").click();
+        // Programs page
+        console.log("\nprograms features");
+        {
+            const { page, errors } = await openPage(browser, "programs.html", viewport);
+            check(await page.locator(".day-card").count() >= 3, "program builder shows day cards");
+            await page.locator("#day-grid input[type=checkbox]").first().check({ force: true });
+            check(/^1 of/.test(await page.locator("#progress-label").textContent()), "checking an exercise updates progress");
+            await page.locator("#reset-week").click();
+            await page.locator('input[name="goal"][value="classic"]').check({ force: true });
+            await page.locator('input[name="days"][value="5"]').check({ force: true });
+            check(await page.locator(".day-card").count() === 5, "5-day plan shows 5 day cards");
+            await page.locator('input[name="goal"][value="beginner"]').check({ force: true });
+            check(await page.locator('input[name="days"][value="5"]').isDisabled(), "unavailable day options are disabled");
+            check(/New to lifting · 4 days/.test(await page.locator("#program-head h3").textContent()), "switching to a plan without 5 days picks the nearest");
+            await page.locator(".theme-toggle").click();
+            check(await page.evaluate(() => document.documentElement.dataset.theme === "dark"), "dark mode toggles");
+            await page.screenshot({ path: path.join(SHOTS, `${name}-programs-dark.png`), fullPage: true });
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
 
-        // Front page: stats are filled from the data, quick start opens the right plan
-        check(Number(await page.locator('[data-stat="plans"]').textContent()) >= 8, "hero stats count the plans");
-        check(await page.locator("#ticker-track span").count() > 20, "ticker lists exercise names");
-        await page.locator('#quickstart input[value="classic"]').check({ force: true });
-        check(await page.locator('#qs-days input[value="5"]').count() === 1, "quick start offers the days the plan has");
-        await page.locator('#qs-days input[value="5"]').check({ force: true });
-        await page.locator(".qs-go").click();
-        await page.waitForTimeout(150);
-        check(/Classic Physique · 5 days/.test(await page.locator("#program-head h3").textContent()), "quick start opens Classic Physique, 5 days");
-        check(await page.locator(".day-card").count() === 5, "5-day plan shows 5 day cards");
+        // Pros page
+        {
+            const { page } = await openPage(browser, "pros.html", viewport);
+            check(await page.locator(".principles li").count() === 6, "six pro principles");
+            const safe = await page.locator(".pro-link").evaluateAll((as) => as.every((a) => a.target === "_blank" && /noopener/.test(a.rel) && a.href.startsWith("https://")));
+            check(safe, "pro links open safely in a new tab");
+            await page.close();
+        }
 
-        // Days a plan doesn't offer are disabled, and the builder falls back sensibly
-        await page.locator('input[name="goal"][value="beginner"]').check({ force: true });
-        check(await page.locator('input[name="days"][value="5"]').isDisabled(), "unavailable day options are disabled");
-        check(/New to lifting · 4 days/.test(await page.locator("#program-head h3").textContent()), "switching to a plan without 5 days picks the nearest");
+        // Tools page
+        console.log("\ntools features");
+        {
+            const { page, errors } = await openPage(browser, "tools.html", viewport);
+            await page.fill("#cal-age", "30");
+            await page.fill("#cal-ft", "5");
+            await page.fill("#cal-in", "10");
+            await page.fill("#cal-weight", "185");
+            check(/\d/.test(await page.locator("#cal-results .result.big .result-value").textContent().catch(() => "")), "calorie estimator gives a number");
+            await page.fill("#rm-weight", "185");
+            await page.fill("#rm-reps", "5");
+            check((await page.locator("#rm-results .result-value").textContent().catch(() => "")).startsWith("215"), "one-rep max math is right (185 x 5 = 215)");
+            await page.fill("#plate-target", "225");
+            check((await page.locator(".plate-list").textContent().catch(() => "")).includes("45 + 45"), "plate loader math is right (225 = 45 + 45 per side)");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
 
-        // Pros section
-        check(await page.locator(".principles li").count() === 6, "six pro principles");
-        const proLinks = await page.locator(".pro-link").evaluateAll((as) => as.every((a) => a.target === "_blank" && /noopener/.test(a.rel) && a.href.startsWith("https://")));
-        check(proLinks, "pro links open safely in a new tab");
-
-        // Tools
-        await page.fill("#cal-age", "30");
-        await page.fill("#cal-ft", "5");
-        await page.fill("#cal-in", "10");
-        await page.fill("#cal-weight", "185");
-        check(/\d/.test(await page.locator("#cal-results .result.big .result-value").textContent().catch(() => "")), "calorie estimator gives a number");
-        await page.fill("#rm-weight", "185");
-        await page.fill("#rm-reps", "5");
-        check((await page.locator("#rm-results .result-value").textContent().catch(() => "")).startsWith("215"), "one-rep max math is right (185 x 5 = 215)");
-        await page.fill("#plate-target", "225");
-        check((await page.locator(".plate-list").textContent().catch(() => "")).includes("45 + 45"), "plate loader math is right (225 = 45 + 45 per side)");
-
-        // Dark mode
-        await page.locator(".theme-toggle").click();
-        check(await page.evaluate(() => document.documentElement.dataset.theme === "dark"), "dark mode toggles");
-
-        await page.screenshot({ path: path.join(SHOTS, `${name}-full-dark.png`), fullPage: true });
-        await page.locator(".theme-toggle").click();
-        await page.evaluate(() => window.scrollTo(0, 0));
-        await page.screenshot({ path: path.join(SHOTS, `${name}-full-light.png`), fullPage: true });
-
-        check(errors.length === 0, `still no script errors after using the page ${errors.length ? JSON.stringify(errors) : ""}`);
-        await page.close();
+        // Basics page: linking to a question opens its answer
+        {
+            const { page } = await openPage(browser, "basics.html", viewport, "#faq-protein");
+            check(await page.locator("#faq-protein").evaluate((d) => d.open), "linking to a question opens its answer");
+            await page.close();
+        }
     }
 
     await browser.close();

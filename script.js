@@ -10,6 +10,12 @@
 
    Links: features can teach the router new addresses with
    addRoute(pattern, handler). See setupPrograms() for an example.
+
+   Pages: the site has one HTML file per menu tab. The header, menus,
+   footer, and "Jump to" dialog are built once, in setupLayout(), from
+   SITE_NAV below, so a menu change only happens in one place.
+   Each feature checks for its own elements and quietly does nothing
+   on pages that don't have them.
    ========================================================= */
 
 /* ---------- CONTACT FORM SETTINGS (the one place you need to edit) ----------
@@ -25,6 +31,7 @@ const CONTACT_CONFIG = {
 
 /* ---------- Feature list: add new setup functions here ---------- */
 const FEATURES = [
+    setupLayout,     // keep first: builds the header and footer the others use
     setupTheme,
     setupMenu,
     setupDropdowns,
@@ -35,6 +42,55 @@ const FEATURES = [
     setupContactForm,
     setupLinks,      // keep after features that add routes
     setupJump
+];
+
+/* ---------- Site menu: one place for every page's header and footer ----------
+   Each top-level entry is a page. "items" become its dropdown.
+   An item is [title, short description, link], or "divider".
+   The Programs dropdown is filled in from PROGRAMS automatically. */
+const SITE_NAV = [
+    { label: "Start here", href: "start.html", page: "start", items: [
+        ["I'm new to the gym", "Your first two weeks, step by step", "start.html#path-new"],
+        ["I want to lose weight", "Eat a little less, keep your muscle", "start.html#path-lose"],
+        ["I want to get stronger", "Barbell basics and steady progress", "start.html#path-strength"]
+    ] },
+    { label: "Programs", href: "programs.html", page: "programs", items: "programs" },
+    { label: "Pros", href: "pros.html", page: "pros", items: [
+        ["Train like a pro", "Six habits every champion shares", "pros.html"],
+        ["Learn from the pros", "Olympia champions and record holders", "pros.html#pro-links"],
+        "divider",
+        ["Classic Physique plan", "A bodybuilding split to follow", "programs.html#program-classic"]
+    ] },
+    { label: "Tools", href: "tools.html", page: "tools", items: [
+        ["Calorie estimator", "Daily calories and protein", "tools.html#tool-calories"],
+        ["One-rep max", "Estimate your max and working weights", "tools.html#tool-1rm"],
+        ["Plate loader", "Which plates go on the bar", "tools.html#tool-plates"]
+    ] },
+    { label: "Gym basics", href: "basics.html", page: "basics", items: [
+        ["What weight should I use?", "", "basics.html#faq-weight"],
+        ["How often should I train?", "", "basics.html#faq-often"],
+        ["Will lifting make me bulky?", "", "basics.html#faq-bulky"],
+        ["Cardio or weights for fat loss?", "", "basics.html#faq-cardio"],
+        ["I'm sore. Should I skip?", "", "basics.html#faq-sore"],
+        ["The unwritten gym rules", "", "basics.html#faq-etiquette"],
+        ["How much protein do I need?", "", "basics.html#faq-protein"]
+    ] },
+    { label: "Contact", href: "contact.html", page: "contact", items: [
+        ["Send a message", "Any question at all", "contact.html#contact-general"],
+        ["Help getting started", "Not sure where to begin?", "contact.html#contact-beginner"],
+        ["Ask about a program", "Swaps, schedules, sticking points", "contact.html#contact-program"]
+    ] }
+];
+
+// Unsplash photos used on the site (free under the Unsplash License), credited in the footer
+const PHOTO_CREDITS = [
+    ["Victor Freitas", "https://unsplash.com/@victorfreitas"],
+    ["Sven Mieke", "https://unsplash.com/@sxoxm"],
+    ["Edgar Chaparro", "https://unsplash.com/@echaparro"],
+    ["Anastase Maragos", "https://unsplash.com/@visualsbyroyalz"],
+    ["Karsten Winegeart", "https://unsplash.com/@_karsten"],
+    ["Tyler Raye", "https://unsplash.com/@tcraye"],
+    ["Ambitious Studio | Rick Barrett", "https://unsplash.com/@weareambitious"]
 ];
 
 /* ---------- Shared app state and helpers ---------- */
@@ -70,6 +126,27 @@ const store = {
 
 const fmt = (n) => Math.round(n).toLocaleString("en-US");
 
+// Which page we're on, as named in <body data-page="...">
+const currentPage = () => document.body.dataset.page || "home";
+
+// Normalize a path so ".../" and ".../index.html" count as the same page
+const pagePath = (path) => path.replace(/index\.html$/, "");
+
+// True when a link points somewhere on the page that's already open
+function isSamePage(href) {
+    try {
+        const url = new URL(href, location.href);
+        return url.origin === location.origin && pagePath(url.pathname) === pagePath(location.pathname);
+    } catch (e) { return false; }
+}
+
+// Send the visitor to a link: scroll if it's on this page, otherwise load the other page
+function navigate(href) {
+    const url = new URL(href, location.href);
+    if (isSamePage(href) && url.hash && goTo(url.hash)) return;
+    location.href = url.href;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     FEATURES.forEach((feature) => {
         try { feature(); } catch (err) { console.error(`${feature.name} failed:`, err); }
@@ -77,6 +154,96 @@ document.addEventListener("DOMContentLoaded", () => {
     const year = document.getElementById("year");
     if (year) year.textContent = new Date().getFullYear();
 });
+
+/* =========================================================
+   FEATURE: Shared header, footer, and Jump-to dialog
+   Built from SITE_NAV so every page has the same menus.
+   ========================================================= */
+function setupLayout() {
+    const headerSlot = document.getElementById("site-header");
+    const footerSlot = document.getElementById("site-footer");
+    const page = currentPage();
+
+    const programItems = () => Object.entries(PROGRAMS).map(([key, p]) => [
+        p.name,
+        `${Object.keys(p.plans).join(" or ")} days · ${p.tagline || ""}`.replace(/ · $/, ""),
+        `programs.html#program-${key}`
+    ]);
+
+    const menuItem = (item) => item === "divider"
+        ? `<li class="divider" role="separator"></li>`
+        : `<li><a href="${item[2]}"><strong>${escapeHtml(item[0])}</strong>${item[1] ? `<span class="sub-desc">${escapeHtml(item[1])}</span>` : ""}</a></li>`;
+
+    const navHtml = SITE_NAV.map((entry) => {
+        const items = entry.items === "programs" ? programItems() : entry.items;
+        const id = `menu-${entry.page}`;
+        const here = entry.page === page;
+        return `
+            <li class="nav-item has-menu">
+                <a class="nav-link${here ? " active" : ""}" href="${entry.href}"${here ? ' aria-current="page"' : ""}>${escapeHtml(entry.label)}</a>
+                <button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="${id}">
+                    <span class="visually-hidden">Show ${escapeHtml(entry.label)} links</span>
+                </button>
+                <ul class="submenu" id="${id}">${items.map(menuItem).join("")}</ul>
+            </li>`;
+    }).join("");
+
+    if (headerSlot) {
+        headerSlot.outerHTML = `
+<header class="site-header">
+    <div class="header-inner">
+        <a class="brand" href="index.html"${page === "home" ? ' aria-current="page"' : ""}><span class="brand-mark" aria-hidden="true"></span>Ground Up</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+        <nav id="site-nav" aria-label="Main">
+            <ul class="nav-list">${navHtml}</ul>
+        </nav>
+        <button class="jump-toggle" type="button" aria-haspopup="dialog" aria-controls="jump">Search <kbd>/</kbd></button>
+        <button class="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
+    </div>
+</header>`;
+    }
+
+    if (footerSlot) {
+        const credits = PHOTO_CREDITS.map(([name, url]) =>
+            `<a href="${url}" target="_blank" rel="noopener noreferrer">${escapeHtml(name)}</a>`).join(", ");
+        footerSlot.outerHTML = `
+<footer class="site-footer">
+    <div class="footer-inner">
+        <div class="footer-brand">
+            <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>Ground Up</a>
+            <p>Free plans for real people. Start where you are.</p>
+        </div>
+        <nav class="footer-nav" aria-label="Footer">
+            <a href="start.html">Start here</a>
+            <a href="programs.html">Programs</a>
+            <a href="pros.html">Train like a pro</a>
+            <a href="tools.html">Tools</a>
+            <a href="basics.html">Gym basics</a>
+            <a href="contact.html">Contact</a>
+        </nav>
+    </div>
+    <div class="footer-fine">
+        <p>&copy; <span id="year">2026</span> Ground Up Fitness &middot; Built by Christopher Dippold for ISCI 250</p>
+        <p>Information on this site is general fitness education, not medical advice. Check with a doctor before starting if you have a health condition.</p>
+        <p>Photos from Unsplash by ${credits}.</p>
+        <p class="footer-hint">Press <kbd>/</kbd> anywhere to search the site. <a href="#main">Back to top</a></p>
+    </div>
+</footer>`;
+    }
+
+    if (!document.getElementById("jump")) {
+        document.body.insertAdjacentHTML("beforeend", `
+<dialog id="jump" class="jump" aria-label="Search the site">
+    <div class="jump-inner">
+        <label class="visually-hidden" for="jump-input">Where do you want to go?</label>
+        <input id="jump-input" type="text" placeholder="Where do you want to go?" autocomplete="off"
+               role="combobox" aria-controls="jump-list" aria-expanded="true" aria-autocomplete="list">
+        <ul id="jump-list" role="listbox" aria-label="Destinations"></ul>
+        <p class="jump-hint">Arrow keys to move, Enter to open, Esc to close</p>
+    </div>
+</dialog>`);
+    }
+}
 
 /* =========================================================
    FEATURE: Theme toggle (remembers your choice)
@@ -188,25 +355,21 @@ function setupDropdowns() {
    FEATURE: Highlight the nav link for the section on screen
    ========================================================= */
 function setupActiveNav() {
-    if (!("IntersectionObserver" in window)) return;
-    const links = [...document.querySelectorAll("#site-nav .nav-link")];
-    const sections = links
-        .map((a) => document.getElementById(a.getAttribute("href").slice(1)))
-        .filter(Boolean);
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            links.forEach((a) => {
-                const on = a.getAttribute("href") === "#" + entry.target.id;
-                a.classList.toggle("active", on);
-                if (on) a.setAttribute("aria-current", "true");
-                else a.removeAttribute("aria-current");
-            });
+    // The current page's tab is marked in setupLayout. Here we also mark the dropdown
+    // entry for the part of the page you're looking at, and keep it in step as you move.
+    const mark = () => {
+        document.querySelectorAll("#site-nav .submenu a").forEach((a) => {
+            const url = new URL(a.getAttribute("href"), location.href);
+            const on = isSamePage(a.href) && url.hash !== "" && url.hash === location.hash;
+            a.classList.toggle("is-current", on);
+            if (on) a.setAttribute("aria-current", "location");
+            else a.removeAttribute("aria-current");
         });
-    }, { rootMargin: "-45% 0px -50% 0px" });
-
-    sections.forEach((s) => observer.observe(s));
+    };
+    mark();
+    window.addEventListener("hashchange", mark);
+    window.addEventListener("popstate", mark);
+    window.addEventListener("routechange", mark);
 }
 
 /* =========================================================
@@ -242,6 +405,7 @@ function goTo(hash, { push = true } = {}) {
     if (target.tagName === "DETAILS") target.open = true;
 
     if (push && location.hash !== hash) history.pushState(null, "", hash);
+    window.dispatchEvent(new Event("routechange"));
     App.closeMenus();
 
     target.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
@@ -265,9 +429,13 @@ function goTo(hash, { push = true } = {}) {
 
 function setupLinks() {
     document.addEventListener("click", (e) => {
-        const a = e.target.closest('a[href^="#"]');
-        if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-        if (goTo(a.getAttribute("href"))) e.preventDefault();
+        const a = e.target.closest("a[href]");
+        if (!a || a.target === "_blank" || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+        // Links to a spot on the page that's already open scroll there smoothly;
+        // links to other pages load normally (and the hash is handled on arrival)
+        if (!isSamePage(a.href)) return;
+        const hash = new URL(a.href, location.href).hash;
+        if (hash && goTo(hash)) e.preventDefault();
     });
 
     window.addEventListener("popstate", () => goTo(location.hash, { push: false }));
@@ -340,7 +508,7 @@ function setupJump() {
         const d = matches[i];
         if (!d) return;
         dialog.close();
-        goTo(d.href);
+        navigate(d.href);
     }
 
     opener.addEventListener("click", open);
@@ -390,6 +558,7 @@ const BEGINNER_A = [
 const PROGRAMS = {
     beginner: {
         name: "New to lifting",
+        tagline: "machines and dumbbells",
         summary: "Full-body sessions using machines and dumbbells, so you learn the basic movements without worrying about balance or heavy barbells.",
         session: "45 to 60 minutes",
         effort: "Stop each set with about 2 or 3 good reps left in the tank.",
@@ -447,6 +616,7 @@ const PROGRAMS = {
 
     fatloss: {
         name: "Lose fat",
+        tagline: "lifting plus conditioning",
         summary: "Lifting keeps the muscle you have while you eat a little less. Short finishers and daily walking add to what you burn. The scale moves because of your eating; the training decides whether you lose fat or muscle.",
         session: "40 to 50 minutes, plus a daily walk",
         effort: "Lifts: 2 reps in reserve. Finishers: hard but controlled, enough that you can only talk in short phrases.",
@@ -515,6 +685,7 @@ const PROGRAMS = {
 
     strength: {
         name: "Get stronger",
+        tagline: "squat, bench, deadlift",
         summary: "Barbell training built around the squat, bench press, deadlift, and overhead press. Best once you're comfortable with the basic movements.",
         session: "60 to 75 minutes",
         effort: "Main lifts: the last set should feel hard, with clean form. Rest longer on heavy sets.",
@@ -578,6 +749,7 @@ const PROGRAMS = {
 
     classic: {
         name: "Classic Physique",
+        tagline: "bodybuilding split",
         summary: "A bodybuilding split in the style many physique competitors favor: more weekly sets, every muscle trained hard, and extra work for the shoulders, upper back, and arms that build a V-taper. Best after six months of steady lifting.",
         session: "60 to 75 minutes",
         effort: "Most sets end 1 or 2 reps short of failure. The last set of an isolation move (raises, curls, extensions) can go to failure with clean form.",
@@ -687,6 +859,7 @@ function setupPrograms() {
         goalInputs: [...document.querySelectorAll('input[name="goal"]')],
         dayInputs: [...document.querySelectorAll('input[name="days"]')]
     };
+    if (!els.grid || !els.head) return; // not on the Programs page
 
     const state = { goal: "beginner", days: 3 };
     const progressKey = () => `gu-progress-${state.goal}-${state.days}`;
@@ -820,10 +993,14 @@ function setupHero() {
     const counts = {
         goals: Object.keys(PROGRAMS).length,
         plans: Object.values(PROGRAMS).reduce((n, p) => n + Object.keys(p.plans).length, 0),
-        tools: document.querySelectorAll(".tool").length
+        tools: 3,
+        exercises: typeof EXERCISES === "object" ? Object.keys(EXERCISES).length : 0
     };
     document.querySelectorAll("[data-stat]").forEach((el) => {
-        if (counts[el.dataset.stat] !== undefined) el.textContent = counts[el.dataset.stat];
+        const n = counts[el.dataset.stat];
+        if (n === undefined) return;
+        el.textContent = n;
+        if (!n) el.closest("li").hidden = true; // don't brag about zero
     });
 
     // Quick start: pick a goal and days, jump straight into that plan
@@ -848,7 +1025,7 @@ function setupHero() {
         });
         form.addEventListener("submit", (e) => {
             e.preventDefault();
-            if (PROGRAMS[goal()]) goTo(`#program-${goal()}-${days}`);
+            if (PROGRAMS[goal()]) navigate(`programs.html#program-${goal()}-${days}`);
         });
         renderDays();
     }
@@ -913,6 +1090,7 @@ function setupTools() {
         plateOut: $("plate-results"),
         bar: $("plate-bar")
     };
+    if (!els.calForm || !els.rmForm || !els.plateForm) return; // not on the Tools page
 
     let unit = store.get("gu-unit") === "kg" ? "kg" : "lb";
     const num = (el) => (el.value === "" ? NaN : Number(el.value));
@@ -1114,6 +1292,7 @@ function setupTools() {
    ========================================================= */
 function setupContactForm() {
     const form = document.getElementById("contact-form");
+    if (!form) return; // not on the Contact page
     const fields = form.elements;
     const status = document.getElementById("form-status");
     const counter = document.getElementById("message-count");

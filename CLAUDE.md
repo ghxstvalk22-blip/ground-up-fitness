@@ -11,7 +11,9 @@ ships **one** focused improvement.
 
 | File | What it holds |
 | --- | --- |
-| `index.html` | All page markup. Sections: hero (with quick-start card and ticker), Start here, Program builder, Train like a pro (`#pros`), Tools, Gym basics, Contact. |
+| `index.html` | Home page: photo hero, "Nervous about starting?", quick-start plan picker, program tiles, how it works, pro band, tools teaser. |
+| `start.html`, `programs.html`, `pros.html`, `tools.html`, `basics.html`, `contact.html` | One page per menu tab. Each has a photo banner and its own `<body data-page="...">`. |
+| `exercises.js` | The exercise library: how-to guides for every exercise (loaded before `script.js`). |
 | `styles.css` | All styles. Colors are tokens on `:root`, with dark mode overrides. |
 | `script.js` | All behavior, organized as independent feature blocks. |
 | `ROADMAP.md` | The idea backlog. The owner adds ideas here. |
@@ -25,19 +27,27 @@ ships **one** focused improvement.
 - Features that need special links register them with `addRoute(pattern, handler)`
   (see `setupPrograms` and `setupContactForm`).
 - Use the shared helpers: `store` (safe localStorage), `escapeHtml`, `fmt`, `goTo`.
-- New menu links in `#site-nav` show up in the "Jump to" search automatically.
+- The header, menus, footer, and search dialog are built by `setupLayout()` from `SITE_NAV`.
+  Edit menus there, not in the HTML files. New menu links show up in search automatically.
+- Each feature must check for its own elements and return quietly on pages without them.
+- Links between pages use the page name: `tools.html#tool-1rm`, `programs.html#program-classic-5`.
+  A new page needs: the same `<head>`, `<div id="site-header">`, a banner, `<main id="main">`,
+  `<div id="site-footer">`, an entry in `SITE_NAV`, and a line in `PAGES` in `tests/check.js`.
 
 ## Rules for every change
 
 1. **Add, don't rewrite.** Make targeted edits. Never regenerate a whole file. Never
    remove an existing feature unless `ROADMAP.md` explicitly asks for it.
-2. **Match the existing look:** the Barlow / Barlow Condensed fonts, the charcoal and volt
-   color tokens, uppercase display headings, and working dark mode and phone layouts
-   (no sideways scrolling at 390px wide).
+2. **Match the existing look** (a streetwear/gym-brand style the owner asked for, in the spirit of
+   YoungLA, DFYNE, Gold's Gym): the Archivo font (condensed for big headlines, expanded for
+   small labels), black/white/bone colors with the one orange accent (`--volt`), sharp corners,
+   uppercase letter-spaced labels and buttons, black-and-white photos, plain human wording
+   (no buzzwords), and working dark mode and phone layouts (no sideways scrolling at 390px wide).
 3. **Accessible:** real labels on inputs, keyboard support, visible focus, and nothing
    that relies on color alone.
-4. **No new external dependencies.** Fonts come from Google Fonts. No frameworks, no
-   trackers, no analytics, no ads.
+4. **No new external dependencies.** Fonts come from Google Fonts. Photos come from Unsplash
+   (free license only, never Unsplash+), loaded from images.unsplash.com, and every photographer
+   is added to `PHOTO_CREDITS`. No frameworks, no trackers, no analytics, no ads.
 5. **Health content must be safe and mainstream:** evidence-based, beginner-friendly, and
    for healthy adults. No crash diets, no calorie targets below the existing floors
    (1,500 for men and 1,200 for women), no supplements or drugs, no medical claims, and no
