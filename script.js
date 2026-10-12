@@ -104,6 +104,30 @@ const SITE_NAV = [
     ] }
 ];
 
+// "Where to next?" row at the bottom of each page: [label, short reason, link]
+const NEXT_STEPS = {
+    start: [["Start the beginner plan", "3 days, machines and dumbbells", "programs.html#program-beginner"],
+            ["Not ready for a gym?", "Begin at home, no equipment", "programs.html#program-home"],
+            ["Browse every exercise", "With how-tos and demos", "exercises.html"]],
+    programs: [["Stuck on an exercise?", "Search the exercise library", "exercises.html"],
+               ["How much should I eat?", "Calories and protein for your goal", "tools.html#tool-calories"],
+               ["Train like a pro", "The habits champions share", "pros.html"]],
+    exercises: [["Put them together", "Pick a ready-made plan", "programs.html"],
+                ["First time at the gym?", "What to expect, start to finish", "start.html#first-day"],
+                ["Gym words, decoded", "Sets, reps, failure, deload", "start.html#glossary"]],
+    pros: [["Try the Classic Physique plan", "A bodybuilding split, 4 or 5 days", "programs.html#program-classic"],
+           ["Hit your protein", "Find your daily target", "tools.html#tool-calories"],
+           ["Check your form", "Every exercise, step by step", "exercises.html"]],
+    tools: [["Get a plan that fits", "Free, takes 10 seconds", "index.html#get-plan"],
+            ["Track your lifts", "Log sets on any program", "programs.html#my-progress"],
+            ["Is this normal?", "Gym basics, answered straight", "basics.html"]],
+    basics: [["Your first day", "What to bring and what to do", "start.html#first-day"],
+             ["Find your plan", "Free, takes 10 seconds", "index.html#get-plan"],
+             ["Still have a question?", "Ask a real person", "contact.html#contact-general"]],
+    contact: [["New here?", "Start with the basics", "start.html"],
+              ["See the programs", "Pick one and start this week", "programs.html"]]
+};
+
 // Unsplash photos used on the site (free under the Unsplash License), credited in the footer
 const PHOTO_CREDITS = [
     ["Victor Freitas", "https://unsplash.com/@victorfreitas"],
@@ -223,6 +247,19 @@ function setupLayout() {
         <button class="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
     </div>
 </header>`;
+    }
+
+    const next = NEXT_STEPS[page];
+    if (next && footerSlot) {
+        footerSlot.insertAdjacentHTML("beforebegin", `
+<nav class="next-steps" aria-labelledby="next-title">
+    <div class="container wide">
+        <h2 id="next-title">Where to next?</h2>
+        <ul>${next.map(([label, why, href]) => `
+            <li><a href="${href}"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(why)}</span></a></li>`).join("")}
+        </ul>
+    </div>
+</nav>`);
     }
 
     if (footerSlot) {

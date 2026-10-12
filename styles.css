@@ -1912,6 +1912,33 @@ select, input, textarea {
 .sent:not([hidden]) .sent-check circle { animation: draw 0.6s ease-out forwards; }
 .sent:not([hidden]) .sent-check path { animation: draw 0.4s ease-out 0.5s forwards; }
 
+/* ---------- Where to next? ---------- */
+.next-steps { background-color: var(--ink); color: var(--paper); padding: 56px 0 60px; }
+.next-steps h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); margin-bottom: 20px; color: var(--paper); }
+.next-steps ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+}
+.next-steps a {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 100%;
+    padding: 20px 22px;
+    border: 1px solid color-mix(in srgb, var(--paper) 25%, transparent);
+    color: var(--paper);
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+.next-steps a:hover { border-color: var(--volt); background-color: color-mix(in srgb, var(--paper) 6%, transparent); }
+.next-steps strong { font-size: 1.05rem; }
+.next-steps strong::after { content: "\00a0\2192"; color: var(--volt); }
+.next-steps span { font-size: 0.88rem; opacity: 0.75; }
+
 /* ---------- Footer ---------- */
 .site-footer { background-color: #000000; color: #cfcfcf; }
 .footer-inner {
