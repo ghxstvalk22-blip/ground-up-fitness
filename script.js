@@ -811,6 +811,46 @@ const PROGRAMS = {
         }
     },
 
+    build: {
+        name: "Build muscle",
+        tagline: "full body, 3 days",
+        summary: "Three full-body sessions a week built for muscle: moderate weights, 8 to 15 reps, and every muscle trained three times a week. A great next step after the beginner plan, and before a bodybuilding split like Classic Physique.",
+        session: "50 to 60 minutes",
+        effort: "Most sets end 1 or 2 reps short of failure. Control the lowering on every rep; that's where a lot of the muscle-building happens.",
+        progression: "Double progression: work up to the top of the rep range on every set, then add the smallest weight jump and build back up.",
+        plans: {
+            3: {
+                schedule: "Any 3 days with a rest day between, like Mon, Wed, Fri.",
+                days: [
+                    { title: "Full body A", items: [
+                        ex("Leg press", "3 × 10–12", "2 min"),
+                        ex("Incline dumbbell press", "3 × 8–12", "2 min", "Incline machine press"),
+                        ex("Lat pulldown", "3 × 10–12", "90 s"),
+                        ex("Seated hamstring curl", "3 × 10–12", "60 s"),
+                        ex("Lateral raise", "3 × 12–15", "60 s"),
+                        ex("Dumbbell curl", "2 × 10–12", "60 s")
+                    ] },
+                    { title: "Full body B", items: [
+                        ex("Hack squat", "3 × 8–12", "2 min", "Goblet squat"),
+                        ex("Machine chest press", "3 × 10–12", "90 s"),
+                        ex("Seated cable row", "3 × 10–12", "90 s"),
+                        ex("Dumbbell Romanian deadlift", "3 × 10", "2 min"),
+                        ex("Triceps pushdown", "2 × 12–15", "60 s"),
+                        ex("Standing calf raise", "3 × 12–15", "60 s")
+                    ] },
+                    { title: "Full body C", items: [
+                        ex("Bulgarian split squat", "3 × 10 per leg", "90 s", "Split squat holding a rail"),
+                        ex("Dumbbell bench press", "3 × 8–12", "2 min"),
+                        ex("Chest-supported row", "3 × 10–12", "90 s"),
+                        ex("Hip thrust", "3 × 10–12", "90 s", "Glute bridge"),
+                        ex("Rear delt fly", "2 × 15", "60 s"),
+                        ex("Hammer curl", "2 × 12", "60 s")
+                    ] }
+                ]
+            }
+        }
+    },
+
     home: {
         name: "No gym needed",
         tagline: "bodyweight at home",

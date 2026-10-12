@@ -119,12 +119,12 @@ async function openPage(browser, file, viewport, hash = "") {
             const { page, errors } = await openPage(browser, "index.html", viewport);
             check(Number(await page.locator('[data-stat="plans"]').textContent()) >= 8, "hero stats count the plans");
             check(await page.locator("#ticker-track span").count() > 20, "ticker lists exercise names");
-            await page.locator('#quickstart input[value="classic"]').check({ force: true });
-            await page.locator('#qs-days input[value="5"]').check({ force: true });
+            await page.locator('#quickstart input[value="build"]').check({ force: true });
+            check(await page.locator('#qs-days input').count() === 1, "quick start only offers the days a plan has");
             await Promise.all([page.waitForNavigation(), page.locator(".qs-go").click()]);
             await page.waitForTimeout(250);
-            check(page.url().endsWith("programs.html#program-classic-5"), "quick start opens the Programs page");
-            check(/Classic Physique · 5 days/.test(await page.locator("#program-head h3").textContent()), "and shows Classic Physique, 5 days");
+            check(page.url().endsWith("programs.html#program-build-3"), "quick start opens the Programs page");
+            check(/Build muscle · 3 days/.test(await page.locator("#program-head h3").textContent()), "and shows Build muscle, 3 days");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

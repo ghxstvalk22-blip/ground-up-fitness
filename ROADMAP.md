@@ -8,7 +8,6 @@ Write it in plain words, like `- [ ] Add a page about stretching before workouts
 Owner priorities (2026-10-12): more workout plans, more ways to move around the site, a site people
 actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFYNE / Gold's Gym style.
 
-- [ ] New program "Build muscle" (hypertrophy) for 3 days a week: a gentler full-body muscle plan for people who aren't ready for the 4- and 5-day Classic Physique split. Add its radio button, quick-start tile, home program tile, and use exercises that are already in `exercises.js` (or add guides for new ones).
 - [ ] Pro principles deep dives: turn each of the six "Train like a pro" habits into a short expandable guide with practical steps for beginners.
 
 ## Ideas
@@ -24,6 +23,7 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 ## Done
 
+- [x] 2026-10-12 (overnight): Build muscle plan (3-day full body); the quick start's "Build muscle" now opens it instead of the advanced Classic Physique split.
 - [x] 2026-10-12 (overnight): link previews and a site icon for sharing; Gym basics answers link to the right plan, tool, or guide; "Print this week" gives a two-column gym sheet with blanks to write in sets.
 - [x] 2026-10-12 (overnight): "Where to next?" row at the bottom of every page (set in `NEXT_STEPS` in script.js).
 - [x] 2026-10-12 (overnight): three new plans: No gym needed (home, bodyweight, 3 days), Short on time (2 days), and Dumbbells only (3 or 4 days). Home and dumbbell plans only rotate into exercises their equipment allows. 6 new exercise guides (103 total).
