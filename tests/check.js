@@ -68,6 +68,8 @@ async function openPage(browser, file, viewport, hash = "") {
         await page.route(/fonts\.gstatic\.com\/test/, (r) => r.fulfill({ contentType: "font/woff2", body: fs.readFileSync(FONT_FILE) }));
     }
     await page.route(/images\.unsplash\.com/, (r) => r.abort());
+    // Most checks test the built-in coach, so the AI is switched off here (the AI check fakes it)
+    await page.route(/script\.js/, (r) => r.fulfill({ contentType: "application/javascript", body: fs.readFileSync(path.join(ROOT, "script.js"), "utf8").replace(/const COACH_AI_URL = "[^"]*";/, 'const COACH_AI_URL = "";') }));
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (m) => {
@@ -522,7 +524,7 @@ async function openPage(browser, file, viewport, hash = "") {
             page.on("pageerror", (e) => errors.push(e.message));
             await page.route(/fonts\.|unsplash/, (r) => r.abort());
             await page.route(/script\.js/, async (r) => {
-                const body = fs.readFileSync(path.join(ROOT, "script.js"), "utf8").replace('const COACH_AI_URL = "";', 'const COACH_AI_URL = "https://coach.test/api";');
+                const body = fs.readFileSync(path.join(ROOT, "script.js"), "utf8").replace(/const COACH_AI_URL = "[^"]*";/, 'const COACH_AI_URL = "https://coach.test/api";');
                 await r.fulfill({ contentType: "application/javascript", body });
             });
             const sent = [];

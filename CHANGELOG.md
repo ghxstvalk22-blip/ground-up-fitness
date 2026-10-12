@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Fitness Coach AI switched on)
+
+- Fitness Coach is now connected to Claude through the site's own Cloudflare server, so it can answer complex questions and build detailed plans. The API key stays on that server, never in the website. If the AI can't be reached, the built-in coach still answers.
+
 ## 2026-10-12 (Fitness Coach can use real AI)
 
 - Fitness Coach can now be switched to **Claude**, an AI made by Anthropic, so it can read any question, think it through, and answer like a real coach: full weekly plans, complex questions ("45 minutes, 3 days a week, lose fat and keep my strength"), and follow-ups that remember the conversation. While it works, it shows what it's doing ("Reading your question…", "Thinking it through…").

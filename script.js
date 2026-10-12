@@ -46,7 +46,7 @@ const FIREBASE_CONFIG = {
    e.g. "https://ground-up-coach.yourname.workers.dev". Also add that address to
    connect-src in the Content-Security-Policy on every page. Leave it empty and
    Fitness Coach uses its built-in rules, with nothing sent anywhere. */
-const COACH_AI_URL = "";
+const COACH_AI_URL = "https://ground-up-coach.ghxstvalk22.workers.dev";
 
 /* ---------- Feature list: add new setup functions here ---------- */
 const FEATURES = [
