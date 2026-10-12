@@ -11,7 +11,7 @@ ships **one** focused improvement.
 
 | File | What it holds |
 | --- | --- |
-| `index.html` | All page markup. Sections: hero, Start here, Program builder, Tools, Gym basics, Contact. |
+| `index.html` | All page markup. Sections: hero (with quick-start card and ticker), Start here, Program builder, Train like a pro (`#pros`), Tools, Gym basics, Contact. |
 | `styles.css` | All styles. Colors are tokens on `:root`, with dark mode overrides. |
 | `script.js` | All behavior, organized as independent feature blocks. |
 | `ROADMAP.md` | The idea backlog. The owner adds ideas here. |
@@ -45,7 +45,13 @@ ships **one** focused improvement.
    or registered dietitian when appropriate.
 6. **Never** put passwords, API keys, or personal information in the repo. The contact
    form key stays an empty string unless the owner fills it in.
-7. **Update the counts in the hero** (goals, plans, tools) if you add a plan or a tool.
+7. **Hero counts update themselves** from `PROGRAMS` and `.tool` panels. When you add a
+   program, also add its radio button in the program builder, a tile in the quick-start
+   card if it's a main goal, and a link in the Programs menu.
+8. **Real people:** never write quotes, tips, testimonials, or endorsements attributed to
+   real athletes or coaches, and never use their photos or logos. Linking to their own
+   official channels with a factual one-line description is fine, but verify the URL and
+   facts first, and keep the "not affiliated" note.
 
 ## The daily run, step by step
 

@@ -30,6 +30,7 @@ const FEATURES = [
     setupDropdowns,
     setupActiveNav,
     setupPrograms,
+    setupHero,
     setupTools,
     setupContactForm,
     setupLinks,      // keep after features that add routes
@@ -573,6 +574,101 @@ const PROGRAMS = {
                 ]
             }
         }
+    },
+
+    classic: {
+        name: "Classic Physique",
+        summary: "A bodybuilding split in the style many physique competitors favor: more weekly sets, every muscle trained hard, and extra work for the shoulders, upper back, and arms that build a V-taper. Best after six months of steady lifting.",
+        session: "60 to 75 minutes",
+        effort: "Most sets end 1 or 2 reps short of failure. The last set of an isolation move (raises, curls, extensions) can go to failure with clean form.",
+        progression: "Double progression: once you hit the top of the rep range on every set, add the smallest weight jump. Log every set; small rep gains each week add up.",
+        plans: {
+            4: {
+                schedule: "Upper and lower days, like Mon, Tue, Thu, Fri.",
+                days: [
+                    { title: "Upper A", items: [
+                        ex("Incline dumbbell press", "3 × 6–8", "2 min", "Incline machine press"),
+                        ex("Chest-supported row", "3 × 8–10", "2 min"),
+                        ex("Seated dumbbell shoulder press", "3 × 8–10", "90 s"),
+                        ex("Lat pulldown", "3 × 10–12", "90 s"),
+                        ex("Cable lateral raise", "3 × 12–15", "60 s", "Dumbbell lateral raise"),
+                        ex("EZ-bar curl", "2 × 10–12", "60 s"),
+                        ex("Overhead triceps extension", "2 × 10–12", "60 s")
+                    ] },
+                    { title: "Lower A", items: [
+                        ex("Back squat", "3 × 6–8", "3 min", "Hack squat or goblet squat"),
+                        ex("Romanian deadlift", "3 × 8–10", "2 min"),
+                        ex("Leg press", "3 × 10–12", "90 s"),
+                        ex("Leg extension", "2 × 12–15", "60 s"),
+                        ex("Seated hamstring curl", "2 × 10–12", "60 s"),
+                        ex("Standing calf raise", "4 × 10–15", "60 s")
+                    ] },
+                    { title: "Upper B", items: [
+                        ex("Pull-up", "3 × 6–10", "2 min", "Lat pulldown"),
+                        ex("Flat dumbbell press", "3 × 8–10", "2 min"),
+                        ex("Seated cable row", "3 × 10–12", "90 s"),
+                        ex("Cable fly", "2 × 12–15", "60 s"),
+                        ex("Lateral raise", "3 × 15–20", "60 s"),
+                        ex("Rear delt fly", "3 × 15", "60 s"),
+                        ex("Incline dumbbell curl", "2 × 10–12", "60 s"),
+                        ex("Triceps pushdown", "2 × 12–15", "60 s")
+                    ] },
+                    { title: "Lower B", items: [
+                        ex("Hack squat", "3 × 8–10", "2 min", "Goblet squat"),
+                        ex("Hip thrust", "3 × 8–10", "2 min", "Glute bridge"),
+                        ex("Bulgarian split squat", "2 × 10 per leg", "90 s", "Split squat holding a rail"),
+                        ex("Lying hamstring curl", "3 × 10–12", "60 s"),
+                        ex("Seated calf raise", "4 × 12–15", "60 s"),
+                        ex("Cable crunch", "3 × 12–15", "60 s", "Dead bug")
+                    ] }
+                ]
+            },
+            5: {
+                schedule: "Push, Pull, Legs, rest, Upper, Lower, rest. Or Monday to Friday.",
+                days: [
+                    { title: "Push", items: [
+                        ex("Incline barbell press", "4 × 6–8", "2–3 min", "Incline dumbbell press"),
+                        ex("Machine chest press", "3 × 8–10", "2 min", "Flat dumbbell press"),
+                        ex("Seated dumbbell shoulder press", "3 × 8–10", "90 s"),
+                        ex("Cable lateral raise", "4 × 12–15", "60 s", "Dumbbell lateral raise"),
+                        ex("Cable fly", "2 × 12–15", "60 s"),
+                        ex("Overhead triceps extension", "3 × 10–12", "60 s")
+                    ] },
+                    { title: "Pull", items: [
+                        ex("Pull-up", "4 × 6–10", "2 min", "Lat pulldown"),
+                        ex("Chest-supported row", "3 × 8–10", "2 min"),
+                        ex("Single-arm cable row", "2 × 10–12 per side", "90 s"),
+                        ex("Rear delt fly", "3 × 15", "60 s"),
+                        ex("EZ-bar curl", "3 × 10–12", "60 s"),
+                        ex("Hammer curl", "2 × 12", "60 s")
+                    ] },
+                    { title: "Legs", items: [
+                        ex("Back squat", "4 × 6–8", "3 min", "Hack squat or goblet squat"),
+                        ex("Romanian deadlift", "3 × 8–10", "2 min"),
+                        ex("Leg press", "3 × 10–12", "90 s"),
+                        ex("Leg extension", "3 × 12–15", "60 s"),
+                        ex("Seated hamstring curl", "3 × 10–12", "60 s"),
+                        ex("Standing calf raise", "4 × 10–15", "60 s")
+                    ] },
+                    { title: "Upper (shoulders + arms)", items: [
+                        ex("Seated dumbbell shoulder press", "3 × 8–10", "2 min"),
+                        ex("Close-grip lat pulldown", "3 × 10–12", "90 s"),
+                        ex("Incline dumbbell press", "3 × 10", "90 s"),
+                        ex("Lateral raise", "4 × 15–20", "60 s"),
+                        ex("Incline dumbbell curl", "3 × 10–12", "60 s"),
+                        ex("Triceps pushdown", "3 × 12–15", "60 s")
+                    ] },
+                    { title: "Lower + core", items: [
+                        ex("Hack squat", "3 × 8–10", "2 min", "Goblet squat"),
+                        ex("Hip thrust", "3 × 8–10", "2 min", "Glute bridge"),
+                        ex("Walking lunge", "2 × 10 per leg", "90 s", "Split squat holding a rail"),
+                        ex("Lying hamstring curl", "3 × 10–12", "60 s"),
+                        ex("Seated calf raise", "4 × 12–15", "60 s"),
+                        ex("Hanging knee raise", "3 × 10–15", "60 s", "Lying leg raise")
+                    ] }
+                ]
+            }
+        }
     }
 };
 
@@ -598,11 +694,22 @@ function setupPrograms() {
 
     function render({ syncUrl = false } = {}) {
         const p = PROGRAMS[state.goal];
+        // Not every program offers every number of days; fall back to the closest one it has
+        const available = Object.keys(p.plans).map(Number);
+        if (!p.plans[state.days]) {
+            state.days = available.reduce((best, d) => (Math.abs(d - state.days) < Math.abs(best - state.days) ? d : best));
+        }
         const plan = p.plans[state.days];
         const done = new Set(store.get(progressKey(), []));
 
         els.goalInputs.forEach((r) => { r.checked = r.value === state.goal; });
-        els.dayInputs.forEach((r) => { r.checked = Number(r.value) === state.days; });
+        els.dayInputs.forEach((r) => {
+            const offered = available.includes(Number(r.value));
+            r.disabled = !offered;
+            r.closest("label").classList.toggle("is-off", !offered);
+            r.closest("label").title = offered ? "" : `${p.name} doesn't have a ${r.value}-day version`;
+            r.checked = Number(r.value) === state.days;
+        });
 
         els.head.innerHTML = `
             <div>
@@ -703,6 +810,58 @@ function setupPrograms() {
     });
 
     render();
+}
+
+/* =========================================================
+   FEATURE: Front page (live stats, quick start card, ticker)
+   ========================================================= */
+function setupHero() {
+    // Stats count what's actually on the site, so they stay right as plans and tools are added
+    const counts = {
+        goals: Object.keys(PROGRAMS).length,
+        plans: Object.values(PROGRAMS).reduce((n, p) => n + Object.keys(p.plans).length, 0),
+        tools: document.querySelectorAll(".tool").length
+    };
+    document.querySelectorAll("[data-stat]").forEach((el) => {
+        if (counts[el.dataset.stat] !== undefined) el.textContent = counts[el.dataset.stat];
+    });
+
+    // Quick start: pick a goal and days, jump straight into that plan
+    const form = document.getElementById("quickstart");
+    const dayList = document.getElementById("qs-days");
+    if (form && dayList) {
+        let days = 3;
+        const goal = () => (form.querySelector('input[name="qs-goal"]:checked') || {}).value;
+
+        function renderDays() {
+            const p = PROGRAMS[goal()];
+            if (!p) return;
+            const options = Object.keys(p.plans).map(Number);
+            if (!options.includes(days)) days = options[0];
+            dayList.innerHTML = options.map((d) => `
+                <label><input type="radio" name="qs-days" value="${d}" ${d === days ? "checked" : ""}><span>${d} days</span></label>`).join("");
+        }
+
+        form.addEventListener("change", (e) => {
+            if (e.target.name === "qs-goal") renderDays();
+            if (e.target.name === "qs-days") days = Number(e.target.value);
+        });
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+            if (PROGRAMS[goal()]) goTo(`#program-${goal()}-${days}`);
+        });
+        renderDays();
+    }
+
+    // Ticker: every exercise in every plan, listed twice so the loop is seamless
+    const track = document.getElementById("ticker-track");
+    if (track) {
+        const names = new Set();
+        Object.values(PROGRAMS).forEach((p) => Object.values(p.plans).forEach((plan) =>
+            plan.days.forEach((d) => d.items.forEach((x) => names.add(x.n)))));
+        const row = [...names].map((n) => `<span>${escapeHtml(n)}</span>`).join("");
+        track.innerHTML = row + row;
+    }
 }
 
 /* =========================================================

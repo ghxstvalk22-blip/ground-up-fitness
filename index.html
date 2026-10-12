@@ -47,6 +47,20 @@
                         <li><a href="#program-beginner"><strong>New to lifting</strong><span class="sub-desc">Machines and dumbbells, full body</span></a></li>
                         <li><a href="#program-fatloss"><strong>Lose fat</strong><span class="sub-desc">Lifting plus short finishers</span></a></li>
                         <li><a href="#program-strength"><strong>Get stronger</strong><span class="sub-desc">Squat, bench, deadlift, press</span></a></li>
+                        <li><a href="#program-classic"><strong>Classic Physique</strong><span class="sub-desc">Bodybuilding split, 4 or 5 days</span></a></li>
+                    </ul>
+                </li>
+
+                <li class="nav-item has-menu">
+                    <a class="nav-link" href="#pros">Pros</a>
+                    <button class="submenu-toggle" type="button" aria-expanded="false" aria-controls="menu-pros">
+                        <span class="visually-hidden">Show Pros links</span>
+                    </button>
+                    <ul class="submenu" id="menu-pros">
+                        <li><a href="#pros"><strong>Train like a pro</strong><span class="sub-desc">Six habits every champion shares</span></a></li>
+                        <li><a href="#pro-links"><strong>Learn from the pros</strong><span class="sub-desc">Olympia champions and record holders</span></a></li>
+                        <li class="divider" role="separator"></li>
+                        <li><a href="#program-classic-5"><strong>Classic Physique plan</strong><span class="sub-desc">A bodybuilding split to follow</span></a></li>
                     </ul>
                 </li>
 
@@ -86,20 +100,44 @@
         <path class="steps-track" d="M0,285 H150 V255 H300 V222 H450 V190 H600 V156 H750 V124 H900 V90 H1050 V58 H1200"/>
         <path class="steps-line" pathLength="1" d="M0,285 H150 V255 H300 V222 H450 V190 H600 V156 H750 V124 H900 V90 H1050 V58 H1200"/>
     </svg>
-    <div class="hero-inner">
-        <p class="eyebrow">Weight loss &middot; Strength &middot; Day one at the gym</p>
-        <h1>Start where you are. Build from the ground up.</h1>
-        <p class="hero-lede">Simple training plans, honest nutrition math, and tools that answer the questions you might not want to ask at the front desk.</p>
-        <div class="hero-actions">
-            <a class="btn btn-primary" href="#start">Find your starting point</a>
-            <a class="btn btn-ghost" href="#programs">Build my plan</a>
+    <div class="hero-inner hero-grid">
+        <div class="hero-copy">
+            <p class="eyebrow">Weight loss &middot; Muscle &middot; Strength &middot; Day one</p>
+            <h1>Start where you are. Build from the <span class="hl">ground up.</span></h1>
+            <p class="hero-lede">Free training plans, honest nutrition math, and the habits the pros swear by, explained for real people with real schedules.</p>
+            <div class="hero-actions">
+                <a class="btn btn-primary" href="#start">Find your starting point</a>
+                <a class="btn btn-ghost" href="#pros">Train like a pro</a>
+            </div>
+            <ul class="hero-stats">
+                <li><strong data-stat="goals">4</strong> programs</li>
+                <li><strong data-stat="plans">8</strong> ready-made plans</li>
+                <li><strong data-stat="tools">3</strong> free tools</li>
+            </ul>
         </div>
-        <ul class="hero-stats">
-            <li><strong>3</strong> goals</li>
-            <li><strong>6</strong> ready-made plans</li>
-            <li><strong>3</strong> free tools</li>
-        </ul>
+
+        <aside class="quickstart" aria-labelledby="qs-title">
+            <p class="qs-kicker">Quick start &middot; 10 seconds</p>
+            <h2 id="qs-title">Get your plan</h2>
+            <form id="quickstart" novalidate>
+                <fieldset class="qs-goals">
+                    <legend>1. What's your goal?</legend>
+                    <label><input type="radio" name="qs-goal" value="fatloss" checked><span><strong>Lose fat</strong><small>Keep muscle, drop weight</small></span></label>
+                    <label><input type="radio" name="qs-goal" value="classic"><span><strong>Build muscle</strong><small>Classic Physique style</small></span></label>
+                    <label><input type="radio" name="qs-goal" value="strength"><span><strong>Get stronger</strong><small>Squat, bench, deadlift</small></span></label>
+                    <label><input type="radio" name="qs-goal" value="beginner"><span><strong>Brand new</strong><small>Learn the basics first</small></span></label>
+                </fieldset>
+                <fieldset class="qs-days">
+                    <legend>2. Days a week</legend>
+                    <div class="qs-day-list" id="qs-days"></div>
+                </fieldset>
+                <button class="btn btn-primary qs-go" type="submit">Show my plan <span aria-hidden="true">&rarr;</span></button>
+                <p class="qs-note">Opens your plan below. Free, no sign-up.</p>
+            </form>
+        </aside>
     </div>
+
+    <div class="ticker" aria-hidden="true"><div class="ticker-track" id="ticker-track"></div></div>
 </section>
 
 <main id="main">
@@ -171,11 +209,13 @@
                     <label><input type="radio" name="goal" value="beginner" checked><span>New to lifting</span></label>
                     <label><input type="radio" name="goal" value="fatloss"><span>Lose fat</span></label>
                     <label><input type="radio" name="goal" value="strength"><span>Get stronger</span></label>
+                    <label><input type="radio" name="goal" value="classic"><span>Classic Physique</span></label>
                 </fieldset>
                 <fieldset class="segmented" id="days-picker">
                     <legend>Days per week</legend>
                     <label><input type="radio" name="days" value="3" checked><span>3 days</span></label>
                     <label><input type="radio" name="days" value="4"><span>4 days</span></label>
+                    <label><input type="radio" name="days" value="5"><span>5 days</span></label>
                 </fieldset>
                 <div class="share">
                     <button id="copy-plan" class="btn btn-small" type="button">Copy link to this plan</button>
@@ -194,6 +234,116 @@
             </div>
 
             <div class="day-grid" id="day-grid"></div>
+        </div>
+    </section>
+
+    <section id="pros" class="block pros">
+        <div class="container wide">
+            <p class="kicker">Train like a pro</p>
+            <h2>What the pros have in common</h2>
+            <p class="section-lede">Olympia champions and world-record lifters don't share one secret routine. They share habits. Here's what those habits look like, scaled down for your first year in the gym.</p>
+
+            <ol class="principles">
+                <li id="pro-overload">
+                    <span class="principle-num" aria-hidden="true">01</span>
+                    <h3>Progressive overload</h3>
+                    <p>Every champion physique was built one small jump at a time: a little more weight, or one more rep, than last time.</p>
+                    <a class="text-link" href="#programs">Start with: write down every set &rarr;</a>
+                </li>
+                <li id="pro-consistency">
+                    <span class="principle-num" aria-hidden="true">02</span>
+                    <h3>Consistency for years</h3>
+                    <p>Pro physiques take many years of training. The plan you stick with beats the perfect plan you quit in March.</p>
+                    <a class="text-link" href="#program-beginner">Start with: three fixed days a week &rarr;</a>
+                </li>
+                <li id="pro-effort">
+                    <span class="principle-num" aria-hidden="true">03</span>
+                    <h3>Hard sets, clean reps</h3>
+                    <p>The pros push their working sets close to failure, but they control every rep. Sloppy reps build injuries, not muscle.</p>
+                    <a class="text-link" href="#faq-weight">Start with: how heavy to go &rarr;</a>
+                </li>
+                <li id="pro-food">
+                    <span class="principle-num" aria-hidden="true">04</span>
+                    <h3>Eat for the goal</h3>
+                    <p>Protein every day, and calories matched to what you're after: a little less to lose fat, a little more to build muscle.</p>
+                    <a class="text-link" href="#tool-calories">Start with: your calorie and protein targets &rarr;</a>
+                </li>
+                <li id="pro-recovery">
+                    <span class="principle-num" aria-hidden="true">05</span>
+                    <h3>Recovery is training</h3>
+                    <p>Muscle grows between workouts, not during them. Seven to nine hours of sleep and real rest days are part of the program.</p>
+                    <a class="text-link" href="#faq-sore">Start with: training when you're sore &rarr;</a>
+                </li>
+                <li id="pro-basics">
+                    <span class="principle-num" aria-hidden="true">06</span>
+                    <h3>Master the basics</h3>
+                    <p>Strip away the highlight reels and pro programs still center on squats, presses, rows, and hinges, done well, for years.</p>
+                    <a class="text-link" href="#path-new">Start with: your first two weeks &rarr;</a>
+                </li>
+            </ol>
+
+            <p class="reality-check"><strong>A reality check:</strong> top professional physiques come from many years of work, genetics, and in many cases performance-enhancing drugs. Use them for inspiration and ideas, and compare yourself only to last month's you.</p>
+
+            <div class="pro-links" id="pro-links">
+                <h3>Learn from the pros</h3>
+                <p class="pro-links-lede">Champions and coaches worth following. Each link goes to their own official channel.</p>
+                <ul class="pro-cards">
+                    <li class="pro-card">
+                        <span class="pro-mono" aria-hidden="true">CB</span>
+                        <div>
+                            <h4>Chris Bumstead</h4>
+                            <p class="pro-title">Six-time Classic Physique Olympia champion (2019&ndash;2024)</p>
+                            <p>Watch for: training vlogs, posing, and what contest prep really looks like.</p>
+                            <a class="pro-link" href="https://www.youtube.com/@ChrisBumstead" target="_blank" rel="noopener noreferrer">YouTube <span aria-hidden="true">&nearr;</span><span class="visually-hidden">(opens in a new tab)</span></a>
+                        </div>
+                    </li>
+                    <li class="pro-card">
+                        <span class="pro-mono" aria-hidden="true">RC</span>
+                        <div>
+                            <h4>Ronnie Coleman</h4>
+                            <p class="pro-title">Eight-time Mr. Olympia (1998&ndash;2005)</p>
+                            <p>Watch for: classic heavy-training footage and a lifetime of work ethic.</p>
+                            <a class="pro-link" href="https://www.instagram.com/ronniecoleman8/" target="_blank" rel="noopener noreferrer">Instagram <span aria-hidden="true">&nearr;</span><span class="visually-hidden">(opens in a new tab)</span></a>
+                        </div>
+                    </li>
+                    <li class="pro-card">
+                        <span class="pro-mono" aria-hidden="true">JN</span>
+                        <div>
+                            <h4>Jeff Nippard</h4>
+                            <p class="pro-title">Natural bodybuilder and powerlifter</p>
+                            <p>Watch for: science-based breakdowns of exercise technique and program design.</p>
+                            <a class="pro-link" href="https://www.youtube.com/@JeffNippard" target="_blank" rel="noopener noreferrer">YouTube <span aria-hidden="true">&nearr;</span><span class="visually-hidden">(opens in a new tab)</span></a>
+                        </div>
+                    </li>
+                    <li class="pro-card">
+                        <span class="pro-mono" aria-hidden="true">RP</span>
+                        <div>
+                            <h4>Renaissance Periodization</h4>
+                            <p class="pro-title">Dr. Mike Israetel and the RP coaching team</p>
+                            <p>Watch for: evidence-based muscle-building advice, like how many sets to do and how to do them.</p>
+                            <a class="pro-link" href="https://www.youtube.com/@RenaissancePeriodization" target="_blank" rel="noopener noreferrer">YouTube <span aria-hidden="true">&nearr;</span><span class="visually-hidden">(opens in a new tab)</span></a>
+                        </div>
+                    </li>
+                    <li class="pro-card">
+                        <span class="pro-mono" aria-hidden="true">SC</span>
+                        <div>
+                            <h4>Stefi Cohen</h4>
+                            <p class="pro-title">25 powerlifting world records, Doctor of Physical Therapy</p>
+                            <p>Watch for: strength training, lifting technique, and training smart around injuries.</p>
+                            <a class="pro-link" href="https://www.instagram.com/steficohen/" target="_blank" rel="noopener noreferrer">Instagram <span aria-hidden="true">&nearr;</span><span class="visually-hidden">(opens in a new tab)</span></a>
+                        </div>
+                    </li>
+                </ul>
+                <p class="fine-print">Ground Up Fitness isn't affiliated with or endorsed by any of these athletes or coaches. Descriptions are based on their public records.</p>
+            </div>
+
+            <div class="pro-cta">
+                <div>
+                    <h3>Want a bodybuilding-style plan?</h3>
+                    <p>The Classic Physique program uses the higher-volume split many physique competitors favor. Best after six months of steady lifting.</p>
+                </div>
+                <a class="btn btn-primary" href="#program-classic-5">Open the Classic Physique plan</a>
+            </div>
         </div>
     </section>
 
@@ -421,6 +571,7 @@
     <nav class="footer-nav" aria-label="Footer">
         <a href="#start">Start here</a>
         <a href="#programs">Programs</a>
+        <a href="#pros">Train like a pro</a>
         <a href="#tools">Tools</a>
         <a href="#basics">Gym basics</a>
         <a href="#contact">Contact</a>

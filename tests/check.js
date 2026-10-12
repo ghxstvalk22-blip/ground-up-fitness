@@ -62,6 +62,27 @@ const check = (ok, msg) => { if (!ok) failures.push(msg); console.log((ok ? "  o
         check(/^1 of/.test(await page.locator("#progress-label").textContent()), "checking an exercise updates progress");
         await page.locator("#reset-week").click();
 
+        // Front page: stats are filled from the data, quick start opens the right plan
+        check(Number(await page.locator('[data-stat="plans"]').textContent()) >= 8, "hero stats count the plans");
+        check(await page.locator("#ticker-track span").count() > 20, "ticker lists exercise names");
+        await page.locator('#quickstart input[value="classic"]').check({ force: true });
+        check(await page.locator('#qs-days input[value="5"]').count() === 1, "quick start offers the days the plan has");
+        await page.locator('#qs-days input[value="5"]').check({ force: true });
+        await page.locator(".qs-go").click();
+        await page.waitForTimeout(150);
+        check(/Classic Physique · 5 days/.test(await page.locator("#program-head h3").textContent()), "quick start opens Classic Physique, 5 days");
+        check(await page.locator(".day-card").count() === 5, "5-day plan shows 5 day cards");
+
+        // Days a plan doesn't offer are disabled, and the builder falls back sensibly
+        await page.locator('input[name="goal"][value="beginner"]').check({ force: true });
+        check(await page.locator('input[name="days"][value="5"]').isDisabled(), "unavailable day options are disabled");
+        check(/New to lifting · 4 days/.test(await page.locator("#program-head h3").textContent()), "switching to a plan without 5 days picks the nearest");
+
+        // Pros section
+        check(await page.locator(".principles li").count() === 6, "six pro principles");
+        const proLinks = await page.locator(".pro-link").evaluateAll((as) => as.every((a) => a.target === "_blank" && /noopener/.test(a.rel) && a.href.startsWith("https://")));
+        check(proLinks, "pro links open safely in a new tab");
+
         // Tools
         await page.fill("#cal-age", "30");
         await page.fill("#cal-ft", "5");
