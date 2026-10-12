@@ -106,7 +106,8 @@ const SITE_NAV = [
         ["Core exercises", "Planks, carries, crunches", "exercises.html#core"],
         ["Cardio exercises", "Intervals and steady work", "exercises.html#cardio"]
     ] },
-    { label: "Pros", href: "pros.html", page: "pros", items: [
+    // Pros and Gym basics are off the menus (owner's call, 2026-10-12); their pages stay up and searchable
+    { label: "Pros", href: "pros.html", page: "pros", menu: false, items: [
         ["Train like a pro", "Six habits every champion shares", "pros.html"],
         ["Learn from the pros", "Olympia champions and record holders", "pros.html#pro-links"],
         "divider",
@@ -118,7 +119,7 @@ const SITE_NAV = [
         ["Plate loader", "Which plates go on the bar", "tools.html#tool-plates"],
         ["Weight trend", "Your 7-day average, not daily noise", "tools.html#tool-weight"]
     ] },
-    { label: "Gym basics", href: "basics.html", page: "basics", also: ["supplements"], items: [
+    { label: "Gym basics", href: "basics.html", page: "basics", also: ["supplements"], menu: false, items: [
         ["What weight should I use?", "", "basics.html#faq-weight"],
         ["How often should I train?", "", "basics.html#faq-often"],
         ["I'm sore. Should I skip?", "", "basics.html#faq-sore"],
@@ -147,7 +148,7 @@ const NEXT_STEPS = {
             ["Browse every exercise", "With how-tos and demos", "exercises.html"]],
     programs: [["Stuck on an exercise?", "Search the exercise library", "exercises.html"],
                ["How much should I eat?", "Calories and protein for your goal", "tools.html#tool-calories"],
-               ["Train like a pro", "The habits champions share", "pros.html"]],
+               ["Get weights that fit you", "Set your level and bodyweight", "index.html#setup"]],
     exercises: [["Put them together", "Pick a ready-made plan", "programs.html"],
                 ["First time at the gym?", "What to expect, start to finish", "start.html#first-day"],
                 ["Gym words, decoded", "Sets, reps, failure, deload", "start.html#glossary"]],
@@ -156,7 +157,7 @@ const NEXT_STEPS = {
            ["Check your form", "Every exercise, step by step", "exercises.html"]],
     tools: [["Get a plan that fits", "Free, takes 10 seconds", "index.html#get-plan"],
             ["Track your lifts", "Log sets on any program", "programs.html#my-progress"],
-            ["Is this normal?", "Gym basics, answered straight", "basics.html"]],
+            ["Get weights that fit you", "Set your level and bodyweight", "index.html#setup"]],
     basics: [["Your first day", "What to bring and what to do", "start.html#first-day"],
              ["Find your plan", "Free, takes 10 seconds", "index.html#get-plan"],
              ["Still have a question?", "Ask a real person", "contact.html#contact-general"]],
@@ -165,7 +166,7 @@ const NEXT_STEPS = {
          ["Track your bodyweight", "7-day average trend", "tools.html#tool-weight"]],
     supplements: [["Hit your protein with food first", "Find your daily target", "tools.html#tool-calories"],
                   ["Get a plan that fits", "Free, takes 10 seconds", "index.html#get-plan"],
-                  ["More straight answers", "Gym basics", "basics.html"]],
+                  ["Browse every exercise", "With how-tos and demos", "exercises.html"]],
     contact: [["New here?", "Start with the basics", "start.html"],
               ["See the programs", "Pick one and start this week", "programs.html"]]
 };
@@ -269,7 +270,7 @@ function setupLayout() {
         ? `<li class="divider" role="separator"></li>`
         : `<li><a href="${item[2]}"><strong>${escapeHtml(item[0])}</strong>${item[1] ? `<span class="sub-desc">${escapeHtml(item[1])}</span>` : ""}</a></li>`;
 
-    const navHtml = SITE_NAV.map((entry) => {
+    const navHtml = SITE_NAV.filter((entry) => entry.menu !== false).map((entry) => {
         const items = entry.items === "programs" ? programItems() : entry.items;
         const id = `menu-${entry.page}`;
         const here = entry.page === page || (entry.also || []).includes(page);
@@ -342,9 +343,7 @@ function setupLayout() {
             <a href="programs.html">Programs</a>
             <a href="me.html">My progress</a>
             <a href="exercises.html">Exercise library</a>
-            <a href="pros.html">Train like a pro</a>
             <a href="tools.html">Tools</a>
-            <a href="basics.html">Gym basics</a>
             <a href="contact.html">Contact</a>
         </nav>
     </div>
@@ -637,10 +636,13 @@ function setupJump() {
             : "Page";
         destinations.push({ href, title, group });
     });
-    // Links trimmed from the menus, and every plan, are still searchable
-    SITE_NAV.forEach((entry) => (entry.more || []).forEach(([title, , href]) => {
-        if (!seen.has(href)) { seen.add(href); destinations.push({ href, title, group: entry.label }); }
-    }));
+    // Links trimmed from the menus (and whole sections taken off them), and every plan, are still searchable
+    SITE_NAV.forEach((entry) => {
+        const extra = entry.menu === false ? [[entry.label, "", entry.href], ...(Array.isArray(entry.items) ? entry.items : []).filter(Array.isArray)] : [];
+        [...extra, ...(entry.more || [])].forEach(([title, , href]) => {
+            if (!seen.has(href)) { seen.add(href); destinations.push({ href, title, group: entry.label }); }
+        });
+    });
     Object.entries(PROGRAMS).forEach(([key, p]) => {
         const href = `programs.html#program-${key}`;
         if (!seen.has(href)) { seen.add(href); destinations.push({ href, title: p.name, group: `Programs · ${p.level}` }); }

@@ -156,7 +156,9 @@ async function openPage(browser, file, viewport, hash = "") {
             check(unsafeBlank.length === 0, `links that open a new tab can't control this page ${unsafeBlank.slice(0, 2).join(", ")}`);
             const key = file === "index.html" ? null : file.replace(".html", "");
             const tab = key === "supplements" ? "basics.html" : file;
-            if (key && key !== "me") check(await page.locator(`#site-nav .nav-link.active[href="${tab}"]`).count() === 1, "this page's tab is marked as current");
+            if (file === "index.html") check(await page.locator('#site-nav .nav-link[href="pros.html"], #site-nav .nav-link[href="basics.html"], .footer-nav a[href="pros.html"], .footer-nav a[href="basics.html"]').count() === 0, "Pros and Gym basics are off the menus");
+            // Pros, Gym basics (and Supplements, which sits under it) are off the menus
+            if (key && !["me", "pros", "basics", "supplements"].includes(key)) check(await page.locator(`#site-nav .nav-link.active[href="${tab}"]`).count() === 1, "this page's tab is marked as current");
             await page.screenshot({ path: path.join(SHOTS, `${name}-${file.replace(".html", "")}.png`), fullPage: true });
             await page.close();
         }

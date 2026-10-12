@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Simpler menus)
+
+- Took **Pros** and **Gym basics** off the top menu and the footer, and removed the "Train like a pro" band from the home page, so the menu only shows what people use most: Start here, Programs, Exercises, Tools, Contact, and My progress.
+- The pages themselves are still there, so links from other pages and old bookmarks keep working, and the site search still finds them and every question on them.
+
 ## 2026-10-12 (Pick your level, get your starting weights, and see what each exercise needs)
 
 - **Pick your level on the front cover.** Beginner, Intermediate, Advanced, or Expert, right under the headline. The whole site follows it.

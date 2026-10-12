@@ -96,7 +96,7 @@ ships **one** focused improvement.
    common mistakes, harder versions, "How this plan works", and "Make it yours"; Advanced adds form
    cues, swaps, the 4-week training waves, variety, and the muscle map's anatomy names; Expert adds
    programming notes and research notes. New in-depth content goes at the level it suits, never at
-   Beginner by default. Menus have 6 links or fewer (extras go in `more` in `SITE_NAV`, which search
+   Beginner by default. Pros and Gym basics are off the menus at the owner's request (`menu: false` in `SITE_NAV`; their pages stay up and searchable), so don't add them back. Menus have 6 links or fewer (extras go in `more` in `SITE_NAV`, which search
    still finds). The test enforces the plan counts per level and the menu limit.
 
 ## The daily run, step by step
