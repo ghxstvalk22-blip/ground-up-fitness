@@ -2,6 +2,14 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (muscle map: every head)
+
+- **Every muscle now shows its heads and parts**, on the same body drawing. Pick a muscle and the panel lists each part with what it does and the best exercises for it; tap a part (on the body or in the list) and it lights up red while the rest of that muscle turns pink:
+  - Chest: upper, middle, lower. Shoulders: front, side, rear delt. Traps: upper, middle, lower.
+  - Biceps: outer (long) head, inner (short) head, brachialis. Triceps: long, lateral, medial heads. Forearms: inner and outer.
+  - Abs: upper and lower. Glutes: glute max and outer glute (medius). Quads: outer, middle, inner (teardrop). Hamstrings: outer and inner. Calves: inner head, outer head, soleus.
+- Picking a muscle turns the body to the side that shows the most of it.
+
 ## 2026-10-12 (pro habits: how to start)
 
 - **Each of the six "Train like a pro" habits now has a "How to start" guide.** Tap it on the Pros page and it opens into 3 or 4 plain, practical steps for a beginner, plus the most common mistake to avoid (for example, how to add weight without wrecking your form, or how to keep training when a week gets busy).

@@ -375,32 +375,45 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
-        // Muscle map: spin it, point at a muscle, every muscle's exercises exist
+        // Muscle map: every head of every muscle is on the body, lights up, and has real exercises
         {
             const { page, errors } = await openPage(browser, "exercises.html", viewport, "#muscle-map");
             const stage = page.locator(".mm-stage");
-            const data = await page.evaluate(() => MUSCLE_MAP.map((m) => ({ id: m.id, ex: m.ex, missing: m.ex.filter((n) => !EXERCISES[n]), views: muscleViews(m).length })));
-            check(data.length >= 20 && data.every((m) => m.views > 0 && m.ex.length >= 2 && m.missing.length === 0), `every muscle has a shape and real exercises ${JSON.stringify(data.filter((m) => m.missing.length || !m.views))}`);
-            await page.locator('.mm-face.is-active [data-m="quads"] path').first().hover();
-            check(/Quads/.test(await page.locator(".mm-title").textContent()) && await page.locator('.mm-face.is-active [data-m="quads"].is-on').count() === 1, "pointing at a muscle highlights it and names it");
+            const data = await page.evaluate(() => MUSCLE_MAP.flatMap((g) => g.parts.map((p) => ({ id: p.id, missing: p.ex.filter((n) => !EXERCISES[n]),
+                male: muscleViews(p.id, "male").length, female: muscleViews(p.id, "female").length }))));
+            const bad = data.filter((p) => p.missing.length || !p.male || !p.female);
+            check(data.length >= 30 && bad.length === 0, `all ${data.length} heads and parts are on both bodies with real exercises ${JSON.stringify(bad)}`);
+            // Each multi-head muscle shows its heads separately
+            const heads = await page.evaluate(() => ["chest-upper", "chest-middle", "chest-lower", "delt-front", "delt-side", "quad-outer", "quad-middle", "quad-inner", "biceps-long", "biceps-short"]
+                .map((id) => [id, document.querySelectorAll(`.mm-face[data-face="front"] path[data-parts~="${id}"]`).length]));
+            check(heads.every(([, n]) => n >= 2), `front view has separate shapes for each head ${JSON.stringify(heads.filter(([, n]) => n < 2))}`);
+            await page.locator('.mm-face.is-active [data-m="quad-outer"] path').first().hover();
+            check(await page.locator('.mm-face.is-active path.is-on[data-parts~="quad-outer"]').count() >= 2 && await page.locator('.mm-face.is-active path.is-on[data-parts~="quad-middle"]').count() === 0, "pointing at one head lights only that head");
+            await page.locator('.mm-face.is-active [data-m="quad-outer"] path').first().click();
+            check(/Outer quad/.test(await page.locator(".mm-title").textContent()) && await page.locator("#mm-panel .mm-part").count() === 3, "tapping a head names it and lists all three quad heads");
+            await page.click('#mm-panel [data-mm-part="quad-inner"]');
+            check(await page.locator('#mm-panel .mm-part.is-on[data-part="quad-inner"]').count() === 1 && await page.locator('.mm-face.is-active path.is-on[data-parts~="quad-inner"]').count() >= 2, "picking a head in the panel lights it on the body");
+            await stage.scrollIntoViewIfNeeded();
             const box = await stage.boundingBox();
-            await page.mouse.move(box.x + box.width / 2, box.y + 60);
+            await page.mouse.move(box.x + box.width / 2, box.y + 30);
             await page.mouse.down();
-            await page.mouse.move(box.x + box.width / 2 + 150, box.y + 60, { steps: 10 });
+            await page.mouse.move(box.x + box.width / 2 + 150, box.y + 30, { steps: 10 });
             const mid = Number(await stage.getAttribute("data-angle"));
             await page.mouse.up();
             await page.waitForTimeout(100);
             check(mid > 60 && Math.abs(Number(await stage.getAttribute("data-angle"))) === 180, `dragging spins the body around to the back (${mid})`);
-            await page.click('[data-mm-view="front"]');
+            await page.click('[data-mm-pick="triceps"]');
+            check(await page.locator('.mm-face.is-active').getAttribute("data-face") === "back" && await page.locator("#mm-panel .mm-part").count() === 3, "triceps shows the back and its three heads");
+            for (const id of ["triceps-long", "triceps-lateral", "triceps-medial"]) {
+                await page.click(`#mm-panel [data-mm-part="${id}"]`);
+                check(await page.locator(`.mm-face.is-active path.is-on[data-parts~="${id}"]`).count() >= 2, `${id} lights up on the back view`);
+            }
             await page.click('[data-mm-sex="female"]');
-            check(await page.locator('[data-mm-sex="female"][aria-pressed="true"]').count() === 1 && await page.locator('.mm-face.is-active [data-m="side-delts"] path').count() >= 2, "the female body can be picked, with every muscle on it");
+            check(await page.locator('[data-mm-sex="female"][aria-pressed="true"]').count() === 1 && await page.locator('.mm-face.is-active path[data-parts~="hams-outer"]').count() >= 2, "the female body has the heads too");
             await page.click('[data-mm-sex="male"]');
-            await page.click('[data-mm-view="back"]');
-            check(await page.locator('.mm-face.is-active').getAttribute("data-face") === "back", "the Back button turns it around");
-            await page.click('[data-mm-pick="hamstrings"]');
-            check(/Hamstrings/.test(await page.locator(".mm-title").textContent()) && await page.locator("#mm-panel [data-howto]").count() >= 2, "picking from the list shows exercises with how-tos");
-            await page.locator('.mm-face.is-active [data-m="glutes"]').focus();
-            check(/Glutes/.test(await page.locator(".mm-title").textContent()), "muscles work with the keyboard");
+            await page.click('[data-mm-view="front"]');
+            await page.locator('.mm-face.is-active [data-m="abs-upper"]').focus();
+            check(/Upper abs/.test(await page.locator(".mm-title").textContent()), "muscles work with the keyboard");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

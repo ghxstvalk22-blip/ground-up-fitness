@@ -2535,119 +2535,252 @@ function setupLibrary() {
 
 /* =========================================================
    FEATURE: Muscle map (Exercises page)
-   An anatomy figure (male or female) you can spin with a mouse, a
-   finger, or the buttons. Point at or tap a muscle to see what it does
-   and the best exercises for it. The artwork lives in muscle-art.js;
-   `art` below lists which of its shapes belong to each muscle.
+   An anatomy figure (male or female, from muscle-art.js) you can spin
+   with a mouse, a finger, or the buttons. Every muscle is broken into
+   its heads and parts (upper/middle/lower chest, front/side/rear delt,
+   outer/middle/inner quad...). Point at or tap a part to light it up
+   and see the best exercises for it. MM_PIECES decides which part each
+   shape in the drawing belongs to.
    ========================================================= */
+const P = (id, name, aka, where, ex) => ({ id, name, aka, where, ex });
 const MUSCLE_MAP = [
-    { id: "chest-upper", name: "Upper chest", group: "chest", art: ["CHEST:upper"],
-      does: "Lifts your arms forward and up. Builds the top of your chest, just under the collarbones.",
-      ex: ["Incline dumbbell press", "Incline machine press", "Low-to-high cable fly"],
-      tip: "Set the bench to about 30 degrees. Much higher and it turns into a shoulder press." },
-    { id: "chest", name: "Chest", group: "chest", art: ["CHEST:lower"],
-      does: "Pushes your arms forward and together: push-ups, pushing a door, getting up off the floor.",
-      ex: ["Bench press", "Dumbbell bench press", "Push-up", "Cable fly"],
-      tip: "Lower the weight slowly and keep your shoulder blades pinned back on the bench." },
-    { id: "front-delts", name: "Front shoulders", group: "shoulders", art: ["SHOULDER_FRONT"],
-      does: "The front head of the shoulder. Raises your arms in front of you and presses things overhead.",
-      ex: ["Overhead press", "Seated dumbbell shoulder press", "Machine shoulder press"],
-      tip: "Chest pressing already works these a lot. One overhead press a week is plenty to start." },
-    { id: "side-delts", name: "Side shoulders", group: "shoulders", art: ["SHOULDER_SIDE"],
-      does: "The side head of the shoulder. Lifts your arms out to the sides, and it's what makes shoulders look wider.",
-      ex: ["Lateral raise", "Cable lateral raise", "Machine lateral raise"],
-      tip: "Go light and lead with your elbows. Swinging heavy dumbbells mostly works your traps." },
-    { id: "rear-delts", name: "Rear shoulders", group: "shoulders", art: ["SHOULDER_REAR"],
-      does: "The rear head of the shoulder. Pulls your arms back, and helps your posture and shoulder health.",
-      ex: ["Face pull", "Rear delt fly", "Reverse pec deck"],
-      tip: "Most people under-train these. Add 2 or 3 sets a week and your posture will thank you." },
-    { id: "traps", name: "Traps", group: "back", art: ["TRAPEZIUS"],
-      does: "Shrug and steady your shoulder blades. They run from your neck down the middle of your upper back.",
-      ex: ["Farmer carry", "Deadlift", "Face pull"],
-      tip: "Heavy carries and deadlifts work them hard, so most people don't need extra traps work." },
-    { id: "upper-back", name: "Upper back", group: "back", art: ["RHOMBOID"],
-      does: "The rhomboids squeeze your shoulder blades together. They give your back thickness and help you stand tall.",
-      ex: ["Seated cable row", "Chest-supported row", "Barbell row"],
-      tip: "Finish every row by pulling your shoulder blades together for a second." },
-    { id: "lats", name: "Lats", group: "back", art: ["LATISSIMUS"],
-      does: "Pull your arms down and back: pull-ups, climbing, starting a lawnmower. They create the V-shape.",
-      ex: ["Lat pulldown", "Pull-up", "Assisted pull-up", "Single-arm dumbbell row"],
-      tip: "Think about pulling your elbows down to your back pockets, not yanking with your hands." },
-    { id: "lower-back", name: "Lower back", group: "back", art: ["LOWER_BACK"],
-      does: "Holds your spine steady when you bend, lift, and carry.",
-      ex: ["Back extension", "Romanian deadlift", "Bird dog"],
-      tip: "These muscles keep your back flat. Train them by holding a neutral spine, not by rounding and arching." },
-    { id: "biceps", name: "Biceps", group: "arms", art: ["BICEPS"],
-      does: "Two heads (long and short) that bend your elbows and help every pulling exercise.",
-      ex: ["Dumbbell curl", "Hammer curl", "Cable curl", "Incline dumbbell curl"],
-      tip: "Keep your elbows still at your sides. If your body swings, the weight is too heavy." },
-    { id: "triceps", name: "Triceps", group: "arms", art: ["TRICEPS"],
-      does: "Three heads (long, lateral, and medial) that straighten your elbows. They're about two-thirds of your upper arm.",
-      ex: ["Triceps pushdown", "Overhead triceps extension", "Skull crusher", "Assisted dip"],
-      tip: "Overhead extensions stretch the long head, the biggest of the three. Include one each week." },
-    { id: "forearms", name: "Forearms", group: "arms", art: ["FOREARM"],
-      does: "Grip and twist. Strong forearms mean you can hold on to heavier weights.",
-      ex: ["Farmer carry", "Hammer curl", "Suitcase carry"],
-      tip: "Carrying heavy things builds grip fast. Skip lifting straps for your first few months." },
-    { id: "abs", name: "Abs", group: "core", art: ["CORE"],
+    { id: "chest", name: "Chest", group: "chest",
+      does: "Your pecs push your arms forward and together: push-ups, presses, pushing a door. The fibers fan out, so different angles hit different parts.",
+      tip: "Lower the weight slowly and keep your shoulder blades pinned back on the bench.",
+      parts: [
+        P("chest-upper", "Upper chest", "clavicular head", "Just under your collarbones. Worked most when you press or fly upward.", ["Incline dumbbell press", "Incline machine press", "Low-to-high cable fly"]),
+        P("chest-middle", "Middle chest", "sternal head", "The biggest part, across the middle. Flat pressing and flys hit it hardest.", ["Bench press", "Dumbbell bench press", "Machine chest press", "Pec deck"]),
+        P("chest-lower", "Lower chest", "costal fibers", "The bottom edge. Pushing down and forward works it: dips and high-to-low flys.", ["Assisted dip", "Cable fly", "Push-up"])
+      ] },
+    { id: "shoulders", name: "Shoulders", group: "shoulders",
+      does: "Your delts have three heads that move your arms forward, out to the side, and back. Training all three gives round, healthy shoulders.",
+      tip: "Most people overtrain the front and undertrain the side and rear. Pressing already hits the front a lot.",
+      parts: [
+        P("delt-front", "Front delt", "anterior head", "Raises your arms in front of you and presses overhead.", ["Overhead press", "Seated dumbbell shoulder press", "Machine shoulder press"]),
+        P("delt-side", "Side delt", "lateral head", "Lifts your arms out to the sides. It's what makes shoulders look wider.", ["Lateral raise", "Cable lateral raise", "Machine lateral raise"]),
+        P("delt-rear", "Rear delt", "posterior head", "Pulls your arms back. Key for posture and shoulder health.", ["Face pull", "Rear delt fly", "Reverse pec deck"])
+      ] },
+    { id: "traps", name: "Traps", group: "back",
+      does: "A kite-shaped muscle from your neck to the middle of your back. Each part moves your shoulder blades a different way.",
+      tip: "Heavy carries and deadlifts work the upper traps hard, so most people don't need extra shrugs.",
+      parts: [
+        P("traps-upper", "Upper traps", "upper fibers", "Between your neck and shoulders. Shrugs your shoulders up and holds heavy things.", ["Farmer carry", "Deadlift", "Suitcase carry"]),
+        P("traps-middle", "Middle traps", "middle fibers", "Across your upper back. Squeezes your shoulder blades together.", ["Face pull", "Seated cable row", "Chest-supported row"]),
+        P("traps-lower", "Lower traps", "lower fibers", "Down toward the middle of your back. Pulls your shoulder blades down; important for overhead work.", ["Face pull", "Chest-supported row", "Pull-up"])
+      ] },
+    { id: "upper-back", name: "Upper back", group: "back",
+      does: "Your rhomboids squeeze your shoulder blades together. They give your back thickness and help you stand tall.",
+      tip: "Finish every row by pulling your shoulder blades together for a second.",
+      parts: [P("rhomboids", "Rhomboids", "rhomboid major and minor", "Between your shoulder blades, under the traps.", ["Seated cable row", "Chest-supported row", "Barbell row", "Machine row"])] },
+    { id: "lats", name: "Lats", group: "back",
+      does: "The biggest muscles of your back. They pull your arms down and back: pull-ups, climbing, starting a lawnmower. They create the V-shape.",
+      tip: "Think about pulling your elbows down to your back pockets, not yanking with your hands.",
+      parts: [P("lats", "Lats", "latissimus dorsi", "From under your armpits down to your lower back.", ["Lat pulldown", "Pull-up", "Assisted pull-up", "Single-arm dumbbell row"])] },
+    { id: "lower-back", name: "Lower back", group: "back",
+      does: "Two columns of muscle along your spine that hold it steady when you bend, lift, and carry.",
+      tip: "Train them by holding a flat back under load, not by rounding and arching.",
+      parts: [P("erectors", "Spinal erectors", "erector spinae", "Either side of your spine, strongest in the lower back.", ["Back extension", "Romanian deadlift", "Bird dog", "Deadlift"])] },
+    { id: "biceps", name: "Biceps", group: "arms",
+      does: "Two heads that bend your elbow and turn your palm up, with the brachialis working underneath.",
+      tip: "Keep your elbows still at your sides. If your body swings, the weight is too heavy.",
+      parts: [
+        P("biceps-long", "Outer biceps", "long head", "The outer half; makes the biceps peak. Stretched when your arms are behind you.", ["Incline dumbbell curl", "Dumbbell curl", "Barbell curl"]),
+        P("biceps-short", "Inner biceps", "short head", "The inner half; adds thickness. Worked most with arms in front of you.", ["Preacher curl", "Cable curl", "EZ-bar curl"]),
+        P("brachialis", "Brachialis", "under the biceps", "Sits under the biceps on the outside of the arm. Pushes the biceps up and out.", ["Hammer curl", "Cable curl"])
+      ] },
+    { id: "triceps", name: "Triceps", group: "arms",
+      does: "Three heads that straighten your elbow. They're about two-thirds of your upper arm, and they help every press.",
+      tip: "Overhead extensions stretch the long head, the biggest of the three. Include one each week.",
+      parts: [
+        P("triceps-long", "Long head", "inner back of the arm", "The biggest head, running up into the shoulder. Hit hardest with your arms overhead.", ["Overhead triceps extension", "Skull crusher"]),
+        P("triceps-lateral", "Lateral head", "outer horseshoe", "The outer side; makes the horseshoe shape. Pushdowns hit it well.", ["Triceps pushdown", "Rope pushdown", "Assisted dip"]),
+        P("triceps-medial", "Medial head", "lower, near the elbow", "Lower down, near the elbow. Works in every triceps exercise.", ["Triceps pushdown", "Assisted dip", "Skull crusher"])
+      ] },
+    { id: "forearms", name: "Forearms", group: "arms",
+      does: "Grip and turn your wrist. Strong forearms mean you can hold on to heavier weights.",
+      tip: "Carrying heavy things builds grip fast. Skip lifting straps for your first few months.",
+      parts: [
+        P("forearm-flexors", "Inner forearm", "wrist flexors", "The palm side. Closes your grip.", ["Farmer carry", "Dumbbell curl"]),
+        P("forearm-extensors", "Outer forearm", "wrist extensors", "The back-of-the-hand side. Hammer and reverse grips work it.", ["Hammer curl", "Suitcase carry"])
+      ] },
+    { id: "abs", name: "Abs", group: "core",
       does: "Brace your trunk and curl your ribs toward your hips. They protect your back when you lift.",
-      ex: ["Dead bug", "Plank", "Cable crunch", "Hanging knee raise"],
-      tip: "Training makes your abs stronger. Seeing them depends on body fat, which comes down to food." },
-    { id: "obliques", name: "Obliques", group: "core", art: ["OBLIQUE"],
+      tip: "Training makes your abs stronger. Seeing them depends on body fat, which comes down to food.",
+      parts: [
+        P("abs-upper", "Upper abs", "upper rectus abdominis", "Curling your ribs down: crunches.", ["Cable crunch", "Dead bug", "Ab wheel rollout"]),
+        P("abs-lower", "Lower abs", "lower rectus abdominis", "Curling your hips up: leg and knee raises.", ["Hanging knee raise", "Reverse crunch", "Lying leg raise"])
+      ] },
+    { id: "obliques", name: "Obliques", group: "core",
       does: "Twist and bend your trunk sideways, and stop it from twisting when you carry or press with one arm.",
-      ex: ["Side plank", "Pallof press", "Suitcase carry"],
-      tip: "Carrying a weight in one hand works them without any crunches." },
-    { id: "glutes", name: "Glutes", group: "legs", art: ["GLUTEUS"],
-      does: "Drive your hips forward: standing up, climbing stairs, sprinting, lifting things off the floor.",
-      ex: ["Hip thrust", "Romanian deadlift", "Bulgarian split squat", "Glute bridge"],
-      tip: "Squeeze for a second at the top of hip thrusts and bridges. Feel them working, not your lower back." },
-    { id: "abductors", name: "Outer hips", group: "legs", art: ["ABDUCTOR"],
-      does: "Move your legs out to the side and keep your knees from caving in when you squat or run.",
-      ex: ["Hip abduction machine", "Single-leg glute bridge", "Step-up"],
-      tip: "If your knees cave in on squats, a few sets of these each week can help." },
-    { id: "quads", name: "Quads", group: "legs", art: ["QUADRICEPS", "QUADS"],
-      does: "Four heads on the front of your thigh that straighten your knees: squats, stairs, standing up.",
-      ex: ["Back squat", "Leg press", "Goblet squat", "Leg extension"],
-      tip: "Let your knees travel forward over your toes. That's safe, and it's how the quads get worked." },
-    { id: "adductors", name: "Inner thighs", group: "legs", art: ["ADDUCTOR"],
+      tip: "Carrying a weight in one hand works them without any crunches.",
+      parts: [P("obliques", "Obliques", "internal and external obliques", "The sides of your waist.", ["Side plank", "Pallof press", "Suitcase carry"])] },
+    { id: "glutes", name: "Glutes", group: "legs",
+      does: "The biggest muscles in your body. They drive your hips forward and keep your knees and hips lined up.",
+      tip: "Squeeze for a second at the top of hip thrusts and bridges. Feel them working, not your lower back.",
+      parts: [
+        P("glute-max", "Glute max", "gluteus maximus", "The main, rounded part. Standing up, climbing, sprinting, lifting.", ["Hip thrust", "Romanian deadlift", "Bulgarian split squat", "Glute bridge"]),
+        P("glute-med", "Outer glute", "gluteus medius", "The upper, outer hip. Moves your leg out and keeps knees from caving in.", ["Hip abduction machine", "Single-leg glute bridge", "Step-up"])
+      ] },
+    { id: "quads", name: "Quads", group: "legs",
+      does: "Four heads on the front of your thigh that straighten your knee: squats, stairs, standing up. The fourth (vastus intermedius) sits underneath the other three.",
+      tip: "Let your knees travel forward over your toes. That's safe, and it's how the quads get worked.",
+      parts: [
+        P("quad-outer", "Outer quad", "vastus lateralis", "The big outer sweep of the thigh.", ["Leg press", "Hack squat", "Back squat"]),
+        P("quad-middle", "Middle quad", "rectus femoris", "Down the middle; it also crosses the hip, so leg extensions hit it well.", ["Leg extension", "Walking lunge", "Goblet squat"]),
+        P("quad-inner", "Inner quad", "vastus medialis (teardrop)", "The teardrop above your inner knee. Deep knee bends and the last part of a leg extension.", ["Bulgarian split squat", "Leg extension", "Goblet squat"])
+      ] },
+    { id: "adductors", name: "Inner thighs", group: "legs",
       does: "Pull your legs together and help you get out of the bottom of a squat.",
-      ex: ["Hip adduction machine", "Goblet squat", "Bulgarian split squat"],
-      tip: "Deep squats with your feet a little wider work your inner thighs well." },
-    { id: "hamstrings", name: "Hamstrings", group: "legs", art: ["HAMSTRINGS"],
-      does: "Three muscles on the back of your thigh that bend your knees and help your glutes drive your hips forward.",
-      ex: ["Romanian deadlift", "Seated hamstring curl", "Lying hamstring curl"],
-      tip: "On Romanian deadlifts, push your hips back until you feel a stretch, then stand up." },
-    { id: "calves", name: "Calves", group: "legs", art: ["CALVES"],
-      does: "The two-headed gastrocnemius and the soleus underneath push you up onto your toes for every step, jump, and stair.",
-      ex: ["Standing calf raise", "Seated calf raise", "Single-leg calf raise"],
-      tip: "Straight-leg raises hit the gastrocnemius; bent-knee (seated) raises hit the soleus. Do both." }
+      tip: "Deep squats with your feet a little wider work your inner thighs well.",
+      parts: [P("adductors", "Inner thighs", "adductors", "The inside of your thigh.", ["Hip adduction machine", "Goblet squat", "Bulgarian split squat"])] },
+    { id: "hamstrings", name: "Hamstrings", group: "legs",
+      does: "Muscles on the back of your thigh that bend your knee and help your glutes drive your hips forward. Strong hamstrings protect your knees.",
+      tip: "On Romanian deadlifts, push your hips back until you feel a stretch, then stand up.",
+      parts: [
+        P("hams-outer", "Outer hamstring", "biceps femoris", "The outside of the back of your thigh.", ["Lying hamstring curl", "Romanian deadlift"]),
+        P("hams-inner", "Inner hamstrings", "semitendinosus and semimembranosus", "The inside of the back of your thigh.", ["Seated hamstring curl", "Stability ball leg curl", "Romanian deadlift"])
+      ] },
+    { id: "calves", name: "Calves", group: "legs",
+      does: "Push you up onto your toes for every step, jump, and stair.",
+      tip: "Pause for a second at the bottom of every rep. Bouncing lets your tendons do the work.",
+      parts: [
+        P("calf-inner", "Inner calf", "gastrocnemius, inner head", "The bigger, lower-hanging inner bulge.", ["Standing calf raise", "Single-leg calf raise"]),
+        P("calf-outer", "Outer calf", "gastrocnemius, outer head", "The outer bulge.", ["Standing calf raise", "Leg press calf raise"]),
+        P("soleus", "Soleus", "under the calf", "A flat muscle underneath. Bent-knee raises work it most.", ["Seated calf raise"])
+      ] }
 ];
-const MM_GROUP_LABEL = { chest: "Chest", shoulders: "Shoulders", back: "Back", arms: "Arms", core: "Core", legs: "Legs" };
 
-// Which views (front/back) show a muscle
-function muscleViews(m) {
-    if (typeof MUSCLE_ART !== "object") return [];
-    const keys = m.art.map((a) => a.split(":")[0]);
-    return ["front", "back"].filter((v) => MUSCLE_ART.male[v].muscles.some(([k]) => keys.includes(k)));
+const MM_GROUP_LABEL = { chest: "Chest", shoulders: "Shoulders", back: "Back", arms: "Arms", core: "Core", legs: "Legs" };
+const mmPart = (id) => { for (const g of MUSCLE_MAP) { const p = g.parts.find((x) => x.id === id); if (p) return { g, p }; } return null; };
+const mmGroup = (id) => MUSCLE_MAP.find((g) => g.id === id) || (mmPart(id) || {}).g || null;
+
+/* Which part each shape in the drawing belongs to. Each muscle in
+   muscle-art.js is drawn as one or more shapes per side; these rules sort
+   them into heads by where they sit (higher/lower, nearer/farther from the
+   middle of the body). The chest and biceps are single shapes, so they're
+   cut into bands. */
+function mmShapes(d) {
+    return d.split(/(?=M)/).map((sd) => {
+        const n = (sd.match(/-?\d+(\.\d+)?/g) || []).map(Number);
+        const xs = n.filter((_, i) => i % 2 === 0), ys = n.filter((_, i) => i % 2 === 1);
+        const cx = xs.reduce((a, b) => a + b, 0) / (xs.length || 1), cy = ys.reduce((a, b) => a + b, 0) / (ys.length || 1);
+        return { d: sd, cx, cy, dx: Math.abs(cx - 512), x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
+    });
+}
+function mmPieces(key, view, d) {
+    const subs = mmShapes(d);
+    const out = [];
+    const put = (sub, parts, clip) => out.push({ d: sub.d, parts, clip: clip || null });
+    const byDx = subs.slice().sort((a, b) => b.dx - a.dx);   // farthest from the middle first
+    const byY = subs.slice().sort((a, b) => a.cy - b.cy);    // highest first
+    const simple = { SHOULDER_FRONT: "delt-front", SHOULDER_SIDE: "delt-side", SHOULDER_REAR: "delt-rear", RHOMBOID: "rhomboids", LATISSIMUS: "lats",
+        LOWER_BACK: "erectors", OBLIQUE: "obliques", ADDUCTOR: "adductors", ABDUCTOR: "glute-med", QUADS: "quad-inner" };
+    if (simple[key]) { subs.forEach((s) => put(s, [simple[key]])); return out; }
+    switch (key) {
+    case "CHEST": // three bands: upper, middle, lower
+        subs.forEach((s) => {
+            const h = s.y1 - s.y0, b1 = s.y0 + h * 0.36, b2 = s.y0 + h * 0.7;
+            put(s, ["chest-upper"], [s.x0 - 5, s.y0 - 5, s.x1 - s.x0 + 10, b1 - s.y0 + 5]);
+            put(s, ["chest-middle"], [s.x0 - 5, b1, s.x1 - s.x0 + 10, b2 - b1]);
+            put(s, ["chest-lower"], [s.x0 - 5, b2, s.x1 - s.x0 + 10, s.y1 - b2 + 5]);
+        });
+        break;
+    case "BICEPS": // outer half is the long head (with the brachialis beside it), inner half the short head
+        subs.forEach((s) => {
+            const mid = (s.x0 + s.x1) / 2, left = s.cx < 512;
+            const outerRect = left ? [s.x0 - 5, s.y0 - 5, mid - s.x0 + 5, s.y1 - s.y0 + 10] : [mid, s.y0 - 5, s.x1 - mid + 5, s.y1 - s.y0 + 10];
+            const innerRect = left ? [mid, s.y0 - 5, s.x1 - mid + 5, s.y1 - s.y0 + 10] : [s.x0 - 5, s.y0 - 5, mid - s.x0 + 5, s.y1 - s.y0 + 10];
+            put(s, ["biceps-long", "brachialis"], outerRect);
+            put(s, ["biceps-short"], innerRect);
+        });
+        break;
+    case "TRAPEZIUS":
+        if (view === "front") { subs.forEach((s) => put(s, ["traps-upper"])); break; }
+        if (byY.length === 1) { put(byY[0], ["traps-upper", "traps-middle", "traps-lower"]); break; }
+        put(byY[0], ["traps-upper"]);
+        if (byY.length === 2) put(byY[1], ["traps-middle", "traps-lower"]);
+        else byY.slice(1).forEach((s, i, arr) => put(s, [i === arr.length - 1 ? "traps-lower" : "traps-middle"]));
+        break;
+    case "TRICEPS":
+        if (view === "front") { subs.forEach((s) => put(s, ["triceps-long"])); break; }
+        if (byDx.length === 1) { put(byDx[0], ["triceps-long", "triceps-lateral", "triceps-medial"]); break; }
+        byDx.forEach((s, i, arr) => put(s, i === 0 ? ["triceps-lateral"] : i === arr.length - 1 ? (arr.length === 2 ? ["triceps-long", "triceps-medial"] : ["triceps-long"]) : ["triceps-medial"]));
+        break;
+    case "FOREARM":
+        byDx.forEach((s, i, arr) => {
+            if (view === "front") put(s, [i === 0 ? "forearm-extensors" : "forearm-flexors"]);
+            else put(s, [i === arr.length - 1 ? "forearm-flexors" : "forearm-extensors"]);
+        });
+        break;
+    case "CORE":
+        byY.forEach((s, i, arr) => put(s, [i < Math.ceil(arr.length / 2) ? "abs-upper" : "abs-lower"]));
+        break;
+    case "GLUTEUS":
+        if (byY.length === 1) put(byY[0], ["glute-max"]);
+        else byY.forEach((s, i) => put(s, [i === 0 ? "glute-med" : "glute-max"]));
+        break;
+    case "QUADRICEPS": {
+        const outer = byDx[0], rest = subs.filter((s) => s !== outer).sort((a, b) => a.cy - b.cy);
+        put(outer, ["quad-outer"]);
+        rest.forEach((s, i) => put(s, [i === 0 ? "quad-middle" : "quad-inner"]));
+        break;
+    }
+    case "HAMSTRINGS":
+        byDx.forEach((s, i) => put(s, [i === 0 ? "hams-outer" : "hams-inner"]));
+        break;
+    case "CALVES": {
+        if (view === "back") {
+            const sole = byY[byY.length - 1];
+            put(sole, ["soleus"]);
+            const rest = byDx.filter((s) => s !== sole);
+            rest.forEach((s, i, arr) => put(s, arr.length === 1 ? ["calf-inner", "calf-outer"] : [i === 0 ? "calf-outer" : "calf-inner"]));
+        } else {
+            const inner = byDx[byDx.length - 1];
+            const rest = byDx.filter((s) => s !== inner);
+            const sole = rest.slice().sort((a, b) => b.cy - a.cy)[0];
+            put(inner, ["calf-inner"]);
+            rest.forEach((s) => put(s, [s === sole ? "soleus" : "calf-outer"]));
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    return out;
+}
+const MM_PIECES = {};
+function mmViewPieces(sex, view) {
+    const k = `${sex}-${view}`;
+    if (!MM_PIECES[k]) MM_PIECES[k] = MUSCLE_ART[sex][view].muscles.flatMap(([key, d]) => mmPieces(key, view, d));
+    return MM_PIECES[k];
+}
+// Which views (front/back) show a part
+function muscleViews(partId, sex) {
+    return ["front", "back"].filter((v) => mmViewPieces(sex || "male", v).some((pc) => pc.parts.includes(partId)));
 }
 
 function muscleMapSvg(sex, view) {
     const a = MUSCLE_ART[sex][view];
-    const clipId = `mm-clip-${sex}-${view}`;
-    const shapes = MUSCLE_MAP.map((m) => {
-        const paths = m.art.flatMap((spec) => {
-            const [key, part] = spec.split(":");
-            const clip = part ? ` clip-path="url(#${clipId}-${part})"` : "";
-            return a.muscles.filter(([k]) => k === key).map(([, d]) => `<path d="${d}"${clip}/>`);
-        });
-        if (!paths.length) return "";
-        return `<g class="mm-muscle" data-m="${m.id}" tabindex="-1" role="button" aria-label="${escapeHtml(m.name)}"><title>${escapeHtml(m.name)}</title>${paths.join("")}</g>`;
+    const pieces = mmViewPieces(sex, view);
+    const defs = [];
+    const order = MUSCLE_MAP.flatMap((g) => g.parts.map((p) => p.id));
+    const groups = order.map((partId) => {
+        const mine = pieces.filter((pc) => pc.parts[0] === partId);
+        if (!mine.length) return "";
+        const paths = mine.map((pc) => {
+            let clip = "";
+            if (pc.clip) {
+                const id = `mm-c-${sex}-${view}-${defs.length}`;
+                defs.push(`<clipPath id="${id}"><rect x="${pc.clip[0].toFixed(1)}" y="${pc.clip[1].toFixed(1)}" width="${pc.clip[2].toFixed(1)}" height="${pc.clip[3].toFixed(1)}"/></clipPath>`);
+                clip = ` clip-path="url(#${id})"`;
+            }
+            return `<path d="${pc.d}" data-parts="${pc.parts.join(" ")}"${clip}/>`;
+        }).join("");
+        const name = mmPart(partId).p.name;
+        return `<g class="mm-muscle" data-m="${partId}" tabindex="-1" role="button" aria-label="${escapeHtml(name)}"><title>${escapeHtml(name)}</title>${paths}</g>`;
     }).join("");
-    const clips = a.split ? `<defs>
-        <clipPath id="${clipId}-upper"><rect x="0" y="0" width="1024" height="${a.split}"/></clipPath>
-        <clipPath id="${clipId}-lower"><rect x="0" y="${a.split}" width="1024" height="${1536 - a.split}"/></clipPath></defs>` : "";
-    return `<svg class="mm-svg" viewBox="150 30 724 1480" xmlns="http://www.w3.org/2000/svg" focusable="false">${clips}
-        <g class="mm-body">${a.outline.map((d) => `<path d="${d}"/>`).join("")}</g>${shapes}</svg>`;
+    return `<svg class="mm-svg" viewBox="150 30 724 1480" xmlns="http://www.w3.org/2000/svg" focusable="false"><defs>${defs.join("")}</defs>
+        <g class="mm-body">${a.outline.map((d) => `<path d="${d}"/>`).join("")}</g>${groups}</svg>`;
 }
 
 function setupMuscleMap() {
@@ -2659,7 +2792,10 @@ function setupMuscleMap() {
     const panelIntro = panel.innerHTML;
     let sex = store.get("gu-mm-body") || (getProfile().sex === "female" ? "female" : "male");
     if (!["male", "female"].includes(sex)) sex = "male";
-    let angle = 0, pinned = null, anim = null, drag = null, suppressClick = false;
+    let angle = 0, anim = null, drag = null, suppressClick = false;
+    let sel = { group: null, part: null }, hover = null;
+    const norm = (x) => ((x % 360) + 540) % 360 - 180;
+    const facing = () => (Math.abs(norm(angle)) <= 90 ? "front" : "back");
 
     // Two faces on a card that turns in 3D: front at 0 degrees, back at 180
     function build() {
@@ -2669,28 +2805,36 @@ function setupMuscleMap() {
         </div><div class="mm-floor" aria-hidden="true"></div>`;
         root.querySelectorAll("[data-mm-sex]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mmSex === sex)));
         draw();
-        if (pinned) show(pinned, true);
     }
 
-    const norm = (x) => ((x % 360) + 540) % 360 - 180; // -180..180
     function draw() {
         const turn = stage.querySelector(".mm-turntable");
         // 3D only while turning; at rest it's a plain flat drawing (avoids 3D rendering glitches on some phones)
         const resting = Math.abs(norm(angle)) % 180 < 0.01 && !(drag && drag.moved);
         turn.classList.toggle("is-rest", resting);
         turn.style.transform = resting ? "" : `rotateY(${angle.toFixed(1)}deg)`;
-        const facing = Math.abs(norm(angle)) <= 90 ? "front" : "back";
+        const face = facing();
         stage.querySelectorAll(".mm-face").forEach((f) => {
-            const on = f.dataset.face === facing;
+            const on = f.dataset.face === face;
             f.classList.toggle("is-active", on);
             f.setAttribute("aria-hidden", on ? "false" : "true");
             f.querySelectorAll(".mm-muscle").forEach((g) => g.setAttribute("tabindex", on ? "0" : "-1"));
         });
+        // The picked muscle's parts in light red; the picked or pointed-at part in strong red
+        const g = sel.group ? mmGroup(sel.group) : null;
+        const groupParts = g ? g.parts.map((p) => p.id) : [];
+        const strong = [sel.part, hover].filter(Boolean);
+        stage.querySelectorAll("path[data-parts]").forEach((pth) => {
+            const parts = pth.dataset.parts.split(" ");
+            const on = parts.some((p) => strong.includes(p));
+            pth.classList.toggle("is-on", on);
+            pth.classList.toggle("is-group", !on && parts.some((p) => groupParts.includes(p)));
+        });
+        root.querySelectorAll("[data-mm-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mmView === face)));
+        stage.dataset.angle = String(Math.round(norm(angle)));
+        root.querySelector(".mm-view-label").textContent = face === "front" ? "Front view" : "Back view";
         const floor = stage.querySelector(".mm-floor");
         floor.style.transform = `translateX(-50%) scaleX(${(0.55 + 0.45 * Math.abs(Math.cos((angle * Math.PI) / 180))).toFixed(3)})`;
-        root.querySelectorAll("[data-mm-view]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mmView === facing)));
-        stage.dataset.angle = String(Math.round(norm(angle)));
-        root.querySelector(".mm-view-label").textContent = facing === "front" ? "Front view" : "Back view";
     }
 
     function turnTo(target) {
@@ -2706,41 +2850,53 @@ function setupMuscleMap() {
         anim = requestAnimationFrame(step);
     }
 
-    // Panel: what the muscle does and how to train it
-    function show(id, isPin) {
-        const m = MUSCLE_MAP.find((x) => x.id === id);
-        if (isPin) pinned = id || null;
-        root.querySelectorAll(".mm-muscle").forEach((g) => g.classList.toggle("is-on", g.dataset.m === id));
-        root.querySelectorAll("[data-mm-pick]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mmPick === id)));
-        if (!m) { panel.innerHTML = panelIntro; return; }
-        panel.innerHTML = `
-            <p class="mm-eyebrow">${MM_GROUP_LABEL[m.group]}</p>
-            <h3 class="mm-title"><span class="mm-dot" aria-hidden="true"></span>${escapeHtml(m.name)}</h3>
-            <p>${escapeHtml(m.does)}</p>
-            <h4>Best exercises</h4>
-            <ul class="mm-ex">${m.ex.map((n) => `<li><button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button></li>`).join("")}</ul>
-            <h4>Beginner tip</h4>
-            <p>${escapeHtml(m.tip)}</p>
-            <a class="text-link" href="#${m.group}">All ${MM_GROUP_LABEL[m.group].toLowerCase()} exercises</a>`;
+    // Turn to the side of the body that shows a part
+    function facePart(partId) {
+        const views = muscleViews(partId, sex);
+        if (views.length && !views.includes(facing())) turnTo(views[0] === "back" ? 180 : 0);
     }
 
-    // Hover previews; click, tap, or Enter picks
-    stage.addEventListener("pointerover", (e) => {
-        const g = e.target.closest(".mm-muscle");
-        if (g && e.pointerType === "mouse" && !(drag && drag.moved)) show(g.dataset.m, false);
-    });
-    stage.addEventListener("pointerout", (e) => {
-        const g = e.target.closest(".mm-muscle");
-        const to = e.relatedTarget && e.relatedTarget.closest ? e.relatedTarget.closest(".mm-muscle") : null;
-        if (g && e.pointerType === "mouse" && (!to || to.dataset.m !== g.dataset.m)) show(pinned, false);
-    });
-    stage.addEventListener("focusin", (e) => { const g = e.target.closest(".mm-muscle"); if (g) show(g.dataset.m, true); });
-    stage.addEventListener("keydown", (e) => {
-        const g = e.target.closest(".mm-muscle");
-        if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); show(g.dataset.m, true); panel.focus(); }
-    });
+    // Panel: the muscle, each of its heads or parts, and the best exercises for each
+    function show() {
+        const g = sel.group ? mmGroup(sel.group) : null;
+        root.querySelectorAll("[data-mm-pick]").forEach((b) => b.setAttribute("aria-pressed", String(Boolean(g) && b.dataset.mmPick === g.id)));
+        draw();
+        if (!g) { panel.innerHTML = panelIntro; return; }
+        const exList = (ex) => `<ul class="mm-ex">${ex.map((n) => `<li><button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button></li>`).join("")}</ul>`;
+        const single = g.parts.length === 1;
+        const picked = sel.part ? g.parts.find((p) => p.id === sel.part) : null;
+        panel.innerHTML = `
+            <p class="mm-eyebrow">${MM_GROUP_LABEL[g.group]}</p>
+            <h3 class="mm-title"><span class="mm-dot" aria-hidden="true"></span>${escapeHtml(picked && !single ? picked.name : g.name)}</h3>
+            ${picked && !single ? `<p class="mm-aka">${escapeHtml(picked.aka)} &middot; part of the ${escapeHtml(g.name.toLowerCase())}</p>` : ""}
+            <p>${escapeHtml(g.does)}</p>
+            ${single ? `<p class="mm-aka">${escapeHtml(g.parts[0].aka)}: ${escapeHtml(g.parts[0].where)}</p><h4>Best exercises</h4>${exList(g.parts[0].ex)}` : `
+            <h4>${g.parts.length} ${/delt|triceps|biceps|quad/.test(g.parts[0].id) ? "heads" : "parts"} &middot; tap one to light it up</h4>
+            <ol class="mm-parts">${g.parts.map((p) => `
+                <li class="mm-part${sel.part === p.id ? " is-on" : ""}" data-part="${p.id}">
+                    <button type="button" class="mm-part-name" data-mm-part="${p.id}" aria-pressed="${sel.part === p.id}"><span class="mm-part-mark" aria-hidden="true"></span>${escapeHtml(p.name)} <small>${escapeHtml(p.aka)}</small></button>
+                    <p>${escapeHtml(p.where)}</p>
+                    <p class="mm-best">Best for it:</p>${exList(p.ex)}
+                </li>`).join("")}</ol>`}
+            <h4>Beginner tip</h4>
+            <p>${escapeHtml(g.tip)}</p>
+            <a class="text-link" href="#${g.group}">All ${MM_GROUP_LABEL[g.group].toLowerCase()} exercises</a>`;
+    }
+    function pick(partId) {
+        const hit = mmPart(partId);
+        if (!hit) return;
+        sel = { group: hit.g.id, part: partId };
+        show();
+    }
 
-    // Drag (mouse or finger) to spin it all the way around
+    // Pointer: hover previews (mouse), click or tap picks, drag turns
+    const partAt = (target) => { const g = target && target.closest ? target.closest(".mm-muscle") : null; return g ? g.dataset.m : null; };
+    stage.addEventListener("pointerover", (e) => {
+        if (e.pointerType !== "mouse" || (drag && drag.moved)) return;
+        const id = partAt(e.target);
+        if (id !== hover) { hover = id; draw(); }
+    });
+    stage.addEventListener("pointerleave", () => { if (hover) { hover = null; draw(); } });
     stage.addEventListener("pointerdown", (e) => {
         if (e.button !== 0) return;
         drag = { x: e.clientX, start: angle, moved: false, id: e.pointerId };
@@ -2751,6 +2907,7 @@ function setupMuscleMap() {
         const dx = e.clientX - drag.x;
         if (!drag.moved && Math.abs(dx) > 6) {
             drag.moved = true;
+            hover = null;
             stage.classList.add("is-dragging");
             try { stage.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
         }
@@ -2759,10 +2916,7 @@ function setupMuscleMap() {
     const endDrag = (e) => {
         if (!drag) return;
         const moved = drag.moved;
-        if (!moved && e.type === "pointerup") {
-            const g = e.target.closest && e.target.closest(".mm-muscle");
-            if (g) show(g.dataset.m, true);
-        }
+        if (!moved && e.type === "pointerup") { const id = partAt(e.target); if (id) pick(id); }
         drag = null;
         stage.classList.remove("is-dragging");
         if (moved) { suppressClick = true; turnTo(Math.round(angle / 180) * 180); draw(); }
@@ -2771,7 +2925,23 @@ function setupMuscleMap() {
     stage.addEventListener("pointercancel", endDrag);
     stage.addEventListener("click", (e) => { if (suppressClick) { e.preventDefault(); e.stopPropagation(); suppressClick = false; } }, true);
 
-    // Buttons: views, turning, body type, and the muscle list
+    // Keyboard: tab through the muscles, Enter picks, arrow keys turn
+    stage.addEventListener("focusin", (e) => { const id = partAt(e.target); if (id) pick(id); });
+    stage.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); turnTo(Math.round(angle / 180) * 180 + 180); return; }
+        const id = partAt(e.target);
+        if (id && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pick(id); panel.focus(); }
+    });
+
+    // Pointing at a part in the panel lights it on the body
+    panel.addEventListener("pointerover", (e) => {
+        const li = e.target.closest("[data-part]");
+        const id = li ? li.dataset.part : null;
+        if (id !== hover) { hover = id; draw(); }
+    });
+    panel.addEventListener("pointerleave", () => { if (hover) { hover = null; draw(); } });
+
+    // Buttons: views, turning, body type, the muscle list, and parts in the panel
     root.addEventListener("click", (e) => {
         const v = e.target.closest("[data-mm-view]");
         if (v) turnTo(v.dataset.mmView === "back" ? 180 : 0);
@@ -2781,12 +2951,18 @@ function setupMuscleMap() {
         if (s && s.dataset.mmSex !== sex) { sex = s.dataset.mmSex; store.set("gu-mm-body", sex); build(); }
         const p = e.target.closest("[data-mm-pick]");
         if (p) {
-            const m = MUSCLE_MAP.find((x) => x.id === p.dataset.mmPick);
-            const views = m ? muscleViews(m) : [];
-            const facing = Math.abs(norm(angle)) <= 90 ? "front" : "back";
-            if (views.length && !views.includes(facing)) turnTo(views[0] === "back" ? 180 : 0);
-            show(p.dataset.mmPick, true);
+            const g = mmGroup(p.dataset.mmPick);
+            if (g) {
+                // turn to the side that shows the most of this muscle's parts
+                const count = (v) => g.parts.filter((x) => muscleViews(x.id, sex).includes(v)).length;
+                const best = count("back") > count("front") ? "back" : "front";
+                if (best !== facing()) turnTo(best === "back" ? 180 : 0);
+                sel = { group: g.id, part: null };
+                show();
+            }
         }
+        const pp = e.target.closest("[data-mm-part]");
+        if (pp) { facePart(pp.dataset.mmPart); pick(pp.dataset.mmPart); }
     });
     root.querySelector(".mm-picks").innerHTML = Object.keys(MM_GROUP_LABEL).map((grp) => `
         <li><span class="mm-pick-group">${MM_GROUP_LABEL[grp]}</span>${MUSCLE_MAP.filter((m) => m.group === grp)
