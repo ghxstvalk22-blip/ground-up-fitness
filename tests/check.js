@@ -364,18 +364,22 @@ async function openPage(browser, file, viewport, hash = "") {
         {
             const { page, errors } = await openPage(browser, "exercises.html", viewport, "#muscle-map");
             const stage = page.locator(".mm-stage");
-            const data = await page.evaluate(() => MUSCLE_MAP.map((m) => ({ id: m.id, ex: m.ex, missing: m.ex.filter((n) => !EXERCISES[n]), views: ["front", "back", "side"].filter((v) => m[v]).length })));
+            const data = await page.evaluate(() => MUSCLE_MAP.map((m) => ({ id: m.id, ex: m.ex, missing: m.ex.filter((n) => !EXERCISES[n]), views: muscleViews(m).length })));
             check(data.length >= 20 && data.every((m) => m.views > 0 && m.ex.length >= 2 && m.missing.length === 0), `every muscle has a shape and real exercises ${JSON.stringify(data.filter((m) => m.missing.length || !m.views))}`);
             await page.locator('.mm-face.is-active [data-m="quads"] path').first().hover();
             check(/Quads/.test(await page.locator(".mm-title").textContent()) && await page.locator('.mm-face.is-active [data-m="quads"].is-on').count() === 1, "pointing at a muscle highlights it and names it");
             const box = await stage.boundingBox();
             await page.mouse.move(box.x + box.width / 2, box.y + 60);
             await page.mouse.down();
-            await page.mouse.move(box.x + box.width / 2 + 120, box.y + 60, { steps: 8 });
+            await page.mouse.move(box.x + box.width / 2 + 150, box.y + 60, { steps: 10 });
             const mid = Number(await stage.getAttribute("data-angle"));
             await page.mouse.up();
             await page.waitForTimeout(100);
-            check(mid > 30 && Math.abs(Number(await stage.getAttribute("data-angle"))) === 90, `dragging spins the body and it settles on a view (${mid})`);
+            check(mid > 60 && Math.abs(Number(await stage.getAttribute("data-angle"))) === 180, `dragging spins the body around to the back (${mid})`);
+            await page.click('[data-mm-view="front"]');
+            await page.click('[data-mm-sex="female"]');
+            check(await page.locator('[data-mm-sex="female"][aria-pressed="true"]').count() === 1 && await page.locator('.mm-face.is-active [data-m="side-delts"] path').count() >= 2, "the female body can be picked, with every muscle on it");
+            await page.click('[data-mm-sex="male"]');
             await page.click('[data-mm-view="back"]');
             check(await page.locator('.mm-face.is-active').getAttribute("data-face") === "back", "the Back button turns it around");
             await page.click('[data-mm-pick="hamstrings"]');

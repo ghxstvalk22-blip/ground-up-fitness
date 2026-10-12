@@ -1796,29 +1796,57 @@ select, input, textarea {
     -webkit-user-select: none;
 }
 .mm-stage.is-dragging { cursor: grabbing; }
-.mm-face {
+.mm-stage { perspective: 1400px; }
+.mm-turntable {
     position: absolute;
     inset: 0 0 18px;
+    transform-style: preserve-3d;
+    will-change: transform;
+}
+.mm-face {
+    position: absolute;
+    inset: 0;
     display: flex;
     justify-content: center;
     pointer-events: none;
-    will-change: opacity, transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
 }
+.mm-face-back { transform: rotateY(180deg); }
+.mm-turntable.is-rest { transform: none; transform-style: flat; }
+.mm-turntable.is-rest .mm-face { transform: none; backface-visibility: visible; -webkit-backface-visibility: visible; }
+.mm-turntable.is-rest .mm-face:not(.is-active) { visibility: hidden; }
 .mm-face.is-active { pointer-events: auto; }
+.mm-sex { display: flex; justify-content: center; gap: 0; margin-top: 10px; }
+.mm-sex-btn {
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid var(--line);
+    background-color: transparent;
+    color: var(--muted);
+    cursor: pointer;
+}
+.mm-sex-btn + .mm-sex-btn { border-left: 0; }
+.mm-sex-btn[aria-pressed="true"] { color: var(--ink); border-color: var(--ink); box-shadow: inset 0 -2px 0 var(--volt); }
 .mm-svg { height: 100%; width: auto; max-width: 100%; overflow: visible; }
-.mm-body, .mm-body path, .mm-body ellipse { fill: var(--mm-skin); stroke: var(--mm-line); stroke-width: 1; }
+.mm-body, .mm-body path { fill: var(--mm-skin); stroke: var(--mm-line); stroke-width: 2.5; stroke-linejoin: round; }
 .mm-hair { fill: var(--mm-hair); }
 .mm-muscle path {
     fill: var(--mm-muscle);
     stroke: var(--mm-line);
-    stroke-width: 0.8;
+    stroke-width: 2;
+    stroke-linejoin: round;
     transition: fill 0.15s ease;
     cursor: pointer;
 }
 .mm-muscle:hover path,
-.mm-muscle.is-on path { fill: var(--mm-hot); stroke: #7a1020; stroke-width: 1.4; }
+.mm-muscle.is-on path { fill: var(--mm-hot); stroke: #7a1020; stroke-width: 3; }
 .mm-muscle:focus { outline: none; }
-.mm-muscle:focus-visible path { fill: var(--mm-hot); stroke: var(--ink); stroke-width: 2.2; }
+.mm-muscle:focus-visible path { fill: var(--mm-hot); stroke: var(--ink); stroke-width: 6; }
 .mm-floor {
     position: absolute;
     left: 50%;
@@ -1830,6 +1858,8 @@ select, input, textarea {
     background: radial-gradient(closest-side, rgba(0, 0, 0, 0.18), transparent);
 }
 .mm-hint { text-align: center; margin: 8px 0 0; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.mm-credit { text-align: center; margin: 4px 0 0; font-size: 0.7rem; color: var(--muted); }
+.mm-credit a { color: inherit; }
 .mm-panel { border-top: 2px solid var(--ink); padding-top: 16px; min-height: 220px; }
 .mm-panel:focus { outline: none; }
 .mm-panel:focus-visible { outline: 2px solid var(--volt); outline-offset: 4px; }

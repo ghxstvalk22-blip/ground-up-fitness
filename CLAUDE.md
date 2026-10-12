@@ -14,6 +14,7 @@ ships **one** focused improvement.
 | `index.html` | Home page: photo hero, "Nervous about starting?", quick-start plan picker, program tiles, how it works, pro band, tools teaser. |
 | `start.html`, `programs.html`, `exercises.html`, `pros.html`, `tools.html`, `basics.html`, `contact.html` | One page per menu tab. Each has a photo banner and its own `<body data-page="...">`. |
 | `exercises.js` | `EXERCISES` (a how-to guide for every exercise) and `EXERCISE_FAMILIES` (exercises that can swap for each other, used by the weekly rotation and Swap). Loaded before `script.js`. Every exercise used in a plan must have an entry; the test checks this. |
+| `muscle-art.js` | Body outlines and muscle shapes for the Muscle map (front/back, male/female), from the MIT-licensed `@musclemap/assets`; keep its license header. Loaded only on `exercises.html`. |
 | `styles.css` | All styles. Colors are tokens on `:root`, with dark mode overrides. |
 | `script.js` | All behavior, organized as independent feature blocks. |
 | `ROADMAP.md` | The idea backlog. The owner adds ideas here. |

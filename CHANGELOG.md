@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (muscle map, new artwork)
+
+- **The muscle map has a real anatomy figure now**, replacing the simple mannequin. Muscles have their true shapes, and the multi-part muscles show their separate heads: the three heads of the shoulder (front, side, and rear are each their own pick), the triceps' heads, the quads, the hamstrings, and the two-headed calves. The chest splits into upper and lower.
+- **Male and female bodies:** a toggle under the buttons switches between them (it starts on Female if you picked that in "Make it yours").
+- **Spinning:** drag it with a mouse or finger and it turns in 3D, then settles on the front or back. The buttons still work too.
+- The artwork comes from MuscleMap, a free (MIT-licensed) set of body drawings, credited under the figure.
+
 ## 2026-10-12 (security)
 
 - **Locked down the site.** Every page now tells browsers to only run code from this site (a "Content Security Policy"), blocks old-style plugins, and doesn't leak page addresses to other sites.

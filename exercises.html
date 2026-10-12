@@ -20,6 +20,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="exercises.js" defer></script>
+    <script src="muscle-art.js" defer></script>
     <script src="script.js" defer></script>
 </head>
 
@@ -49,12 +50,16 @@
                     <div class="mm-controls" role="group" aria-label="Turn the body">
                         <button type="button" class="mm-turn" data-mm-turn="-1" aria-label="Turn left">&#8634;</button>
                         <button type="button" class="mm-view" data-mm-view="front" aria-pressed="true">Front</button>
-                        <button type="button" class="mm-view" data-mm-view="side" aria-pressed="false">Side</button>
                         <button type="button" class="mm-view" data-mm-view="back" aria-pressed="false">Back</button>
                         <button type="button" class="mm-turn" data-mm-turn="1" aria-label="Turn right">&#8635;</button>
                     </div>
+                    <div class="mm-sex" role="group" aria-label="Body">
+                        <button type="button" class="mm-sex-btn" data-mm-sex="male" aria-pressed="true">Male</button>
+                        <button type="button" class="mm-sex-btn" data-mm-sex="female" aria-pressed="false">Female</button>
+                    </div>
                     <div class="mm-stage" aria-label="Body model. Drag sideways to spin it. Tab to a muscle and press Enter to learn about it." role="group"></div>
                     <p class="mm-hint"><span class="mm-view-label">Front view</span> &middot; drag to spin</p>
+                    <p class="mm-credit">Body artwork: <a href="https://www.npmjs.com/package/@musclemap/assets" target="_blank" rel="noopener">MuscleMap</a> (MIT license)</p>
                 </div>
                 <div class="mm-side">
                     <div class="mm-panel" id="mm-panel" tabindex="-1" aria-live="polite">
