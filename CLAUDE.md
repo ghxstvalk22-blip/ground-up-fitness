@@ -75,6 +75,11 @@ ships **one** focused improvement.
    real athletes or coaches, and never use their photos or logos. Linking to their own
    official channels with a factual one-line description is fine, but verify the URL and
    facts first, and keep the "not affiliated" note.
+9. **Security:** every page carries the same `Content-Security-Policy` meta tag. Never add inline
+   `<script>` blocks or `onclick=`-style attributes. A new outside host (images, scripts, APIs) must
+   be added to the policy on every page, and only if it's truly needed. Put saved or typed values
+   into the page only through `escapeHtml` (or `textContent`), and check saved settings against a
+   list of allowed values the way `getProfile` does. The test enforces most of this.
 
 ## The daily run, step by step
 

@@ -1588,15 +1588,19 @@ function programStart(program) {
 const weekOf = (start, date = new Date()) => Math.floor((mondayOf(date) - start) / (7 * 864e5)) + 1;
 
 /* ---------- Profile ---------- */
+// Only known values get through, so tampered or corrupted saved data can't break or inject into the page
 function getProfile() {
-    const p = store.get(PROFILE_KEY, {}) || {};
+    const raw = store.get(PROFILE_KEY, {});
+    const p = raw && typeof raw === "object" ? raw : {};
+    const pick = (v, allowed, fallback) => (allowed.includes(v) ? v : fallback);
+    const bw = Number(p.bodyweight);
     return {
-        experience: p.experience || "new",
-        bodyweight: p.bodyweight || "",
-        unit: p.unit || (store.get("gu-unit") === "kg" ? "kg" : "lb"),
-        focus: p.focus || "",
-        sex: p.sex || "",
-        trainFor: p.trainFor || "both"
+        experience: pick(p.experience, ["new", "some", "lots"], "new"),
+        bodyweight: bw > 0 && bw < 1000 ? String(p.bodyweight) : "",
+        unit: pick(p.unit, ["lb", "kg"], store.get("gu-unit") === "kg" ? "kg" : "lb"),
+        focus: pick(p.focus, ["", "shoulders", "back", "chest", "arms", "legs"], ""),
+        sex: pick(p.sex, ["", "female", "male"], ""),
+        trainFor: pick(p.trainFor, ["strength", "endurance", "both"], "both")
     };
 }
 

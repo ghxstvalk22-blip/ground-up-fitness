@@ -1,0 +1,19 @@
+// Firestore security rules for Ground Up Fitness accounts.
+// Paste this into Firebase console > Firestore Database > Rules, then Publish.
+// Each signed-in person can only read, change, or delete their own document,
+// it can only hold the site's data, and everything else is locked.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['data', 'updated'])
+        && request.resource.data.data is map
+        && request.resource.data.updated is int;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

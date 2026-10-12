@@ -53,13 +53,13 @@ function linkProblem(href, fromPage) {
 // The test machine can't reach Google Fonts, so serve the same Archivo font from npm.
 // That way the layout is checked with the real font widths, not a fallback.
 const FONT_FILE = path.join(ROOT, "node_modules/@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2");
-const FONT_CSS = `@font-face{font-family:"Archivo";src:url("https://fonts.local/archivo.woff2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:block;}`;
+const FONT_CSS = `@font-face{font-family:"Archivo";src:url("https://fonts.gstatic.com/test/archivo.woff2") format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:block;}`;
 
 async function openPage(browser, file, viewport, hash = "") {
     const page = await browser.newPage({ viewport });
     if (fs.existsSync(FONT_FILE)) {
         await page.route(/fonts\.googleapis\.com/, (r) => r.fulfill({ contentType: "text/css", body: FONT_CSS }));
-        await page.route(/fonts\.local/, (r) => r.fulfill({ contentType: "font/woff2", body: fs.readFileSync(FONT_FILE) }));
+        await page.route(/fonts\.gstatic\.com\/test/, (r) => r.fulfill({ contentType: "font/woff2", body: fs.readFileSync(FONT_FILE) }));
     }
     await page.route(/images\.unsplash\.com/, (r) => r.abort());
     const errors = [];
@@ -81,6 +81,23 @@ async function openPage(browser, file, viewport, hash = "") {
     const names = [...new Set([...src.matchAll(/ex\("([^"]+)"/g)].map((m) => m[1]))];
     const missing = names.filter((n) => !lib.includes(`"${n}": {`));
     check(missing.length === 0, `every plan exercise has a how-to guide ${missing.length ? JSON.stringify(missing) : ""}`);
+}
+
+// Security: a strict policy on every page, no inline scripts, and no secrets in the repo
+{
+    for (const file of PAGES) {
+        const html = fs.readFileSync(path.join(ROOT, file), "utf8");
+        const csp = (html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/) || [])[1] || "";
+        const scriptSrc = (csp.match(/script-src([^;]*)/) || [])[1] || "";
+        check(csp && /object-src 'none'/.test(csp) && /base-uri 'self'/.test(csp) && !/unsafe-eval/.test(csp) && scriptSrc && !/unsafe-inline/.test(scriptSrc),
+            `${file} has a strict security policy`);
+        check(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html) && !/\son[a-z]+\s*=\s*["']/i.test(html), `${file} has no inline scripts or event handlers`);
+    }
+    const SECRET = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|sk-[A-Za-z0-9]{32,}|xox[baprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|"?password"?\s*[:=]\s*"[^"]{4,}")/;
+    const files = fs.readdirSync(ROOT).filter((f) => /\.(html|js|css|md|json)$/.test(f) && f !== "package-lock.json")
+        .concat(fs.readdirSync(path.join(ROOT, "tests")).filter((f) => f.endsWith(".js")).map((f) => `tests/${f}`));
+    const leaks = files.filter((f) => SECRET.test(fs.readFileSync(path.join(ROOT, f), "utf8").replace(/const SECRET = .*\n/, "")));
+    check(leaks.length === 0, `no passwords or secret keys in the repo ${leaks.join(", ")}`);
 }
 
 (async () => {
@@ -107,6 +124,8 @@ async function openPage(browser, file, viewport, hash = "") {
             const hrefs = await page.evaluate(() => [...document.querySelectorAll("a[href]")].map((a) => a.getAttribute("href")));
             const bad = [...new Set(hrefs.map((h) => linkProblem(h, file)).filter(Boolean))];
             check(bad.length === 0, `every link has a real target ${bad.length ? JSON.stringify(bad) : ""}`);
+            const unsafeBlank = await page.evaluate(() => [...document.querySelectorAll('a[target="_blank"]')].filter((a) => !/noopener/.test(a.rel)).map((a) => a.href));
+            check(unsafeBlank.length === 0, `links that open a new tab can't control this page ${unsafeBlank.slice(0, 2).join(", ")}`);
             const key = file === "index.html" ? null : file.replace(".html", "");
             const tab = key === "supplements" ? "basics.html" : file;
             if (key && key !== "me") check(await page.locator(`#site-nav .nav-link.active[href="${tab}"]`).count() === 1, "this page's tab is marked as current");
@@ -364,6 +383,32 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator('.mm-face.is-active [data-m="glutes"]').focus();
             check(/Glutes/.test(await page.locator(".mm-title").textContent()), "muscles work with the keyboard");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Security: booby-trapped saved data (or a synced account) can't run code on any page
+        {
+            const BAD = `<img src=x onerror="window.__pwned=1">`;
+            const { page } = await openPage(browser, "me.html", viewport);
+            await page.evaluate((bad) => {
+                const today = new Date().toISOString().slice(0, 10);
+                localStorage.setItem("gu-log", JSON.stringify({ [bad]: [{ date: today, unit: "lb", sets: [{ w: 100, r: 5 }] }] }));
+                localStorage.setItem("gu-cardio", JSON.stringify([{ date: today, activity: bad, minutes: 30, effort: bad }]));
+                localStorage.setItem("gu-prs", JSON.stringify([{ date: today, name: bad, kind: "max", value: 120 }]));
+                localStorage.setItem("gu-profile", JSON.stringify({ experience: bad, unit: bad, focus: bad, bodyweight: bad }));
+                localStorage.setItem("gu-weights", JSON.stringify([{ date: today, w: bad, unit: bad }]));
+            }, BAD);
+            const pwned = [];
+            for (const file of ["me.html", "programs.html", "tools.html", "index.html"]) {
+                await page.goto(url(file), { waitUntil: "load" });
+                await page.waitForTimeout(300);
+                if (await page.evaluate(() => window.__pwned === 1 || document.querySelectorAll("img[src='x']").length > 0)) pwned.push(file);
+            }
+            await page.goto(url("index.html") + "#<img src=x onerror=window.__pwned=1>", { waitUntil: "load" });
+            await page.waitForTimeout(200);
+            if (await page.evaluate(() => window.__pwned === 1)) pwned.push("index.html#hash");
+            check(pwned.length === 0, `saved data and links can't inject code ${pwned.join(", ")}`);
+            await page.evaluate(() => localStorage.clear());
             await page.close();
         }
 

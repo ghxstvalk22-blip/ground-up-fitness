@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (security)
+
+- **Locked down the site.** Every page now tells browsers to only run code from this site (a "Content Security Policy"), blocks old-style plugins, and doesn't leak page addresses to other sites.
+- **Fixed a weak spot:** tampered saved settings on someone's own device could have put unwanted code on the Programs and My progress pages. Settings are now checked against a list of allowed values.
+- **The automatic test now attacks the site before every update:** it tries to inject code through saved data and links, checks every page's security policy, makes sure new-tab links are safe, and scans for leaked passwords or keys. If any of that fails, nothing goes live.
+- Added `firestore.rules` (account data rules, ready for when accounts are switched on) and `SECURITY.md`.
+
 ## 2026-10-12 (muscle map)
 
 - **New: Muscle map** at the top of the Exercises page (also in the Exercises menu). Drag the body with your mouse or finger to spin it all the way around, or tap Front, Side, or Back. Point at or tap a muscle and it lights up red. Next to the body you'll see what that muscle does, the best exercises for it (tap one for the how-to), and a beginner tip. It covers 21 muscle groups: upper chest, chest, front/side/rear shoulders, traps, upper back, lats, lower back, biceps, triceps, forearms, abs, obliques, glutes, outer hips, quads, inner thighs, hamstrings, and calves. There's also a list of every muscle for people who prefer not to drag, and it works with a keyboard.
