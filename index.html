@@ -24,9 +24,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261012-13">
-    <script src="exercises.js?v=20261012-13" defer></script>
-    <script src="script.js?v=20261012-13" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261012-14">
+    <script src="exercises.js?v=20261012-14" defer></script>
+    <script src="script.js?v=20261012-14" defer></script>
 </head>
 
 <body data-page="home">
@@ -45,6 +45,8 @@
         <p class="eyebrow">Free &middot; No sign-up &middot; Made for beginners</p>
         <h1>Nobody walks in <span class="hl">ready.</span></h1>
         <p class="hero-lede">Pick what you want. We'll show you exactly what to do, how to do it, and what to lift next time.</p>
+        <div class="hero-level" data-level-bar data-compact data-label="Your level"></div>
+        <a class="hero-setup-link" href="#setup">Add your bodyweight for starting weights</a>
         <div class="hero-actions"></div>
         </div>
         <div class="hero-pick">
@@ -55,7 +57,7 @@
                 <li><a href="programs.html#program-fatloss"><strong>Lose fat</strong><span>Keep your muscle</span></a></li>
                 <li><a href="programs.html#program-build"><strong>Build muscle</strong><span>3 days a week</span></a></li>
                 <li><a href="programs.html#program-strength"><strong>Get stronger</strong><span>Squat, bench, deadlift</span></a></li>
-                <li><a href="programs.html#program-home"><strong>Train at home</strong><span>No equipment</span></a></li>
+                <li><a href="programs.html#program-home"><strong>Train at home</strong><span>With or without dumbbells</span></a></li>
                 <li><a href="#get-plan"><strong>Not sure?</strong><span>Answer 2 quick questions</span></a></li>
             </ul>
         </nav>
@@ -77,6 +79,8 @@
 </section>
 
 <main id="main">
+    <section class="block setup-block" id="setup"><div class="container wide" data-setup></div></section>
+
     <section class="block fears" aria-labelledby="fears-title">
         <div class="container wide">
             <p class="kicker">Nervous about starting?</p>

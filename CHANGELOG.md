@@ -2,6 +2,15 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Pick your level, get your starting weights, and see what each exercise needs)
+
+- **Pick your level on the front cover.** Beginner, Intermediate, Advanced, or Expert, right under the headline. The whole site follows it.
+- **Your starting point** (home page and My progress): pick your level and add your bodyweight (and sex, if you like). You'll see your starting weights for bench, squat, deadlift, and overhead press, and every plan now suggests a starting weight for each lift the first time ("Start with about 140 lb, from your level and bodyweight"). A higher level gives heavier weights, so it pushes you. Once you log a set, your real numbers take over. The Fitness Coach uses them too.
+- **An equipment icon next to every exercise**: bodyweight, dumbbells, barbell, machine, cable, or cardio, in plans, the exercise library, and Fitness Coach workouts.
+- **Exercise library:** a new Equipment filter. Pick "Dumbbells" to see everything you can do with dumbbells (plus bodyweight moves).
+- **Training at home:** home plans now ask "What do you have?" Nothing, or Dumbbells. One tap switches between the No gym needed and Dumbbells only plans. The cover's "Train at home" says "With or without dumbbells".
+- Everything here also shows in the phone app on its next open. Starting weights are estimates from common strength standards, set on the light side; nothing leaves your device.
+
 ## 2026-10-12 (A clearer front cover)
 
 - The front cover keeps its photo and big headline, but now gets people going in one tap. **What do you want to do?** offers six choices (Brand new, Lose fat, Build muscle, Get stronger, Train at home, Not sure?) that open the right plan or guide.

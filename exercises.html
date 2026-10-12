@@ -24,10 +24,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261012-13">
-    <script src="exercises.js?v=20261012-13" defer></script>
-    <script src="muscle-art.js?v=20261012-13" defer></script>
-    <script src="script.js?v=20261012-13" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261012-14">
+    <script src="exercises.js?v=20261012-14" defer></script>
+    <script src="muscle-art.js?v=20261012-14" defer></script>
+    <script src="script.js?v=20261012-14" defer></script>
 </head>
 
 <body data-page="exercises">
@@ -62,6 +62,15 @@
                     <label><input type="radio" name="muscle" value="arms"><span>Arms</span></label>
                     <label><input type="radio" name="muscle" value="core"><span>Core</span></label>
                     <label><input type="radio" name="muscle" value="cardio"><span>Cardio</span></label>
+                </fieldset>
+                <fieldset class="segmented compact library-filter library-equip" id="library-equip">
+                    <legend>Equipment</legend>
+                    <label><input type="radio" name="equip" value="" checked><span>Any</span></label>
+                    <label><input type="radio" name="equip" value="body"><span><span class="equip equip-body" aria-hidden="true"></span>None</span></label>
+                    <label><input type="radio" name="equip" value="db"><span><span class="equip equip-db" aria-hidden="true"></span>Dumbbells</span></label>
+                    <label><input type="radio" name="equip" value="barbell"><span><span class="equip equip-barbell" aria-hidden="true"></span>Barbell</span></label>
+                    <label><input type="radio" name="equip" value="machine"><span><span class="equip equip-machine" aria-hidden="true"></span>Machine</span></label>
+                    <label><input type="radio" name="equip" value="cable"><span><span class="equip equip-cable" aria-hidden="true"></span>Cable</span></label>
                 </fieldset>
             </div>
             <p class="library-count" id="library-count" role="status"></p>

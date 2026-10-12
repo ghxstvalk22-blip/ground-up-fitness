@@ -447,6 +447,50 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // Your starting point: level + bodyweight give starting weights everywhere
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            check(await page.locator(".hero-level .level-bar input").count() === 4 && await page.locator("#setup .setup-form").count() === 1, "the cover has a level picker and the home page has Your starting point");
+            await page.fill("#setup-bw-0", "180");
+            await page.selectOption("#setup-sex-0", "male");
+            await page.locator('#setup input[value="Intermediate"]').check({ force: true });
+            await page.waitForTimeout(100);
+            const benchMid = Number((await page.locator(".setup-weights li").first().textContent()).replace(/\D+/g, ""));
+            check(benchMid >= 120 && benchMid <= 160 && await page.locator('.hero-level input[value="Intermediate"]').isChecked(), `starting weights show for your level, and the cover picker follows (bench ${benchMid} lb)`);
+            await page.locator('.hero-level input[value="Expert"]').check({ force: true });
+            await page.waitForTimeout(100);
+            const benchTop = Number((await page.locator(".setup-weights li").first().textContent()).replace(/\D+/g, ""));
+            check(benchTop > benchMid, `a higher level gives heavier starting weights (${benchMid} -> ${benchTop} lb)`);
+            await page.evaluate(() => { localStorage.removeItem("gu-log"); setLevel("Intermediate"); });
+            await page.goto(url("programs.html", "#program-strength-3"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            const targets = await page.locator(".ex-target").allTextContents();
+            check(targets.some((t) => /from your level and bodyweight/.test(t)), `plans suggest a starting weight for each lift (${(targets.find((t) => /level and bodyweight/.test(t)) || "").slice(0, 70)})`);
+            check(await page.locator(".ex-name .equip").count() >= 3 && await page.locator(".ex-name .equip-barbell").count() >= 1, "each exercise in a plan shows an equipment icon");
+            // At home: switch between nothing and dumbbells
+            await page.goto(url("programs.html", "#program-home"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator("#home-kit").isVisible(), "home plans ask what equipment you have");
+            await page.locator('#home-kit input[value="dumbbell"]').check({ force: true });
+            await page.waitForTimeout(300);
+            check(/Dumbbells only/.test(await page.locator("#program-head").textContent()) && await page.locator(".ex-name .equip-db").count() >= 1, "picking Dumbbells switches to the dumbbell plan");
+            await page.evaluate(() => { ["gu-profile", "gu-level", "gu-last-plan"].forEach((k) => localStorage.removeItem(k)); });
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Exercise library: filter by equipment, with icons
+        {
+            const { page, errors } = await openPage(browser, "exercises.html", viewport);
+            const all = await page.locator(".library-card").count();
+            await page.locator('input[name="equip"][value="db"]').check({ force: true });
+            const dbCards = await page.locator(".library-card").count();
+            const kinds = await page.locator(".library-card .equip").evaluateAll((els) => [...new Set(els.map((e) => e.className.match(/equip-(\w+)/)[1]))]);
+            check(dbCards > 10 && dbCards < all && kinds.every((k) => k === "db" || k === "body"), `the Dumbbells filter shows dumbbell and bodyweight moves (${dbCards} of ${all})`);
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
         // Coach: ask for muscles, get a workout, start it on the Plans page
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);

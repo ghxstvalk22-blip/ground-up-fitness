@@ -2842,3 +2842,75 @@ main, .page-banner, .hero { animation: page-in 0.45s ease-out both; }
 }
 @media print { .coach-fab, .coach { display: none !important; } }
 body:has(#rest-timer:not([hidden])) .coach-fab { display: none; }
+
+
+/* ---------- Your starting point (home page and My progress) ---------- */
+.setup-card { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 40px; align-items: start; }
+.setup-intro h2 { margin-top: 0; }
+.setup-form { padding: 24px; border: 1px solid var(--line); border-top: 4px solid var(--volt); background-color: var(--surface); }
+.setup-level { margin-bottom: 8px; }
+.setup-level legend { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+.setup-level span { min-height: 44px; display: flex !important; align-items: center; }
+.setup-level-info { margin: 0 0 18px; font-size: 0.88rem; color: var(--muted); }
+.setup-form .field-row { grid-template-columns: 1fr 1fr 1fr; }
+.setup-form input, .setup-form select { font-size: 16px; }
+.setup-preview { margin: 4px 0 12px; }
+.setup-preview p { margin: 0 0 8px; }
+.setup-preview-title { font-weight: 700; }
+.setup-preview-title span { font-weight: 400; color: var(--muted); }
+.setup-weights { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.setup-weights li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; background-color: var(--paper); border-left: 3px solid var(--volt); }
+.setup-weights span { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.setup-weights strong { font-family: var(--display); font-size: 1.35rem; font-weight: 900; font-stretch: 80%; }
+@media (max-width: 900px) {
+    .setup-card { grid-template-columns: 1fr; gap: 16px; }
+    .setup-weights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+    .setup-form { padding: 16px; }
+    .setup-form .field-row { grid-template-columns: 1fr 1fr; }
+    .setup-form .field-row .field:last-child { grid-column: 1 / -1; }
+    .setup-level label { flex: 1 1 auto; }
+    .setup-level span { justify-content: center; padding: 8px 6px; font-size: 0.82rem; }
+}
+
+/* The level picker on the dark home cover */
+.hero-level { margin: 1.4rem 0 0; }
+.hero-level .level-bar legend { color: #ffffff; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.hero-level .segmented span { min-height: 44px; display: flex; align-items: center; background-color: rgba(0, 0, 0, 0.5); border-color: rgba(255, 255, 255, 0.4); color: #ffffff; }
+.hero-level .segmented input:checked + span { background-color: #ffffff; border-color: #ffffff; color: #000000; }
+.hero-setup-link { display: inline-block; margin-top: 10px; min-height: 44px; line-height: 44px; color: #ffffff; font-size: 0.86rem; font-weight: 700; text-decoration: underline; text-decoration-color: var(--volt); text-underline-offset: 3px; }
+.hero-setup-link::after { content: " \2193"; color: var(--volt); }
+@media (max-width: 760px) {
+    .hero-level .segmented label { flex: 1 1 auto; }
+    .hero-level .segmented span { justify-content: center; padding: 6px 6px; font-size: 0.78rem; }
+    .hero-setup-link { margin-top: 2px; }
+}
+
+
+/* ---------- Equipment icons (next to every exercise) ----------
+   Drawn as masks so they take the text color and work in light and dark mode. */
+.equip { display: inline-flex; align-items: center; gap: 6px; vertical-align: -3px; margin-right: 8px; color: var(--ink); }
+.equip::before { content: ""; flex: none; width: 18px; height: 18px; background-color: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.equip.has-label { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-right: 0; }
+.equip.has-label::before { background-color: var(--ink); }
+.equip-barbell { --icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22square%22%3E%3Cpath d=%22M1 12h22%22/%3E%3Crect x=%224%22 y=%226%22 width=%223%22 height=%2212%22 fill=%22%23000%22/%3E%3Crect x=%2217%22 y=%226%22 width=%223%22 height=%2212%22 fill=%22%23000%22/%3E%3Cpath d=%22M8.5 9v6M15.5 9v6%22/%3E%3C/svg%3E"); }
+.equip-db { --icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22%3E%3Cpath d=%22M8 12h8%22/%3E%3Crect x=%223%22 y=%228%22 width=%225%22 height=%228%22 rx=%221%22 fill=%22%23000%22/%3E%3Crect x=%2216%22 y=%228%22 width=%225%22 height=%228%22 rx=%221%22 fill=%22%23000%22/%3E%3C/svg%3E"); }
+.equip-body { --icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Ccircle cx=%2212%22 cy=%224.5%22 r=%222.2%22 fill=%22%23000%22/%3E%3Cpath d=%22M12 8v7M6 10.5l6-1.5 6 1.5M12 15l-4 6M12 15l4 6%22/%3E%3C/svg%3E"); }
+.equip-machine { --icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22%3E%3Cpath d=%22M4 22V2h16v20%22/%3E%3Cpath d=%22M9 6h6M9 9h6M9 12h6%22 stroke-width=%222.4%22/%3E%3Cpath d=%22M12 12v6%22/%3E%3Cpath d=%22M8 18h8%22/%3E%3C/svg%3E"); }
+.equip-cable { --icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22%3E%3Ccircle cx=%2212%22 cy=%225%22 r=%223%22/%3E%3Cpath d=%22M12 8v9%22/%3E%3Cpath d=%22M8 17h8l-1 4H9z%22 fill=%22%23000%22/%3E%3C/svg%3E"); }
+.equip-cardio { --icon: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linejoin=%22round%22 stroke-linecap=%22round%22%3E%3Cpath d=%22M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z%22/%3E%3Cpath d=%22M3 12h4l2-3 3 6 2-3h7%22/%3E%3C/svg%3E"); }
+.coach-workout li .equip { margin-right: 6px; }
+.library-tags { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+/* At home: nothing or dumbbells */
+.home-kit { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0 0 18px; padding: 14px 16px; border: 1px solid var(--line); border-left: 4px solid var(--volt); background-color: var(--surface); }
+.home-kit p { margin: 0; font-weight: 700; }
+.home-kit .segmented label > span { min-height: 44px; display: flex; align-items: center; }
+.home-kit .segmented input:checked + span .equip { color: var(--paper); }
+.home-kit-note { flex-basis: 100%; font-size: 0.85rem; color: var(--muted); font-weight: 400 !important; }
+
+/* Icons inside segmented buttons: just the icon, no button styling of their own */
+.segmented span.equip { display: inline-flex; padding: 0; border: 0; background: none; margin: 0 6px 0 0; min-height: 0; vertical-align: -3px; color: inherit; }
+.segmented input:checked + span .equip { color: var(--paper); }
+.library-equip label > span { display: inline-flex; align-items: center; }

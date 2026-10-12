@@ -64,6 +64,7 @@ const FEATURES = [
     setupLibrary,
     setupMuscleMap,
     setupLevelBar,
+    setupStartingPoint,
     setupApp,
     setupCoach,
     setupWeightTrend,
@@ -1973,6 +1974,67 @@ function weightStep(name, unit, current = Infinity) {
     return unit === "kg" ? (legCompound ? 5 : 2.5) : (legCompound ? 10 : 5);
 }
 
+/* ---------- Starting weights ----------
+   Before someone has logged anything, a starting weight comes from their level and
+   bodyweight. Rough one-rep maxes as a multiple of bodyweight for men, by level
+   (Beginner, Intermediate, Advanced, Expert), in line with common strength standards;
+   women's are scaled down, and so is "prefer not to say", to start on the light side.
+   Real logged sets always take over from these. */
+const START_MAX = {
+    "Bench press": [0.5, 1.0, 1.3, 1.6],
+    "Back squat": [0.65, 1.25, 1.65, 2.0],
+    Deadlift: [0.8, 1.5, 2.0, 2.4],
+    "Overhead press": [0.33, 0.62, 0.8, 1.0],
+    "Barbell row": [0.4, 0.8, 1.05, 1.25]
+};
+const START_WOMEN = { "Bench press": 0.6, "Overhead press": 0.62, "Barbell row": 0.65, "Back squat": 0.75, Deadlift: 0.78 };
+// More moves, as a share of a big lift: [big lift, share, dumbbells (weight per hand)?]
+const START_EXTRA = {
+    "Lat pulldown": [["Bench press", 0.8]],
+    "Close-grip lat pulldown": [["Bench press", 0.8]],
+    "Seated cable row": [["Bench press", 0.8]],
+    "Single-arm dumbbell row": [["Barbell row", 0.4, true]],
+    "Chest-supported dumbbell row": [["Barbell row", 0.3, true]],
+    "Dumbbell curl": [["Bench press", 0.14, true]],
+    "Hammer curl": [["Bench press", 0.15, true]],
+    "Barbell curl": [["Bench press", 0.35]],
+    "EZ-bar curl": [["Bench press", 0.35]],
+    "Lateral raise": [["Overhead press", 0.16, true]],
+    "Dumbbell shoulder press": [["Overhead press", 0.42, true]],
+    "Triceps pushdown": [["Bench press", 0.35]],
+    "Rope pushdown": [["Bench press", 0.3]],
+    "Goblet squat": [["Back squat", 0.3]],
+    "Dumbbell Romanian deadlift": [["Deadlift", 0.25, true]],
+    "Hip thrust": [["Deadlift", 0.8]],
+    "Trap bar deadlift": [["Deadlift", 1.05]]
+};
+const BARBELL = /^(Bench press|Incline barbell press|Back squat|Front squat|Deadlift|Romanian deadlift|Overhead press|Barbell row|Hip thrust|Barbell curl)$/;
+function startMax(name, unit) {
+    const p = getProfile();
+    const bw = Number(p.bodyweight);
+    if (!bw) return null;
+    const body = toUnit(bw, p.unit, unit);
+    const i = levelRank(getLevel());
+    const base = (n) => (START_MAX[n] ? body * START_MAX[n][i] * (p.sex === "male" ? 1 : START_WOMEN[n]) : null);
+    if (START_MAX[name]) return { m: base(name), each: false };
+    const via = [...(typeof COACH_RATIOS === "object" && COACH_RATIOS[name] ? COACH_RATIOS[name] : []), ...(START_EXTRA[name] || [])];
+    for (const [from, share, each] of via) {
+        const b = base(from);
+        if (b) return { m: b * share, each: !!each };
+    }
+    return null;
+}
+// A weight to start with for sets of up to "high" reps, leaving 1 or 2 in the tank
+function startWeight(name, high, unit) {
+    const s = startMax(name, unit);
+    if (!s) return null;
+    const step = s.each ? (unit === "kg" ? 1 : 2.5) : unit === "kg" ? 2.5 : 5;
+    let w = Math.round(s.m / (1 + (high + 1) / 30) / step) * step;
+    if (BARBELL.test(name)) w = Math.max(w, unit === "kg" ? 20 : 45);   // the empty bar is the lightest a barbell gets
+    else w = Math.max(w, step);
+    return { w, each: s.each, bar: BARBELL.test(name) && w <= (unit === "kg" ? 20 : 45) };
+}
+
 // What to lift next time, based on last time (double progression)
 function nextTarget(name, dose, unit) {
     const entries = logFor(name);
@@ -1982,7 +2044,15 @@ function nextTarget(name, dose, unit) {
         // Fitness Coach workouts can carry a starting weight ("3 × 5 at 230 lb")
         const start = String(dose).match(/at (?:about )?(\d+(?:\.\d+)?) (lb|kg)/);
         if (start) return { first: true, text: `First time? Start at about ${trimNum(roundWeight(toUnit(Number(start[1]), start[2], unit), unit))} ${unit}. Log it and you'll get a target next time.` };
-        return { first: true, text: `First time? Pick a weight you could do for about 2 more reps than ${d.high}. Log it and you'll get a target next time.` };
+        // From their level and bodyweight
+        const sw = startWeight(name, d.high, unit);
+        if (sw) {
+            const how = sw.bar ? "just the empty bar" : `about ${trimNum(sw.w)} ${unit}${sw.each ? " in each hand" : ""}`;
+            return { first: true, weight: sw.each ? 0 : sw.w, reps: d.high, start: true,
+                text: `First time? Start with ${how} (from your level and bodyweight). If ${d.high} reps feel easy, go up next set; if your form slips, go lighter.` };
+        }
+        const noBody = !Number(getProfile().bodyweight) && (START_MAX[name] || START_EXTRA[name]);
+        return { first: true, text: `First time? Pick a weight you could do for about 2 more reps than ${d.high}. Log it and you'll get a target next time.${noBody ? " Add your bodyweight under Your starting point (home page) for a suggested weight." : ""}` };
     }
     const last = entries[entries.length - 1];
     const sets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, unit), unit), r: s.r }));
@@ -2023,6 +2093,27 @@ function saveCardio(entry) {
     window.dispatchEvent(new CustomEvent("logchange", { detail: { cardio: true } }));
 }
 const distUnit = (unit) => (unit === "kg" ? "km" : "mi");
+/* What each exercise needs, for the small equipment icon shown next to it everywhere.
+   Worked out from the guide's kit and equipment text, so new exercises get one automatically. */
+const EQUIP_LABEL = { body: "Bodyweight", db: "Dumbbells", barbell: "Barbell", machine: "Machine", cable: "Cable", cardio: "Cardio" };
+function equipOf(name) {
+    const x = typeof EXERCISES === "object" && EXERCISES[name];
+    if (!x) return "body";
+    if (/heart and lungs/i.test(x.m)) return "cardio";
+    if (x.kit === "none") return "body";
+    if (x.kit === "db" || /^(one|two) (light |heavy )?dumbbell/i.test(x.eq)) return "db";
+    if (/pull-up bar|ab wheel|stability ball|dip bars/i.test(x.eq) && !/machine/i.test(x.eq.split(" or ")[0])) return "body";
+    if (/cable/i.test(x.eq)) return "cable";
+    if (/machine|pec deck|row station|sled|back extension/i.test(x.eq)) return "machine";
+    if (/barbell|ez|bar\b/i.test(x.eq)) return "barbell";
+    return "body";
+}
+// The icon itself is drawn in CSS (.equip-*), so it also works inside saved Coach messages
+const equipIcon = (name, showLabel = false) => {
+    const k = equipOf(name);
+    return showLabel ? `<span class="equip equip-${k} has-label"><span class="equip-label">${EQUIP_LABEL[k]}</span></span>`
+        : `<span class="equip equip-${k}" title="${EQUIP_LABEL[k]}" aria-hidden="true"></span>`;
+};
 const isCardio = (name) => typeof EXERCISES === "object" && EXERCISES[name] && /heart and lungs/i.test(EXERCISES[name].m);
 
 // Minutes of cardio in the Monday-to-Sunday week that contains `date`
@@ -2144,6 +2235,21 @@ function setupPrograms() {
             r.checked = Number(r.value) === state.days;
         });
 
+        // At home: switch between bodyweight only and dumbbells
+        const homeKit = document.getElementById("home-kit");
+        if (homeKit) {
+            const atHome = state.goal === "home" || state.goal === "dumbbell";
+            homeKit.hidden = !atHome;
+            if (atHome && PROGRAMS.dumbbell) {
+                homeKit.innerHTML = `<p>Training at home? What do you have?</p>
+                    <fieldset class="segmented compact"><legend class="visually-hidden">Equipment at home</legend>
+                        <label><input type="radio" name="home-kit" value="home"${state.goal === "home" ? " checked" : ""}><span><span class="equip equip-body" aria-hidden="true"></span>Nothing</span></label>
+                        <label><input type="radio" name="home-kit" value="dumbbell"${state.goal === "dumbbell" ? " checked" : ""}><span><span class="equip equip-db" aria-hidden="true"></span>Dumbbells</span></label>
+                    </fieldset>
+                    ${state.goal === "dumbbell" && !levelAtLeast("Intermediate") ? `<p class="home-kit-note">This plan is written for Intermediate lifters. As a beginner, start with light dumbbells and stop each set with 2 or 3 reps left.</p>` : ""}`;
+            }
+        }
+
         els.head.innerHTML = `
             <div>
                 <h3>${escapeHtml(p.name)} &middot; ${state.goal === "custom" ? "1 session" : `${state.days} days`} <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
@@ -2232,7 +2338,7 @@ function setupPrograms() {
         // Week-by-week plans set the next step themselves
         if (cardio && PROGRAMS[state.goal].plans[state.days].weeks && target && !target.first) target = { ...target, text: "Stick to this week's runs. The plan steps up next week, and repeating a week is fine." };
         // The "first time" tip shows once per day card, not on every exercise
-        if (target && target.first) {
+        if (target && target.first && !target.start) {
             if (firstTipShown.has(di)) target = null;
             else firstTipShown.add(di);
         }
@@ -2251,7 +2357,7 @@ function setupPrograms() {
             <li class="ex-row" data-slot="${key}">
                 <input type="checkbox" id="${id}" data-key="${key}" ${done.has(key) ? "checked" : ""} aria-label="Done: ${escapeHtml(x.name)}">
                 <div class="ex-main">
-                    <label for="${id}" class="ex-name">${escapeHtml(x.name)}</label>
+                    <label for="${id}" class="ex-name">${equipIcon(x.name)}${escapeHtml(x.name)}</label>
                     <span class="ex-dose">${escapeHtml(dose.text)}</span>
                     ${badges ? `<span class="ex-badges">${badges}</span>` : ""}
                     ${x.rest ? (restSeconds(x.rest)
@@ -2506,6 +2612,15 @@ function setupPrograms() {
         state.days = Number(r.value);
         render({ syncUrl: true });
     }));
+    const homeKitBox = document.getElementById("home-kit");
+    if (homeKitBox) homeKitBox.addEventListener("change", (e) => {
+        if (e.target.name !== "home-kit" || !PROGRAMS[e.target.value]) return;
+        state.goal = e.target.value;
+        state.week = null;
+        render({ syncUrl: true });
+        const again = homeKitBox.querySelector(`input[value="${e.target.value}"]`);
+        if (again) again.focus();
+    });
 
     // Personal settings
     if (els.profileForm) {
@@ -2699,6 +2814,7 @@ function setupLibrary() {
     const search = document.getElementById("library-search");
     const count = document.getElementById("library-count");
     const radios = [...document.querySelectorAll('input[name="muscle"]')];
+    const kits = [...document.querySelectorAll('input[name="equip"]')];
     const names = Object.keys(EXERCISES).sort((a, b) => a.localeCompare(b));
     const group = Object.fromEntries(names.map((n) => [n, libraryGroup(n)]));
     const label = { legs: "Legs", chest: "Chest", back: "Back", shoulders: "Shoulders", arms: "Arms", core: "Core", cardio: "Cardio" };
@@ -2706,7 +2822,10 @@ function setupLibrary() {
     function render() {
         const q = search.value.trim().toLowerCase();
         const muscle = (radios.find((r) => r.checked) || {}).value || "";
-        const shown = names.filter((n) => (!muscle || group[n] === muscle)
+        const kit = (kits.find((r) => r.checked) || {}).value || "";
+        // "Dumbbells" also shows bodyweight moves, since anyone with dumbbells can do those too
+        const kitOk = (n) => !kit || equipOf(n) === kit || (kit === "db" && equipOf(n) === "body" && !isCardio(n));
+        const shown = names.filter((n) => (!muscle || group[n] === muscle) && kitOk(n)
             && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq}`.toLowerCase().includes(q)));
         count.textContent = shown.length
             ? `${shown.length} exercise${shown.length === 1 ? "" : "s"}${muscle ? ` for ${label[muscle].toLowerCase()}` : ""}`
@@ -2715,7 +2834,7 @@ function setupLibrary() {
             const x = EXERCISES[n];
             return `
                 <li class="library-card">
-                    <span class="library-tag">${label[group[n]]}</span>
+                    <span class="library-tags"><span class="library-tag">${label[group[n]]}</span>${equipIcon(n, true)}</span>
                     <h3>${escapeHtml(n)}</h3>
                     <p class="library-muscles">${escapeHtml(x.m)}</p>
                     <p class="library-eq">${escapeHtml(x.eq)}</p>
@@ -2726,6 +2845,7 @@ function setupLibrary() {
     }
 
     search.addEventListener("input", render);
+    kits.forEach((r) => r.addEventListener("change", render));
     radios.forEach((r) => r.addEventListener("change", () => {
         history.replaceState(null, "", r.value ? `#${r.value}` : location.pathname);
         render();
@@ -3048,6 +3168,8 @@ function coachKnownMax(name, unit) {
     const entries = typeof logFor === "function" ? logFor(name) : [];
     const lastEntry = entries[entries.length - 1];
     if (lastEntry && lastEntry.sets && lastEntry.sets.some((x) => x.w > 0)) return { m: sessionBest(lastEntry, unit), from: "your log" };
+    const start = typeof startMax === "function" ? startMax(name, unit) : null;
+    if (start && !start.each) return { m: start.m, from: "your level and bodyweight" };
     return null;
 }
 /* Starting guesses for helper lifts, from a big lift we know: [known lift, share of its max, dumbbells?].
@@ -3355,7 +3477,7 @@ function setupCoach() {
         const focusStep = w.focus ? weightStep(w.focus, unit) : 0;
         return `<p class="coach-heard"><span>What I heard</span> ${escapeHtml(heard.join(" · "))}</p>
             <p>Here's your <strong>${escapeHtml(w.title)}</strong> workout: ${w.items.length} exercises, about ${w.minutes} minutes${kitNote}. Set for <strong>${lvl}</strong>.</p>
-            <ol class="coach-workout">${w.items.map((x) => `<li><button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.w ? ` at <strong>${x.guess ? "about " : ""}${escapeHtml(trimNum(x.w))} ${unit}</strong>${x.each ? " each hand" : ""}` : ""}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
+            <ol class="coach-workout">${w.items.map((x) => `<li>${equipIcon(x.n)}<button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.w ? ` at <strong>${x.guess ? "about " : ""}${escapeHtml(trimNum(x.w))} ${unit}</strong>${x.each ? " each hand" : ""}` : ""}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
             ${w.focus ? `<p><strong>How often:</strong> ${escapeHtml(w.focus.toLowerCase())} 2 times a week, with at least 2 days between. <strong>To keep improving:</strong> when you get the top of the rep range on every set, add ${trimNum(focusStep)} ${unit} next time. Miss the bottom of the range two sessions in a row? Drop about 10% and build back up.</p>` : ""}
             ${known.length ? `<p class="coach-fine">Weights are worked out from ${escapeHtml(known.map((k) => `your ${k.n.toLowerCase()} (${k.from})`).join(" and "))} so each set ends with 1 or 2 reps left. ${lvl === "Beginner" ? "Start about 10% lighter the first week while you learn the movement." : "If the first set feels too heavy or your form slips, drop 5 to 10%."}${w.items.some((x) => x.guess) ? " Weights marked \"about\" are starting guesses from your main lift; adjust after the first set." : ""}</p>` : ""}
             ${unweighed.length ? `<p class="coach-fine">${known.length ? "For the rest, pick" : "Pick"} a weight you can lift for the top of the rep range with 1 or 2 reps left.${!known.length && (w.focus || w.goal === "strength" || w.items.some((x) => COACH_LIFTS.some(([, n]) => n === x.n))) ? ` Tell me your numbers, like "I bench 185 for 5", and I'll put exact weights on these.` : ""}</p>` : ""}
@@ -3624,7 +3746,7 @@ function setupCoach() {
             lastReq = null;
             saveState();
             html += `<p class="coach-h"><strong>${escapeHtml(workout.title)}</strong></p>
-                <ol class="coach-workout">${workout.items.map((x) => `<li><button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
+                <ol class="coach-workout">${workout.items.map((x) => `<li>${equipIcon(x.n)}<button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
                 <div class="coach-actions"><button type="button" class="btn btn-primary btn-compact" data-coach-start>Start this workout</button></div>`;
         }
         say(`<div class="coach-ai">${html}</div>`);
@@ -3726,6 +3848,96 @@ function setupApp() {
    FEATURE: Level picker. Any element with data-level-bar gets the
    Beginner / Intermediate / Advanced / Expert switch.
    ========================================================= */
+/* =========================================================
+   FEATURE: Your starting point (home page and My progress)
+   Pick a level, add bodyweight (and sex, optional), and every plan and the
+   Fitness Coach suggest starting weights that fit. Saved on this device only,
+   in the same profile the Plans page uses.
+   ========================================================= */
+function setupStartingPoint() {
+    const spots = [...document.querySelectorAll("[data-setup]")];
+    if (!spots.length) return;
+    spots.forEach((spot, n) => {
+        spot.innerHTML = `
+            <div class="setup-card">
+                <div class="setup-intro">
+                    <p class="kicker">Your starting point</p>
+                    <h2 id="setup-title-${n}">Get weights that fit you</h2>
+                    <p class="section-lede">Pick your level and add your bodyweight. Every plan and the Fitness Coach will suggest a starting weight for each lift, and push you up as you log your sets.</p>
+                </div>
+                <form class="setup-form" novalidate aria-labelledby="setup-title-${n}">
+                    <fieldset class="segmented setup-level">
+                        <legend>Your level</legend>
+                        ${LEVELS.map((l) => `<label><input type="radio" name="setup-level-${n}" value="${l}"><span>${l}</span></label>`).join("")}
+                    </fieldset>
+                    <p class="setup-level-info"></p>
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="setup-bw-${n}">Bodyweight</label>
+                            <input id="setup-bw-${n}" name="bodyweight" type="number" inputmode="decimal" min="50" max="700" placeholder="180">
+                        </div>
+                        <div class="field">
+                            <label for="setup-unit-${n}">Units</label>
+                            <select id="setup-unit-${n}" name="unit"><option value="lb">Pounds (lb)</option><option value="kg">Kilograms (kg)</option></select>
+                        </div>
+                        <div class="field">
+                            <label for="setup-sex-${n}">Sex <span class="field-hint">(optional)</span></label>
+                            <select id="setup-sex-${n}" name="sex"><option value="">Prefer not to say</option><option value="female">Female</option><option value="male">Male</option></select>
+                        </div>
+                    </div>
+                    <div class="setup-preview" aria-live="polite"></div>
+                    <p class="fine-print">Saved only on this device. These are starting points: your logged sets take over from the first workout.</p>
+                </form>
+            </div>`;
+        const form = spot.querySelector("form");
+        form.addEventListener("change", (e) => {
+            if (e.target.name === `setup-level-${n}`) { setLevel(e.target.value); return; }
+            save();
+        });
+        form.addEventListener("input", (e) => { if (e.target.name === "bodyweight") save(); });
+        form.addEventListener("submit", (e) => e.preventDefault());
+        function save() {
+            const raw = store.get(PROFILE_KEY, {}) || {};
+            const bw = Number(form.elements.bodyweight.value);
+            raw.bodyweight = bw >= 50 && bw <= 700 ? String(bw) : "";
+            raw.unit = ["lb", "kg"].includes(form.elements.unit.value) ? form.elements.unit.value : "lb";
+            raw.sex = ["", "female", "male"].includes(form.elements.sex.value) ? form.elements.sex.value : "";
+            store.set(PROFILE_KEY, raw);
+            render(false);
+        }
+    });
+    const LIFTS = [["Bench press", "Bench press"], ["Back squat", "Squat"], ["Deadlift", "Deadlift"], ["Overhead press", "Overhead press"]];
+    function render(fill = true) {
+        const p = getProfile(), lvl = getLevel();
+        spots.forEach((spot) => {
+            const form = spot.querySelector("form");
+            if (fill) {
+                form.querySelectorAll(".setup-level input").forEach((r) => { r.checked = r.value === lvl; });
+                if (document.activeElement !== form.elements.bodyweight) form.elements.bodyweight.value = p.bodyweight;
+                form.elements.unit.value = p.unit;
+                form.elements.sex.value = p.sex;
+            }
+            spot.querySelector(".setup-level-info").textContent = LEVEL_INFO[lvl];
+            const link = document.querySelector(".hero-setup-link");
+            if (link) link.textContent = Number(p.bodyweight) ? "See your starting weights" : "Add your bodyweight for starting weights";
+            const preview = spot.querySelector(".setup-preview");
+            if (!Number(p.bodyweight)) {
+                preview.innerHTML = `<p>Add your bodyweight to see your starting weights.</p>`;
+                return;
+            }
+            const rows = LIFTS.map(([name, label]) => {
+                const sw = startWeight(name, 8, p.unit);
+                return sw ? `<li><span>${escapeHtml(label)}</span><strong>${sw.bar ? "Empty bar" : `${trimNum(sw.w)} ${p.unit}`}</strong></li>` : "";
+            }).join("");
+            preview.innerHTML = `<p class="setup-preview-title">Your starting weights at <strong>${escapeHtml(lvl)}</strong> <span>(sets of 8)</span></p>
+                <ul class="setup-weights">${rows}</ul>
+                <a class="btn btn-primary btn-compact" href="programs.html">See them in your plan</a>`;
+        });
+    }
+    window.addEventListener("levelchange", () => render(true));
+    render(true);
+}
+
 function setupLevelBar() {
     const bars = [...document.querySelectorAll("[data-level-bar]")];
     if (!bars.length) return;
@@ -3733,7 +3945,7 @@ function setupLevelBar() {
         const compact = bar.hasAttribute("data-compact");
         bar.innerHTML = `
             <fieldset class="segmented level-bar${compact ? " is-compact" : ""}">
-                <legend>${compact ? "Detail level" : "Your level"}</legend>
+                <legend>${escapeHtml(bar.dataset.label || (compact ? "Detail level" : "Your level"))}</legend>
                 ${LEVELS.map((l) => `<label><input type="radio" name="level-${n}" value="${l}"><span>${l}</span></label>`).join("")}
             </fieldset>
             ${compact ? "" : `<p class="level-info" aria-live="polite"></p>`}`;
