@@ -2175,11 +2175,39 @@ select, input, textarea {
     a { color: #000000; }
 }
 
+/* ---------- Calm page changes ---------- */
+@keyframes page-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+main, .page-banner, .hero { animation: page-in 0.45s ease-out both; }
+.is-leaving main, .is-leaving .page-banner, .is-leaving .hero, .is-leaving .next-steps, .is-leaving .site-footer {
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.page-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 200;
+    height: 3px;
+    width: 0;
+    background-color: var(--volt);
+    pointer-events: none;
+}
+.is-leaving .page-progress { width: 85%; transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* "You are here" trail */
+.breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 18px; font-size: 0.82rem; color: #cfcfcf; }
+.breadcrumbs a { color: #ffffff; text-decoration: none; border-bottom: 1px solid rgba(255, 255, 255, 0.5); }
+.breadcrumbs a:hover { border-bottom-color: var(--volt); }
+.breadcrumbs [aria-current] { color: #ffffff; font-weight: 700; }
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     .hero-steps .steps-line { animation: none; stroke-dashoffset: 0; }
     .ticker-track { animation: none; }
+    main, .page-banner, .hero { animation: none; }
+    .is-leaving main, .is-leaving .page-banner, .is-leaving .hero { opacity: 1; transform: none; }
     .pro-card, .pro-card:hover { transition: none; transform: none; }
     .progress-fill { transition: none; }
     .submenu, .submenu-toggle::before { transition: none !important; }

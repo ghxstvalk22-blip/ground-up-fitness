@@ -135,6 +135,7 @@ async function openPage(browser, file, viewport, hash = "") {
             if (await page.locator(".menu-toggle").isVisible()) await page.locator(".menu-toggle").click();
             await Promise.all([page.waitForNavigation(), page.locator('#site-nav .nav-link[href="tools.html"]').click()]);
             check(page.url().endsWith("tools.html"), "clicking the Tools tab opens tools.html");
+            check(await page.locator(".breadcrumbs [aria-current]").textContent() === "Tools", "inner pages show a 'you are here' trail");
             await page.close();
         }
 

@@ -47,6 +47,7 @@ const FEATURES = [
     setupTools,
     setupContactForm,
     setupLinks,      // keep after features that add routes
+    setupPageTransitions,
     setupJump
 ];
 
@@ -293,6 +294,16 @@ function setupLayout() {
 </footer>`;
     }
 
+    // "You are here" trail at the top of inner pages
+    const banner = document.querySelector(".page-banner-inner");
+    const here = SITE_NAV.find((n) => n.page === page);
+    if (banner && here && !banner.querySelector(".breadcrumbs")) {
+        banner.insertAdjacentHTML("afterbegin", `
+            <nav class="breadcrumbs" aria-label="You are here">
+                <a href="index.html">Ground Up Fitness</a><span aria-hidden="true">&rsaquo;</span><span aria-current="page">${escapeHtml(here.label)}</span>
+            </nav>`);
+    }
+
     if (!document.getElementById("jump")) {
         document.body.insertAdjacentHTML("beforeend", `
 <dialog id="jump" class="jump" aria-label="Search the site">
@@ -507,6 +518,34 @@ function setupLinks() {
 
     // Opening a shared link like index.html#program-fatloss-4
     if (location.hash) requestAnimationFrame(() => goTo(location.hash, { push: false }));
+}
+
+/* =========================================================
+   FEATURE: Calm page changes
+   Moving to another page fades the current one out with a thin
+   loading bar, then the new page fades and slides in, so the change
+   is visible and nobody loses their place. Skipped for people who
+   ask their device to reduce motion.
+   ========================================================= */
+function setupPageTransitions() {
+    if (!document.querySelector(".page-progress")) {
+        document.body.insertAdjacentHTML("afterbegin", '<div class="page-progress" aria-hidden="true"></div>');
+    }
+    // Coming back with the browser's Back button: make sure the page isn't left faded out
+    window.addEventListener("pageshow", () => document.documentElement.classList.remove("is-leaving"));
+
+    document.addEventListener("click", (e) => {
+        const a = e.target.closest("a[href]");
+        if (!a || e.defaultPrevented || a.target === "_blank" || a.hasAttribute("download")) return;
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        let url;
+        try { url = new URL(a.href, location.href); } catch (err) { return; }
+        if (url.origin !== location.origin || isSamePage(a.href) || !/\.html$|\/$/.test(url.pathname)) return;
+        if (reduceMotion.matches) return; // go straight there
+        e.preventDefault();
+        document.documentElement.classList.add("is-leaving");
+        setTimeout(() => { location.href = url.href; }, 260);
+    });
 }
 
 /* =========================================================
