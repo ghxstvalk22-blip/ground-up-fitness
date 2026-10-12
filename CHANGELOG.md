@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Fitness Coach AI costs less)
+
+- Fitness Coach now uses Claude Haiku, Anthropic's low-cost model: about a twentieth of a cent per answer instead of about a cent. Its instructions now tell it to answer exactly what was asked first, stick to well-established advice, say so when something depends on the person, and keep answers focused. It also sends less of the past conversation with each question, which saves more.
+
 ## 2026-10-12 (Fitness Coach AI switched on)
 
 - Fitness Coach is now connected to Claude through the site's own Cloudflare server, so it can answer complex questions and build detailed plans. The API key stays on that server, never in the website. If the AI can't be reached, the built-in coach still answers.

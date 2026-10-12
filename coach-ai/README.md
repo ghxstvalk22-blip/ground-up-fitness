@@ -25,8 +25,8 @@ It takes about 15 minutes. You need two free accounts: Anthropic (for the AI) an
 5. Go back to the Worker's **Settings > Variables and Secrets** and add:
    - `ANTHROPIC_API_KEY`, type **Secret**, value: the key from step 1
    - `ALLOWED_ORIGINS`, type **Text**, value: `https://ghxstvalk22-blip.github.io`
-   - Optional: `MODEL`, type **Text**, value `claude-haiku-5-5` for a much cheaper,
-     simpler coach. Without it, the coach uses `claude-sonnet-5-5` for more detailed answers.
+   - Optional: `MODEL`, type **Text**, value `claude-sonnet-5-5` for longer, deeper answers
+     (about 20 times the cost). Without it, the coach uses `claude-haiku-5-5`, the low-cost model.
 6. Copy the Worker's address. It looks like `https://ground-up-coach.yourname.workers.dev`.
 
 ## 3. Switch it on in the site
@@ -37,9 +37,10 @@ Send the Worker address to Claude (or edit it yourself):
 
 ## What it costs
 
-You pay Anthropic for each answer. With `claude-sonnet-5-5` (about $2 per million tokens (word pieces)
-in and $10 per million out), a typical answer costs around one cent. `claude-haiku-5-5` costs
-about one twentieth of that. Cloudflare's free plan covers the server.
+You pay Anthropic for each answer. The default, `claude-haiku-5-5` ($0.10 per million tokens in,
+$0.50 per million out), costs roughly a twentieth of a cent per answer: about 2,000 answers per $1.
+`claude-sonnet-5-5` costs about 20 times more (around a cent per answer). Cloudflare's free plan
+covers the server.
 
 ## Safety and privacy
 

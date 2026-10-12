@@ -3563,7 +3563,7 @@ function setupCoach() {
             tpl.content.querySelectorAll("li").forEach((li) => li.prepend("- "));
             tpl.content.querySelectorAll("p, li, ol, ul").forEach((el) => el.append("\n"));
             return { role: m.who === "you" ? "user" : "assistant", content: tpl.content.textContent.replace(/\n{3,}/g, "\n\n").trim().slice(0, 2000) };
-        }).filter((m) => m.content).slice(-12);
+        }).filter((m) => m.content).slice(-8);
     }
 
     // Ask the AI: show what it's doing while it reads and thinks, then the answer.
