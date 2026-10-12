@@ -57,6 +57,7 @@ const FEATURES = [
     setupLibrary,
     setupMuscleMap,
     setupLevelBar,
+    setupApp,
     setupWeightTrend,
     setupDashboard,
     setupAccount,
@@ -117,7 +118,8 @@ const SITE_NAV = [
         ["Will lifting make me bulky?", "", "basics.html#faq-bulky"],
         ["Cardio or weights for fat loss?", "", "basics.html#faq-cardio"],
         ["How much protein do I need?", "", "basics.html#faq-protein"],
-        ["Should women train differently?", "", "basics.html#faq-women"]
+        ["Should women train differently?", "", "basics.html#faq-women"],
+        ["Use it like an app on your phone", "", "basics.html#faq-app"]
     ] },
     { label: "Contact", href: "contact.html", page: "contact", items: [
         ["Send a message", "Any question at all", "contact.html#contact-general"],
@@ -283,6 +285,21 @@ function setupLayout() {
         <button class="theme-toggle" type="button" aria-pressed="false">Dark mode</button>
     </div>
 </header>`;
+    }
+
+    // Phones: an app-style tab bar along the bottom with the four places people use most
+    const TABS = [
+        ["home", "index.html", "Home", '<path d="M4 11.5 12 5l8 6.5V20h-5.5v-5h-5v5H4z"/>'],
+        ["programs", "programs.html", "Plans", '<path d="M5 5h14v3H5zM5 10.5h14v3H5zM5 16h9v3H5z"/>'],
+        ["exercises", "exercises.html", "Exercises", '<path d="M2 10h3V8h2v8H5v-2H2zM22 10h-3V8h-2v8h2v-2h3zM8 11h8v2H8z"/>'],
+        ["me", "me.html", "Progress", '<path d="M4 19h16v2H4zM5 12h3v6H5zM10.5 8h3v10h-3zM16 4h3v14h-3z"/>']
+    ];
+    if (!document.querySelector(".tabbar")) {
+        document.body.insertAdjacentHTML("beforeend", `
+<nav class="tabbar" aria-label="Quick links">
+    ${TABS.map(([key, href, label, icon]) => `<a href="${href}"${key === page ? ' aria-current="page"' : ""}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${icon}</svg><span>${label}</span></a>`).join("")}
+</nav>`);
+        document.body.classList.add("has-tabbar");
     }
 
     const next = NEXT_STEPS[page];
@@ -2682,6 +2699,47 @@ function setupLibrary() {
     const match = radios.find((r) => r.value && r.value === fromHash);
     if (match) match.checked = true;
     render();
+}
+
+/* =========================================================
+   FEATURE: Phone app. Works offline (sw.js) and, on a phone, offers
+   once to add Ground Up to the home screen so it opens like an app.
+   ========================================================= */
+function setupApp() {
+    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+        navigator.serviceWorker.register("sw.js").catch(() => { /* offline support is a bonus */ });
+    }
+    const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    document.documentElement.classList.toggle("is-app", standalone);
+    if (standalone) return;
+    // Count visits; only suggest installing from the second visit on, and not again after "Not now" for 30 days
+    const visits = (Number(store.get("gu-visits")) || 0) + 1;
+    store.set("gu-visits", visits);
+    const snoozed = Number(store.get("gu-install-snooze")) || 0;
+    const phone = window.matchMedia("(max-width: 760px)").matches;
+    let deferred = null;
+    const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    function offer() {
+        if (!phone || visits < 2 || Date.now() < snoozed || document.querySelector(".install-tip")) return;
+        if (!ios && !deferred) return;
+        document.body.insertAdjacentHTML("beforeend", `
+<aside class="install-tip" role="region" aria-label="Add to home screen">
+    <p><strong>Use Ground Up like an app.</strong> ${ios
+        ? 'Tap the Share button <span class="share-glyph" aria-hidden="true">&#x2191;</span>, then <strong>Add to Home Screen</strong>.'
+        : "Add it to your home screen: it opens full screen and works offline."}</p>
+    <div class="install-actions">
+        ${ios ? "" : '<button type="button" class="btn btn-primary btn-compact" data-install>Add to home screen</button>'}
+        <button type="button" class="text-button" data-install-later>Not now</button>
+    </div>
+</aside>`);
+        const tip = document.querySelector(".install-tip");
+        tip.addEventListener("click", async (e) => {
+            if (e.target.closest("[data-install]") && deferred) { deferred.prompt(); await deferred.userChoice.catch(() => null); deferred = null; tip.remove(); }
+            if (e.target.closest("[data-install-later]")) { store.set("gu-install-snooze", Date.now() + 30 * 864e5); tip.remove(); }
+        });
+    }
+    window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; offer(); });
+    setTimeout(offer, 1500);
 }
 
 /* =========================================================

@@ -99,6 +99,14 @@ async function openPage(browser, file, viewport, hash = "") {
             `${file} has a strict security policy`);
         check(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html) && !/\son[a-z]+\s*=\s*["']/i.test(html), `${file} has no inline scripts or event handlers`);
     }
+    // Installable app: manifest, icons, offline helper, and the tags on every page
+    const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "manifest.webmanifest"), "utf8"));
+    check(manifest.display === "standalone" && manifest.icons.every((i) => fs.existsSync(path.join(ROOT, i.src))) && manifest.icons.some((i) => i.sizes === "512x512"), "the app manifest is valid and its icons exist");
+    const sw = fs.readFileSync(path.join(ROOT, "sw.js"), "utf8");
+    const missingCore = PAGES.filter((f) => !sw.includes(`"${f}"`));
+    check(missingCore.length === 0, `the offline helper saves every page ${missingCore.join(", ")}`);
+    const noAppTags = PAGES.filter((f) => { const h = fs.readFileSync(path.join(ROOT, f), "utf8"); return !/rel="manifest"/.test(h) || !/apple-touch-icon/.test(h) || !/viewport-fit=cover/.test(h); });
+    check(noAppTags.length === 0, `every page can be installed as an app ${noAppTags.join(", ")}`);
     // Every page asks for the same version of the shared files, so browsers never mix old and new
     const versions = new Set(PAGES.flatMap((f) => [...fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/(?:styles\.css|script\.js|exercises\.js|muscle-art\.js)\?v=([\w-]+)"/g)].map((m) => m[1])));
     const unversioned = PAGES.filter((f) => /(?:href="styles\.css"|src="script\.js")/.test(fs.readFileSync(path.join(ROOT, f), "utf8")));
@@ -134,6 +142,14 @@ async function openPage(browser, file, viewport, hash = "") {
             const hrefs = await page.evaluate(() => [...document.querySelectorAll("a[href]")].map((a) => a.getAttribute("href")));
             const bad = [...new Set(hrefs.map((h) => linkProblem(h, file)).filter(Boolean))];
             check(bad.length === 0, `every link has a real target ${bad.length ? JSON.stringify(bad) : ""}`);
+            const tabbar = await page.locator(".tabbar").isVisible();
+            check(viewport.width <= 760 ? tabbar : !tabbar, viewport.width <= 760 ? "phones get the bottom tab bar" : "the tab bar is only for phones");
+            if (viewport.width <= 760) {
+                const tiny = await page.evaluate(() => [...document.querySelectorAll("main button, main select, main .segmented label, .tabbar a, .site-header button")]
+                    .filter((el) => el.offsetParent && !el.closest("dialog:not([open])") && !el.classList.contains("inline-howto"))
+                    .filter((el) => el.getBoundingClientRect().height < 40).map((el) => (el.textContent || el.className).trim().slice(0, 20)));
+                check(tiny.length === 0, `buttons are big enough to tap ${JSON.stringify(tiny.slice(0, 5))}`);
+            }
             const unsafeBlank = await page.evaluate(() => [...document.querySelectorAll('a[target="_blank"]')].filter((a) => !/noopener/.test(a.rel)).map((a) => a.href));
             check(unsafeBlank.length === 0, `links that open a new tab can't control this page ${unsafeBlank.slice(0, 2).join(", ")}`);
             const key = file === "index.html" ? null : file.replace(".html", "");

@@ -2625,3 +2625,54 @@ main, .page-banner, .hero { animation: page-in 0.45s ease-out both; }
     border-radius: 0;
 }
 .howto-levels:has(> div:only-child) { grid-template-columns: 1fr; }
+
+/* ---------- Phones: app-style tab bar, comfy tap targets, notch-safe ---------- */
+:root { --tabbar-h: 0px; }
+.tabbar { display: none; }
+@media (max-width: 760px) {
+    :root { --tabbar-h: calc(60px + env(safe-area-inset-bottom)); }
+    html { -webkit-text-size-adjust: 100%; }
+    body.has-tabbar { padding-bottom: var(--tabbar-h); }
+    a, button, label, summary, select, input { touch-action: manipulation; -webkit-tap-highlight-color: rgba(255, 90, 31, 0.15); }
+    .tabbar {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 65;
+        display: grid; grid-template-columns: repeat(4, 1fr);
+        height: var(--tabbar-h); padding-bottom: env(safe-area-inset-bottom);
+        background-color: #000000; border-top: 1px solid #2a2a2a;
+    }
+    .tabbar a {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+        min-height: 44px; color: #a6a6a6; text-decoration: none;
+        font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .tabbar svg { width: 22px; height: 22px; fill: currentColor; }
+    .tabbar a[aria-current="page"] { color: #ffffff; box-shadow: inset 0 2px 0 var(--volt); }
+    .tabbar a:focus-visible { outline: 2px solid var(--volt); outline-offset: -4px; }
+    /* things that sit at the bottom of the screen move up above the tab bar */
+    .rest-timer { bottom: var(--tabbar-h); }
+    .toast { bottom: calc(var(--tabbar-h) + 12px); right: 12px; width: calc(100% - 24px); }
+    /* fingers need room: about 44px for anything you tap */
+    .chip, .btn-small, .btn-compact, .rest-btn, .text-button, .mm-view, .mm-turn, .mm-sex-btn, .goal-more-toggle,
+    .menu-toggle, .theme-toggle, .me-link, .brand, .howto-close, .week-step, .mm-part-name {
+        min-height: 44px; display: inline-flex; align-items: center;
+    }
+    .theme-toggle, .howto-close, .week-step, .mm-turn { min-width: 44px; justify-content: center; }
+    .has-tabbar .me-link { display: none; } /* the tab bar's Progress tab replaces it */
+    .segmented label span { min-height: 44px; display: inline-flex; align-items: center; }
+    .text-link { display: inline-block; padding: 10px 0; }
+    .library-card .btn { min-height: 44px; }
+    /* 16px text in form fields stops iPhones from zooming in when you tap them */
+    input, select, textarea { font-size: 16px !important; min-height: 44px; }
+    input[type="checkbox"], input[type="radio"] { min-height: 0; }
+}
+/* Installed app: clear the notch and status bar */
+.is-app .site-header { padding-top: env(safe-area-inset-top); }
+.install-tip {
+    position: fixed; left: 12px; right: 12px; bottom: calc(var(--tabbar-h) + 12px); z-index: 80;
+    padding: 14px 16px; background-color: var(--surface); color: var(--ink);
+    border: 1px solid var(--line); border-left: 4px solid var(--volt); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+.install-tip p { margin: 0 0 8px; font-size: 0.92rem; }
+.install-actions { display: flex; gap: 12px; align-items: center; }
+.share-glyph { display: inline-block; padding: 0 4px; border: 1px solid currentColor; font-size: 0.8rem; }
+@media print { .tabbar, .install-tip { display: none !important; } }

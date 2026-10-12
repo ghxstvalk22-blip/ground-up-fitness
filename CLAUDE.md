@@ -15,6 +15,7 @@ ships **one** focused improvement.
 | `start.html`, `programs.html`, `exercises.html`, `pros.html`, `tools.html`, `basics.html`, `contact.html` | One page per menu tab. Each has a photo banner and its own `<body data-page="...">`. |
 | `exercises.js` | `EXERCISES` (a how-to guide for every exercise) and `EXERCISE_FAMILIES` (exercises that can swap for each other, used by the weekly rotation and Swap). Loaded before `script.js`. Every exercise used in a plan must have an entry; the test checks this. |
 | `muscle-art.js` | Body outlines and muscle shapes for the Muscle map (front/back, male/female), from the MIT-licensed `@musclemap/assets`; keep its license header. Loaded only on `exercises.html`. |
+| `manifest.webmanifest`, `sw.js`, `icons/` | The phone app: installing to the home screen, the app icon, and offline support. A new page must be added to `CORE` in `sw.js` (the test checks). Phones also get a bottom tab bar (built in `setupLayout`). |
 | `styles.css` | All styles. Colors are tokens on `:root`, with dark mode overrides. |
 | `script.js` | All behavior, organized as independent feature blocks. |
 | `ROADMAP.md` | The idea backlog. The owner adds ideas here. |
@@ -50,6 +51,9 @@ ships **one** focused improvement.
    small labels), black/white/bone colors with the one orange accent (`--volt`), sharp corners,
    uppercase letter-spaced labels and buttons, black-and-white photos, plain human wording
    (no buzzwords), and working dark mode and phone layouts (no sideways scrolling at 390px wide).
+   Most visitors are on phones: anything you tap must be at least 44px tall there, form fields use
+   16px text (so iPhones don't zoom), and nothing fixed to the bottom may hide behind the tab bar
+   (use `var(--tabbar-h)`). The test checks button sizes at 390px.
 3. **Accessible:** real labels on inputs, keyboard support, visible focus, and nothing
    that relies on color alone.
 4. **No new external dependencies.** Fonts come from Google Fonts. Photos come from Unsplash

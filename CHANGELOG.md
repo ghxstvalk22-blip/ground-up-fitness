@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (works like a phone app)
+
+- **Add it to your home screen:** Ground Up can now be installed like an app, free, from Safari (Share, then Add to Home Screen) or Chrome. It gets its own icon, opens full screen without the browser bars, and stays clear of the notch.
+- **Works offline:** after your first visit, pages, plans, and how-tos open even with no signal in the gym.
+- **Built for thumbs:** on phones there's a tab bar along the bottom (Home, Plans, Exercises, Progress). Every button is now big enough to tap easily, and form fields no longer make iPhones zoom in.
+- From the second visit, phones get a one-time tip on how to add it to the home screen ("Not now" hides it for a month). Gym basics has the steps too.
+
 ## 2026-10-12 (fresh files after updates)
 
 - Visitors' browsers now always load the newest version of the site's code after an update, instead of sometimes showing an old saved copy (or mixing old and new). Each update bumps a version number on the shared files.
