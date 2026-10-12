@@ -646,6 +646,17 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.evaluate(() => saveSession("Bench press", new Date().toISOString().slice(0, 10), "lb", [{ w: 160, r: 6 }]));
             check(/personal record/i.test(await page.locator("#toast").textContent()) && await page.locator("#toast").isVisible(), "beating a best shows a personal-record celebration");
             check(/Bench press/.test(await page.locator("#recent-prs").textContent()), "personal records are listed");
+            // Clear my progress: pick, confirm, cleared, and Undo brings it back
+            await page.evaluate(() => { store.set("gu-level", "Advanced"); window.dispatchEvent(new CustomEvent("logchange")); });
+            check(await page.locator('#reset-list input[value="lifts"]').isChecked() && !(await page.locator('#reset-list input[value="settings"]').isChecked()), "Clear my progress picks logs by default, not settings");
+            await page.click("#reset-go");
+            check(await page.locator("#reset-confirm").isVisible() && await page.evaluate(() => Object.keys(getLog()).length > 0), "clearing asks to confirm first and nothing is deleted yet");
+            await page.click("#reset-yes");
+            check(await page.evaluate(() => Object.keys(getLog()).length === 0 && getPRs().length === 0 && store.get("gu-level") === "Advanced"), "confirming clears the log and records but keeps settings");
+            check(/Bench press/.test(await page.locator("#recent-prs").textContent()) === false, "the page updates right away after clearing");
+            await page.click("#reset-undo");
+            check(await page.evaluate(() => Object.keys(getLog()).length > 0 && getPRs().length > 0), "Undo brings the cleared progress back");
+            await page.evaluate(() => store.remove("gu-level"));
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

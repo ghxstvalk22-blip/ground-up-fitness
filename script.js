@@ -61,6 +61,7 @@ const FEATURES = [
     setupCoach,
     setupWeightTrend,
     setupDashboard,
+    setupResetProgress,
     setupAccount,
     setupTools,
     setupContactForm,
@@ -121,7 +122,8 @@ const SITE_NAV = [
         ["How much protein do I need?", "", "basics.html#faq-protein"],
         ["Should women train differently?", "", "basics.html#faq-women"],
         ["Use it like an app on your phone", "", "basics.html#faq-app"],
-        ["Who can see my logs?", "", "basics.html#faq-privacy"]
+        ["Who can see my logs?", "", "basics.html#faq-privacy"],
+        ["Clear my progress", "Start over: delete logs, records, or settings", "me.html#reset-progress"]
     ] },
     { label: "Contact", href: "contact.html", page: "contact", items: [
         ["Send a message", "Any question at all", "contact.html#contact-general"],
@@ -5181,6 +5183,94 @@ function setupContactForm() {
      match /users/{uid} { allow read, write: if request.auth != null && request.auth.uid == uid; }
    ========================================================= */
 const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+
+/* =========================================================
+   FEATURE: Clear my progress (My progress page)
+   Pick what to clear (lifts, cardio, bodyweight, plan progress, Coach,
+   settings), confirm, and it's removed from this device. An Undo button
+   stays until the page is closed, in case it was a mistake.
+   ========================================================= */
+const RESET_GROUPS = [
+    { id: "lifts", label: "Lifting log and personal records", keys: ["gu-log", "gu-prs"], on: true,
+        count: () => { const days = new Set(Object.values(getLog()).flatMap((e) => (Array.isArray(e) ? e.map((x) => x && x.date) : []))); const n = days.size; return n ? `${n} ${n === 1 ? "day" : "days"} of lifting logged` : ""; } },
+    { id: "cardio", label: "Cardio log", keys: ["gu-cardio"], on: true,
+        count: () => { const n = getCardio().length; return n ? `${n} ${n === 1 ? "entry" : "entries"}` : ""; } },
+    { id: "weight", label: "Bodyweight entries", keys: ["gu-weights"], on: true,
+        count: () => { const n = (store.get("gu-weights", []) || []).length; return n ? `${n} ${n === 1 ? "entry" : "entries"}` : ""; } },
+    { id: "plans", label: "Plan progress", hint: "checked-off workouts, swaps, your start week, and My workout", keys: ["gu-last-plan", "gu-custom"], prefixes: ["gu-progress-", "gu-swaps-", "gu-start-", "gu-checklist-"], on: true },
+    { id: "coach", label: "Fitness Coach chat and the lift numbers you told it", keys: ["gu-coach-history", "gu-coach-state", "gu-coach-maxes", "gu-coach-open"], on: false },
+    { id: "settings", label: "Settings", hint: "your level, profile, units, and light or dark mode", rest: true, on: false }
+];
+function resetKeys(group) {
+    let all = [];
+    try { all = Object.keys(localStorage).filter((k) => k.startsWith("gu-") || k === "theme"); } catch (e) { return []; }
+    const owned = (g, k) => (g.keys || []).includes(k) || (g.prefixes || []).some((p) => k.startsWith(p));
+    if (group.rest) return all.filter((k) => !RESET_GROUPS.some((g) => !g.rest && owned(g, k)));
+    return all.filter((k) => owned(group, k));
+}
+
+function setupResetProgress() {
+    const form = document.getElementById("reset-progress");
+    if (!form) return;
+    const list = document.getElementById("reset-list"), confirmBox = document.getElementById("reset-confirm");
+    const confirmText = document.getElementById("reset-confirm-text"), status = document.getElementById("reset-status");
+    const go = document.getElementById("reset-go");
+    let undo = null;
+
+    function render() {
+        // Keep what the person ticked; anything that was empty before gets its default
+        const was = new Map([...list.querySelectorAll("input")].map((i) => [i.value, i.disabled ? null : i.checked]));
+        list.innerHTML = RESET_GROUPS.map((g) => {
+            const keys = resetKeys(g);
+            const empty = !keys.length;
+            const detail = empty ? "nothing saved" : (g.count && g.count()) || g.hint || "";
+            const on = !empty && (was.get(g.id) == null ? g.on : was.get(g.id));
+            return `<label class="reset-item${empty ? " is-empty" : ""}"><input type="checkbox" name="reset" value="${g.id}"${on ? " checked" : ""}${empty ? " disabled" : ""}>
+                <span><strong>${escapeHtml(g.label)}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ""}</span></label>`;
+        }).join("");
+        go.disabled = !RESET_GROUPS.some((g) => resetKeys(g).length);
+    }
+    const chosen = () => RESET_GROUPS.filter((g) => list.querySelector(`input[value="${g.id}"]:checked`));
+    const names = (picks) => { const n = picks.map((g) => g.label.toLowerCase()); return n.length > 1 ? `${n.slice(0, -1).join(", ")} and ${n[n.length - 1]}` : n[0]; };
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const picks = chosen();
+        if (!picks.length) { status.textContent = "Tick at least one thing to clear."; return; }
+        status.textContent = "";
+        confirmText.innerHTML = `<strong>Clear ${escapeHtml(names(picks))}?</strong> This removes it from this device.${document.querySelector(".account-box [data-signed-in], #acct-delete") ? " It will also be removed from your account." : ""}`;
+        confirmBox.hidden = false;
+        go.hidden = true;
+        confirmText.focus();
+    });
+    document.getElementById("reset-no").addEventListener("click", () => { confirmBox.hidden = true; go.hidden = false; go.focus(); });
+    document.getElementById("reset-yes").addEventListener("click", () => {
+        const picks = chosen();
+        const snapshot = {};
+        picks.forEach((g) => resetKeys(g).forEach((k) => { try { snapshot[k] = localStorage.getItem(k); } catch (e) { /* ignore */ } }));
+        Object.keys(snapshot).forEach((k) => store.remove(k));
+        // The open chat on this page starts fresh too
+        const coachClear = document.getElementById("coach-clear");
+        if (picks.some((g) => g.id === "coach") && coachClear) coachClear.click();
+        undo = snapshot;
+        confirmBox.hidden = true;
+        go.hidden = false;
+        render();
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { cleared: true } }));
+        status.innerHTML = `Cleared ${escapeHtml(names(picks))}. <button type="button" class="text-button" id="reset-undo">Undo</button>`;
+        document.getElementById("reset-undo").focus();
+    });
+    status.addEventListener("click", (e) => {
+        if (!e.target.closest("#reset-undo") || !undo) return;
+        Object.entries(undo).forEach(([k, v]) => { try { if (v !== null) localStorage.setItem(k, v); } catch (err) { /* ignore */ } });
+        undo = null;
+        render();
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { restored: true } }));
+        status.textContent = "Everything is back the way it was.";
+    });
+    window.addEventListener("logchange", (e) => { if (!(e.detail && (e.detail.cleared || e.detail.restored))) render(); });
+    render();
+}
 
 function loadScript(src) {
     return new Promise((resolve, reject) => {

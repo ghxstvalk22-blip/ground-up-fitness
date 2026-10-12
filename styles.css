@@ -1479,6 +1479,18 @@ select, input, textarea {
 .progress-stats strong { font-family: var(--display); font-size: 1.6rem; font-weight: 900; font-stretch: 80%; }
 @media (max-width: 600px) { .progress-stats { grid-template-columns: 1fr; } }
 .progress-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 16px; }
+.reset-panel { margin-top: 32px; padding: 20px; border: 1px solid var(--line); border-top: 4px solid var(--ink); max-width: 640px; }
+.reset-panel h3 { margin: 0 0 6px; }
+.reset-panel fieldset { border: 0; margin: 12px 0 16px; padding: 0; }
+.reset-panel legend { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+.reset-list { display: grid; gap: 4px; }
+.reset-item { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; padding: 8px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.reset-item input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--volt); }
+.reset-item small { display: block; color: var(--muted); font-size: 0.8rem; }
+.reset-item.is-empty { opacity: 0.55; cursor: default; }
+.reset-confirm { margin-top: 12px; padding: 14px; background-color: var(--paper); border-left: 4px solid var(--volt); }
+.reset-confirm p:focus { outline: none; }
+#reset-status .text-button { margin-left: 8px; min-height: 44px; }
 
 /* How-to dialog */
 .howto {

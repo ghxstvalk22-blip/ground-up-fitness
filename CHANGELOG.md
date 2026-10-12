@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Clear my progress)
+
+- New **Clear my progress** box at the bottom of the My progress page. Tick what you want to clear: your lifting log and personal records, cardio, bodyweight entries, plan progress, the Fitness Coach chat and lift numbers, or your settings. Each one shows how much is saved, so you know what you're deleting.
+- Logs are ticked by default and settings aren't, so starting over doesn't reset your level or units unless you choose to.
+- Nothing is deleted until you confirm, and an **Undo** button brings everything back as long as you're still on the page. Only this device is changed.
+- The Plans page links to it ("Clear other progress"), and searching "clear" finds it.
+
 ## 2026-10-12 (Fitness Coach gives sets, reps and weights)
 
 - Fitness Coach now works out what you're asking before it answers, and shows it at the top of each reply under **What I heard** (for example: Bench press · Get stronger · Beginner · bench max about 275 lb), so you can see it understood you.
