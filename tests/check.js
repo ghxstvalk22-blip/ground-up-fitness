@@ -170,7 +170,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(Number(await page.locator('[data-stat="plans"]').textContent()) >= 8, "hero stats count the plans");
             check(await page.locator(".ticker").count() === 0 && await page.locator(".promise-strip li").count() === 4, "no moving ticker; calm promise strip instead");
             // The cover: one-tap goals and a box that asks the Fitness Coach
-            const goalLinks = await page.locator(".hero-goals a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+            const goalLinks = await page.locator(".hero-goals li a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
             check(goalLinks.length === 6 && goalLinks.includes("programs.html#program-fatloss") && await page.locator(".hero-goals a").first().isVisible(), "the cover offers one-tap goals");
             const coverFits = await page.evaluate(() => { const r = document.querySelector(".hero-ask").getBoundingClientRect(); return r.bottom <= document.querySelector(".hero").getBoundingClientRect().bottom + 1; });
             check(coverFits, "the ask box sits inside the cover");
@@ -500,11 +500,53 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // Build your own workout: pick exercises, get a weight for each, save as My workout
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            check(await page.locator('.hero-build-link[href="programs.html#build"]').count() === 1, "the cover links to Build your own workout");
+            await page.evaluate(() => { localStorage.clear(); localStorage.setItem("gu-profile", JSON.stringify({ bodyweight: "180", unit: "lb", sex: "male" })); localStorage.setItem("gu-level", JSON.stringify("Intermediate")); });
+            await page.goto(url("programs.html", "#build"), { waitUntil: "load" });
+            await page.waitForTimeout(400);
+            check(await page.locator("#builder-body").isVisible(), "programs.html#build opens the workout builder");
+            for (const ex of ["Bench press", "Lat pulldown", "Plank"]) {
+                await page.fill("#builder-search", ex);
+                await page.locator(`[data-add="${ex}"]`).click();
+            }
+            check(await page.locator(".builder-item").count() === 3, "exercises can be added");
+            const w8 = await page.locator(".builder-item").first().locator(".bi-weight").textContent();
+            await page.locator(".builder-item").first().locator('[data-f="amount"]').selectOption("5");
+            const w5 = await page.locator(".builder-item").first().locator(".bi-weight").textContent();
+            const lbs = (t) => Number((t.match(/about (\d+)/) || [])[1]);
+            check(lbs(w8) > 0 && lbs(w5) > lbs(w8), `each exercise gets a weight, heavier for fewer reps (${lbs(w8)} -> ${lbs(w5)} lb)`);
+            await page.locator(".builder-item").nth(2).locator("[data-move='-1']").click();
+            check(/Plank/.test(await page.locator(".builder-item").nth(1).textContent()), "exercises can be reordered");
+            // Too many for one muscle: allowed, but with a warning
+            for (const ex of ["Incline dumbbell press", "Cable fly"]) { await page.fill("#builder-search", ex); await page.locator(`[data-add="${ex}"]`).click(); }
+            await page.fill("#builder-search", "Pec deck");
+            const anyway = (await page.locator('[data-add="Pec deck"]').textContent()).trim();
+            await page.locator('[data-add="Pec deck"]').click();
+            check(/Add anyway/i.test(anyway) && await page.locator(".bi-warn").count() >= 1 && /too many/.test(await page.locator(".builder-tally").textContent()), `a 4th chest exercise is allowed but flagged (${anyway})`);
+            for (const ex of ["Pec deck", "Cable fly", "Incline dumbbell press"]) await page.locator(".builder-item", { hasText: ex }).locator("[data-remove]").click();
+            await page.locator('input[name="builder-goal"][value="strength"]').check({ force: true });
+            check(/4–6|5/.test(await page.locator(".builder-item").first().locator('[data-f="amount"]').inputValue()), "switching the goal to Get stronger changes the reps");
+            await page.locator(".builder-save").click();
+            await page.waitForURL(/program-custom/);
+            await page.waitForTimeout(400);
+            const saved = await page.evaluate(() => store.get("gu-custom"));
+            check(saved && saved.items.length === 3 && /^\d × (4–6|5)$/.test(saved.items[0].d), `Save and start saves it as My workout (${saved && saved.items[0].d})`);
+            check(/My workout/i.test(await page.locator("#program-head").textContent()) && /Start with about/.test(await page.locator(".ex-target").first().textContent()), "the saved workout opens with a starting weight on each lift");
+            await page.evaluate(() => { localStorage.clear(); });
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
         // Coach: ask for muscles, get a workout, start it on the Plans page
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);
             await page.evaluate(() => { localStorage.removeItem("gu-custom"); localStorage.removeItem("gu-level"); });
             // On phones the coach button steps aside while the cover's ask box is showing; it's back once you scroll
+            await page.locator("#hero-ask").scrollIntoViewIfNeeded();
+            await page.waitForTimeout(200);
             check(viewport.width > 760 || !(await page.locator("#coach-fab").isVisible()), "on phones the coach button hides behind the cover's own ask box");
             await page.evaluate(() => window.scrollTo(0, document.querySelector("#get-plan").offsetTop));
             await page.waitForTimeout(200);

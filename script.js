@@ -65,6 +65,7 @@ const FEATURES = [
     setupMuscleMap,
     setupLevelBar,
     setupStartingPoint,
+    setupBuilder,
     setupApp,
     setupCoach,
     setupWeightTrend,
@@ -93,7 +94,9 @@ const SITE_NAV = [
         ["The 5-minute warm-up", "Do this before every workout", "start.html#warm-up"],
         ["Gym words, decoded", "Sets, reps, failure, deload, and more", "start.html#glossary"]
     ] },
-    { label: "Programs", href: "programs.html", page: "programs", items: "programs" },
+    { label: "Programs", href: "programs.html", page: "programs", items: "programs", more: [
+        ["Build your own workout", "Pick your exercises, get your weights", "programs.html#build"]
+    ] },
     { label: "Exercises", href: "exercises.html", page: "exercises", items: [
         ["Find by muscle", "Tap a muscle, see how to train it", "exercises.html#muscle-map"],
         ["Exercise library", "Every exercise, with form guides and demos", "exercises.html#library"]
@@ -1771,7 +1774,7 @@ function loadCustomWorkout() {
         level: "Beginner",
         name: "My workout",
         tagline: title,
-        summary: `${title}: a session your Fitness Coach built from this site's exercise guides. Do it once, or repeat it 1 to 3 times a week with a rest day between.`,
+        summary: `${title}: a session you built (or your Fitness Coach built) from this site's exercise guides. Do it once, or repeat it 1 to 3 times a week with a rest day between.`,
         session: `About ${Math.max(15, Math.round(items.length * 7.5))} minutes`,
         effort: "Stop most sets with 1 to 3 good reps left. Ask the Fitness Coach to make it easier or harder any time.",
         progression: "Log your sets. Next time you'll get a target for each exercise.",
@@ -2008,7 +2011,21 @@ const START_EXTRA = {
     "Goblet squat": [["Back squat", 0.3]],
     "Dumbbell Romanian deadlift": [["Deadlift", 0.25, true]],
     "Hip thrust": [["Deadlift", 0.8]],
-    "Trap bar deadlift": [["Deadlift", 1.05]]
+    "Trap bar deadlift": [["Deadlift", 1.05]],
+    // Machines, cables, and smaller moves: rough starting points (machines differ, so the plan says "about")
+    "Leg press": [["Back squat", 1.6]], "Hack squat": [["Back squat", 0.8]], "Smith machine squat": [["Back squat", 0.85]],
+    "Leg extension": [["Back squat", 0.45]], "Dumbbell or trap bar deadlift": [["Deadlift", 0.3, true]], "Cable pull-through": [["Deadlift", 0.25]],
+    "Hip abduction machine": [["Back squat", 0.5]], "Hip adduction machine": [["Back squat", 0.45]], "Cable glute kickback": [["Back squat", 0.1]],
+    "Hamstring curl machine": [["Deadlift", 0.3]], "Seated hamstring curl": [["Deadlift", 0.3]], "Lying hamstring curl": [["Deadlift", 0.28]],
+    "Standing calf raise": [["Back squat", 0.2, true]], "Seated calf raise": [["Back squat", 0.5]], "Leg press calf raise": [["Back squat", 1.0]],
+    "Machine chest press": [["Bench press", 0.8]], "Incline machine press": [["Bench press", 0.7]], "Pec deck": [["Bench press", 0.5]],
+    "Cable fly": [["Bench press", 0.12, true]], "Low-to-high cable fly": [["Bench press", 0.1, true]], "Dumbbell fly": [["Bench press", 0.13, true]],
+    "Chest-supported row": [["Barbell row", 0.8]], "Single-arm cable row": [["Barbell row", 0.35]], "Machine row": [["Barbell row", 0.9]],
+    "Machine shoulder press": [["Overhead press", 0.9]], "Arnold press": [["Overhead press", 0.32, true]],
+    "Cable lateral raise": [["Overhead press", 0.1]], "Machine lateral raise": [["Overhead press", 0.3]], "Lean-away lateral raise": [["Overhead press", 0.12, true]],
+    "Rear delt fly": [["Overhead press", 0.12, true]], "Face pull": [["Barbell row", 0.35]], "Reverse pec deck": [["Barbell row", 0.4]], "Cable rear delt fly": [["Overhead press", 0.08]],
+    "Incline dumbbell curl": [["Bench press", 0.12, true]], "Cable curl": [["Bench press", 0.3]], "Preacher curl": [["Bench press", 0.3]],
+    "Overhead triceps extension": [["Bench press", 0.25]], "Pallof press": [["Bench press", 0.15]], "Cable crunch": [["Back squat", 0.35]]
 };
 const BARBELL = /^(Bench press|Incline barbell press|Back squat|Front squat|Deadlift|Romanian deadlift|Overhead press|Barbell row|Hip thrust|Barbell curl)$/;
 function startMax(name, unit) {
@@ -2030,7 +2047,8 @@ function startMax(name, unit) {
 function startWeight(name, high, unit) {
     const s = startMax(name, unit);
     if (!s) return null;
-    const step = s.each ? (unit === "kg" ? 1 : 2.5) : unit === "kg" ? 2.5 : 5;
+    // Dumbbells come in 5 lb (2 kg) steps in most gyms; tiny ones in 2.5 lb (1 kg)
+    const step = s.each ? (unit === "kg" ? (s.m < 15 ? 1 : 2) : (s.m < 25 ? 2.5 : 5)) : unit === "kg" ? 2.5 : 5;
     let w = Math.round(s.m / (1 + (high + 1) / 30) / step) * step;
     if (BARBELL.test(name)) w = Math.max(w, unit === "kg" ? 20 : 45);   // the empty bar is the lightest a barbell gets
     else w = Math.max(w, step);
@@ -3944,6 +3962,344 @@ function setupApp() {
    FEATURE: Level picker. Any element with data-level-bar gets the
    Beginner / Intermediate / Advanced / Expert switch.
    ========================================================= */
+/* =========================================================
+   FEATURE: Build your own workout (Plans page)
+   Pick any exercises from the library; each gets sets, reps, and rest
+   (changeable) and a weight to use: from your logged sets if you have
+   them (and it goes up when you hit your reps), or from your level and
+   bodyweight the first time. Saved as "My workout" (gu-custom), with a
+   draft kept as gu-builder while you work.
+   ========================================================= */
+const BUILDER_KEY = "gu-builder";
+const BUILDER_REPS = ["3–5", "4–6", "5", "6–8", "8–10", "8–12", "10–12", "10–15", "12–15", "15–20"];
+const BUILDER_HOLDS = ["20–30 s", "30–45 s", "45–60 s"];
+const BUILDER_TIMES = ["10 min", "15 min", "20 min", "30 min", "45 min"];
+const BUILDER_STEPS = ["30 steps", "40 steps", "60 steps"];
+const BUILDER_RESTS = ["30 s", "45 s", "60 s", "90 s", "2 min", "3 min"];
+function builderKind(name) {
+    if (isCardio(name)) return "time";
+    const def = coachDose(name, COACH_COMPOUND.test(name), getLevel())[0];
+    if (/steps/.test(def)) return "steps";
+    if (/\bs$|\bs per side$/.test(def)) return "hold";
+    return "reps";
+}
+/* What the session is for, and how much work each muscle needs in one workout.
+   Evidence: muscle growth levels off around 6 to 11 hard sets per muscle in one session
+   (Remmert, Zourdos et al. 2025 meta-regression), strength gains level off after a few
+   heavy sets of a lift, and general fitness needs about 1 exercise per major muscle
+   (ACSM 2009 position stand). So: a few exercises per muscle, fewer when you train many. */
+const BUILD_GOALS = {
+    muscle: { label: "Build muscle", for: "building muscle", dose: "muscle", per: [3, 2], total: 8, sets: 10, why: "about 6 to 10 hard sets per muscle in one workout; more than that mostly adds fatigue" },
+    strength: { label: "Get stronger", for: "getting stronger", dose: "strength", per: [2, 1], total: 6, sets: 8, why: "one main lift plus one helper per muscle; strength gains level off after a few heavy sets" },
+    fit: { label: "Lose fat / get fit", for: "fat loss and fitness", dose: null, per: [2, 1], total: 8, sets: 8, why: "1 or 2 exercises per muscle, so you can train every muscle without spending all day" },
+    endurance: { label: "Endurance (high reps)", for: "endurance", dose: "endurance", per: [2, 1], total: 8, sets: 8, why: "1 or 2 exercises per muscle with light weights and short rests" }
+};
+const BUILD_LARGE = ["chest", "back", "quads", "hamstrings", "glutes"];
+const BUILD_MUSCLE_NAME = { chest: "Chest", back: "Back", shoulders: "Shoulders", biceps: "Biceps", triceps: "Triceps", quads: "Quads", hamstrings: "Hamstrings", glutes: "Glutes", calves: "Calves", core: "Core", cardio: "Cardio" };
+// The main muscle an exercise trains, from its guide ("Lats, upper back, biceps" -> back)
+function builderMuscle(name) {
+    const m = String((EXERCISES[name] || {}).m || "").toLowerCase().split(",")[0].trim();
+    if (/heart/.test(m)) return "cardio";
+    if (/chest/.test(m)) return "chest";
+    if (/lat|back|trap|rhomboid/.test(m)) return "back";
+    if (/shoulder|delt|rotator/.test(m)) return "shoulders";
+    if (/biceps|forearm|grip/.test(m)) return "biceps";
+    if (/triceps/.test(m)) return "triceps";
+    if (/quad|adductor|inner thigh|legs/.test(m)) return "quads";
+    if (/hamstring/.test(m)) return "hamstrings";
+    if (/glute|hip/.test(m)) return "glutes";
+    if (/calf|calves/.test(m)) return "calves";
+    return "core";
+}
+// How many exercises fit for one muscle, given the goal and how many muscles are in the workout
+function builderLimit(goalKey, muscle, musclesTrained) {
+    const g = BUILD_GOALS[goalKey] || BUILD_GOALS.muscle;
+    if (muscle === "cardio") return 2;
+    let max = BUILD_LARGE.includes(muscle) ? g.per[0] : g.per[1];
+    // Training several muscles in one session? Fewer exercises each, so the workout stays doable
+    if (musclesTrained >= 3) max = Math.min(max, 2);
+    if (musclesTrained >= 5) max = 1;
+    return Math.max(1, max);
+}
+// One exercise as the builder keeps it: { n, sets, amount, rest }
+function builderDefault(name, goalKey = "muscle") {
+    const [d, rest] = coachDose(name, COACH_COMPOUND.test(name), getLevel(), (BUILD_GOALS[goalKey] || {}).dose || null);
+    const kind = builderKind(name);
+    if (kind === "time") return { n: name, sets: 1, amount: "15 min", rest: "" };
+    const m = d.match(/^(\d+) × (.+?)( per side)?$/);
+    const amount = m ? m[2] : "8–12";
+    return { n: name, sets: m ? Number(m[1]) : 3, amount: kind === "hold" ? (BUILDER_HOLDS.includes(amount) ? amount : "30–45 s") : kind === "steps" ? (BUILDER_STEPS.includes(amount) ? amount : "40 steps") : (BUILDER_REPS.includes(amount) ? amount : "8–12"), rest: BUILDER_RESTS.includes(rest) ? rest : "60 s" };
+}
+function builderDose(x) {
+    const kind = builderKind(x.n);
+    if (kind === "time") return x.amount;
+    const perSide = /per side/.test(coachDose(x.n, COACH_COMPOUND.test(x.n), getLevel())[0]);
+    return `${x.sets} × ${x.amount}${perSide ? " per side" : ""}`;
+}
+// Only real exercises and allowed values get back in from storage
+function builderClean(raw) {
+    if (!raw || typeof raw !== "object" || !Array.isArray(raw.items)) return null;
+    const items = raw.items.filter((x) => x && EXERCISES[x.n]).slice(0, 12).map((x) => {
+        const base = builderDefault(x.n, BUILD_GOALS[raw.goal] ? raw.goal : "muscle"), kind = builderKind(x.n);
+        const list = kind === "time" ? BUILDER_TIMES : kind === "hold" ? BUILDER_HOLDS : kind === "steps" ? BUILDER_STEPS : BUILDER_REPS;
+        return { n: x.n, sets: Number(x.sets) >= 1 && Number(x.sets) <= 6 ? Number(x.sets) : base.sets, amount: list.includes(x.amount) ? x.amount : base.amount, rest: BUILDER_RESTS.includes(x.rest) ? x.rest : base.rest };
+    });
+    return { title: String(raw.title || "").replace(/[<>]/g, "").slice(0, 40), goal: BUILD_GOALS[raw.goal] ? raw.goal : "muscle", items };
+}
+// The weight to use, in plain words
+function builderWeight(x) {
+    const unit = getProfile().unit;
+    const d = builderDose(x);
+    const kind = builderKind(x.n);
+    const name = x.n;
+    if (kind === "time") return "Go at a pace where you can talk in short sentences.";
+    if (/^Assisted/.test(name)) return `Pick the assistance that lets you do ${x.amount.split("–").pop()} clean reps. Use less assistance as you get stronger.`;
+    if (equipOf(name) === "body" && !START_EXTRA[name] && !START_MAX[name]) return kind === "hold" ? "Your bodyweight. Hold good form the whole time." : "Your bodyweight. When every set feels easy, try the harder version in the how-to.";
+    if (kind === "steps") {
+        const sw = startWeight(name, 10, unit);
+        return sw ? `Carry about ${trimNum(sw.w)} ${unit} in each hand.` : "Pick heavy dumbbells you can hold for the whole walk with good posture.";
+    }
+    const t = nextTarget(name, d, unit);
+    if (t && !t.first) return t.text;
+    const high = parseDose(d).high || 10;
+    const sw = startWeight(name, high, unit);
+    if (sw) return `Start with ${sw.bar ? "just the empty bar" : `about ${trimNum(sw.w)} ${unit}${sw.each ? " in each hand" : ""}`}. Log your sets and it goes up when you hit ${high} reps on every set.`;
+    if (!Number(getProfile().bodyweight)) return "NEED_BODYWEIGHT";
+    return `Pick a weight you could do for about 2 more reps than ${high}. Log it and you'll get a target next time.`;
+}
+
+function setupBuilder() {
+    const spot = document.querySelector("[data-builder]");
+    if (!spot || typeof EXERCISES !== "object") return;
+    const names = Object.keys(EXERCISES).sort((a, b) => a.localeCompare(b));
+    const groupLabel = { "": "All", chest: "Chest", back: "Back", shoulders: "Shoulders", arms: "Arms", legs: "Legs", core: "Core", cardio: "Cardio" };
+    let draft = builderClean(store.get(BUILDER_KEY)) || (() => {
+        const mine = loadCustomWorkout();
+        if (!mine) return { title: "", goal: getProfile().trainFor === "endurance" ? "endurance" : "muscle", items: [] };
+        const day = mine.plans[1].days[0];
+        return builderClean({ title: day.title === "My workout" ? "" : day.title, items: day.items.map((it) => {
+            const m = String(it.d).match(/^(\d+) × (.+?)( per side)?( at .*)?$/);
+            return { n: it.n, sets: m ? Number(m[1]) : 3, amount: m ? m[2] : it.d, rest: it.rest };
+        }) }) || { title: "", goal: "muscle", items: [] };
+    })();
+    spot.innerHTML = `
+        <div class="builder">
+            <div class="builder-intro">
+                <div>
+                    <p class="kicker">Your way</p>
+                    <h2 id="builder-title">Build your own workout</h2>
+                    <p class="section-lede">Pick the exercises you want to hit today. Each one gets sets, reps, and rest you can change, plus the weight to use. Log your sets and the weights go up as you get stronger.</p>
+                </div>
+                <button type="button" class="btn btn-primary builder-open" aria-expanded="false" aria-controls="builder-body">${draft.items.length ? "Edit my workout" : "Start building"}</button>
+            </div>
+            <div class="builder-body" id="builder-body" hidden>
+                <div class="builder-goal">
+                    <fieldset class="segmented builder-goals">
+                        <legend>What's this workout for?</legend>
+                        ${Object.entries(BUILD_GOALS).map(([k, g]) => `<label><input type="radio" name="builder-goal" value="${k}"${k === (draft.goal || "muscle") ? " checked" : ""}><span>${g.label}</span></label>`).join("")}
+                    </fieldset>
+                    <p class="builder-goal-why"></p>
+                </div>
+                <div class="builder-pick">
+                    <h3>1. Pick exercises</h3>
+                    <div class="field">
+                        <label for="builder-search">Search</label>
+                        <input id="builder-search" type="search" placeholder="Try press, row, or curl" autocomplete="off">
+                    </div>
+                    <fieldset class="segmented compact builder-muscles">
+                        <legend>Muscle</legend>
+                        ${Object.entries(groupLabel).map(([v, l]) => `<label><input type="radio" name="builder-muscle" value="${v}"${v === "" ? " checked" : ""}><span>${l}</span></label>`).join("")}
+                    </fieldset>
+                    <div class="field builder-kit">
+                        <label for="builder-kit">Equipment</label>
+                        <select id="builder-kit"><option value="">Any</option><option value="body">None (bodyweight)</option><option value="db">Dumbbells</option><option value="barbell">Barbell</option><option value="machine">Machine</option><option value="cable">Cable</option></select>
+                    </div>
+                    <p class="builder-count" role="status"></p>
+                    <ul class="builder-results"></ul>
+                </div>
+                <div class="builder-plan">
+                    <h3>2. Your workout <span class="builder-n"></span></h3>
+                    <div class="field">
+                        <label for="builder-name">Name it <span class="field-hint">(optional)</span></label>
+                        <input id="builder-name" type="text" maxlength="40" placeholder="e.g. Chest and back day">
+                    </div>
+                    <ul class="builder-tally" aria-label="Exercises per muscle"></ul>
+                    <p class="builder-empty">Nothing here yet. Tap <strong>Add</strong> next to an exercise.</p>
+                    <ol class="builder-list"></ol>
+                    <p class="builder-note" hidden></p>
+                    <div class="builder-actions">
+                        <button type="button" class="btn btn-primary builder-save">Save and start</button>
+                        <button type="button" class="text-button builder-clear">Clear</button>
+                    </div>
+                    <p class="log-status builder-status" role="status"></p>
+                    <details class="builder-science">
+                        <summary>Why these limits?</summary>
+                        <p>Research on training volume shows muscle growth levels off at roughly 6 to 11 hard sets for one muscle in a single workout, and strength gains level off after a few heavy sets of a lift. Past that, extra exercises mostly add fatigue and soreness, not results. Spreading work across the week (training a muscle 2 times a week) beats piling it into one day.</p>
+                        <p>Sources: Remmert, Zourdos et al., 2025 meta-regression on sets per session (SportRxiv preprint); American College of Sports Medicine, <em>Progression Models in Resistance Training for Healthy Adults</em>, 2009.</p>
+                    </details>
+                </div>
+            </div>
+        </div>`;
+    const $ = (sel) => spot.querySelector(sel);
+    const body = $("#builder-body"), openBtn = $(".builder-open"), results = $(".builder-results"), list = $(".builder-list");
+    const search = $("#builder-search"), kitSel = $("#builder-kit"), nameIn = $("#builder-name"), status = $(".builder-status");
+    nameIn.value = draft.title;
+    const save = () => store.set(BUILDER_KEY, draft);
+    function open(scroll) {
+        body.hidden = false;
+        openBtn.setAttribute("aria-expanded", "true");
+        openBtn.hidden = true;
+        renderGoal(); renderResults(); renderList();
+        if (scroll) spot.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    openBtn.addEventListener("click", () => { open(false); search.focus(); });
+
+    const goal = () => BUILD_GOALS[draft.goal] ? draft.goal : "muscle";
+    // Per-muscle counts for the current workout
+    function tally(items = draft.items) {
+        const by = {};
+        items.forEach((x) => { const m = builderMuscle(x.n); (by[m] = by[m] || { n: 0, sets: 0 }); by[m].n += 1; by[m].sets += builderKind(x.n) === "time" ? 0 : x.sets; });
+        const trained = Object.keys(by).filter((m) => m !== "cardio" && m !== "core").length;
+        Object.keys(by).forEach((m) => { by[m].max = builderLimit(goal(), m, trained); });
+        return { by, trained };
+    }
+    function renderGoal() {
+        const g = BUILD_GOALS[goal()];
+        $(".builder-goal-why").textContent = `For ${g.for}: ${g.why}. Up to ${g.total} exercises in all.`;
+    }
+    function renderResults() {
+        const q = search.value.trim().toLowerCase();
+        const muscle = (spot.querySelector('input[name="builder-muscle"]:checked') || {}).value || "";
+        const kit = kitSel.value;
+        const shown = names.filter((n) => (!muscle || libraryGroup(n) === muscle) && (!kit || equipOf(n) === kit)
+            && (!q || `${n} ${EXERCISES[n].m}`.toLowerCase().includes(q)) && !/stretch|mobility/i.test(n));
+        $(".builder-count").textContent = `${shown.length} exercise${shown.length === 1 ? "" : "s"}`;
+        const picked = new Set(draft.items.map((x) => x.n));
+        const { by, trained } = tally();
+        const full = (n) => {
+            const m = builderMuscle(n);
+            const now = by[m] ? by[m].n : 0;
+            const t = trained + (now || m === "cardio" || m === "core" ? 0 : 1);
+            return now >= builderLimit(goal(), m, t);
+        };
+        results.innerHTML = shown.map((n) => {
+            const over = !picked.has(n) && full(n);
+            return `
+            <li class="${over ? "is-full" : ""}">${equipIcon(n)}<span class="br-name"><strong>${escapeHtml(n)}</strong><small>${over ? `Enough ${escapeHtml(BUILD_MUSCLE_NAME[builderMuscle(n)].toLowerCase())} for today` : escapeHtml(EXERCISES[n].m)}</small></span>
+                <button type="button" class="btn btn-small${over ? " is-anyway" : ""}" data-add="${escapeHtml(n)}"${picked.has(n) || draft.items.length >= 12 ? " disabled" : ""}>${picked.has(n) ? "Added" : over ? "Add anyway" : "Add"}<span class="visually-hidden"> ${escapeHtml(n)}</span></button></li>`;
+        }).join("");
+    }
+    const opts = (list, val) => list.map((v) => `<option${v === val ? " selected" : ""}>${v}</option>`).join("");
+    function renderList() {
+        $(".builder-n").textContent = draft.items.length ? `(${draft.items.length})` : "";
+        const { by } = tally();
+        const g = BUILD_GOALS[goal()];
+        $(".builder-tally").innerHTML = Object.entries(by).filter(([m]) => m !== "cardio").map(([m, t]) => {
+            const over = t.n > t.max || t.sets > g.sets;
+            return `<li class="${over ? "is-over" : t.n === t.max ? "is-full" : ""}"><strong>${BUILD_MUSCLE_NAME[m]}</strong> ${t.n} of ${t.max} exercise${t.max === 1 ? "" : "s"} · ${t.sets} sets${over ? ` <span class="tally-warn">(${t.n > t.max ? "too many exercises" : "too many sets"})</span>` : ""}</li>`;
+        }).join("") + (draft.items.length > g.total ? `<li class="is-over"><strong>Total</strong> ${draft.items.length} exercises <span class="tally-warn">(${g.total} is plenty for ${g.for})</span></li>` : "");
+        $(".builder-empty").hidden = draft.items.length > 0;
+        $(".builder-save").disabled = !draft.items.length;
+        let needBody = false;
+        list.innerHTML = draft.items.map((x, i) => {
+            const kind = builderKind(x.n);
+            let w = builderWeight(x);
+            if (w === "NEED_BODYWEIGHT") { needBody = true; w = "Add your bodyweight (below) to get a weight for this."; }
+            const amountList = kind === "time" ? BUILDER_TIMES : kind === "hold" ? BUILDER_HOLDS : kind === "steps" ? BUILDER_STEPS : BUILDER_REPS;
+            const label = kind === "time" ? "Time" : kind === "hold" ? "Hold" : kind === "steps" ? "Walk" : "Reps";
+            return `
+            <li class="builder-item" data-i="${i}">
+                <div class="bi-head">${equipIcon(x.n)}<strong>${escapeHtml(x.n)}</strong>
+                    <button type="button" class="chip" data-howto="${escapeHtml(x.n)}">How to</button></div>
+                <div class="bi-controls">
+                    ${kind === "time" ? "" : `<label>Sets <select data-f="sets">${opts(["1", "2", "3", "4", "5", "6"], String(x.sets))}</select></label>`}
+                    <label>${label} <select data-f="amount">${opts(amountList, x.amount)}</select></label>
+                    ${kind === "time" ? "" : `<label>Rest <select data-f="rest">${opts(BUILDER_RESTS, x.rest)}</select></label>`}
+                </div>
+                <p class="bi-weight"><span class="bi-weight-label">Weight</span> ${escapeHtml(w)}</p>
+                ${(() => { const m = builderMuscle(x.n), t = by[m]; if (!t || m === "cardio") return ""; const rank = draft.items.slice(0, i + 1).filter((y) => builderMuscle(y.n) === m).length; return rank > t.max ? `<p class="bi-warn" role="note"><strong>Heads up:</strong> that's ${t.n} ${BUILD_MUSCLE_NAME[m].toLowerCase()} exercises. For ${g.for}, ${t.max} ${t.max === 1 ? "is" : "are"} enough in one workout; ${g.why.split(";")[1] ? g.why.split(";")[1].trim() : "more mostly adds fatigue"}. Keep it if you like, or swap it for another muscle.</p>` : ""; })()}
+                <div class="bi-move">
+                    <button type="button" class="chip" data-move="-1"${i === 0 ? " disabled" : ""} aria-label="Move ${escapeHtml(x.n)} up">&uarr;</button>
+                    <button type="button" class="chip" data-move="1"${i === draft.items.length - 1 ? " disabled" : ""} aria-label="Move ${escapeHtml(x.n)} down">&darr;</button>
+                    <button type="button" class="chip" data-remove aria-label="Remove ${escapeHtml(x.n)}">Remove</button>
+                </div>
+            </li>`;
+        }).join("");
+        const note = $(".builder-note");
+        note.hidden = !needBody;
+        note.innerHTML = needBody ? `To get a starting weight for every exercise, add your level and bodyweight in <a href="index.html#setup">Your starting point</a>. It takes 10 seconds.` : "";
+    }
+    spot.querySelector(".builder-goals").addEventListener("change", (e) => {
+        if (e.target.name !== "builder-goal" || !BUILD_GOALS[e.target.value]) return;
+        draft.goal = e.target.value;
+        // New goal, new sets and reps for everything already picked (you can still change them)
+        draft.items = draft.items.map((x) => builderDefault(x.n, draft.goal));
+        save(); renderGoal(); renderList(); renderResults();
+        status.textContent = `Set for ${BUILD_GOALS[draft.goal].for}: sets, reps, and weights updated.`;
+    });
+    search.addEventListener("input", renderResults);
+    kitSel.addEventListener("change", renderResults);
+    spot.querySelector(".builder-muscles").addEventListener("change", renderResults);
+    results.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-add]");
+        if (!b || !EXERCISES[b.dataset.add] || draft.items.length >= 12) return;
+        const wasAnyway = b.classList.contains("is-anyway");
+        draft.items.push(builderDefault(b.dataset.add, goal()));
+        save(); renderList(); renderResults();
+        const mName = BUILD_MUSCLE_NAME[builderMuscle(b.dataset.add)].toLowerCase();
+        status.textContent = wasAnyway ? `Added ${b.dataset.add}, but that's more ${mName} than you need today. See the note on it in your workout.` : `Added ${b.dataset.add}.`;
+        const again = results.querySelector(`[data-add="${CSS.escape(b.dataset.add)}"]`);
+        if (again) again.focus();
+    });
+    list.addEventListener("change", (e) => {
+        const li = e.target.closest(".builder-item");
+        if (!li || !e.target.dataset.f) return;
+        const x = draft.items[Number(li.dataset.i)];
+        x[e.target.dataset.f] = e.target.dataset.f === "sets" ? Number(e.target.value) : e.target.value;
+        draft = builderClean(draft);
+        save();
+        const f = e.target.dataset.f, i = li.dataset.i;
+        renderList();
+        const back = list.querySelector(`[data-i="${i}"] [data-f="${f}"]`);
+        if (back) back.focus();
+    });
+    list.addEventListener("click", (e) => {
+        const li = e.target.closest(".builder-item");
+        if (!li) return;
+        const i = Number(li.dataset.i);
+        if (e.target.closest("[data-remove]")) {
+            const gone = draft.items.splice(i, 1)[0];
+            save(); renderList(); renderResults();
+            status.textContent = `Removed ${gone.n}.`;
+            (list.querySelector(`[data-i="${Math.min(i, draft.items.length - 1)}"] [data-remove]`) || search).focus();
+        }
+        const mv = e.target.closest("[data-move]");
+        if (mv && !mv.disabled) {
+            const j = i + Number(mv.dataset.move);
+            [draft.items[i], draft.items[j]] = [draft.items[j], draft.items[i]];
+            save(); renderList();
+            const back = list.querySelector(`[data-i="${j}"] [data-move="${mv.dataset.move}"]`) || list.querySelector(`[data-i="${j}"] [data-remove]`);
+            if (back) back.focus();
+        }
+    });
+    nameIn.addEventListener("input", () => { draft.title = nameIn.value.replace(/[<>]/g, "").slice(0, 40); save(); });
+    $(".builder-clear").addEventListener("click", () => {
+        draft = { title: "", goal: goal(), items: [] }; nameIn.value = ""; save(); renderList(); renderResults();
+        status.textContent = "Cleared. Pick new exercises any time.";
+    });
+    $(".builder-save").addEventListener("click", () => {
+        if (!draft.items.length) return;
+        const title = draft.title.trim() || "My workout";
+        store.set("gu-custom", { title, items: draft.items.map((x) => ({ n: x.n, d: builderDose(x), rest: builderKind(x.n) === "time" ? "" : x.rest })) });
+        store.set("gu-last-plan", { goal: "custom", days: 1 });
+        status.textContent = "Saved. Opening your workout…";
+        setTimeout(() => location.assign(`programs.html?w=${Date.now()}#program-custom-1`), 250);
+    });
+    window.addEventListener("logchange", () => { if (!body.hidden) renderList(); });
+    window.addEventListener("levelchange", () => { if (!body.hidden) renderList(); });
+    addRoute(/^#build$/, () => { open(false); return { target: spot }; });
+}
+
 /* =========================================================
    FEATURE: Your starting point (home page and My progress)
    Pick a level, add bodyweight (and sex, optional), and every plan and the

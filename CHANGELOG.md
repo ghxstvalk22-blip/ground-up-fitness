@@ -2,6 +2,15 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Build your own workout)
+
+- New **Build your own workout** on the Plans page (and linked from the front cover): search or filter the exercise library by muscle and equipment, tap **Add**, and set the sets, reps, and rest for each exercise. Reorder or remove anything, give it a name, then **Save and start**.
+- **Every exercise gets a real weight to use.** The first time, it comes from your level and bodyweight ("Start with about 150 lb"), and it changes with the reps you pick (fewer reps, heavier weight). Once you log your sets, it's based on what you actually lifted and goes up when you hit your reps on every set. Bodyweight moves and holds say so, and cardio gets a pace to aim for.
+- Starting weights now cover machines, cables, and smaller moves too (leg press, lat pulldown, curls, raises and more), marked "about" since machines differ. Dumbbell weights round to sizes gyms actually have.
+- **Pick what it's for:** Build muscle, Get stronger, Lose fat / get fit, or Endurance. Sets, reps, rest, and weights follow the goal.
+- **Smart limits per muscle.** Research shows muscle growth levels off around 6 to 11 hard sets for one muscle in a workout, and strength gains after a few heavy sets, so the builder suggests 2 to 3 exercises for big muscles and 1 to 2 for small ones (fewer when you train several muscles in one session, and 6 to 8 exercises in all). A running count shows "Chest 2 of 3 exercises · 6 sets". You can still add more ("Add anyway"), and it explains why it's more than you need.
+- It saves as **My workout**, the same place Fitness Coach workouts go, with a weight target on each lift. Your unfinished workout is kept while you build it.
+
 ## 2026-10-12 (Full check-up fixes)
 
 - A full check-up of the site: every page on computer and phone, in light and dark mode, for accessibility problems, script errors, and sideways scrolling (all clear); every link and jump link (all work); offline use in the phone app (works); and real visitor journeys with odd inputs.
