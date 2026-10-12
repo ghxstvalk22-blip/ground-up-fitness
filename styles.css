@@ -1726,6 +1726,55 @@ select, input, textarea {
 .principles p { margin: 0 0 14px; color: var(--muted); }
 .principles .text-link { margin-top: auto; }
 
+/* "How to start" guide inside each principle */
+.principle-guide {
+    margin: 0 0 16px;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+}
+.principle-guide summary {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+.principle-guide summary::-webkit-details-marker { display: none; }
+.principle-guide summary::after {
+    content: "+";
+    font-family: var(--display);
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--accent);
+}
+.principle-guide[open] summary::after { content: "\2212"; }
+.principle-guide summary:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.principle-guide ol {
+    margin: 2px 0 12px;
+    padding-left: 1.25em;
+    font-size: 0.93rem;
+}
+.principles .principle-guide li {
+    display: list-item;
+    padding: 0;
+    background: none;
+    margin-bottom: 8px;
+    color: var(--muted);
+}
+.principles .principle-guide li::marker { font-weight: 800; color: var(--ink); }
+.principles .principle-note {
+    margin: 0 0 12px;
+    padding-left: 10px;
+    border-left: 3px solid var(--volt);
+    font-size: 0.88rem;
+}
+
 @media (max-width: 900px) {
     .principles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

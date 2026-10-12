@@ -305,9 +305,24 @@ async function openPage(browser, file, viewport, hash = "") {
         // Pros page
         {
             const { page } = await openPage(browser, "pros.html", viewport);
-            check(await page.locator(".principles li").count() === 6, "six pro principles");
+            check(await page.locator(".principles > li").count() === 6, "six pro principles");
             const safe = await page.locator(".pro-link").evaluateAll((as) => as.every((a) => a.target === "_blank" && /noopener/.test(a.rel) && a.href.startsWith("https://")));
             check(safe, "pro links open safely in a new tab");
+            check(await page.locator(".principles > li > details.principle-guide").count() === 6, "each pro habit has a How to start guide");
+            check(await page.locator(".principle-guide[open]").count() === 0, "guides start folded");
+            await page.locator("#guide-overload summary").focus();
+            await page.keyboard.press("Enter");
+            check(await page.locator("#guide-overload").evaluate((d) => d.open) && await page.locator("#guide-overload ol li").count() >= 3, "a guide opens from the keyboard with practical steps");
+            const pOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+            check(pOverflow <= 0, `an open guide doesn't cause sideways scrolling (${pOverflow}px)`);
+            await page.locator(".principle-guide summary").evaluateAll((s) => s.forEach((x) => { if (!x.parentElement.open) x.click(); }));
+            await page.screenshot({ path: path.join(SHOTS, `${name}-pros-guides.png`), fullPage: true });
+            await page.locator(".theme-toggle").click();
+            await page.screenshot({ path: path.join(SHOTS, `${name}-pros-guides-dark.png`), fullPage: true });
+            await page.goto(url("pros.html", "#guide-food"));
+            await page.waitForTimeout(250);
+            check(await page.locator("#guide-food").evaluate((d) => d.open), "a link to a guide opens it");
+            check(/dietitian/.test(await page.locator("#guide-food").textContent()), "the food guide points to a doctor or dietitian");
             await page.close();
         }
 

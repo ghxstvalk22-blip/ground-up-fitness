@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (pro habits: how to start)
+
+- **Each of the six "Train like a pro" habits now has a "How to start" guide.** Tap it on the Pros page and it opens into 3 or 4 plain, practical steps for a beginner, plus the most common mistake to avoid (for example, how to add weight without wrecking your form, or how to keep training when a week gets busy).
+- **Why:** the habits explained *what* champions do, but not what a beginner should actually do this week. Now each one does.
+- The food guide reminds people to check with a doctor or registered dietitian before changing how they eat if they have a health condition. Links straight to a guide (like `pros.html#guide-food`) open it automatically.
+
 ## 2026-10-12 (muscle map, new artwork)
 
 - **The muscle map has a real anatomy figure now**, replacing the simple mannequin. Muscles have their true shapes, and the multi-part muscles show their separate heads: the three heads of the shoulder (front, side, and rear are each their own pick), the triceps' heads, the quads, the hamstrings, and the two-headed calves. The chest splits into upper and lower.

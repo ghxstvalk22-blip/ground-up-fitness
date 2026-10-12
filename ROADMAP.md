@@ -8,7 +8,7 @@ Write it in plain words, like `- [ ] Add a page about stretching before workouts
 Owner priorities (2026-10-12): more workout plans, more ways to move around the site, a site people
 actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFYNE / Gold's Gym style.
 
-- [ ] Pro principles deep dives: turn each of the six "Train like a pro" habits into a short expandable guide with practical steps for beginners.
+(Empty for now. The next update will pick from **Ideas**.)
 
 ## Ideas
 
@@ -20,6 +20,8 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 - [ ] Couch to 5K: a "Repeat this week" button, since repeating a week is a normal part of the plan.
 - [ ] Tiered strength (GZCLP): a 3-day option that rotates through the 4 workouts, like the original.
 - [ ] Accounts: once Firebase is set up, show a small "Signed in" marker in the header on every page.
+- [ ] Habit check-in: a small weekly checklist on My progress for the six pro habits (logged sets, trained on planned days, slept 7+ hours most nights) to show which habit to work on next.
+- [ ] Link the "Train like a pro" box on the home page to a random habit's "How to start" guide, so returning visitors see a new tip.
 
 ## Blocked
 
@@ -27,6 +29,7 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 ## Done
 
+- [x] 2026-10-12: Pro principles deep dives: each of the six "Train like a pro" habits on the Pros page has a "How to start" guide that opens into practical beginner steps and a common mistake to avoid.
 - [x] 2026-10-12: Muscle map on the Exercises page: spin the body by dragging (mouse or finger) or with Front / Side / Back buttons; point at or tap any of 21 muscles to highlight it in red and see what it does, the best exercises (with how-tos), and a beginner tip.
 
 - [x] 2026-10-12 (owner requests): accounts code (Firebase; switches on when the owner adds the config), supplements guide, Couch to 5K / Tiered strength (GZCLP) / Muscular endurance circuit plans with source credits, Glutes & legs and Upper body focus plans, sex setting and smaller jumps on light lifts, rewards (PRs, streaks, milestones), 4-week training waves, My progress page, cardio logging, calmer page transitions, and a calmer home page.
