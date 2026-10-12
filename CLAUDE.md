@@ -53,7 +53,9 @@ ships **one** focused improvement.
    that relies on color alone.
 4. **No new external dependencies.** Fonts come from Google Fonts. Photos come from Unsplash
    (free license only, never Unsplash+), loaded from images.unsplash.com, and every photographer
-   is added to `PHOTO_CREDITS`. No frameworks, no trackers, no analytics, no ads.
+   is added to `PHOTO_CREDITS`. The one exception is accounts: `setupAccount` loads the Firebase
+   SDK from gstatic.com, and only when the owner has filled in `FIREBASE_CONFIG`. No frameworks,
+   no trackers, no analytics, no ads.
 5. **Health content must be safe and mainstream:** evidence-based, beginner-friendly, and
    for healthy adults. No crash diets, no calorie targets below the existing floors
    (1,500 for men and 1,200 for women), no supplements or drugs (except the owner-requested, evidence-based `supplements.html` guide:
@@ -61,7 +63,8 @@ ships **one** focused improvement.
    content aimed at minors. Anything about nutrition or injury points people to a doctor
    or registered dietitian when appropriate.
 6. **Never** put passwords, API keys, or personal information in the repo. The contact
-   form key stays an empty string unless the owner fills it in. While it's empty, the Contact
+   form key stays an empty string unless the owner fills it in. `FIREBASE_CONFIG` stays empty
+   unless the owner fills it in (those values are public by design; Firestore rules protect the data). While it's empty, the Contact
    page shows a "still being set up" note and the Send button is disabled; that's expected.
 7. **Hero counts update themselves** from `PROGRAMS`. A program can set `kit: "none"` (home,
    bodyweight) or `kit: "db"` (dumbbells); the rotation and Swap then only use exercises whose

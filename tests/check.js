@@ -344,6 +344,13 @@ async function openPage(browser, file, viewport, hash = "") {
         // My progress: pulls in logged lifts and cardio, and switches between strength and endurance
         {
             const { page, errors } = await openPage(browser, "me.html", viewport);
+            // Accounts stay off (and load nothing from Google) until the owner adds a Firebase config
+            check(/saved on this device only/.test(await page.locator("#account-card").textContent()), "without a Firebase config, the account card explains data stays on this device");
+            check(await page.evaluate(() => typeof firebase === "undefined" && ![...document.scripts].some((s) => /gstatic/.test(s.src))), "Firebase isn't loaded until it's configured");
+            const merged = await page.evaluate(() => JSON.parse(mergeData(
+                { "gu-log": JSON.stringify({ Squat: [{ date: "2026-10-02", unit: "lb", sets: [] }] }) },
+                { "gu-log": JSON.stringify({ Squat: [{ date: "2026-10-01", unit: "lb", sets: [] }], Bench: [] }), "gu-unit": "\"kg\"" })["gu-log"]));
+            check(merged.Squat.length === 2 && "Bench" in merged, "signing in on a new device merges logs instead of overwriting them");
             await page.evaluate(() => {
                 const d = (k) => { const x = new Date(); x.setDate(x.getDate() - k); return x.toISOString().slice(0, 10); };
                 localStorage.setItem("gu-log", JSON.stringify({ "Bench press": [

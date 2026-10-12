@@ -29,6 +29,18 @@ const CONTACT_CONFIG = {
     fallbackEmail: ""
 };
 
+/* ---------- ACCOUNT SETTINGS (optional) ----------
+   Paste the firebaseConfig values from your Firebase project here
+   (Project settings > Your apps > Web app). These values are public by
+   design; your Firestore security rules are what keep data private.
+   Leave them empty and the site keeps everything on the device only. */
+const FIREBASE_CONFIG = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    appId: ""
+};
+
 /* ---------- Feature list: add new setup functions here ---------- */
 const FEATURES = [
     setupLayout,     // keep first: builds the header and footer the others use
@@ -45,6 +57,7 @@ const FEATURES = [
     setupLibrary,
     setupWeightTrend,
     setupDashboard,
+    setupAccount,
     setupTools,
     setupContactForm,
     setupLinks,      // keep after features that add routes
@@ -3609,4 +3622,168 @@ function setupContactForm() {
             afterScroll: () => (fields.name.value ? fields.message : fields.name).focus({ preventScroll: true })
         };
     });
+}
+
+/* =========================================================
+   FEATURE: Accounts (Firebase). Optional: does nothing until
+   FIREBASE_CONFIG near the top of this file is filled in.
+   Signed in, every "gu-" setting and log on this device is saved to
+   users/{uid} in Firestore, and merged when you sign in on a new
+   device. Firestore rules (set in the Firebase console) must only let
+   a signed-in user read and write their own document:
+     match /users/{uid} { allow read, write: if request.auth != null && request.auth.uid == uid; }
+   ========================================================= */
+const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src; s.onload = resolve; s.onerror = () => reject(new Error(`Couldn't load ${src}`));
+        document.head.appendChild(s);
+    });
+}
+
+// Everything this site saves on the device
+function localData() {
+    const data = {};
+    try { Object.keys(localStorage).filter((k) => k.startsWith("gu-")).forEach((k) => { data[k] = localStorage.getItem(k); }); } catch (e) { /* storage blocked */ }
+    return data;
+}
+
+// Combine this device's data with the account's, without losing either side's logs
+function mergeData(local, remote) {
+    const out = { ...remote, ...local };
+    const parse = (s) => { try { return JSON.parse(s); } catch (e) { return null; } };
+    const unionArr = (a, b) => { const seen = new Set(); return [...(b || []), ...(a || [])].filter((x) => { const k = JSON.stringify(x); if (seen.has(k)) return false; seen.add(k); return true; }); };
+    Object.keys(remote).forEach((k) => {
+        if (!(k in local)) return;
+        const a = parse(local[k]), b = parse(remote[k]);
+        if (k === LOG_KEY && a && b && typeof a === "object") {
+            const merged = { ...b };
+            Object.entries(a).forEach(([name, list]) => { merged[name] = unionArr(list, b[name]).sort((x, y) => x.date.localeCompare(y.date)); });
+            out[k] = JSON.stringify(merged);
+        } else if (Array.isArray(a) && Array.isArray(b)) {
+            out[k] = JSON.stringify(unionArr(a, b));
+        }
+    });
+    return out;
+}
+
+function setupAccount() {
+    const card = document.getElementById("account-card");
+    const configured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId;
+    if (!configured) {
+        if (card) card.innerHTML = `
+            <div class="account-box">
+                <h2 class="me-h2">Your data</h2>
+                <p>Everything you log is saved on this device only, so nothing is sent anywhere. Accounts that sync between your phone and computer are coming soon. Until then, use <strong>Download everything</strong> at the bottom of this page to keep a backup.</p>
+            </div>`;
+        return;
+    }
+
+    let db = null, auth = null, user = null, pushTimer = null;
+    const render = (state, msg = "") => {
+        if (!card) return;
+        if (state === "in") {
+            card.innerHTML = `
+                <div class="account-box">
+                    <h2 class="me-h2">Your account</h2>
+                    <p>Signed in as <strong>${escapeHtml(user.email || user.displayName || "you")}</strong>. Your logs and settings are saved to your account and sync to any device you sign in on.</p>
+                    <div class="account-actions">
+                        <button class="btn btn-ghost btn-compact" type="button" id="acct-out">Sign out</button>
+                        <button class="text-button" type="button" id="acct-delete">Delete my account and its data</button>
+                    </div>
+                    <p class="log-status" role="status">${escapeHtml(msg)}</p>
+                </div>`;
+            card.querySelector("#acct-out").addEventListener("click", () => auth.signOut());
+            card.querySelector("#acct-delete").addEventListener("click", deleteAccount);
+        } else {
+            card.innerHTML = `
+                <div class="account-box">
+                    <h2 class="me-h2">Save your progress to an account</h2>
+                    <p>Free. Sign in to keep your logs safe and see them on your phone and computer. Without an account, everything stays on this device.</p>
+                    <div class="account-actions">
+                        <button class="btn btn-primary btn-compact" type="button" id="acct-google">Continue with Google</button>
+                    </div>
+                    <form class="account-form" id="acct-form" novalidate>
+                        <div class="field"><label for="acct-email">Email</label><input id="acct-email" type="email" autocomplete="email" required></div>
+                        <div class="field"><label for="acct-pass">Password <span class="field-hint">(6+ characters)</span></label><input id="acct-pass" type="password" autocomplete="current-password" minlength="6" required></div>
+                        <div class="account-actions">
+                            <button class="btn btn-ghost btn-compact" type="submit">Sign in</button>
+                            <button class="text-button" type="button" id="acct-create">Create an account</button>
+                        </div>
+                    </form>
+                    <p class="log-status" role="status">${escapeHtml(msg)}</p>
+                    <p class="fine-print">We only store your email and what you log here. Delete it all any time.</p>
+                </div>`;
+            const status = card.querySelector(".log-status");
+            const fail = (e) => { status.textContent = friendlyAuthError(e); };
+            card.querySelector("#acct-google").addEventListener("click", () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(fail));
+            const form = card.querySelector("#acct-form");
+            const creds = () => [form.querySelector("#acct-email").value.trim(), form.querySelector("#acct-pass").value];
+            form.addEventListener("submit", (e) => { e.preventDefault(); auth.signInWithEmailAndPassword(...creds()).catch(fail); });
+            card.querySelector("#acct-create").addEventListener("click", () => auth.createUserWithEmailAndPassword(...creds()).catch(fail));
+        }
+    };
+
+    function friendlyAuthError(e) {
+        const code = (e && e.code) || "";
+        if (/wrong-password|invalid-credential|user-not-found/.test(code)) return "That email and password don't match. Try again, or create an account.";
+        if (/email-already-in-use/.test(code)) return "There's already an account with that email. Sign in instead.";
+        if (/weak-password/.test(code)) return "Use a password with at least 6 characters.";
+        if (/invalid-email/.test(code)) return "That doesn't look like an email address.";
+        if (/popup-closed/.test(code)) return "";
+        return "Something went wrong signing in. Check your connection and try again.";
+    }
+
+    const docRef = () => db.collection("users").doc(user.uid);
+    function pushSoon() {
+        if (!user) return;
+        clearTimeout(pushTimer);
+        pushTimer = setTimeout(() => docRef().set({ data: localData(), updated: Date.now() }).catch(() => {}), 1500);
+    }
+
+    async function pullAndMerge() {
+        const snap = await docRef().get();
+        const remote = (snap.exists && snap.data().data) || {};
+        const merged = mergeData(localData(), remote);
+        try { Object.entries(merged).forEach(([k, v]) => localStorage.setItem(k, v)); } catch (e) { /* ignore */ }
+        await docRef().set({ data: merged, updated: Date.now() });
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { synced: true } }));
+    }
+
+    async function deleteAccount() {
+        if (!window.confirm("Delete your account and everything saved to it? Your data on this device stays until you delete it below. This can't be undone.")) return;
+        try {
+            await docRef().delete();
+            await user.delete();
+        } catch (e) {
+            const status = card && card.querySelector(".log-status");
+            if (status) status.textContent = /requires-recent-login/.test(e.code || "")
+                ? "For your security, sign out, sign back in, and try again."
+                : "Couldn't delete the account. Check your connection and try again.";
+        }
+    }
+
+    // Every save on this site also goes to the account (when signed in)
+    const baseSet = store.set.bind(store), baseRemove = store.remove.bind(store);
+    store.set = (k, v) => { baseSet(k, v); if (String(k).startsWith("gu-")) pushSoon(); };
+    store.remove = (k) => { baseRemove(k); if (String(k).startsWith("gu-")) pushSoon(); };
+    window.addEventListener("logchange", (e) => { if (!(e.detail && e.detail.synced)) pushSoon(); });
+
+    if (card) card.innerHTML = `<div class="account-box"><p>Loading your account&hellip;</p></div>`;
+    Promise.all(["firebase-app-compat.js"].map((f) => loadScript(FIREBASE_SDK + f)))
+        .then(() => Promise.all(["firebase-auth-compat.js", "firebase-firestore-compat.js"].map((f) => loadScript(FIREBASE_SDK + f))))
+        .then(() => {
+            firebase.initializeApp(FIREBASE_CONFIG);
+            auth = firebase.auth();
+            db = firebase.firestore();
+            auth.onAuthStateChanged((u) => {
+                user = u;
+                if (!u) { render("out"); return; }
+                render("in", "Syncing…");
+                pullAndMerge().then(() => render("in", "Synced.")).catch(() => render("in", "Couldn't sync right now. Your data is still saved on this device."));
+            });
+        })
+        .catch(() => { if (card) card.innerHTML = `<div class="account-box"><p>Accounts couldn't load right now. Everything you log is still saved on this device.</p></div>`; });
 }

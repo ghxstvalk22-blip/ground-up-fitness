@@ -1992,6 +1992,11 @@ select, input, textarea {
 @media (max-width: 460px) { .me-link { font-size: 0; gap: 0; padding: 9px 11px; } .me-dot { width: 12px; height: 12px; } }
 
 .account-card { margin-bottom: 28px; }
+.account-box { border: 1px solid var(--line); background-color: var(--surface); padding: 20px 22px; }
+.account-box p { margin: 0 0 10px; }
+.account-box .me-h2 { margin-top: 0; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 12px 0; }
+.account-form { max-width: 420px; margin-top: 8px; }
 .train-for { margin-bottom: 8px; }
 .train-for-advice { margin: 0 0 32px; color: var(--muted); max-width: 70ch; }
 .me-h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
