@@ -1867,6 +1867,7 @@ select, input, textarea {
 .form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
 .draft-note { margin: 0; font-size: 0.82rem; color: var(--muted); }
 
+.form-notice { margin: 0 0 24px; padding: 14px 16px; border-left: 4px solid var(--volt); background-color: var(--surface); }
 .form-status { margin: 14px 0 0; font-weight: 600; color: var(--good); }
 .form-status.is-error { color: var(--bad); }
 

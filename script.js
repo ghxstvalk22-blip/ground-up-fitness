@@ -2556,7 +2556,7 @@ function setupContactForm() {
         const { web3formsKey, fallbackEmail } = CONTACT_CONFIG;
 
         if (!web3formsKey && !fallbackEmail) {
-            showStatus("This form isn't connected yet. Add a Web3Forms key or an email at the top of script.js.", true);
+            showStatus("Messages aren't switched on yet, so this didn't send. Your draft is saved on this device.", true);
             return;
         }
 
@@ -2605,6 +2605,13 @@ function setupContactForm() {
     });
 
     // Links like #contact-program open the form with that topic picked
+    // Until the owner connects the form, say so up front instead of failing on Send
+    if (!CONTACT_CONFIG.web3formsKey && !CONTACT_CONFIG.fallbackEmail) {
+        form.insertAdjacentHTML("beforebegin", `<p class="form-notice" role="note"><strong>Heads up:</strong> the contact form is still being set up, so messages can't be sent yet. In the meantime, the <a href="basics.html">Gym basics</a> and <a href="start.html#first-day">first-day guide</a> answer the most common questions.</p>`);
+        sendBtn.disabled = true;
+        sendLabel.textContent = "Coming soon";
+    }
+
     const topicValues = [...fields.topic.options].map((o) => o.value);
     addRoute(/^#contact-([a-z]+)$/, (m) => {
         if (!topicValues.includes(m[1])) return null;

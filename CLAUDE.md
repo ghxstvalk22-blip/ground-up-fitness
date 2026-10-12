@@ -57,7 +57,8 @@ ships **one** focused improvement.
    content aimed at minors. Anything about nutrition or injury points people to a doctor
    or registered dietitian when appropriate.
 6. **Never** put passwords, API keys, or personal information in the repo. The contact
-   form key stays an empty string unless the owner fills it in.
+   form key stays an empty string unless the owner fills it in. While it's empty, the Contact
+   page shows a "still being set up" note and the Send button is disabled; that's expected.
 7. **Hero counts update themselves** from `PROGRAMS`. A program can set `kit: "none"` (home,
    bodyweight) or `kit: "db"` (dumbbells); the rotation and Swap then only use exercises whose
    `kit` in `exercises.js` fits. `rotation: "block"` makes a plan change every 4 weeks instead of weekly. When you add a
