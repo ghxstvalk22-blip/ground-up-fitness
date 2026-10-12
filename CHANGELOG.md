@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Exercise library pictures)
+
+- Every card in the exercise library now has a picture: the body zoomed in on the muscles that exercise works, with the main muscles in orange and the helpers in a lighter orange (front or back view, whichever shows them best). The muscle group sits on the picture, and the equipment icon and name sit right under it.
+- The pictures are drawn from the same anatomy art as the muscle map, so they load fast, look the same in light and dark mode, work offline in the phone app, and new exercises get one automatically. On phones they're a little shorter so you can scroll faster.
+
 ## 2026-10-12 (Simpler menus)
 
 - Took **Pros** and **Gym basics** off the top menu and the footer, and removed the "Train like a pro" band from the home page, so the menu only shows what people use most: Start here, Programs, Exercises, Tools, Contact, and My progress.

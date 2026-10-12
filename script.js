@@ -2810,6 +2810,70 @@ function libraryGroup(name) {
     return muscleGroup(name) || "core";
 }
 
+/* ---------- Library pictures ----------
+   Each card in the exercise library shows the body (from muscle-art.js), zoomed in on
+   the muscles that exercise works: the main one in orange, helpers lighter. Built from
+   the guide's "muscles worked" text, so new exercises get a picture automatically. */
+const LIB_TERMS = [
+    [/^upper chest/, ["chest-upper"]], [/^chest/, ["chest-upper", "chest-middle", "chest-lower"]],
+    [/^front shoulders/, ["delt-front"]], [/^side shoulders/, ["delt-side"]], [/^(rear shoulders|rotator cuff)/, ["delt-rear"]],
+    [/^shoulders/, ["delt-front", "delt-side", "delt-rear"]],
+    [/^traps/, ["traps-upper", "traps-middle", "traps-lower"]], [/^upper back/, ["traps-middle", "traps-lower", "rhomboids"]],
+    [/^lats/, ["lats"]], [/^lower back/, ["erectors"]], [/^back/, ["lats", "rhomboids", "traps-middle"]],
+    [/^biceps \(long/, ["biceps-long"]], [/^biceps/, ["biceps-long", "biceps-short", "brachialis"]],
+    [/^triceps \(long/, ["triceps-long"]], [/^triceps/, ["triceps-long", "triceps-lateral", "triceps-medial"]],
+    [/^forearms \(brachialis/, ["brachialis"]], [/^(forearms|grip)/, ["forearm-flexors", "forearm-extensors"]],
+    [/^abs \(lower/, ["abs-lower"]], [/^abs/, ["abs-upper", "abs-lower"]], [/^core/, ["abs-upper", "abs-lower", "obliques"]], [/^obliques/, ["obliques"]],
+    [/^glutes \(side/, ["glute-med"]], [/^(glutes|hips)/, ["glute-max", "glute-med"]],
+    [/^quads/, ["quad-outer", "quad-middle", "quad-inner"]], [/^(inner thighs|adductors)/, ["adductors"]], [/^hamstrings/, ["hams-outer", "hams-inner"]],
+    [/^calves \(especially the lower/, ["soleus"]], [/^calves/, ["calf-inner", "calf-outer", "soleus"]],
+    [/^legs/, ["quad-outer", "quad-middle", "quad-inner", "hams-outer", "hams-inner", "glute-max", "calf-inner", "calf-outer"]]
+];
+function libMuscles(name) {
+    const terms = String((EXERCISES[name] || {}).m || "").toLowerCase().split(",").map((t) => t.trim()).filter(Boolean);
+    const partsOf = (t) => { const hit = LIB_TERMS.find(([re]) => re.test(t)); return hit ? hit[1] : []; };
+    const main = terms.length ? partsOf(terms[0]) : [];
+    const extra = terms.slice(1).flatMap(partsOf).filter((p) => !main.includes(p));
+    // Cardio lists "heart and lungs" first; show the legs as the main movers
+    if (!main.length && extra.length) return { main: extra, extra: [] };
+    return { main, extra };
+}
+const libShapeCache = {};
+function libThumb(name, sex) {
+    if (typeof MUSCLE_ART !== "object") return "";
+    const { main, extra } = libMuscles(name);
+    if (!main.length) return "";
+    const score = (view) => mmViewPieces(sex, view).filter((pc) => pc.parts.some((p) => main.includes(p))).length;
+    const view = score("front") >= score("back") ? "front" : "back";
+    const seen = new Set(), lit = [];
+    mmViewPieces(sex, view).forEach((pc) => {
+        if (seen.has(pc.d)) return;
+        const isMain = pc.parts.some((p) => main.includes(p)), isExtra = !isMain && pc.parts.some((p) => extra.includes(p));
+        if (!isMain && !isExtra) return;
+        seen.add(pc.d);
+        lit.push({ d: pc.d, isMain });
+    });
+    if (!lit.some((x) => x.isMain)) return "";
+    // Zoom in on the main muscles (with a little of the helpers and body around them), in a 4:3 frame
+    const box = lit.filter((x) => x.isMain).map((x) => libShapeCache[x.d] || (libShapeCache[x.d] = mmShapes(x.d)[0]))
+        .reduce((b, sh) => [Math.min(b[0], sh.x0), Math.min(b[1], sh.y0), Math.max(b[2], sh.x1), Math.max(b[3], sh.y1)], [Infinity, Infinity, -Infinity, -Infinity]);
+    let w = Math.max(box[2] - box[0], 260) + 160, h = Math.max(box[3] - box[1], 200) + 140;
+    if (w / h > 4 / 3) h = w * 3 / 4; else w = h * 4 / 3;
+    const cx = (box[0] + box[2]) / 2, cy = (box[1] + box[3]) / 2;
+    const x = Math.min(Math.max(cx - w / 2, 150), Math.max(150, 874 - w)), y = Math.min(Math.max(cy - h / 2, 30), Math.max(30, 1510 - h));
+    return `<svg class="lib-body" viewBox="${x.toFixed(0)} ${y.toFixed(0)} ${w.toFixed(0)} ${h.toFixed(0)}" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+        <use href="#lib-${sex}-${view}"/>${lit.map((p) => `<path class="${p.isMain ? "lib-main" : "lib-extra"}" d="${p.d}"/>`).join("")}</svg>`;
+}
+// One copy of each body drawing, reused by every card
+function libSprite(sex) {
+    if (typeof MUSCLE_ART !== "object" || document.getElementById(`lib-${sex}-front`)) return;
+    const views = ["front", "back"].map((v) => {
+        const a = MUSCLE_ART[sex][v];
+        return `<g id="lib-${sex}-${v}"><g class="lib-outline">${a.outline.map((d) => `<path d="${d}"/>`).join("")}</g><g class="lib-rest">${a.muscles.map(([, d]) => `<path d="${d}"/>`).join("")}</g></g>`;
+    }).join("");
+    document.body.insertAdjacentHTML("beforeend", `<svg class="lib-sprite" aria-hidden="true" focusable="false" width="0" height="0"><defs>${views}</defs></svg>`);
+}
+
 function setupLibrary() {
     const grid = document.getElementById("library-grid");
     if (!grid || typeof EXERCISES !== "object") return;
@@ -2820,6 +2884,8 @@ function setupLibrary() {
     const names = Object.keys(EXERCISES).sort((a, b) => a.localeCompare(b));
     const group = Object.fromEntries(names.map((n) => [n, libraryGroup(n)]));
     const label = { legs: "Legs", chest: "Chest", back: "Back", shoulders: "Shoulders", arms: "Arms", core: "Core", cardio: "Cardio" };
+    const sex = getProfile().sex === "female" ? "female" : "male";
+    libSprite(sex);
 
     function render() {
         const q = search.value.trim().toLowerCase();
@@ -2836,7 +2902,9 @@ function setupLibrary() {
             const x = EXERCISES[n];
             return `
                 <li class="library-card">
-                    <span class="library-tags"><span class="library-tag">${label[group[n]]}</span>${equipIcon(n, true)}</span>
+                    <div class="library-pic${isCardio(n) ? " is-cardio" : ""}">${libThumb(n, sex) || `<span class="library-pic-icon equip equip-${equipOf(n)}" aria-hidden="true"></span>`}
+                        <span class="library-pic-tag">${label[group[n]]}</span></div>
+                    <span class="library-tags">${equipIcon(n, true)}</span>
                     <h3>${escapeHtml(n)}</h3>
                     <p class="library-muscles">${escapeHtml(x.m)}</p>
                     <p class="library-eq">${escapeHtml(x.eq)}</p>

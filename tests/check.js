@@ -485,6 +485,8 @@ async function openPage(browser, file, viewport, hash = "") {
         {
             const { page, errors } = await openPage(browser, "exercises.html", viewport);
             const all = await page.locator(".library-card").count();
+            const noPic = await page.evaluate(() => [...document.querySelectorAll(".library-card")].filter((c) => !c.querySelector(".library-pic .lib-main")).map((c) => c.querySelector("h3").textContent));
+            check(noPic.length <= 2, `every exercise card shows the muscles it works ${JSON.stringify(noPic)}`);
             await page.locator('input[name="equip"][value="db"]').check({ force: true });
             const dbCards = await page.locator(".library-card").count();
             const kinds = await page.locator(".library-card .equip").evaluateAll((els) => [...new Set(els.map((e) => e.className.match(/equip-(\w+)/)[1]))]);
