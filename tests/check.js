@@ -432,6 +432,40 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // Coach: ask for muscles, get a workout, start it on the Plans page
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            await page.evaluate(() => { localStorage.removeItem("gu-custom"); localStorage.removeItem("gu-level"); });
+            await page.click("#coach-fab");
+            check(await page.locator("#coach").isVisible(), "the Coach button opens the chat");
+            const ask = async (text) => {
+                await page.fill("#coach-input", text);
+                await page.press("#coach-input", "Enter");
+                return page.locator(".coach-msg.is-coach").last().textContent();
+            };
+            const w = await ask("hey I wanna do shoulders back and abs");
+            check(/Shoulders, Back & Abs/.test(w) && await page.locator(".coach-msg.is-coach").last().locator(".coach-ex").count() >= 4, "Coach builds a workout for the muscles you name");
+            const names = await page.locator(".coach-msg.is-coach").last().locator(".coach-ex").allTextContents();
+            const groups = await page.evaluate((names) => names.map((n) => EXERCISES[n].m.toLowerCase()), names);
+            check(groups.some((m) => /shoulder/.test(m)) && groups.some((m) => /lats|upper back/.test(m)) && groups.some((m) => /abs|core/.test(m)), `the workout covers each muscle asked for (${names.join(", ")})`);
+            await ask("no equipment");
+            const homeNames = await page.locator(".coach-msg.is-coach").last().locator(".coach-ex").allTextContents();
+            check(homeNames.length >= 3 && await page.evaluate((n) => n.every((x) => EXERCISES[x].kit === "none"), homeNames), `"no equipment" only uses bodyweight moves (${homeNames.join(", ")})`);
+            check(/Deadlift/.test(await ask("how do I do a deadlift?")) && await page.locator('.coach-msg.is-coach').last().locator('[data-howto="Deadlift"]').count() === 1, "Coach answers how-to questions with a link to the full guide");
+            check(/doctor|physical therapist/.test(await ask("my knee hurts, can I do legs?")), "Coach sends pain and injury questions to a professional");
+            await ask(`<img src=x onerror="window.__pwned=1">`);
+            check(await page.evaluate(() => !window.__pwned && document.querySelectorAll(".coach-log img").length === 0), "typing code into Coach can't run it");
+            await ask("chest and triceps, 30 minutes");
+            await page.locator(".coach-msg.is-coach").last().locator("[data-coach-start]").click();
+            await page.waitForURL(/programs\.html/);
+            await page.waitForTimeout(300);
+            check(/My workout/.test(await page.locator(".program-head h3").textContent()) && /Chest & Triceps/.test(await page.locator(".day-card h4").first().textContent()), "Start this workout opens it as My workout on the Plans page");
+            check(await page.locator(".day-card [data-log]").count() >= 3, "My workout can be logged like any plan");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.evaluate(() => { localStorage.removeItem("gu-custom"); localStorage.removeItem("gu-last-plan"); });
+            await page.close();
+        }
+
         // How-tos and the muscle map get more in-depth as the level goes up
         {
             const { page, errors } = await openPage(browser, "exercises.html", viewport);

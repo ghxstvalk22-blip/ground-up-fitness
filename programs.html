@@ -24,9 +24,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261012-3">
-    <script src="exercises.js?v=20261012-3" defer></script>
-    <script src="script.js?v=20261012-3" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261012-4">
+    <script src="exercises.js?v=20261012-4" defer></script>
+    <script src="script.js?v=20261012-4" defer></script>
 </head>
 
 <body data-page="programs">
@@ -50,6 +50,7 @@
                 <div class="level-wrap" id="all-plans" data-level-bar></div>
                 <fieldset class="segmented goal-picker" id="goal-picker">
                     <legend>What's your goal?</legend>
+                    <label data-level="Beginner" hidden><input type="radio" name="goal" value="custom"><span>My workout</span></label>
                     <label data-level="Beginner"><input type="radio" name="goal" value="beginner" checked><span>New to lifting</span></label>
                     <label data-level="Beginner"><input type="radio" name="goal" value="fatloss"><span>Lose fat</span></label>
                     <label data-level="Beginner"><input type="radio" name="goal" value="home"><span>No gym</span></label>
@@ -69,6 +70,7 @@
                 </fieldset>
                 <fieldset class="segmented" id="days-picker">
                     <legend>Days per week</legend>
+                    <label><input type="radio" name="days" value="1"><span>1 day</span></label>
                     <label><input type="radio" name="days" value="2"><span>2 days</span></label>
                     <label><input type="radio" name="days" value="3" checked><span>3 days</span></label>
                     <label><input type="radio" name="days" value="4"><span>4 days</span></label>

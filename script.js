@@ -58,6 +58,7 @@ const FEATURES = [
     setupMuscleMap,
     setupLevelBar,
     setupApp,
+    setupCoach,
     setupWeightTrend,
     setupDashboard,
     setupAccount,
@@ -1742,6 +1743,31 @@ function setLevel(l) {
     window.dispatchEvent(new CustomEvent("levelchange", { detail: { level: l } }));
 }
 
+/* ---------- "My workout" (built by Coach) ----------
+   Saved on this device as "gu-custom": { title, items: [{ n, d, rest }] }. Only exercises
+   that exist in the library get through, and text is checked before it's used. */
+function loadCustomWorkout() {
+    const raw = store.get("gu-custom");
+    if (!raw || typeof raw !== "object" || !Array.isArray(raw.items) || typeof EXERCISES !== "object") return null;
+    const clean = (v, max) => String(v == null ? "" : v).replace(/[<>]/g, "").slice(0, max);
+    const items = raw.items.filter((x) => x && EXERCISES[x.n]).slice(0, 12)
+        .map((x) => ex(x.n, clean(x.d, 40), clean(x.rest, 20)));
+    if (!items.length) return null;
+    const title = clean(raw.title, 60) || "My workout";
+    return {
+        level: "Beginner",
+        name: "My workout",
+        tagline: title,
+        summary: `${title}: a session Coach built for you from this site's exercise guides. Do it once, or repeat it 1 to 3 times a week with a rest day between.`,
+        session: `About ${Math.max(15, Math.round(items.length * 7.5))} minutes`,
+        effort: "Stop most sets with 1 to 3 good reps left. Ask Coach to make it easier or harder any time.",
+        progression: "Log your sets. Next time you'll get a target for each exercise.",
+        rotation: "none",
+        waves: false,
+        plans: { 1: { schedule: "Whenever you like.", days: [{ title, items }] } }
+    };
+}
+
 // Main muscle of an exercise, from the library ("Side shoulders" -> shoulders)
 function muscleGroup(name) {
     const m = ((typeof EXERCISES === "object" && EXERCISES[name]) ? EXERCISES[name].m : "").split(",")[0].toLowerCase();
@@ -2067,6 +2093,10 @@ function setupPrograms() {
     };
     if (!els.grid || !els.head) return; // not on the Programs page
 
+    // "My workout": a one-off session built by Coach, if there is one
+    const custom = loadCustomWorkout();
+    if (custom) PROGRAMS.custom = custom;
+
     // Open on the plan this person used last time
     const last = store.get("gu-last-plan", {}) || {};
     const state = { goal: PROGRAMS[last.goal] ? last.goal : "beginner", days: Number(last.days) || 3, week: null };
@@ -2103,7 +2133,7 @@ function setupPrograms() {
 
         els.head.innerHTML = `
             <div>
-                <h3>${escapeHtml(p.name)} &middot; ${state.days} days <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
+                <h3>${escapeHtml(p.name)} &middot; ${state.goal === "custom" ? "1 session" : `${state.days} days`} <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
                 <p>${escapeHtml(p.summary)}</p>
                 ${p.source ? `<p class="plan-source">Based on <a href="${p.source[1]}" target="_blank" rel="noopener">${escapeHtml(p.source[0])}</a>. Adapted for this site; not affiliated.</p>` : ""}
             </div>
@@ -2509,7 +2539,7 @@ function setupPrograms() {
         els.goalInputs.forEach((r) => {
             const label = r.closest("label");
             const lvl = PROGRAMS[r.value] ? PROGRAMS[r.value].level : "Beginner";
-            label.hidden = levelRank(lvl) > rank && r.value !== state.goal;
+            label.hidden = !PROGRAMS[r.value] || (levelRank(lvl) > rank && r.value !== state.goal);
             label.classList.toggle("is-above", levelRank(lvl) > rank);
         });
         const note = document.getElementById("level-unlock");
@@ -2699,6 +2729,339 @@ function setupLibrary() {
     const match = radios.find((r) => r.value && r.value === fromHash);
     if (match) match.checked = true;
     render();
+}
+
+/* =========================================================
+   FEATURE: Coach, the chat helper (every page)
+   A built-in assistant that runs on the device, with no AI service
+   and nothing sent anywhere. It reads what people type ("shoulders,
+   back and abs", "30 min legs, no equipment"), builds a workout from
+   the muscle map and exercise guides, answers how-to and plan
+   questions, and saves the workout as "My workout" on the Plans page.
+   Everything it shows is built from this site's own data.
+   ========================================================= */
+const COACH_GROUPS = [
+    ["chest", /\b(chest|pecs?|pectorals?|bench)\b/],
+    ["shoulders", /\b(shoulders?|delts?|deltoids?)\b/],
+    ["traps", /\b(traps?|trapezius)\b/],
+    ["upper-back", /\b(upper back|mid(dle)? back|rhomboids?)\b/],
+    ["lats", /\b(lats?|latissimus|wings?|v[- ]?taper)\b/],
+    ["lower-back", /\b(lower back|erectors?)\b/],
+    ["biceps", /\b(biceps?|bis|guns)\b/],
+    ["triceps", /\b(triceps?|tris)\b/],
+    ["forearms", /\b(forearms?|grip)\b/],
+    ["abs", /\b(abs|abdominals?|core|six[- ]?pack|stomach|belly)\b/],
+    ["obliques", /\b(obliques?|love handles|waist)\b/],
+    ["glutes", /\b(glutes?|butt|booty|bum|hips?)\b/],
+    ["quads", /\b(quads?|quadriceps|front of (my )?thighs?)\b/],
+    ["adductors", /\b(inner thighs?|adductors?)\b/],
+    ["hamstrings", /\b(hamstrings?|hams|back of (my )?thighs?)\b/],
+    ["calves", /\b(calf|calves)\b/]
+];
+const COACH_COMBOS = [
+    [/\bfull[- ]?body|everything|whole body|total body\b/, ["quads", "chest", "lats", "shoulders", "hamstrings", "abs"]],
+    [/\bupper[- ]?body\b/, ["chest", "lats", "shoulders", "upper-back", "biceps", "triceps"]],
+    [/\blower[- ]?body\b/, ["quads", "glutes", "hamstrings", "calves"]],
+    [/\blegs?\b(?! (raise|press|curl|extension))/, ["quads", "glutes", "hamstrings", "calves"]],
+    [/\barms?\b/, ["biceps", "triceps", "forearms"]],
+    [/\bback\b/, ["lats", "upper-back"]],
+    [/\bpush\b/, ["chest", "shoulders", "triceps"]],
+    [/\bpull\b/, ["lats", "upper-back", "biceps"]]
+];
+const COACH_PARTS = [
+    [/\bupper (chest|pecs?)\b/, "chest-upper"], [/\blower (chest|pecs?)\b/, "chest-lower"],
+    [/\b(front|anterior) delts?\b/, "delt-front"], [/\b(side|lateral|middle) delts?\b/, "delt-side"], [/\b(rear|back|posterior) delts?\b/, "delt-rear"],
+    [/\b(teardrop|inner quads?|vmo)\b/, "quad-inner"], [/\bouter quads?\b/, "quad-outer"],
+    [/\blong head\b/, "triceps-long"], [/\blower abs\b/, "abs-lower"], [/\bupper abs\b/, "abs-upper"], [/\bglute med(ius)?|side glutes?\b/, "glute-med"]
+];
+// Fallback: find exercises for a muscle from the library's own "muscles worked" text
+const COACH_MUSCLE_TEXT = {
+    chest: /chest/i, shoulders: /shoulder/i, traps: /trap|upper back/i, "upper-back": /upper back/i, lats: /lats/i, "lower-back": /lower back/i,
+    biceps: /biceps/i, triceps: /triceps/i, forearms: /forearm|grip/i, abs: /abs|core/i, obliques: /oblique/i, glutes: /glute/i,
+    quads: /quad/i, adductors: /adductor|inner thigh/i, hamstrings: /hamstring/i, calves: /calv/i
+};
+const COACH_COMPOUND = /press|squat|deadlift|row|pull-up|pulldown|lunge|thrust|dip|step-up|push-up|leg press|bridge|carry/i;
+
+function coachUnderstand(text) {
+    const t = ` ${text.toLowerCase().replace(/[’']/g, "'").replace(/&/g, " and ")} `;
+    const groups = new Set(), parts = new Set(), labels = [];
+    const where = (re) => { const m = t.match(re); return m ? m.index : -1; };
+    const label = (pos, name) => { if (pos >= 0 && !labels.some((l) => l.name === name)) labels.push({ pos, name }); };
+    COACH_PARTS.forEach(([re, id]) => { if (re.test(t)) { parts.add(id); groups.add(mmPart(id).g.id); label(where(re), mmPart(id).p.name); } });
+    const COMBO_NAMES = ["Full body", "Upper body", "Lower body", "Legs", "Arms", "Back", "Push", "Pull"];
+    COACH_COMBOS.forEach(([re, ids], i) => { if (re.test(t)) { ids.forEach((g) => groups.add(g)); label(where(re), COMBO_NAMES[i]); } });
+    COACH_GROUPS.forEach(([id, re]) => {
+        if (!re.test(t)) return;
+        groups.add(id);
+        const covered = labels.some((l) => ["Full body", "Upper body", "Lower body", "Legs", "Arms", "Back", "Push", "Pull"].includes(l.name) && COACH_COMBOS[COMBO_NAMES.indexOf(l.name)][1].includes(id));
+        const ownPart = [...parts].some((p) => mmPart(p).g.id === id);
+        if (!covered && !ownPart) label(where(re), MUSCLE_MAP.find((x) => x.id === id).name);
+    });
+    // "lower back" and "upper back" shouldn't also pull in the whole back
+    if (/\b(lower|upper) back\b/.test(t) && !/\b(my|the|whole) back\b|\bback (and|,)|, back\b|\bback day\b/.test(t.replace(/\b(lower|upper) back\b/g, ""))) {
+        if (!/\bback\b/.test(t.replace(/\b(lower|upper) back\b/g, ""))) { groups.delete("lats"); if (!/\bupper back\b/.test(t)) groups.delete("upper-back"); }
+    }
+    const kit = /\b(no equipment|bodyweight|body weight|no gym|at home|home workout|from home|hotel|nothing)\b/.test(t) ? "none"
+        : /\bdumbbells?( only)?\b|\bdb\b/.test(t) ? "db" : null;
+    const min = t.match(/\b(\d{1,3})\s*(?:min|mins|minutes|m)\b/);
+    const minutes = min ? Math.min(120, Math.max(10, Number(min[1]))) : /\b(quick|short|fast|little time|busy)\b/.test(t) ? 25 : null;
+    const pain = /\b(pain|hurts?|hurting|injur(y|ed|ies)|sprain|strain(ed)?|torn|tear|surgery|dizzy|chest pain|faint)\b/.test(t);
+    const howto = /\bhow (do|should|can) (i|you)\b|\bhow to\b|\bform (for|on)\b|\bshow me how\b|\bwhat('s| is) the right way\b/.test(t);
+    // keep the muscles in the order the person said them
+    const order = (g) => { const m = COACH_GROUPS.find(([id]) => id === g); const i = m ? where(m[1]) : -1; return i < 0 ? 999 : i; };
+    return { t, groups: [...groups].sort((a, b) => order(a) - order(b)), parts: [...parts], kit, minutes, pain, howto,
+        title: labels.sort((a, b) => a.pos - b.pos).map((l) => l.name) };
+}
+
+// Find an exercise named in the text (longest name wins)
+function coachFindExercise(t) {
+    let best = null;
+    Object.keys(EXERCISES).forEach((name) => {
+        const n = name.toLowerCase();
+        const variants = [n, n.replace(/s$/, ""), `${n}s`, n.replace(/-/g, " ")];
+        if (variants.some((v) => t.includes(v)) && (!best || n.length > best.length)) best = name;
+    });
+    return best;
+}
+
+function coachDose(name, compound, level) {
+    if (/plank|wall sit/i.test(name)) return ["3 × 30–45 s", "45 s"];
+    if (/carry/i.test(name)) return ["3 × 40 steps", "60 s"];
+    if (/dead bug|bird dog/i.test(name)) return ["3 × 8 per side", "45 s"];
+    if (isCardio(name)) return ["10–15 min", ""];
+    const per = /single|split squat|lunge|step-up|one-arm|single-arm/i.test(name) ? " per side" : "";
+    const table = {
+        Beginner: compound ? ["3 × 8–12", "90 s"] : ["2 × 12–15", "60 s"],
+        Intermediate: compound ? ["3 × 8–10", "2 min"] : ["3 × 10–15", "60 s"],
+        Advanced: compound ? ["4 × 6–8", "2–3 min"] : ["3 × 10–15", "60 s"],
+        Expert: compound ? ["4 × 5–8", "3 min"] : ["3 × 10–15", "60–90 s"]
+    }[level];
+    return [table[0] + per, table[1]];
+}
+
+// Build a workout for some muscles, a kit ("none", "db", or the full gym), and a time budget
+function coachBuild(req, level) {
+    const groups = req.groups.length ? req.groups : ["quads", "chest", "lats", "shoulders", "hamstrings", "abs"];
+    const count = req.minutes ? Math.min(9, Math.max(3, Math.round(req.minutes / 8))) : level === "Beginner" ? 5 : 6;
+    const kitOk = (n) => !req.kit || kitAllows(req.kit, EXERCISES[n] && EXERCISES[n].kit);
+    const pool = groups.map((gid) => {
+        const g = MUSCLE_MAP.find((x) => x.id === gid);
+        const named = g.parts.filter((p) => req.parts.includes(p.id));
+        const fromMap = (named.length ? named : g.parts).flatMap((p) => p.ex);
+        const primary = (n) => COACH_MUSCLE_TEXT[gid].test((EXERCISES[n].m || "").split(",")[0]);
+        const fromText = Object.keys(EXERCISES)
+            .filter((n) => !isCardio(n) && !/stretch|mobility/i.test(n) && COACH_MUSCLE_TEXT[gid].test((EXERCISES[n].m || "").split(",").slice(0, 2).join(",")))
+            .sort((a, b) => Number(primary(b)) - Number(primary(a)));
+        // beginners get the assisted version of pull-ups and dips
+        const easy = (n) => (level === "Beginner" && (n === "Pull-up" || n === "Dip") ? `Assisted ${n.toLowerCase()}` : n);
+        const mapped = fromMap.map(easy).filter((n) => EXERCISES[n] && kitOk(n));
+        const list = named.length && mapped.length ? mapped : [...new Set([...mapped, ...fromText.map(easy)])].filter((n) => EXERCISES[n] && kitOk(n));
+        return { gid, list: [...new Set(list)] };
+    }).filter((x) => x.list.length);
+    const picked = [], used = new Set();
+    for (let round = 0; picked.length < count && round < 6; round++) {
+        pool.forEach((p) => {
+            if (picked.length >= count) return;
+            const n = p.list.find((x) => !used.has(x));
+            if (n) { used.add(n); picked.push(n); }
+        });
+    }
+    // Big lifts first, smaller moves after
+    picked.sort((a, b) => Number(COACH_COMPOUND.test(b)) - Number(COACH_COMPOUND.test(a)));
+    let items = picked.map((n) => { const [d, rest] = coachDose(n, COACH_COMPOUND.test(n), level); return { n, d, rest }; });
+    // Only a couple of moves fit? Add a set to each so it's still a full session
+    const bumped = items.length > 0 && items.length < 4;
+    if (bumped) items = items.map((x) => ({ ...x, d: x.d.replace(/^(\d+)/, (s) => String(Math.min(5, Number(s) + 1))) }));
+    const names = req.title && req.title.length ? req.title : pool.map((p) => MUSCLE_MAP.find((x) => x.id === p.gid).name);
+    const title = names.length > 1 ? `${names.slice(0, -1).join(", ")} & ${names[names.length - 1]}` : names[0] || "Full body";
+    const minutes = Math.round(items.reduce((sum, x) => sum + (parseDose(x.d).sets || 3) * 2, 0) + 5);
+    return { title: req.groups.length ? title : "Full body", items, minutes, kit: req.kit, bumped, missing: req.groups.filter((g) => !pool.some((p) => p.gid === g)) };
+}
+
+function setupCoach() {
+    if (typeof EXERCISES !== "object" || typeof MUSCLE_MAP !== "object") return;
+    const ROBOT = `<svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="15" y="2" width="2" height="5" fill="currentColor"/><circle cx="16" cy="3" r="2" fill="var(--volt)"/><rect x="5" y="8" width="22" height="17" rx="2" fill="currentColor"/><rect x="9" y="13" width="4" height="4" fill="var(--volt)"/><rect x="19" y="13" width="4" height="4" fill="var(--volt)"/><rect x="11" y="20" width="10" height="2" fill="#000"/><rect x="2" y="13" width="3" height="7" fill="currentColor"/><rect x="27" y="13" width="3" height="7" fill="currentColor"/></svg>`;
+    document.body.insertAdjacentHTML("beforeend", `
+<button type="button" class="coach-fab" id="coach-fab" aria-haspopup="dialog" aria-controls="coach" aria-expanded="false">${ROBOT}<span>Ask Coach</span></button>
+<section class="coach" id="coach" role="dialog" aria-modal="false" aria-labelledby="coach-title" hidden>
+    <header class="coach-head">
+        <span class="coach-avatar">${ROBOT}</span>
+        <div><h2 id="coach-title">Coach</h2><p>Builds a workout for any muscles you want</p></div>
+        <button type="button" class="coach-close" id="coach-close" aria-label="Close Coach">&times;</button>
+    </header>
+    <div class="coach-log" id="coach-log" aria-live="polite"></div>
+    <div class="coach-chips" id="coach-chips"></div>
+    <form class="coach-form" id="coach-form" autocomplete="off">
+        <label for="coach-input" class="visually-hidden">Message Coach</label>
+        <input id="coach-input" type="text" maxlength="200" placeholder="e.g. shoulders, back and abs" enterkeyhint="send">
+        <button type="submit" class="btn btn-primary btn-compact">Send</button>
+    </form>
+</section>`);
+    const fab = document.getElementById("coach-fab"), panel = document.getElementById("coach");
+    const log = document.getElementById("coach-log"), chips = document.getElementById("coach-chips");
+    const form = document.getElementById("coach-form"), input = document.getElementById("coach-input");
+    let last = null, lastReq = null, started = false;
+
+    const say = (html, who = "coach") => {
+        log.insertAdjacentHTML("beforeend", `<div class="coach-msg is-${who}">${html}</div>`);
+        log.scrollTop = log.scrollHeight;
+    };
+    const suggest = (list) => { chips.innerHTML = list.map((s) => `<button type="button" class="chip" data-coach-say="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join(""); };
+    const DEFAULT_CHIPS = ["Shoulders, back & abs", "Legs, 30 minutes", "Full body, no equipment", "How do I do a deadlift?"];
+
+    function open() {
+        panel.hidden = false;
+        fab.setAttribute("aria-expanded", "true");
+        document.body.classList.add("coach-open");
+        if (!started) {
+            started = true;
+            say(`<p><strong>Hey, I'm Coach.</strong> Tell me what you want to train and I'll build you a workout from this site's exercise guides. Try "<em>shoulders, back and abs</em>" or "<em>30 min legs, no equipment</em>".</p>
+                <p class="coach-fine">I'm a simple built-in helper, not a person and not an AI service. Nothing you type leaves your phone.</p>`);
+            suggest(DEFAULT_CHIPS);
+        }
+        setTimeout(() => input.focus(), 30);
+    }
+    function close() {
+        panel.hidden = true;
+        fab.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("coach-open");
+        fab.focus();
+    }
+
+    function workoutCard(w) {
+        const lvl = getLevel();
+        const kitNote = w.kit === "none" ? " · no equipment" : w.kit === "db" ? " · dumbbells only" : "";
+        return `<p>Here's your <strong>${escapeHtml(w.title)}</strong> workout: ${w.items.length} exercises, about ${w.minutes} minutes${kitNote}. Set for <strong>${lvl}</strong>.</p>
+            <ol class="coach-workout">${w.items.map((x) => `<li><button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
+            ${w.bumped ? `<p class="coach-fine">Only a few moves fit that, so each one gets an extra set.</p>` : ""}
+            ${w.missing.length ? `<p class="coach-fine">I couldn't find ${escapeHtml(w.missing.join(", "))} exercises for that equipment, so I left them out.</p>` : ""}
+            <div class="coach-actions"><button type="button" class="btn btn-primary btn-compact" data-coach-start>Start this workout</button></div>
+            <p class="coach-fine">Tap an exercise to see how to do it. Warm up for 5 minutes first.</p>`;
+    }
+
+    function reply(text) {
+        const req = coachUnderstand(text);
+        const t = req.t;
+        // Safety first
+        if (req.pain) {
+            say(`<p>If something hurts, especially sharp pain, joint pain, chest pain, or dizziness, please stop and get it checked by a doctor or physical therapist before training it.</p>
+                ${req.groups.length ? `<p>I can build a workout that leaves ${escapeHtml(req.groups.map((g) => MUSCLE_MAP.find((x) => x.id === g).name.toLowerCase()).join(" and "))} alone. Tell me what you'd like to train instead.</p>` : ""}`);
+            suggest(["Upper body", "Lower body", "Core only"]);
+            return;
+        }
+        if (/\b(i'?m|i am) (1[0-7]|[5-9]) ?(years? old|yo|y\/o)?\b|\bmy parents?\b.*\blet me\b/.test(t)) {
+            say(`<p>This site's plans are written for adults. If you're under 18, please train with a coach, PE teacher, or parent, and ask a doctor before starting a program.</p>`);
+            return;
+        }
+        // Follow-ups to the last workout
+        if (last && lastReq && !req.groups.length) {
+            const mod = { ...lastReq };
+            let changed = false;
+            if (/\b(shorter|less time|quicker|too long)\b/.test(t)) { mod.minutes = Math.max(15, (last.minutes || 45) - 15); changed = true; }
+            if (/\b(longer|more exercises|more time|too short)\b/.test(t)) { mod.minutes = Math.min(90, (last.minutes || 45) + 15); changed = true; }
+            if (req.kit) { mod.kit = req.kit; changed = true; }
+            if (/\b(gym|machines|full gym)\b/.test(t) && !req.kit) { mod.kit = null; changed = true; }
+            if (/\b(harder|tougher|more intense|too easy)\b/.test(t)) { const i = levelRank(getLevel()); if (i < 3) setLevel(LEVELS[i + 1]); changed = true; }
+            if (/\b(easier|lighter|too hard)\b/.test(t)) { const i = levelRank(getLevel()); if (i > 0) setLevel(LEVELS[i - 1]); changed = true; }
+            if (/\b(different|other exercises|shuffle|new one)\b/.test(t)) { mod.shuffle = (mod.shuffle || 0) + 1; changed = true; }
+            if (changed) {
+                last = coachBuild(mod, getLevel());
+                if (mod.shuffle) { const k = mod.shuffle % Math.max(1, last.items.length); last.items = [...last.items.slice(k), ...last.items.slice(0, k)]; }
+                lastReq = mod;
+                say(workoutCard(last));
+                suggest(["Make it shorter", "Make it harder", "No equipment", "Start this workout"]);
+                return;
+            }
+            if (/\bstart\b/.test(t)) { startWorkout(); return; }
+        }
+        // How do I do an exercise?
+        const exName = coachFindExercise(t);
+        if (exName && (req.howto || !req.groups.length)) {
+            const x = EXERCISES[exName];
+            say(`<p><strong>${escapeHtml(exName)}</strong> works your ${escapeHtml(x.m.toLowerCase())}.</p>
+                <ol class="coach-steps">${x.steps.slice(0, 3).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol>
+                <p><strong>Remember:</strong> ${escapeHtml(x.tip)}</p>
+                <div class="coach-actions"><button type="button" class="btn btn-compact" data-howto="${escapeHtml(exName)}">Full how-to and demo</button></div>`);
+            suggest([`Workout with ${exName.toLowerCase()}`, "Shoulders, back & abs", "Legs, 30 minutes"]);
+            return;
+        }
+        // What does a muscle do?
+        if (/\bwhat (do|does|is|are)\b/.test(t) && req.groups.length === 1 && !/\bworkout|train|exercise for\b/.test(t)) {
+            const g = MUSCLE_MAP.find((x) => x.id === req.groups[0]);
+            say(`<p><strong>${escapeHtml(g.name)}:</strong> ${escapeHtml(g.does)}</p><p><strong>Tip:</strong> ${escapeHtml(g.tip)}</p>`);
+            suggest([`Build me a ${g.name.toLowerCase()} workout`, "Full body, no equipment"]);
+            return;
+        }
+        // Food and weight questions: point to the right tools, and to a professional
+        if (/\b(diet|eat|eating|calories?|protein|meal|food|macros?|supplements?|creatine)\b/.test(t) && !req.groups.length) {
+            say(`<p>For food, start with the <a href="tools.html#tool-calories">calorie and protein estimator</a>${/\bsupplement|creatine\b/.test(t) ? ` and the <a href="supplements.html">supplements guide</a>` : ""}. For a personal eating plan, especially with a health condition, a registered dietitian or your doctor is the right person to ask.</p>`);
+            return;
+        }
+        // Which plan should I follow?
+        const plans = [
+            [/\b(lose|losing|burn|cut|drop)\b.*\b(weight|fat|pounds|lbs|kg)\b|\bfat loss|weight loss\b/, "fatloss"],
+            [/\b(run|running|5k|jog)\b/, "c25k"],
+            [/\b(stronger|strength|powerlift)\b/, "strength"],
+            [/\b(build muscle|bulk|get big|bigger|size|gain muscle)\b/, "build"],
+            [/\b(new|beginner|never|first time|scared|nervous)\b/, "beginner"]
+        ];
+        const plan = !req.groups.length && plans.find(([re]) => re.test(t));
+        if (plan) {
+            const p = PROGRAMS[plan[1]];
+            say(`<p>For that, I'd start with <strong>${escapeHtml(p.name)}</strong> (${escapeHtml(p.level)}): ${escapeHtml(p.summary)}</p>
+                <div class="coach-actions"><a class="btn btn-primary btn-compact" href="programs.html#program-${plan[1]}">Open ${escapeHtml(p.name)}</a></div>
+                <p class="coach-fine">Prefer a one-off session? Tell me the muscles you want to train.</p>`);
+            return;
+        }
+        // Build a workout
+        if (req.groups.length || /\b(workout|train|session|exercise|lift|routine)\b/.test(t)) {
+            last = coachBuild(req, getLevel());
+            lastReq = req;
+            if (!last.items.length) {
+                say(`<p>I couldn't find exercises for that with ${req.kit === "none" ? "no equipment" : "dumbbells only"}. Want a gym version instead?</p>`);
+                suggest(["Gym version", "Full body, no equipment"]);
+                return;
+            }
+            say(workoutCard(last));
+            suggest(["Make it shorter", "Make it harder", "No equipment", "Different exercises"]);
+            return;
+        }
+        if (/\b(hi|hey|hello|yo|sup)\b/.test(t)) { say(`<p>Hey! What do you want to train today?</p>`); suggest(DEFAULT_CHIPS); return; }
+        if (/\b(thanks|thank you|thx|appreciate)\b/.test(t)) { say(`<p>Anytime. Go get it.</p>`); return; }
+        say(`<p>I didn't quite get that. I'm best at building workouts. Name some muscles (like "chest and triceps" or "glutes"), add time or equipment if you want ("30 minutes", "no equipment"), or ask "how do I do a squat?"</p>`);
+        suggest(DEFAULT_CHIPS);
+    }
+
+    function startWorkout() {
+        if (!last || !last.items.length) return;
+        store.set("gu-custom", { title: last.title, items: last.items });
+        store.set("gu-last-plan", { goal: "custom", days: 1 });
+        say(`<p>Saved as <strong>My workout</strong>. Opening it on the Plans page, where you can log your sets.</p>`);
+        setTimeout(() => { location.assign(`programs.html?w=${Date.now()}#program-custom-1`); }, 350);
+    }
+
+    fab.addEventListener("click", () => (panel.hidden ? open() : close()));
+    document.getElementById("coach-close").addEventListener("click", close);
+    panel.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        say(`<p>${escapeHtml(text)}</p>`, "you");
+        input.value = "";
+        reply(text);
+    });
+    panel.addEventListener("click", (e) => {
+        const c = e.target.closest("[data-coach-say]");
+        if (c) {
+            if (/^start this workout$/i.test(c.dataset.coachSay)) { startWorkout(); return; }
+            say(`<p>${escapeHtml(c.dataset.coachSay)}</p>`, "you");
+            reply(c.dataset.coachSay);
+        }
+        if (e.target.closest("[data-coach-start]")) startWorkout();
+    });
+    // Links like #coach open it
+    if (location.hash === "#coach") open();
 }
 
 /* =========================================================

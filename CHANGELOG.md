@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Coach)
+
+- **New: Coach**, a chat helper on every page (the robot button, bottom right). Tell it what you want to train in your own words, like "shoulders, back and abs", "30 min legs, no equipment", or "upper chest and side delts with dumbbells", and it builds a workout from the site's exercise guides, set for your level.
+- Tap **Start this workout** and it opens as **My workout** on the Plans page, where you can log sets and use the rest timer like any plan.
+- Follow-ups work too: "make it shorter", "harder", "no equipment", "different exercises". It also answers "how do I do a deadlift?", "what do glutes do?", and "what plan should I do to lose weight?"
+- **Safe by design:** if you mention pain or an injury, Coach tells you to see a doctor or physical therapist and won't train that area. Food questions go to the calorie tool and a registered dietitian. It's a built-in helper, not a person or an AI service, and nothing you type leaves your phone.
+
 ## 2026-10-12 (works like a phone app)
 
 - **Add it to your home screen:** Ground Up can now be installed like an app, free, from Safari (Share, then Add to Home Screen) or Chrome. It gets its own icon, opens full screen without the browser bars, and stays clear of the notch.
