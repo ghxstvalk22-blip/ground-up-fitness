@@ -27,6 +27,9 @@ ships **one** focused improvement.
 - Features that need special links register them with `addRoute(pattern, handler)`
   (see `setupPrograms` and `setupContactForm`).
 - Use the shared helpers: `store` (safe localStorage), `escapeHtml`, `fmt`, `goTo`.
+- Program options: `source: [label, url]` shows a "Based on" credit (verify the URL first);
+  `weeks: [...]` inside a plan gives week-by-week days (see Couch to 5K); `rotation: "none"`
+  stops exercise rotation; `waves: false` turns off the 4-week Build/Push/Heavy/Recover cycle.
 - The header, menus, footer, and search dialog are built by `setupLayout()` from `SITE_NAV`.
   Edit menus there, not in the HTML files. New menu links show up in search automatically.
 - Each feature must check for its own elements and return quietly on pages without them.

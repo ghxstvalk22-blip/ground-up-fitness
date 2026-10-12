@@ -861,7 +861,7 @@ const PROGRAMS = {
 
     build: {
         name: "Build muscle",
-        tagline: "full body, 3 days",
+        tagline: "full body",
         summary: "Three full-body sessions a week built for muscle: moderate weights, 8 to 15 reps, and every muscle trained three times a week. A great next step after the beginner plan, and before a bodybuilding split like Classic Physique.",
         session: "50 to 60 minutes",
         effort: "Most sets end 1 or 2 reps short of failure. Control the lowering on every rep; that's where a lot of the muscle-building happens.",
@@ -901,7 +901,7 @@ const PROGRAMS = {
 
     glutes: {
         name: "Glutes & legs focus",
-        tagline: "lower body first, 3 or 4 days",
+        tagline: "lower body first",
         summary: "For anyone, man or woman, who wants stronger, more shapely glutes and legs. Hip thrusts, hinges, and single-leg work come first each lower day, and upper body still gets trained so you stay balanced.",
         session: "50 to 60 minutes",
         effort: "Stop most sets with 1 or 2 good reps left. On hip thrusts and kickbacks, pause and squeeze at the top of every rep.",
@@ -1046,6 +1046,128 @@ const PROGRAMS = {
         }
     },
 
+    c25k: {
+        name: "Couch to 5K",
+        tagline: "from walking to a 30-minute run",
+        summary: "Go from walking to running 30 minutes without stopping in 9 weeks, 3 runs a week. Each week steps up a little. This page shows that week's runs automatically.",
+        session: "About 30 minutes, including a 5-minute walk before and after",
+        effort: "Run slowly enough to talk. If a week feels too hard, repeat it; plenty of people do.",
+        progression: "The plan does it for you: use the week arrows to see what's coming. After week 9, keep running 3 times a week or try the Cardio plan.",
+        source: ["the NHS Couch to 5K running plan", "https://www.nhs.uk/better-health/get-active/get-running-with-couch-to-5k/couch-to-5k-running-plan/"],
+        waves: false,
+        rotation: "none",
+        plans: {
+            3: {
+                schedule: "3 runs a week with a rest day between each, like Mon, Wed, Fri.",
+                weeks: [
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1 min, walk 1½ min. 8 runs in all, ending on a run", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1 min, walk 1½ min. 8 runs in all, ending on a run", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1 min, walk 1½ min. 8 runs in all, ending on a run", ""), ex("Brisk walk", "5 min cool-down", "")] }],
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1½ min, walk 2 min. 6 runs in all, ending on a run", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1½ min, walk 2 min. 6 runs in all, ending on a run", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1½ min, walk 2 min. 6 runs in all, ending on a run", ""), ex("Brisk walk", "5 min cool-down", "")] }],
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1½ min, walk 1½ min, run 3 min, walk 3 min. Do it twice (skip the last walk)", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1½ min, walk 1½ min, run 3 min, walk 3 min. Do it twice (skip the last walk)", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 1½ min, walk 1½ min, run 3 min, walk 3 min. Do it twice (skip the last walk)", ""), ex("Brisk walk", "5 min cool-down", "")] }],
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 3 min, walk 1½ min, run 5 min, walk 2½ min, run 3 min, walk 1½ min, run 5 min", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 3 min, walk 1½ min, run 5 min, walk 2½ min, run 3 min, walk 1½ min, run 5 min", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 3 min, walk 1½ min, run 5 min, walk 2½ min, run 3 min, walk 1½ min, run 5 min", ""), ex("Brisk walk", "5 min cool-down", "")] }],
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 5 min, walk 3 min, run 5 min, walk 3 min, run 5 min", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 8 min, walk 5 min, run 8 min", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "20 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] }],
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 5 min, walk 3 min, run 8 min, walk 3 min, run 5 min", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Run/walk intervals", "Run 10 min, walk 3 min, run 10 min", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "25 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] }],
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "25 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "25 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "25 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] }],
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "28 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "28 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "28 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] }],
+                [{ title: "Run 1", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "30 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 2", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "30 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] },
+                 { title: "Run 3", items: [ex("Brisk walk", "5 min warm-up", ""), ex("Continuous run", "30 min without stopping", ""), ex("Brisk walk", "5 min cool-down", "")] }]
+                ]
+            }
+        }
+    },
+
+    gzclp: {
+        name: "Tiered strength (GZCLP)",
+        tagline: "squat, bench, deadlift, press",
+        summary: "A popular free strength program in three tiers: a heavy main lift (Tier 1), a lighter second lift for more reps (Tier 2), and an accessory for high reps (Tier 3). Best after a few months of lifting, once you know the barbell lifts.",
+        session: "60 to 75 minutes",
+        effort: "Tier 1: 5 sets of 3, with the last set as many good reps as you can. Tier 2: 3 sets of 10. Tier 3: 3 sets of 15, last set as many as you can. Stop any set when your form slips.",
+        progression: "Add weight every session you hit all your reps: about 10 lb (5 kg) on squats and deadlifts, 5 lb (2.5 kg) on bench and overhead press. In the original, if you miss reps you switch to 6 × 2, then 10 × 1 at the same weight before resetting.",
+        source: ["GZCLP by coach Cody LeFever (community guide)", "https://thefitness.wiki/routines/gzclp/"],
+        waves: false,
+        plans: {
+            4: {
+                schedule: "4 days, like Mon, Tue, Thu, Fri. The original also works 3 days a week by rotating through the 4 workouts in order.",
+                days: [
+                    { title: "A1: Squat day", items: [
+                        ex("Back squat", "5 × 3+", "3 min", "Goblet squat"),
+                        ex("Bench press", "3 × 10", "2 min", "Dumbbell bench press"),
+                        ex("Lat pulldown", "3 × 15+", "60 s")
+                    ] },
+                    { title: "B1: Press day", items: [
+                        ex("Overhead press", "5 × 3+", "3 min", "Seated dumbbell shoulder press"),
+                        ex("Deadlift", "3 × 10", "2 min", "Dumbbell or trap bar deadlift"),
+                        ex("Single-arm dumbbell row", "3 × 15+ per side", "60 s")
+                    ] },
+                    { title: "A2: Bench day", items: [
+                        ex("Bench press", "5 × 3+", "3 min", "Dumbbell bench press"),
+                        ex("Back squat", "3 × 10", "2 min", "Goblet squat"),
+                        ex("Lat pulldown", "3 × 15+", "60 s")
+                    ] },
+                    { title: "B2: Deadlift day", items: [
+                        ex("Deadlift", "5 × 3+", "3 min", "Dumbbell or trap bar deadlift"),
+                        ex("Overhead press", "3 × 10", "2 min", "Seated dumbbell shoulder press"),
+                        ex("Single-arm dumbbell row", "3 × 15+ per side", "60 s")
+                    ] }
+                ]
+            }
+        }
+    },
+
+    endurance: {
+        name: "Muscular endurance circuit",
+        tagline: "lighter weights, more reps",
+        summary: "Lighter weights for 15 to 20 reps with short rest, done as a circuit. Builds muscles that keep going: great for fitness tests, hiking, sports, and anyone who prefers lighter weights to heavy ones.",
+        session: "35 to 45 minutes",
+        effort: "Pick weights you could lift about 25 times, and stop each set around 15 to 20 with a few reps left. Move between exercises with 30 to 60 seconds of rest.",
+        progression: "Add reps up to 20 on every set, then add a little weight and start back at 15. Rests can shrink toward 30 seconds as you get fitter.",
+        source: ["the American College of Sports Medicine's resistance training guidelines (2009)", "https://pubmed.ncbi.nlm.nih.gov/19204579/"],
+        plans: {
+            3: {
+                schedule: "Any 3 days with a rest day between. Go around each circuit 2 or 3 times.",
+                days: [
+                    { title: "Circuit A", items: [
+                        ex("Goblet squat", "3 × 15–20", "45 s", "Bodyweight squat"),
+                        ex("Push-up", "3 × 12–20", "45 s", "Incline push-up"),
+                        ex("Seated cable row", "3 × 15–20", "45 s"),
+                        ex("Walking lunge", "3 × 12 per leg", "45 s", "Reverse lunge"),
+                        ex("Plank", "3 × 30–45 s", "30 s", "Plank on your knees")
+                    ] },
+                    { title: "Circuit B", items: [
+                        ex("Leg press", "3 × 15–20", "45 s"),
+                        ex("Lat pulldown", "3 × 15–20", "45 s"),
+                        ex("Dumbbell shoulder press", "3 × 15", "45 s"),
+                        ex("Glute bridge", "3 × 20", "45 s"),
+                        ex("Dead bug", "3 × 10 per side", "30 s")
+                    ] },
+                    { title: "Circuit C", items: [
+                        ex("Step-up", "3 × 12 per leg", "45 s", "Use a lower step"),
+                        ex("Machine chest press", "3 × 15–20", "45 s"),
+                        ex("Single-arm dumbbell row", "3 × 15 per side", "45 s"),
+                        ex("Lateral raise", "3 × 15–20", "30 s"),
+                        ex("Farmer carry", "3 × 40 steps", "45 s")
+                    ] }
+                ]
+            }
+        }
+    },
+
     cardio: {
         name: "Cardio & conditioning",
         tagline: "heart, lungs, endurance",
@@ -1135,7 +1257,7 @@ const PROGRAMS = {
 
     busy: {
         name: "Short on time",
-        tagline: "2 gym days, under 45 min",
+        tagline: "under 45 minutes a session",
         summary: "Two full-body gym sessions a week that hit everything. Short rests and no fluff, for weeks when life is busy. Two good sessions beat four you keep skipping.",
         session: "Under 45 minutes",
         effort: "Stop each set with 1 or 2 good reps left. Keep rests short and stay off your phone between sets.",
@@ -1396,9 +1518,9 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
     const used = new Set();
     return items.map((x, slot) => {
         const mode = PROGRAMS[program].rotation === "block" || slot === 0 ? "block" : "weekly";
-        let name = rotatedName(x.n, { program, days, day: dayIndex, slot, week, mode });
+        let name = PROGRAMS[program].rotation === "none" ? x.n : rotatedName(x.n, { program, days, day: dayIndex, slot, week, mode });
         const fam = familyFor(x.n, program);
-        if (fam && used.has(name)) name = fam.find((n) => !used.has(n)) || name;
+        if (fam && used.has(name) && PROGRAMS[program].rotation !== "none") name = fam.find((n) => !used.has(n)) || name;
         const swapped = swaps[`w${week}:${dayIndex}-${slot}`];
         if (swapped) name = swapped;
         used.add(name);
@@ -1408,6 +1530,7 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
 
 // How many different weekly versions a plan can produce
 function planCombinations(plan, program) {
+    if (PROGRAMS[program] && PROGRAMS[program].rotation === "none") return 1;
     return plan.days.reduce((total, day) => day.items.reduce((t, x) => {
         const fam = familyFor(x.n, program);
         return t * (fam ? fam.length : 1);
@@ -1419,6 +1542,10 @@ function bigNumber(n) {
     if (n >= 1e3) return `over ${fmt(Math.floor(n / 1000) * 1000)}`;
     return fmt(n);
 }
+
+// Week-by-week plans (like Couch to 5K) list each week; everything else repeats its days
+Object.values(PROGRAMS).forEach((p) => Object.values(p.plans).forEach((plan) => { if (plan.weeks && !plan.days) plan.days = plan.weeks[0]; }));
+const weekDays = (plan, week) => (plan.weeks ? plan.weeks[Math.min(Math.max(1, week), plan.weeks.length) - 1] : plan.days);
 
 /* ---------- Weeks ---------- */
 function mondayOf(date) {
@@ -1816,6 +1943,7 @@ function setupPrograms() {
             <div>
                 <h3>${escapeHtml(p.name)} &middot; ${state.days} days</h3>
                 <p>${escapeHtml(p.summary)}</p>
+                ${p.source ? `<p class="plan-source">Based on <a href="${p.source[1]}" target="_blank" rel="noopener">${escapeHtml(p.source[0])}</a>. Adapted for this site; not affiliated.</p>` : ""}
             </div>
             <details class="plan-details"${planDetailsOpen ? " open" : ""}>
                 <summary>How this plan works</summary>
@@ -1854,13 +1982,14 @@ function setupPrograms() {
             : "";
 
         // Days
-        lineups = plan.days.map((day, di) => dayLineup(state.goal, state.days, di, day.items, state.week, swaps));
-        const lastWeek = state.week > 1
+        const thisWeek = weekDays(plan, state.week);
+        lineups = thisWeek.map((day, di) => dayLineup(state.goal, state.days, di, day.items, state.week, swaps));
+        const lastWeek = state.week > 1 && !plan.weeks
             ? plan.days.map((day, di) => dayLineup(state.goal, state.days, di, day.items, state.week - 1, swaps))
             : null;
 
         firstTipShown = new Set();
-        els.grid.innerHTML = plan.days.map((day, di) => `
+        els.grid.innerHTML = thisWeek.map((day, di) => `
             <article class="day-card" data-day="${di}">
                 <header>
                     <span class="day-num">Day ${di + 1} <span class="day-status"></span></span>
@@ -1886,6 +2015,8 @@ function setupPrograms() {
         const easier = x.name === x.n && x.swap ? x.swap : (info && info.easier) || "";
         const cardio = isCardio(x.name);
         let target = cardio ? nextCardioTarget(x.name, profile.unit) : nextTarget(x.name, dose.text, profile.unit);
+        // Week-by-week plans set the next step themselves
+        if (cardio && PROGRAMS[state.goal].plans[state.days].weeks && target && !target.first) target = { ...target, text: "Stick to this week's runs. The plan steps up next week, and repeating a week is fine." };
         // The "first time" tip shows once per day card, not on every exercise
         if (target && target.first) {
             if (firstTipShown.has(di)) target = null;
@@ -1897,7 +2028,7 @@ function setupPrograms() {
             target = { ...target, up: false, weight: w, text: `Recover week: about ${trimNum(w)} ${profile.unit}, roughly 10% lighter than usual. Easy on purpose.` };
         }
         const badges = [
-            xi === 0 && x.canRotate ? `<span class="badge">Main lift</span>` : "",
+            xi === 0 && x.canRotate && !cardio && PROGRAMS[state.goal].rotation !== "none" ? `<span class="badge">Main lift</span>` : "",
             isNew && !x.swapped ? `<span class="badge badge-new">New this week</span>` : "",
             x.swapped ? `<span class="badge">Swapped</span>` : "",
             ...dose.notes.map((n) => `<span class="badge badge-you">${escapeHtml(n)}</span>`)
@@ -2202,7 +2333,7 @@ function setupPrograms() {
     });
 
     // Links like #program-fatloss or #program-strength-4
-    addRoute(/^#program-([a-z]+)(?:-(\d))?$/, (m) => {
+    addRoute(/^#program-([a-z0-9]+)(?:-(\d))?$/, (m) => {
         if (!PROGRAMS[m[1]]) return null;
         if (state.goal !== m[1]) state.week = null;
         state.goal = m[1];

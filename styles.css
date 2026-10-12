@@ -304,6 +304,12 @@ a { color: var(--accent); }
         transform: translateY(-6px);
         transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s linear 0.16s;
     }
+    /* Every plan in two columns so the list fits on a laptop screen */
+    #menu-programs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(250px, 1fr));
+        width: 600px;
+    }
     .submenu::before {
         content: "";
         position: absolute;
@@ -1123,6 +1129,8 @@ select, input, textarea {
     margin: 0 0 6px;
 }
 .program-head p { margin: 0; color: var(--muted); }
+.program-head .plan-source { margin-top: 10px; font-size: 0.88rem; }
+.program-head .plan-source a { color: var(--ink); text-decoration-thickness: 1px; text-underline-offset: 3px; }
 
 .program-meta { margin: 0; display: grid; gap: 10px; }
 .program-meta div { display: grid; grid-template-columns: 110px 1fr; gap: 12px; }

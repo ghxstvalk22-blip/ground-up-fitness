@@ -37,7 +37,7 @@ for (const f of PAGES) {
     idsByPage[f] = new Set([...fs.readFileSync(path.join(ROOT, f), "utf8").matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
 }
 // Addresses handled by the router instead of a plain id
-const ROUTES = { "programs.html": /^program-[a-z]+(-\d)?$/, "contact.html": /^contact-[a-z]+$/, "exercises.html": /^(legs|chest|back|shoulders|arms|core|cardio)$/ };
+const ROUTES = { "programs.html": /^program-[a-z0-9]+(-\d)?$/, "contact.html": /^contact-[a-z]+$/, "exercises.html": /^(legs|chest|back|shoulders|arms|core|cardio)$/ };
 
 function linkProblem(href, fromPage) {
     if (/^(https?:|mailto:)/.test(href)) return null;
@@ -221,7 +221,16 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.evaluate(() => (getProfile().sex === "female")), "sex is saved in the profile");
             const steps = await page.evaluate(() => [weightStep("Lateral raise", "lb", 15), weightStep("Lateral raise", "lb", 60), weightStep("Leg press", "lb", 200)]);
             check(steps.join() === "2.5,5,10", `light upper-body lifts move up in smaller steps (${steps.join()})`);
-            for (const goal of ["glutes", "upper"]) {
+            // Couch to 5K changes every week; sourced plans credit their source
+            await page.locator('input[name="goal"][value="c25k"]').check({ force: true });
+            check(/Based on/.test(await page.locator(".plan-source").textContent()), "sourced plans show where they come from");
+            const c25kW1 = await page.locator(".day-card").first().textContent();
+            await page.locator("#week-next").click();
+            const c25kW2 = await page.locator(".day-card").first().textContent();
+            check(/1 min/.test(c25kW1) && /1½ min, walk 2 min/.test(c25kW2), "Couch to 5K steps up week by week");
+            await page.locator("#week-today").click();
+            check(await page.evaluate(() => PROGRAMS.c25k.plans[3].weeks.length === 9 && PROGRAMS.gzclp.plans[4].days.length === 4), "Couch to 5K has 9 weeks and GZCLP 4 workouts");
+            for (const goal of ["glutes", "upper", "gzclp", "endurance"]) {
                 await page.locator(`input[name="goal"][value="${goal}"]`).check({ force: true });
                 check(await page.locator(".day-card").count() >= 3, `${goal} plan shows its days`);
             }

@@ -850,6 +850,22 @@ const EXERCISES = {
         mistakes: ["Starting too fast.", "Adding distance too quickly. Increase by about 10% a week at most."],
         easier: "Walk-jog intervals", harder: "Longer jog, or add a few faster minutes"
     },
+    "Run/walk intervals": {
+        kit: "none", m: "Heart and lungs, legs", eq: "Running shoes; a phone timer helps",
+        setup: "Walk briskly for 5 minutes first. Set a timer, or use the free NHS Couch to 5K app, which tells you when to switch.",
+        steps: ["Run at a gentle pace you could still talk at.", "When the timer says walk, walk briskly; don't stop completely.", "Repeat the pattern for today's run.", "Walk for 5 minutes at the end to cool down."],
+        tip: "Slower than you think. If you can't say a short sentence while running, ease off.",
+        mistakes: ["Starting too fast and having nothing left for the later runs.", "Skipping rest days. Run every other day."],
+        easier: "Repeat last week's runs; that's part of the plan", harder: "Move on to next week's runs"
+    },
+    "Continuous run": {
+        kit: "none", m: "Heart and lungs, legs", eq: "Running shoes",
+        setup: "Walk briskly for 5 minutes first.",
+        steps: ["Start slower than feels necessary.", "Keep a steady, conversational pace for the whole time.", "If you need to, slow to a shuffle rather than stopping.", "Walk for 5 minutes at the end."],
+        tip: "Time on your feet is the goal, not speed. Speed comes later.",
+        mistakes: ["Running every run as fast as you can.", "Adding time too quickly once you can run 30 minutes."],
+        easier: "Go back a week, or add a 1-minute walk in the middle", harder: "Keep the same time and add one run a week"
+    },
     "Elliptical": {
         m: "Heart and lungs, legs", eq: "Elliptical machine",
         setup: "Step on, hold the handles, and start at a low resistance.",

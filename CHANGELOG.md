@@ -9,6 +9,7 @@ Newest changes first. Each daily update adds an entry here.
 - **My progress page:** pick "strength" or "endurance" and it projects where each lift should go next, with charts for lifts, cardio, and bodyweight.
 - **Plans change every month too:** training runs in 4-week waves (Build, Push, Heavy, Recover) based on research showing planned variation beats doing the same thing every week.
 - **For men and women:** two new plans anyone can use, **Glutes & legs focus** and **Upper body focus** (3 or 4 days), plus two new glute exercises. "Make it yours" has an optional sex setting that fills in the calorie estimator. Lighter upper-body lifts now go up in smaller steps (2.5 lb instead of 5), which matters most for newer lifters. A new Gym basics answer explains, with a research link, why men and women can follow the same plans.
+- **New plans from trusted sources:** **Couch to 5K** (the NHS's 9-week walk-to-run plan; the page shows the right runs for your week), **Tiered strength** (based on the popular free GZCLP program by coach Cody LeFever), and a **Muscular endurance circuit** (lighter weights and higher reps, following the American College of Sports Medicine guidelines). Each one says what it's based on, with a link. The Programs menu now shows all 14 plans in two columns.
 - **Rewards:** beating your best lift or cardio session pops up a "New personal record" message, your weekly streak (2+ active days a week) is counted, and 12 milestones can be earned on My progress.
 
 ## 2026-10-12 (overnight, continued)
