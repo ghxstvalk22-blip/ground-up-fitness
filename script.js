@@ -40,6 +40,7 @@ const FEATURES = [
     setupPrograms,
     setupProgressPanel,
     setupHero,
+    setupChecklists,
     setupTools,
     setupContactForm,
     setupLinks,      // keep after features that add routes
@@ -54,7 +55,11 @@ const SITE_NAV = [
     { label: "Start here", href: "start.html", page: "start", items: [
         ["I'm new to the gym", "Your first two weeks, step by step", "start.html#path-new"],
         ["I want to lose weight", "Eat a little less, keep your muscle", "start.html#path-lose"],
-        ["I want to get stronger", "Barbell basics and steady progress", "start.html#path-strength"]
+        ["I want to get stronger", "Barbell basics and steady progress", "start.html#path-strength"],
+        "divider",
+        ["Your first day", "What to bring, what to do, start to finish", "start.html#first-day"],
+        ["The 5-minute warm-up", "Do this before every workout", "start.html#warm-up"],
+        ["Gym words, decoded", "Sets, reps, failure, deload, and more", "start.html#glossary"]
     ] },
     { label: "Programs", href: "programs.html", page: "programs", items: "programs" },
     { label: "Pros", href: "pros.html", page: "pros", items: [
@@ -1414,6 +1419,23 @@ function setupPrograms() {
     });
 
     render();
+}
+
+/* =========================================================
+   FEATURE: Saved checklists
+   Any <div data-checklist="name"> full of checkboxes remembers
+   what's ticked on this device.
+   ========================================================= */
+function setupChecklists() {
+    document.querySelectorAll("[data-checklist]").forEach((list) => {
+        const key = `gu-checklist-${list.dataset.checklist}`;
+        const saved = new Set(store.get(key, []));
+        const boxes = [...list.querySelectorAll('input[type="checkbox"]')];
+        boxes.forEach((b) => { b.checked = saved.has(b.value); });
+        list.addEventListener("change", () => {
+            store.set(key, boxes.filter((b) => b.checked).map((b) => b.value));
+        });
+    });
 }
 
 /* =========================================================
