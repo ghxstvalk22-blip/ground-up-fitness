@@ -1,0 +1,11 @@
+{
+  "name": "ground-up-fitness",
+  "private": true,
+  "description": "Static fitness website. No build step; npm is only used for the browser test.",
+  "scripts": {
+    "test": "node tests/check.js"
+  },
+  "devDependencies": {
+    "playwright-core": "1.47.2"
+  }
+}
