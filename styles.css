@@ -2722,6 +2722,12 @@ main, .page-banner, .hero { animation: page-in 0.45s ease-out both; }
 .coach-msg.is-coach { align-self: flex-start; background-color: var(--paper); border-left: 3px solid var(--volt); }
 .coach-msg.is-you { align-self: flex-end; background-color: var(--ink); color: var(--paper); }
 .coach-fine { font-size: 0.8rem; color: var(--muted); }
+.coach-step { font-size: 0.85rem; color: var(--muted); vertical-align: middle; }
+.coach-ai ul, .coach-ai ol { margin: 4px 0 8px; padding-left: 1.2rem; }
+.coach-ai li { margin-bottom: 4px; }
+.coach-ai .coach-h { margin-top: 10px; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.coach-ai .coach-h:first-child { margin-top: 0; }
+.coach-ai a { color: var(--ink); text-decoration-color: var(--volt); text-underline-offset: 2px; }
 .coach-heard { font-size: 0.8rem; color: var(--muted); padding-bottom: 6px; border-bottom: 1px solid var(--line); }
 .coach-heard span { display: block; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
 .coach-dots { display: inline-flex; gap: 5px; padding: 4px 2px; }

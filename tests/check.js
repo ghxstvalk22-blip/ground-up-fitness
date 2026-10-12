@@ -514,6 +514,64 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // Fitness Coach with its AI switched on (the AI service is faked here)
+        {
+            const ctx = await browser.newContext({ viewport, bypassCSP: true });
+            const page = await ctx.newPage();
+            const errors = [];
+            page.on("pageerror", (e) => errors.push(e.message));
+            await page.route(/fonts\.|unsplash/, (r) => r.abort());
+            await page.route(/script\.js/, async (r) => {
+                const body = fs.readFileSync(path.join(ROOT, "script.js"), "utf8").replace('const COACH_AI_URL = "";', 'const COACH_AI_URL = "https://coach.test/api";');
+                await r.fulfill({ contentType: "application/javascript", body });
+            });
+            const sent = [];
+            let mode = "ok";
+            await page.route("https://coach.test/api", async (r) => {
+                if (r.request().method() === "OPTIONS") return r.fulfill({ status: 204, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" } });
+                sent.push(r.request().postData());
+                if (mode === "down") return r.fulfill({ status: 502, headers: { "Access-Control-Allow-Origin": "*" }, contentType: "application/json", body: JSON.stringify({ error: "The AI service had a problem." }) });
+                const text = `## Your week\nI assumed you train at a gym.\n- **Monday:** upper body\n- Tuesday: rest\n\nSee [the strength plan](programs.html#program-strength) and [this](https://evil.example/x).\n<img src=x onerror="window.__pwned=1"> <script>window.__pwned=1</script>\n<workout>{"title":"Upper A","items":[{"n":"bench press","d":"4 x 4-6","rest":"3 min","w":"225 lb"},{"n":"Made-up move","d":"3 × 10"},{"n":"Lat pulldown","d":"3 × 8–12","rest":"90 s","w":"<b>1</b>"}]}</workout>`;
+                await new Promise((res) => setTimeout(res, 300));
+                return r.fulfill({ headers: { "Access-Control-Allow-Origin": "*" }, contentType: "application/json", body: JSON.stringify({ text }) });
+            });
+            await page.goto(url("index.html"), { waitUntil: "load" });
+            await page.evaluate(() => { saveSession("Squat secret", "2026-10-01", "lb", [{ w: 999, r: 1 }]); });
+            await page.click("#coach-fab");
+            check(/Ask anything/.test(await page.locator(".coach-head p").textContent()) && /Claude, an AI made by Anthropic/.test(await page.locator(".coach-log").textContent()), "with AI on, Coach says answers come from Claude and what is sent");
+            await page.fill("#coach-input", "I have 45 minutes 3 days a week, want to lose fat and keep strength");
+            await page.press("#coach-input", "Enter");
+            await page.waitForTimeout(200);
+            check(/Reading your question/.test(await page.locator(".coach-typing").textContent()), "Coach shows what it's doing while the AI thinks");
+            await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 8000 });
+            const msg = page.locator(".coach-msg.is-coach").last();
+            const msgText = await msg.textContent();
+            check(/Your week/.test(msgText) && await msg.locator("ul li strong").count() === 1, "the AI answer is shown with headings, lists and bold");
+            check(await msg.locator('a[href="programs.html#program-strength"]').count() === 1 && await msg.locator('a[href*="evil"]').count() === 0, "AI answers can only link to this site's pages");
+            check(await page.evaluate(() => !window.__pwned && !document.querySelector(".coach-log img, .coach-log script")), "code in an AI answer can't run");
+            const exNames = await msg.locator(".coach-ex").allTextContents();
+            check(exNames.join("|") === "Bench press|Lat pulldown" && /4 × 4–6 at 225 lb/.test(msgText) && !/<b>/.test(msgText), `the AI's workout only keeps real exercises and clean values (${exNames.join(", ")})`);
+            const body = JSON.parse(sent[0]);
+            check(body.messages[body.messages.length - 1].role === "user" && /45 minutes/.test(body.messages[body.messages.length - 1].content) && !/Squat secret|999/.test(sent[0]) && /Bench press/.test(body.context), "only the chat (not your logs) is sent, with the site's exercise list");
+            await msg.locator("[data-coach-start]").click();
+            await page.waitForURL(/programs\.html/);
+            check(await page.evaluate(() => (store.get("gu-custom") || { items: [] }).items.some((x) => /225 lb/.test(x.d))), "Start saves the AI's workout as My workout");
+            await page.click("#coach-fab").catch(() => {});
+            if (!(await page.locator("#coach").isVisible())) await page.click("#coach-fab");
+            mode = "down";
+            await page.fill("#coach-input", "chest and back");
+            await page.press("#coach-input", "Enter");
+            await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 8000 });
+            check(/couldn't reach the AI coach/.test(await page.locator(".coach-log").textContent()) && /Chest & Back/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "if the AI can't be reached, the built-in coach answers");
+            const before = sent.length;
+            await page.fill("#coach-input", "my shoulder hurts when I bench");
+            await page.press("#coach-input", "Enter");
+            await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 8000 });
+            check(sent.length === before && /doctor|physical therapist/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "pain questions still get the built-in safety answer");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await ctx.close();
+        }
+
         // How-tos and the muscle map get more in-depth as the level goes up
         {
             const { page, errors } = await openPage(browser, "exercises.html", viewport);

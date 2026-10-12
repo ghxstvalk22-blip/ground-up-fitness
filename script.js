@@ -41,6 +41,13 @@ const FIREBASE_CONFIG = {
     appId: ""
 };
 
+/* ---------- FITNESS COACH AI (optional) ----------
+   Paste the web address of your Cloudflare Worker here (see coach-ai/README.md),
+   e.g. "https://ground-up-coach.yourname.workers.dev". Also add that address to
+   connect-src in the Content-Security-Policy on every page. Leave it empty and
+   Fitness Coach uses its built-in rules, with nothing sent anywhere. */
+const COACH_AI_URL = "";
+
 /* ---------- Feature list: add new setup functions here ---------- */
 const FEATURES = [
     setupLayout,     // keep first: builds the header and footer the others use
@@ -3069,7 +3076,7 @@ function coachWeigh(w) {
     const loadFor = (m, d, each) => { const st = each ? step / 2.5 * (unit === "kg" ? 1 : 2.5) : step; return Math.max(st, Math.round(m / (1 + (d.high + 1) / 30) / st) * st); };
     const first = w.items.map((x) => {
         const d = parseDose(x.d);
-        const max = d.timed ? null : coachKnownMax(x.n, unit);
+        const max = d.timed || /\bat \d/.test(x.d) ? null : coachKnownMax(x.n, unit);
         if (!max) return { ...x, w: 0 };
         w.known.push({ n: x.n, m: max.m, from: max.from });
         return { ...x, w: loadFor(max.m, d) };
@@ -3077,7 +3084,7 @@ function coachWeigh(w) {
     // Then fill in helper lifts from the big lifts we know
     w.items = first.map((x) => {
         const d = parseDose(x.d);
-        if (x.w || d.timed || !COACH_RATIOS[x.n]) return x;
+        if (x.w || d.timed || !COACH_RATIOS[x.n] || /\bat \d/.test(x.d)) return x;
         for (const [from, share, each] of COACH_RATIOS[x.n]) {
             const max = coachKnownMax(from, unit);
             if (max) return { ...x, w: loadFor(max.m * share, d, each), guess: true, each: !!each };
@@ -3158,6 +3165,65 @@ function coachBuild(req, level) {
         missing: req.groups.filter((g) => !pool.some((p) => p.gid === g)) };
 }
 
+/* ---------- Fitness Coach AI helpers ----------
+   Only when COACH_AI_URL is set. The answer comes back as plain text with light
+   formatting; it's escaped first and only simple tags are added back. */
+const coachAiOn = () => /^https:\/\/[a-z0-9.-]+(\/[\w\-./]*)?$/i.test(COACH_AI_URL);
+
+function coachMarkdown(md) {
+    const inline = (s) => escapeHtml(s)
+        .replace(/\[([^\]]{1,80})\]\(([a-z0-9-]+\.html(?:#[\w-]+)?)\)/g, '<a href="$2">$1</a>')
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>");
+    const out = [];
+    let list = null;
+    const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+    String(md).replace(/\r/g, "").split("\n").forEach((line) => {
+        const l = line.trim();
+        let m;
+        if (!l || /^[-*_]{3,}$/.test(l)) { close(); return; }
+        if ((m = l.match(/^#{1,6}\s+(.*)$/))) { close(); out.push(`<p class="coach-h"><strong>${inline(m[1].replace(/\*\*/g, ""))}</strong></p>`); return; }
+        if ((m = l.match(/^[-*•]\s+(.*)$/))) { if (list !== "ul") { close(); out.push("<ul>"); list = "ul"; } out.push(`<li>${inline(m[1])}</li>`); return; }
+        if ((m = l.match(/^\d{1,2}[.)]\s+(.*)$/))) { if (list !== "ol") { close(); out.push("<ol>"); list = "ol"; } out.push(`<li>${inline(m[1])}</li>`); return; }
+        close();
+        out.push(`<p>${inline(l)}</p>`);
+    });
+    close();
+    return out.join("");
+}
+
+// The workout block the AI adds, checked line by line: real exercises only, simple doses, sane weights
+function coachAiWorkout(raw) {
+    let data;
+    try { data = JSON.parse(raw); } catch (e) { return null; }
+    if (!data || !Array.isArray(data.items)) return null;
+    const names = Object.keys(EXERCISES);
+    const items = data.items.slice(0, 10).map((x) => {
+        if (!x || typeof x.n !== "string") return null;
+        const n = names.find((k) => k.toLowerCase() === x.n.trim().toLowerCase());
+        if (!n) return null;
+        let d = String(x.d || "").replace(/\s*[x×]\s*/i, " × ").replace(/-/g, "–").trim();
+        if (!/^\d{1,2} × \d{1,3}(–\d{1,3})?( ?(s|sec|min|steps))?( per side)?$/.test(d)) d = "3 × 8–12";
+        const w = String(x.w || "").trim().match(/^(\d{1,4}(?:\.\d+)?)\s?(lb|lbs|kg)( each( hand)?)?$/i);
+        if (w) d = `${d} at ${w[1]} ${w[2].toLowerCase().replace("lbs", "lb")}${w[3] ? " each" : ""}`;
+        const rest = /^[\d–\- ]{1,7}\s?(s|sec|min|minutes?)$/.test(String(x.rest || "").trim()) ? String(x.rest).trim() : "";
+        return { n, d: d.slice(0, 40), rest, w: 0 };
+    }).filter(Boolean);
+    if (!items.length) return null;
+    const title = String(data.title || "My workout").replace(/[<>]/g, "").slice(0, 50) || "My workout";
+    const minutes = Math.round(items.reduce((sum, x) => sum + (parseDose(x.d).sets || 3) * 2.5, 0) + 5);
+    return { title, items, minutes, kit: null, bumped: false, level: getLevel(), finisher: null, missing: [], known: [], ai: true };
+}
+
+// What the AI is told about this site (no personal data): the exercises, the plans, and the pages
+function coachAiContext() {
+    const plans = Object.entries(PROGRAMS).filter(([id]) => id !== "custom")
+        .map(([id, p]) => `- ${p.name} (${p.level}, ${Object.keys(p.plans || {}).join("/")} days a week): programs.html#program-${id}`).join("\n");
+    const pages = SITE_NAV.flatMap((s) => [[s.label, s.href], ...[].concat(Array.isArray(s.items) ? s.items : [], s.more || [])
+        .filter((i) => Array.isArray(i)).map((i) => [i[0], i[2]])]).map(([t, h]) => `- ${t}: ${h}`).join("\n");
+    return `Exercises (tap-able how-to guides):\n${Object.keys(EXERCISES).join(", ")}\n\nPlans:\n${plans}\n\nPages:\n${pages}\n- My progress: me.html\n- Supplements guide: supplements.html`;
+}
+
 function setupCoach() {
     if (typeof EXERCISES !== "object" || typeof MUSCLE_MAP !== "object") return;
     // A loaded barbell
@@ -3167,7 +3233,7 @@ function setupCoach() {
 <section class="coach" id="coach" role="dialog" aria-modal="false" aria-labelledby="coach-title" hidden>
     <header class="coach-head">
         <span class="coach-avatar">${ICON}</span>
-        <div><h2 id="coach-title">Fitness Coach</h2><p>Builds a workout for any muscles you want</p></div>
+        <div><h2 id="coach-title">Fitness Coach</h2><p>${coachAiOn() ? "Ask anything about training" : "Builds a workout for any muscles you want"}</p></div>
         <button type="button" class="coach-clear" id="coach-clear">Clear chat</button>
         <button type="button" class="coach-close" id="coach-close" aria-label="Close Fitness Coach">&times;</button>
     </header>
@@ -3262,7 +3328,9 @@ function setupCoach() {
                 return;
             }
             say(`<p><strong>Hey, I'm your Fitness Coach.</strong> Tell me what you want to train and I'll build you a workout from this site's exercise guides. Try "<em>shoulders, back and abs</em>", "<em>30 min legs, no equipment</em>", or "<em>a really hard chest and back workout</em>". You can also say how hard ("easy", "set it for expert") or change it after ("add abs", "without legs").</p>
-                <p class="coach-fine">I'm a simple built-in helper, not a person and not an AI service. Nothing you type leaves your phone.</p>`);
+                ${coachAiOn() ? `<p>Ask me anything, too: "<em>I have 45 minutes 3 days a week and want to lose fat and keep my strength. What should my week look like?</em>"</p>
+                <p class="coach-fine">Answers are written by Claude, an AI made by Anthropic. What you type in this chat is sent to write the answer; your logs and settings stay on your phone. AI can make mistakes, so check anything about your health with a professional.</p>`
+                : `<p class="coach-fine">I'm a simple built-in helper, not a person and not an AI service. Nothing you type leaves your phone.</p>`}`);
             suggest(DEFAULT_CHIPS);
         }
         if (focus) setTimeout(() => input.focus(), 30);
@@ -3464,8 +3532,12 @@ function setupCoach() {
     // Take a moment to "read" the message: a typing indicator for about 1 to 2 seconds
     // (longer messages take a little longer), then the answer
     let thinking = false;
+    const isMinor = (t) => /\b(i'?m|i am) (1[0-7]|[5-9]) ?(years? old|yo|y\/o)?\b|\bmy parents?\b.*\blet me\b/.test(t);
     function think(text) {
         if (thinking) return;
+        // With the AI switched on, everything but the safety replies and "start" goes to it
+        const quick = coachUnderstand(text);
+        if (coachAiOn() && !quick.pain && !isMinor(quick.t) && !(last && /^\s*(start|start this workout|let'?s go|go)\s*[.!]*\s*$/.test(quick.t))) { askAi(text); return; }
         thinking = true;
         const sendBtn = form.querySelector("button[type=submit]");
         sendBtn.disabled = true;
@@ -3480,6 +3552,83 @@ function setupCoach() {
             sendBtn.disabled = false;
             reply(text);
         }, delay);
+    }
+
+    // Plain text of the conversation so far (buttons and fine print left out), for the AI
+    function aiTurns() {
+        return history().map((m) => {
+            const tpl = document.createElement("template");
+            tpl.innerHTML = cleanHtml(m.html);
+            tpl.content.querySelectorAll(".coach-actions, .coach-fine, .coach-heard").forEach((el) => el.remove());
+            tpl.content.querySelectorAll("li").forEach((li) => li.prepend("- "));
+            tpl.content.querySelectorAll("p, li, ol, ul").forEach((el) => el.append("\n"));
+            return { role: m.who === "you" ? "user" : "assistant", content: tpl.content.textContent.replace(/\n{3,}/g, "\n\n").trim().slice(0, 2000) };
+        }).filter((m) => m.content).slice(-12);
+    }
+
+    // Ask the AI: show what it's doing while it reads and thinks, then the answer.
+    // If it can't be reached, the built-in coach answers instead.
+    function askAi(text) {
+        thinking = true;
+        const sendBtn = form.querySelector("button[type=submit]");
+        sendBtn.disabled = true;
+        chips.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+        const steps = ["Reading your question…", "Working out what you need…", "Thinking it through…", "Checking the exercise guides…", "Writing your answer…"];
+        log.insertAdjacentHTML("beforeend", `<div class="coach-msg is-coach coach-typing" role="status"><span class="coach-dots" aria-hidden="true"><i></i><i></i><i></i></span> <span class="coach-step">${steps[0]}</span></div>`);
+        log.scrollTop = log.scrollHeight;
+        let step = 0;
+        const timer = setInterval(() => {
+            step = Math.min(steps.length - 1, step + 1);
+            const el = log.querySelector(".coach-typing .coach-step");
+            if (el) el.textContent = steps[step];
+        }, 2200);
+        const started = Date.now();
+        const ctrl = new AbortController();
+        const kill = setTimeout(() => ctrl.abort(), 45000);
+        const finish = (fn) => {
+            // Give it at least a couple of seconds, so it reads as considered rather than instant
+            setTimeout(() => {
+                clearInterval(timer); clearTimeout(kill);
+                const typing = log.querySelector(".coach-typing");
+                if (typing) typing.remove();
+                thinking = false;
+                sendBtn.disabled = false;
+                fn();
+            }, Math.max(0, 2500 - (Date.now() - started)));
+        };
+        fetch(COACH_AI_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: aiTurns(), context: coachAiContext() }),
+            signal: ctrl.signal
+        }).then((res) => res.json().then((data) => ({ ok: res.ok, data })))
+            .then(({ ok, data }) => {
+                if (!ok || !data || typeof data.text !== "string") throw new Error((data && data.error) || "error");
+                finish(() => showAi(data.text));
+            })
+            .catch((err) => finish(() => {
+                const busy = /too many|busy/i.test(String(err && err.message));
+                say(`<p class="coach-fine">${busy ? "The AI coach is busy right now" : "I couldn't reach the AI coach (check your connection)"}, so here's my quick built-in answer.</p>`);
+                reply(text);
+            }));
+    }
+    function showAi(raw) {
+        let text = String(raw).slice(0, 12000);
+        let workout = null;
+        const m = text.match(/<workout>([\s\S]*?)<\/workout>/i);
+        if (m) { workout = coachAiWorkout(m[1]); text = text.replace(m[0], "").trim(); }
+        text = text.replace(/<\/?workout>/gi, "");
+        let html = coachMarkdown(text);
+        if (workout) {
+            last = workout;
+            lastReq = null;
+            saveState();
+            html += `<p class="coach-h"><strong>${escapeHtml(workout.title)}</strong></p>
+                <ol class="coach-workout">${workout.items.map((x) => `<li><button type="button" class="coach-ex" data-howto="${escapeHtml(x.n)}">${escapeHtml(x.n)}</button><span>${escapeHtml(x.d)}${x.rest ? ` · rest ${escapeHtml(x.rest)}` : ""}</span></li>`).join("")}</ol>
+                <div class="coach-actions"><button type="button" class="btn btn-primary btn-compact" data-coach-start>Start this workout</button></div>`;
+        }
+        say(`<div class="coach-ai">${html}</div>`);
+        suggest(workout ? ["Start this workout", "Make it harder", "Explain why"] : ["Build me a workout for that", "Give me a weekly plan", "Explain more"]);
     }
 
     function startWorkout() {

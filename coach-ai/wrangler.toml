@@ -1,0 +1,16 @@
+# Only needed if you deploy with the Wrangler command line instead of the dashboard.
+name = "ground-up-coach"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://ghxstvalk22-blip.github.io"
+
+# A stronger rate limit (20 messages per minute per visitor). Command-line deploys only.
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 20
+  period = 60

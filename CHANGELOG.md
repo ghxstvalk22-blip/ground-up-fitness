@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Fitness Coach can use real AI)
+
+- Fitness Coach can now be switched to **Claude**, an AI made by Anthropic, so it can read any question, think it through, and answer like a real coach: full weekly plans, complex questions ("45 minutes, 3 days a week, lose fat and keep my strength"), and follow-ups that remember the conversation. While it works, it shows what it's doing ("Reading your question…", "Thinking it through…").
+- Workouts in its answers still get the **Start this workout** button, and only real exercises from the site's guides are kept.
+- It stays safe: pain and under-18 questions still get the built-in safety answers, the AI follows the site's health rules, and its answers can only link to this site's own pages.
+- It's off until the owner sets it up (steps in `coach-ai/README.md`). The API key lives on a small Cloudflare server, never in the website. When it's on, the coach says so, and only what you type in the chat is sent; your logs stay on your phone. If the AI can't be reached, the built-in coach answers instead.
+
 ## 2026-10-12 (Clear my progress)
 
 - New **Clear my progress** box at the bottom of the My progress page. Tick what you want to clear: your lifting log and personal records, cardio, bodyweight entries, plan progress, the Fitness Coach chat and lift numbers, or your settings. Each one shows how much is saved, so you know what you're deleting.
