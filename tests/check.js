@@ -489,6 +489,11 @@ async function openPage(browser, file, viewport, hash = "") {
         // Exercise library: filter by equipment, with icons
         {
             const { page, errors } = await openPage(browser, "exercises.html", viewport);
+            await page.fill("#library-search", "seated chest press");
+            check(await page.locator('.library-card h3', { hasText: "Machine chest press" }).count() === 1, "searching an everyday machine name (seated chest press) finds it");
+            await page.fill("#library-search", "iso-lateral row");
+            check(await page.locator('.library-card h3', { hasText: /^Iso-lateral row$/ }).count() === 1, "plate-loaded machines like the Iso-lateral row are in the library");
+            await page.fill("#library-search", "");
             const all = await page.locator(".library-card").count();
             const noPic = await page.evaluate(() => [...document.querySelectorAll(".library-card")].filter((c) => !c.querySelector(".library-pic .lib-main")).map((c) => c.querySelector("h3").textContent));
             check(noPic.length <= 2, `every exercise card shows the muscles it works ${JSON.stringify(noPic)}`);
@@ -536,6 +541,23 @@ async function openPage(browser, file, viewport, hash = "") {
             const saved = await page.evaluate(() => store.get("gu-custom"));
             check(saved && saved.items.length === 3 && /^\d × (4–6|5)$/.test(saved.items[0].d), `Save and start saves it as My workout (${saved && saved.items[0].d})`);
             check(/My workout/i.test(await page.locator("#program-head").textContent()) && /Start with about/.test(await page.locator(".ex-target").first().textContent()), "the saved workout opens with a starting weight on each lift");
+            // Your plan bar: on other pages, shows today's exercises; the active custom workout can be edited
+            await page.locator(".ex-row").nth(1).locator('input[type="checkbox"]').check({ force: true });
+            await page.goto(url("tools.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator("#planbar").isVisible() && /1 of 3 done/.test(await page.locator("#planbar").textContent()), "the Your plan bar shows the current workout on other pages");
+            await page.click(".planbar-toggle");
+            check(await page.locator(".planbar-list li").count() === 3, "tapping the bar lists today's exercises");
+            await page.click("#planbar [data-edit-custom]");
+            await page.waitForURL(/#build/);
+            await page.waitForTimeout(400);
+            check(/Edit your workout/i.test(await page.locator("#builder-title").textContent()) && await page.locator(".builder-item").count() === 3, "Edit this workout opens the builder with the current exercises");
+            await page.fill("#builder-search", "Iso-lateral row");
+            await page.locator('[data-add="Iso-lateral row"]').click();
+            await page.locator(".builder-save").click();
+            await page.waitForURL(/program-custom/);
+            await page.waitForTimeout(400);
+            check(await page.evaluate(() => store.get("gu-custom").items.some((x) => x.n === "Iso-lateral row")) && await page.locator(".ex-row input[type=checkbox]:checked").count() === 1, "saving edits updates the workout and keeps what you already checked off");
             await page.evaluate(() => { localStorage.clear(); });
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();

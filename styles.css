@@ -3042,3 +3042,49 @@ body:has(#rest-timer:not([hidden])) .coach-fab { display: none; }
 
 @media (max-width: 600px) { .builder-goals label > span { width: 100%; } }
 .hero-goals .hero-build-link { border: 0; }
+
+/* ---------- Your plan bar (bottom of every page but Plans) ---------- */
+.planbar {
+    position: fixed; left: 20px; bottom: 20px; z-index: 70;
+    width: min(420px, calc(100vw - 40px));
+    background-color: #000000; color: #ffffff; border: 1px solid #2a2a2a; border-top: 3px solid var(--volt);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.planbar-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 0; }
+.planbar-toggle {
+    flex: 1; min-width: 0; min-height: 52px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px;
+    padding: 4px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.planbar-kicker::after { content: " \25B4  Show exercises"; color: #bdbdbd; letter-spacing: 0.06em; }
+.planbar.is-open .planbar-kicker::after { content: " \25BE  Hide"; }
+.planbar-toggle:focus-visible { outline: 3px solid var(--volt); outline-offset: -3px; }
+.planbar-kicker { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--volt); }
+.planbar-toggle strong { font-size: 0.95rem; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 18px; }
+.planbar-sub { font-size: 0.76rem; color: #bdbdbd; }
+.planbar-go { flex: none; background-color: var(--volt); border-color: var(--volt); color: #000000; }
+.planbar-go:hover, .planbar-go:focus-visible { background-color: #ffffff; border-color: #ffffff; color: #000000; }
+body.planbar-open .coach-fab { display: none; }
+.planbar-body { border-top: 1px solid #2a2a2a; max-height: 50vh; overflow-y: auto; }
+.planbar-list { list-style: none; margin: 0; padding: 4px 12px; counter-reset: pb; }
+.planbar-list li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #222222; }
+.planbar-list li > span:not(.equip) { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.planbar-list small { color: #bdbdbd; }
+.planbar-list li.is-done strong { text-decoration: line-through; text-decoration-color: var(--volt); color: #9a9a9a; }
+.planbar-list .equip { color: #ffffff; margin-right: 0; }
+.planbar-list .chip { color: #ffffff; border-color: #444444; background: transparent; }
+.planbar-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 12px 12px; }
+.planbar-actions .btn { color: #ffffff; border-color: #ffffff; background: transparent; }
+.planbar-actions .btn:hover { background-color: #ffffff; color: #000000; }
+body.has-planbar .coach-fab { bottom: calc(var(--tabbar-h) + 20px); }
+.plan-edit { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.plan-edit span { font-size: 0.88rem; color: var(--muted); }
+@media (max-width: 760px) {
+    .planbar { left: 0; right: 0; bottom: var(--tabbar-h); width: auto; border-left: 0; border-right: 0; box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.25); }
+    body.has-planbar { padding-bottom: calc(var(--tabbar-h) + 72px); }
+    body.has-planbar .coach-fab { bottom: calc(var(--tabbar-h) + 84px); }
+    .planbar-body { max-height: 45vh; }
+}
+@media (min-width: 761px) { body.has-planbar .site-footer { padding-bottom: 96px; } }
+@media print { .planbar { display: none !important; } }
+
+.library-aka { margin: -6px 0 10px; font-size: 0.8rem; color: var(--muted); font-style: italic; }

@@ -4,6 +4,7 @@
    EXERCISES: one entry per exercise, used by the "How to" guide.
      m        muscles worked
      eq       equipment
+     aka      other names people search for (optional)
      setup    how to get in position
      steps    the movement, in order
      tip      the one cue that matters most
@@ -55,7 +56,7 @@ const EXERCISES = {
         easier: "Squat down to a bench and stand back up", harder: "Pause at the bottom for 2 seconds, or use a heavier weight"
     },
     "Leg press": {
-        m: "Quads, glutes", eq: "Leg press machine",
+        m: "Quads, glutes", eq: "Leg press machine", aka: "seated leg press, linear leg press, 45 degree leg press, sled",
         setup: "Sit with your back and hips flat against the pad. Feet shoulder-width on the middle of the platform. Release the safety handles.",
         steps: ["Lower the platform by bending your knees toward your chest.", "Stop before your lower back starts to lift off the pad.", "Press through your whole foot until your legs are almost straight.", "Don't lock your knees hard at the top."],
         tip: "Your lower back stays glued to the seat. That decides how deep you go.",
@@ -63,7 +64,7 @@ const EXERCISES = {
         easier: "Use a shorter range and lighter weight", harder: "Single-leg leg press, or a 3-second lowering"
     },
     "Hack squat": {
-        m: "Quads, glutes", eq: "Hack squat machine",
+        m: "Quads, glutes", eq: "Hack squat machine", aka: "plate loaded hack squat, hack squat machine",
         setup: "Back flat against the pad, shoulders under the pads. Feet shoulder-width, in the middle of the platform. Release the safeties.",
         steps: ["Bend your knees and sit down into the machine.", "Go as deep as you can keep your hips on the pad.", "Drive through your whole foot to stand up.", "Stop just short of locking out."],
         tip: "Feet lower on the platform hit your quads more; higher hits glutes more.",
@@ -71,7 +72,7 @@ const EXERCISES = {
         easier: "Leg press", harder: "Pause at the bottom"
     },
     "Smith machine squat": {
-        m: "Quads, glutes", eq: "Smith machine",
+        m: "Quads, glutes", eq: "Smith machine", aka: "smith squat",
         setup: "Set the bar on your upper back and step your feet slightly in front of the bar, shoulder-width apart. Unhook the bar by rotating it.",
         steps: ["Brace and sit down, keeping your back against the line of the bar.", "Lower until your thighs are about parallel.", "Push up through your whole foot.", "Re-hook the bar by rotating it when you finish."],
         tip: "Because the bar's path is fixed, put your feet where your knees and hips feel comfortable, usually a little forward.",
@@ -79,7 +80,7 @@ const EXERCISES = {
         easier: "Leg press", harder: "Pause at the bottom"
     },
     "Leg extension": {
-        m: "Quads", eq: "Leg extension machine",
+        m: "Quads", eq: "Leg extension machine", aka: "iso-lateral leg extension, quad extension",
         setup: "Adjust the seat so your knees line up with the machine's pivot point. The pad sits on your lower shins, just above your feet. Hold the handles.",
         steps: ["Straighten your legs to lift the pad.", "Squeeze your quads hard at the top for a second.", "Lower slowly, taking about 2 to 3 seconds.", "Stop just before the weight stack touches down."],
         tip: "Slow on the way down. This one is about the squeeze, not the weight.",
@@ -171,7 +172,7 @@ const EXERCISES = {
         easier: "Lighter dumbbells, shorter range", harder: "Single-leg dumbbell Romanian deadlift"
     },
     "Back extension": {
-        m: "Lower back, glutes, hamstrings", eq: "45-degree back extension bench",
+        m: "Lower back, glutes, hamstrings", eq: "45-degree back extension bench", aka: "hyperextension, roman chair",
         setup: "Set the pad just below your hip bones so you can bend at the hips. Hook your feet under the ankle pads. Cross your arms on your chest.",
         steps: ["Lower your upper body by bending at the hips, back flat.", "Go down until you feel a stretch in your hamstrings.", "Squeeze your glutes to lift back up until your body is in a straight line.", "Don't arch past straight."],
         tip: "Squeeze your glutes at the top instead of leaning back.",
@@ -211,7 +212,7 @@ const EXERCISES = {
         easier: "Two-leg glute bridge", harder: "Single-leg hip thrust off a bench"
     },
     "Hip abduction machine": {
-        m: "Glutes (side), hips", eq: "Hip abduction machine",
+        m: "Glutes (side), hips", eq: "Hip abduction machine", aka: "outer thigh machine, abductor machine",
         setup: "Sit with your back against the pad and the outside of your knees against the leg pads. Pick a weight you can move smoothly.",
         steps: ["Push your knees out as far as is comfortable.", "Pause for a second at the widest point.", "Bring your legs back in slowly, without letting the weights touch.", "Leaning forward a little shifts more of the work to your glutes."],
         tip: "Slow and controlled beats heavy here. Feel the side of your hips doing the work.",
@@ -219,7 +220,7 @@ const EXERCISES = {
         easier: "Lighter weight or a smaller range", harder: "Pause for 3 seconds at the widest point"
     },
     "Hip adduction machine": {
-        m: "Inner thighs (adductors)", eq: "Hip adduction machine",
+        m: "Inner thighs (adductors)", eq: "Hip adduction machine", aka: "inner thigh machine, adductor machine",
         setup: "Sit with your back against the pad and the inside of your knees against the leg pads. Start with your legs only as wide as is comfortable.",
         steps: ["Squeeze your knees together in a smooth arc.", "Pause for a second when the pads meet.", "Let your legs open slowly to the start.", "Keep your back against the pad the whole time."],
         tip: "Control the way out. That stretched part is where a lot of the work happens.",
@@ -235,7 +236,7 @@ const EXERCISES = {
         easier: "Donkey kicks on your hands and knees with no weight", harder: "Pause for 2 seconds at the top"
     },
     "Hamstring curl machine": {
-        m: "Hamstrings", eq: "Seated or lying leg curl machine",
+        m: "Hamstrings", eq: "Seated or lying leg curl machine", aka: "leg curl, hamstring curl",
         setup: "Adjust the machine so your knees line up with its pivot and the pad sits just above your heels.",
         steps: ["Curl your heels toward your butt.", "Squeeze at the end of the movement.", "Return slowly, taking 2 to 3 seconds.", "Keep your hips still."],
         tip: "Point your toes up toward your shins for a stronger squeeze.",
@@ -243,7 +244,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Single-leg curls"
     },
     "Seated hamstring curl": {
-        m: "Hamstrings", eq: "Seated leg curl machine",
+        m: "Hamstrings", eq: "Seated leg curl machine", aka: "seated leg curl",
         setup: "Sit with your back against the pad. Knees line up with the pivot, the lower pad behind your ankles, and the thigh pad snug on top of your legs.",
         steps: ["Curl your heels down and back under the seat.", "Squeeze for a second.", "Let the pad rise slowly.", "Stop just before the stack touches."],
         tip: "Leaning your chest slightly forward gives your hamstrings a bigger stretch.",
@@ -251,7 +252,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "3-second lowering on every rep"
     },
     "Lying hamstring curl": {
-        m: "Hamstrings", eq: "Lying leg curl machine",
+        m: "Hamstrings", eq: "Lying leg curl machine", aka: "lying leg curl, prone leg curl",
         setup: "Lie face down with your knees just off the end of the bench and the pad just above your heels. Hold the handles.",
         steps: ["Curl your heels toward your butt.", "Keep your hips pressed into the pad.", "Squeeze at the top.", "Lower slowly."],
         tip: "If your hips pop up, the weight is too heavy.",
@@ -269,7 +270,7 @@ const EXERCISES = {
 
     /* ---------- Calves ---------- */
     "Standing calf raise": {
-        kit: "db", m: "Calves", eq: "Calf raise machine, step, or Smith machine",
+        kit: "db", m: "Calves", eq: "Calf raise machine, step, or Smith machine", aka: "standing calf machine",
         setup: "Stand with the balls of your feet on the edge of a step or platform, heels hanging off.",
         steps: ["Lower your heels as far as you can for a full stretch.", "Pause for a second at the bottom.", "Rise up as high as you can onto your toes.", "Squeeze for a second at the top."],
         tip: "The pause at the bottom matters. Bouncing lets your tendons do the work instead of your calves.",
@@ -277,7 +278,7 @@ const EXERCISES = {
         easier: "Bodyweight on a step", harder: "Single-leg calf raise holding a dumbbell"
     },
     "Seated calf raise": {
-        m: "Calves (especially the lower part)", eq: "Seated calf raise machine",
+        m: "Calves (especially the lower part)", eq: "Seated calf raise machine", aka: "seated calf machine",
         setup: "Sit with the pad snug on top of your thighs, just above your knees, balls of your feet on the platform.",
         steps: ["Release the safety.", "Lower your heels for a deep stretch, and pause.", "Push up as high as you can.", "Squeeze at the top."],
         tip: "Slow and full range beats heavy and bouncy.",
@@ -285,7 +286,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "3-second lowering"
     },
     "Leg press calf raise": {
-        m: "Calves", eq: "Leg press machine",
+        m: "Calves", eq: "Leg press machine", aka: "horizontal calf, calf press",
         setup: "Sit in the leg press with legs straight (knees soft, not locked) and just the balls of your feet on the bottom edge of the platform. Keep the safeties on.",
         steps: ["Let the platform push your toes back toward you for a stretch.", "Press the platform away with your toes.", "Squeeze at the end.", "Return slowly."],
         tip: "Keep the safety handles engaged so the sled can't come down if your foot slips.",
@@ -319,7 +320,7 @@ const EXERCISES = {
         easier: "Push-ups with hands on a bench", harder: "Pause 1 second at the bottom"
     },
     "Machine chest press": {
-        m: "Chest, front shoulders, triceps", eq: "Chest press machine",
+        m: "Chest, front shoulders, triceps", eq: "Chest press machine", aka: "seated chest press, chest press machine, selectorized chest press",
         setup: "Adjust the seat so the handles line up with your mid-chest. Sit tall with your back against the pad.",
         steps: ["Grip the handles and push them forward until your arms are straight.", "Don't lock your elbows hard.", "Return slowly until you feel a stretch in your chest.", "Keep your shoulder blades back against the pad."],
         tip: "A machine is a great way to train hard safely, with no spotter needed.",
@@ -343,7 +344,7 @@ const EXERCISES = {
         easier: "Incline machine press", harder: "Pause at the bottom"
     },
     "Incline machine press": {
-        m: "Upper chest, front shoulders, triceps", eq: "Incline press machine",
+        m: "Upper chest, front shoulders, triceps", eq: "Incline press machine", aka: "incline chest press machine",
         setup: "Adjust the seat so the handles start around your upper chest. Back flat against the pad.",
         steps: ["Press the handles up and away until your arms are straight.", "Return slowly to a good stretch.", "Keep your shoulder blades back.", "Repeat."],
         tip: "Controlled lowering builds more muscle than heaving heavy weight.",
@@ -359,7 +360,7 @@ const EXERCISES = {
         easier: "Incline dumbbell press", harder: "Pause on the chest"
     },
     "Cable fly": {
-        m: "Chest", eq: "Cable machine with two handles",
+        m: "Chest", eq: "Cable machine with two handles", aka: "cable crossover, crossover",
         setup: "Set both pulleys at about shoulder height. Grab a handle in each hand and take a step forward, one foot in front of the other.",
         steps: ["Start with your arms out wide, elbows slightly bent.", "Bring your hands together in a hugging motion in front of your chest.", "Squeeze your chest for a second.", "Open your arms slowly back to a stretch."],
         tip: "Keep the same small bend in your elbows the whole time. It's a hug, not a press.",
@@ -367,7 +368,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause at the squeeze"
     },
     "Pec deck": {
-        m: "Chest", eq: "Pec deck (chest fly) machine",
+        m: "Chest", eq: "Pec deck (chest fly) machine", aka: "chest fly machine, pec fly, butterfly machine, super fly",
         setup: "Adjust the seat so the handles are at chest height. Sit with your back flat against the pad.",
         steps: ["Grip the handles with a slight bend in your elbows.", "Bring them together in front of your chest.", "Squeeze for a second.", "Let them open slowly to a comfortable stretch."],
         tip: "Stop the stretch where your shoulders still feel good.",
@@ -401,7 +402,7 @@ const EXERCISES = {
         easier: "Chest-supported dumbbell row", harder: "Pause the bar at your ribs"
     },
     "Lat pulldown": {
-        m: "Lats, upper back, biceps", eq: "Lat pulldown machine",
+        m: "Lats, upper back, biceps", eq: "Lat pulldown machine", aka: "pulldown machine, fixed pulldown, cable pulldown",
         setup: "Adjust the knee pad so your legs are locked in. Grip the bar a little wider than your shoulders, palms facing away.",
         steps: ["Lean back slightly and pull your shoulder blades down.", "Pull the bar to your upper chest, driving your elbows down toward your back pockets.", "Squeeze for a second.", "Let the bar rise slowly until your arms are straight."],
         tip: "Think about pulling with your elbows, not your hands.",
@@ -425,7 +426,7 @@ const EXERCISES = {
         easier: "Assisted pull-up or lat pulldown", harder: "Add weight with a belt, or a slow 3-second lowering"
     },
     "Assisted pull-up": {
-        m: "Lats, upper back, biceps", eq: "Assisted pull-up machine or resistance band",
+        m: "Lats, upper back, biceps", eq: "Assisted pull-up machine or resistance band", aka: "assisted chin-up, assist dip chin, gravitron",
         setup: "Kneel or stand on the platform (or loop a band under your knee). More weight on the machine means more help.",
         steps: ["Grip the handles slightly wider than your shoulders.", "Pull your chin up over the handles.", "Lower slowly until your arms are straight.", "Use a little less help each week."],
         tip: "Progress here means using less assistance over time.",
@@ -433,7 +434,7 @@ const EXERCISES = {
         easier: "Lat pulldown", harder: "Pull-up"
     },
     "Seated cable row": {
-        m: "Upper back, lats, biceps", eq: "Cable row station",
+        m: "Upper back, lats, biceps", eq: "Cable row station", aka: "low cable row, cable row",
         setup: "Sit with your feet on the platform and knees slightly bent. Grab the handle and sit tall with your arms straight.",
         steps: ["Pull the handle to your stomach, driving your elbows back.", "Squeeze your shoulder blades together.", "Hold for a second.", "Let your arms extend slowly, feeling your back stretch."],
         tip: "Chest stays up and your torso barely moves.",
@@ -441,7 +442,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause for 2 seconds at your stomach"
     },
     "Chest-supported row": {
-        m: "Upper back, lats, rear shoulders", eq: "Chest-supported row machine (T-bar or plate-loaded)",
+        m: "Upper back, lats, rear shoulders", eq: "Chest-supported row machine (T-bar or plate-loaded)", aka: "chest supported t-bar row, seal row machine",
         setup: "Lie or lean with your chest against the pad. Grab the handles with arms straight.",
         steps: ["Pull the handles back, driving your elbows past your body.", "Squeeze your shoulder blades.", "Hold for a second.", "Lower slowly."],
         tip: "The chest pad takes your lower back out of it, so you can focus on your upper back.",
@@ -473,12 +474,199 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause at the end of the row"
     },
     "Machine row": {
-        m: "Upper back, lats", eq: "Seated row machine",
+        m: "Upper back, lats", eq: "Seated row machine", aka: "seated row machine, row machine",
         setup: "Adjust the seat so the handles line up with your mid-chest and your chest rests on the pad.",
         steps: ["Grab the handles with straight arms.", "Pull back, squeezing your shoulder blades.", "Pause.", "Return slowly."],
         tip: "Try both the wide and the close handles. Each one hits your back a little differently.",
         mistakes: ["Leaning back off the pad.", "Rushing the reps."],
         easier: "Lighter weight", harder: "3-second lowering"
+    },
+
+    /* ---------- Gym machines (plate-loaded and selectorized) ---------- */
+    "Iso-lateral row": {
+        m: "Upper back, lats, rear shoulders, biceps", eq: "Iso-lateral (plate-loaded) row machine", aka: "hammer strength row, plate loaded row, iso row",
+        setup: "Set the seat so the handles are level with your lower chest, and rest your chest on the pad. Load the same plates on both sides.",
+        steps: ["Grab the handles with straight arms.", "Pull your elbows back past your sides, squeezing your shoulder blades.", "Pause for a moment.", "Let the arms go forward slowly until your shoulder blades stretch apart."],
+        tip: "Each arm moves on its own, so you can do one side at a time to fix an imbalance.",
+        mistakes: ["Lifting your chest off the pad to yank the weight.", "Shrugging your shoulders up to your ears."],
+        easier: "Machine row", harder: "One arm at a time with a 2-second squeeze"
+    },
+    "Iso-lateral high row": {
+        m: "Lats, upper back, biceps", eq: "Iso-lateral (plate-loaded) high row machine", aka: "high row, plate loaded high row",
+        setup: "Sit with your thighs under the pad and your chest against the support. Reach up and forward to the handles.",
+        steps: ["Pull the handles down and back toward your upper chest.", "Drive your elbows down to your sides.", "Pause.", "Let your arms rise back up slowly."],
+        tip: "Think about pulling with your elbows, not your hands.",
+        mistakes: ["Leaning way back to use your bodyweight.", "Cutting the stretch short at the top."],
+        easier: "Lat pulldown", harder: "One arm at a time"
+    },
+    "Iso-lateral lat pulldown": {
+        m: "Lats, upper back, biceps", eq: "Plate-loaded pulldown machine", aka: "wide pulldown, front lat pulldown, plate loaded pulldown",
+        setup: "Lock your thighs under the pad. Grab both handles with your arms straight overhead.",
+        steps: ["Pull the handles down beside your chest.", "Squeeze your lats at the bottom.", "Pause.", "Let the handles rise slowly until your arms are straight."],
+        tip: "Keep your chest up and lead with your elbows.",
+        mistakes: ["Swinging your body to start each rep.", "Stopping short of a full stretch."],
+        easier: "Lat pulldown", harder: "3-second lowering"
+    },
+    "T-bar row": {
+        m: "Upper back, lats, rear shoulders, biceps", eq: "T-bar row machine or landmine with a handle",
+        setup: "Stand on the platform (or straddle the bar), hinge at the hips with a flat back, and grab the handles with straight arms.",
+        steps: ["Brace your stomach and keep your back flat.", "Row the handles to your stomach.", "Squeeze your shoulder blades.", "Lower slowly to a full stretch."],
+        tip: "Your torso angle stays the same the whole set. If you stand up to move it, it's too heavy.",
+        mistakes: ["Rounding your lower back.", "Jerking the weight up with your hips."],
+        easier: "Chest-supported row", harder: "Pause at the top for 2 seconds"
+    },
+    "Iso-lateral chest press": {
+        m: "Chest, front shoulders, triceps", eq: "Iso-lateral (plate-loaded) chest press machine", aka: "hammer strength chest press, iso-lateral bench press, horizontal bench press, wide chest press, plate loaded chest press",
+        setup: "Set the seat so the handles line up with the middle of your chest. Pin your shoulder blades back against the pad.",
+        steps: ["Press the handles forward until your arms are straight.", "Don't lock out hard.", "Lower slowly until you feel a stretch across your chest.", "Press again."],
+        tip: "The arms move separately, so press both evenly; your weaker side can't hide.",
+        mistakes: ["Letting your shoulders roll forward off the pad.", "Bouncing out of the bottom."],
+        easier: "Machine chest press", harder: "One arm at a time"
+    },
+    "Iso-lateral incline press": {
+        m: "Upper chest, front shoulders, triceps", eq: "Iso-lateral (plate-loaded) incline press machine", aka: "plate loaded incline press, super incline press",
+        setup: "Set the seat so the handles start near your upper chest. Feet flat, shoulder blades back.",
+        steps: ["Press up and forward until your arms are straight.", "Lower slowly to the stretch.", "Pause briefly.", "Press again."],
+        tip: "Keep your chest tall so your upper chest does the work, not just your shoulders.",
+        mistakes: ["Arching your back off the pad.", "Half reps."],
+        easier: "Incline machine press", harder: "3-second lowering"
+    },
+    "Smith machine bench press": {
+        m: "Chest, front shoulders, triceps", eq: "Smith machine and a flat bench", aka: "smith bench",
+        setup: "Line the bench up so the bar comes down to your mid-chest. Set the safety stops just above your chest.",
+        steps: ["Unhook the bar by turning your wrists.", "Lower it to your mid-chest with elbows at about 45 degrees.", "Press it back up.", "Re-hook at the top."],
+        tip: "Set the safeties every time; it lets you push hard without a spotter.",
+        mistakes: ["Bench in the wrong spot so the bar lands on your neck or stomach.", "Flaring elbows straight out."],
+        easier: "Machine chest press", harder: "Pause on the chest for 1 second"
+    },
+    "Iso-lateral shoulder press": {
+        m: "Shoulders, triceps", eq: "Iso-lateral (plate-loaded) shoulder press machine", aka: "plate loaded shoulder press, hammer strength shoulder press",
+        setup: "Set the seat so the handles start at about shoulder height. Back flat on the pad.",
+        steps: ["Press the handles overhead until your arms are straight.", "Lower slowly to shoulder height.", "Pause.", "Press again."],
+        tip: "Keep your ribs down; don't arch your back to finish the rep.",
+        mistakes: ["Arching hard off the pad.", "Lowering only halfway."],
+        easier: "Machine shoulder press", harder: "One arm at a time"
+    },
+    "Pendulum squat": {
+        m: "Quads, glutes", eq: "Pendulum squat machine", aka: "pendulum squat machine",
+        setup: "Step in with your back on the pad and shoulders under the pads. Feet about hip-width in the middle of the platform.",
+        steps: ["Release the safety handles.", "Squat down as deep as you comfortably can, knees traveling forward.", "Drive up through your whole foot.", "Stop just short of locking out."],
+        tip: "It's built for deep knee bends; go slow at the bottom and own the stretch.",
+        mistakes: ["Heels lifting.", "Bouncing out of the bottom."],
+        easier: "Leg press", harder: "Pause at the bottom for 2 seconds"
+    },
+    "Belt squat": {
+        m: "Quads, glutes, adductors", eq: "Belt squat machine", aka: "belt squat machine",
+        setup: "Clip the belt around your hips and stand on the platform with feet a little wider than shoulder-width.",
+        steps: ["Release the lever so the weight hangs from your hips.", "Squat down with your chest up.", "Go as deep as feels good.", "Stand back up."],
+        tip: "Great for training legs hard without loading your back.",
+        mistakes: ["Knees caving in.", "Rushing the bottom."],
+        easier: "Goblet squat", harder: "Slow 3-second lowering"
+    },
+    "Hip thrust machine": {
+        m: "Glutes, hamstrings", eq: "Hip thrust (glute drive) machine", aka: "glute drive",
+        setup: "Sit with your upper back on the pad and the belt or pad across your hips. Feet flat, about hip-width.",
+        steps: ["Tuck your chin and drive through your heels.", "Lift your hips until your body is flat from knees to shoulders.", "Squeeze your glutes for a second at the top.", "Lower slowly."],
+        tip: "Your shins should be vertical at the top. Move your feet until they are.",
+        mistakes: ["Arching your lower back at the top instead of squeezing your glutes.", "Pushing through your toes."],
+        easier: "Glute bridge", harder: "Pause 3 seconds at the top"
+    },
+    "Seated dip machine": {
+        m: "Triceps, chest, front shoulders", eq: "Seated dip machine", aka: "triceps dip machine, plate loaded seated dip",
+        setup: "Sit tall with the handles at your sides, elbows bent.",
+        steps: ["Press the handles down until your arms are straight.", "Squeeze your triceps.", "Let the handles rise slowly.", "Stop when your elbows reach about 90 degrees."],
+        tip: "Keep your elbows tucked in by your sides to hit the triceps.",
+        mistakes: ["Shrugging your shoulders up.", "Letting the weight slam back up."],
+        easier: "Triceps pushdown", harder: "3-second lowering"
+    },
+    "Machine preacher curl": {
+        m: "Biceps", eq: "Preacher curl machine", aka: "biceps curl machine, seated biceps, preacher machine",
+        setup: "Set the seat so your armpits are snug on top of the pad and your upper arms lie flat on it.",
+        steps: ["Curl the handles up.", "Squeeze your biceps at the top.", "Lower slowly until your arms are almost straight.", "Curl again."],
+        tip: "The bottom is where it works hardest; don't skip it.",
+        mistakes: ["Lifting your elbows off the pad.", "Dropping the weight on the way down."],
+        easier: "Cable curl", harder: "Pause halfway down"
+    },
+    "Ab crunch machine": {
+        m: "Abs", eq: "Ab crunch machine", aka: "abdominal crunch, crunch machine",
+        setup: "Set the seat so the handles or pads sit at your upper chest. Hook your feet if there are rollers.",
+        steps: ["Breathe out and curl your ribs toward your hips.", "Squeeze your abs at the bottom.", "Return slowly.", "Keep tension the whole set."],
+        tip: "Move your spine, not just your arms. Think 'roll down', not 'pull down'.",
+        mistakes: ["Pulling with your arms.", "Using momentum."],
+        easier: "Reverse crunch", harder: "2-second squeeze at the bottom"
+    },
+
+    "Iso-lateral low row": {
+        m: "Lats, upper back, biceps", eq: "Iso-lateral (plate-loaded) low row machine", aka: "low row, hammer strength low row",
+        setup: "Sit with your chest on the pad and feet braced. Reach forward and slightly down to the handles.",
+        steps: ["Row the handles toward your hips.", "Keep your elbows close to your sides.", "Squeeze your lats at the end.", "Return slowly to a full stretch."],
+        tip: "Pulling toward your hips works the lats; pulling toward your chest works the upper back more.",
+        mistakes: ["Leaning back to cheat the weight.", "Short reps without the stretch."],
+        easier: "Seated cable row", harder: "One arm at a time"
+    },
+    "Iso-lateral decline press": {
+        m: "Chest, triceps, front shoulders", eq: "Iso-lateral (plate-loaded) decline chest press machine", aka: "decline chest press, decline press machine",
+        setup: "Set the seat so the handles line up with your lower chest. Shoulder blades back on the pad.",
+        steps: ["Press forward and slightly down until your arms are straight.", "Lower slowly to a stretch.", "Pause briefly.", "Press again."],
+        tip: "Great for the lower chest, and easy on the shoulders.",
+        mistakes: ["Shoulders rolling forward.", "Bouncing at the bottom."],
+        easier: "Machine chest press", harder: "3-second lowering"
+    },
+    "Pullover machine": {
+        m: "Lats, chest", eq: "Pullover machine", aka: "plate loaded pullover, nautilus pullover",
+        setup: "Set the seat so your shoulders line up with the machine's pivot. Rest your arms on the pads overhead.",
+        steps: ["Drive your elbows down and around toward your hips.", "Squeeze your lats at the bottom.", "Let your arms rise slowly back overhead.", "Feel the stretch at the top."],
+        tip: "It trains the lats without your biceps getting tired first.",
+        mistakes: ["Arching your back to move the weight.", "Cutting the stretch short."],
+        easier: "Lat pulldown", harder: "Pause in the stretch for 2 seconds"
+    },
+    "Shrug machine": {
+        m: "Traps", eq: "Seated or standing shrug machine", aka: "machine shrug, seated shrug, standing shrug",
+        setup: "Stand or sit tall with the handles at your sides and arms straight.",
+        steps: ["Lift your shoulders straight up toward your ears.", "Squeeze for a second.", "Lower all the way down.", "Repeat."],
+        tip: "Straight up and down. Rolling your shoulders adds nothing.",
+        mistakes: ["Bending your elbows.", "Bouncing the weight."],
+        easier: "Lighter weight", harder: "2-second squeeze at the top"
+    },
+    "Kneeling leg curl": {
+        m: "Hamstrings", eq: "Kneeling (iso-lateral) leg curl machine", aka: "iso-lateral leg curl, single leg curl machine",
+        setup: "Kneel on the pad with one ankle under the roller and your hips square.",
+        steps: ["Curl your heel toward your glutes.", "Squeeze at the top.", "Lower slowly.", "Finish all reps, then switch legs."],
+        tip: "One leg at a time lets your weaker side catch up.",
+        mistakes: ["Twisting your hips to help.", "Dropping the weight on the way down."],
+        easier: "Lying hamstring curl", harder: "3-second lowering"
+    },
+    "Reverse hyper": {
+        m: "Glutes, hamstrings, lower back", eq: "Reverse hyper or glute-ham machine", aka: "reverse hyperextension, glute ham machine",
+        setup: "Lie face down on the pad with your hips at the edge and hold the handles.",
+        steps: ["Squeeze your glutes and lift your legs up behind you.", "Stop when your body is in a straight line.", "Lower with control.", "Don't swing."],
+        tip: "Lift with your glutes; don't crank your lower back into an arch.",
+        mistakes: ["Swinging the legs with momentum.", "Over-arching at the top."],
+        easier: "Glute bridge", harder: "Pause at the top"
+    },
+    "V-squat machine": {
+        m: "Quads, glutes", eq: "V-squat or reverse V-squat machine", aka: "reverse v squat, super squat",
+        setup: "Step onto the platform with your shoulders under the pads and feet about hip-width.",
+        steps: ["Release the safeties.", "Squat down as deep as you comfortably can.", "Drive up through your whole foot.", "Stop just short of locking out."],
+        tip: "Feet lower on the platform hit the quads more; higher hits the glutes more.",
+        mistakes: ["Heels lifting.", "Knees caving in."],
+        easier: "Leg press", harder: "Pause at the bottom"
+    },
+    "Glute kickback machine": {
+        m: "Glutes", eq: "Glute kickback (hip and glute) machine", aka: "hip and glute machine, glute machine",
+        setup: "Set your chest or forearms on the pad and place one foot on the platform or behind the roller.",
+        steps: ["Push your leg back and up by squeezing your glute.", "Pause at the top.", "Return slowly.", "Finish all reps, then switch legs."],
+        tip: "Keep your lower back still; the glute does all the moving.",
+        mistakes: ["Arching your back to get the leg higher.", "Swinging."],
+        easier: "Cable glute kickback", harder: "2-second squeeze at the top"
+    },
+    "Triceps extension machine": {
+        m: "Triceps", eq: "Triceps extension machine", aka: "seated triceps extension, tricep machine",
+        setup: "Sit with your upper arms resting on the pad and the handles in front of you.",
+        steps: ["Straighten your arms fully.", "Squeeze your triceps.", "Bend back slowly to a stretch.", "Repeat."],
+        tip: "Keep your elbows planted on the pad the whole time.",
+        mistakes: ["Lifting your elbows off the pad.", "Half reps."],
+        easier: "Triceps pushdown", harder: "3-second lowering"
     },
 
     /* ---------- Shoulders ---------- */
@@ -507,7 +695,7 @@ const EXERCISES = {
         easier: "Seated with back support", harder: "Single-arm press (works your core too)"
     },
     "Machine shoulder press": {
-        m: "Shoulders, triceps", eq: "Shoulder press machine",
+        m: "Shoulders, triceps", eq: "Shoulder press machine", aka: "seated shoulder press machine, shoulder press machine",
         setup: "Adjust the seat so the handles start at about shoulder height. Sit tall, back against the pad.",
         steps: ["Press the handles up until your arms are straight.", "Lower slowly back to shoulder height.", "Keep your back against the pad.", "Repeat."],
         tip: "The machine handles balance, so you can focus on pushing hard.",
@@ -539,7 +727,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause at the top"
     },
     "Machine lateral raise": {
-        m: "Side shoulders", eq: "Lateral raise machine",
+        m: "Side shoulders", eq: "Lateral raise machine", aka: "side lateral machine, lateral raise machine",
         setup: "Adjust the seat so your shoulders line up with the machine's pivot points. Pads rest on the outside of your arms.",
         steps: ["Raise your arms out to the sides until level with your shoulders.", "Pause.", "Lower slowly.", "Keep your shoulders down, away from your ears."],
         tip: "Push with your elbows against the pads, not your hands.",
@@ -563,7 +751,7 @@ const EXERCISES = {
         easier: "Lighter dumbbells, chest on an incline bench", harder: "Pause 2 seconds at the top"
     },
     "Face pull": {
-        m: "Rear shoulders, upper back, rotator cuff", eq: "Cable machine with a rope",
+        m: "Rear shoulders, upper back, rotator cuff", eq: "Cable machine with a rope", aka: "rope face pull",
         setup: "Set a rope at about face height. Grab it with your thumbs pointing back toward you and step back until your arms are straight.",
         steps: ["Pull the rope toward your face, splitting the ends apart.", "Finish with your hands beside your ears and elbows high.", "Pause.", "Return slowly."],
         tip: "End in a 'double biceps' position, hands back by your ears.",
@@ -571,7 +759,7 @@ const EXERCISES = {
         easier: "Lighter weight", harder: "Pause 2 seconds at the end"
     },
     "Reverse pec deck": {
-        m: "Rear shoulders, upper back", eq: "Pec deck machine (rear delt setting)",
+        m: "Rear shoulders, upper back", eq: "Pec deck machine (rear delt setting)", aka: "rear delt machine, rear delt fly machine",
         setup: "Sit facing the pad, chest against it. Set the handles so your arms start straight out in front of you.",
         steps: ["Sweep your arms out and back.", "Stop when they're in line with your body.", "Pause.", "Return slowly."],
         tip: "Keep your arms nearly straight and pull out wide.",
@@ -645,7 +833,7 @@ const EXERCISES = {
         easier: "Machine preacher curl", harder: "Slow 3-second lowering"
     },
     "Triceps pushdown": {
-        m: "Triceps", eq: "Cable machine with a bar or rope",
+        m: "Triceps", eq: "Cable machine with a bar or rope", aka: "cable pushdown, tricep pushdown",
         setup: "Set the pulley high. Grab the bar, tuck your elbows at your sides, and lean forward slightly.",
         steps: ["Push the bar down until your arms are straight.", "Squeeze your triceps.", "Let the bar rise slowly until your forearms are about parallel to the floor.", "Elbows stay pinned."],
         tip: "Only your forearms move. Your upper arms stay still at your sides.",
@@ -677,7 +865,7 @@ const EXERCISES = {
         easier: "Triceps pushdown", harder: "Slow 3-second lowering"
     },
     "Assisted dip": {
-        m: "Triceps, chest, front shoulders", eq: "Assisted dip machine or dip bars",
+        m: "Triceps, chest, front shoulders", eq: "Assisted dip machine or dip bars", aka: "assisted dip machine, gravitron dip",
         setup: "Kneel or stand on the assist platform and grip the bars, arms straight.",
         steps: ["Lower yourself by bending your elbows until your upper arms are about parallel to the floor.", "Keep your shoulders down, away from your ears.", "Press back up.", "Use less help over time."],
         tip: "Only go as deep as your shoulders feel good.",

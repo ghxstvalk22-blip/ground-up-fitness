@@ -66,6 +66,7 @@ const FEATURES = [
     setupLevelBar,
     setupStartingPoint,
     setupBuilder,
+    setupPlanBar,
     setupApp,
     setupCoach,
     setupWeightTrend,
@@ -2036,7 +2037,16 @@ const START_EXTRA = {
     "Cable lateral raise": [["Overhead press", 0.1]], "Machine lateral raise": [["Overhead press", 0.3]], "Lean-away lateral raise": [["Overhead press", 0.12, true]],
     "Rear delt fly": [["Overhead press", 0.12, true]], "Face pull": [["Barbell row", 0.35]], "Reverse pec deck": [["Barbell row", 0.4]], "Cable rear delt fly": [["Overhead press", 0.08]],
     "Incline dumbbell curl": [["Bench press", 0.12, true]], "Cable curl": [["Bench press", 0.3]], "Preacher curl": [["Bench press", 0.3]],
-    "Overhead triceps extension": [["Bench press", 0.25]], "Pallof press": [["Bench press", 0.15]], "Cable crunch": [["Back squat", 0.35]]
+    "Overhead triceps extension": [["Bench press", 0.25]], "Pallof press": [["Bench press", 0.15]], "Cable crunch": [["Back squat", 0.35]],
+    // Plate-loaded machines: total plates on the machine (both sides together)
+    "Iso-lateral row": [["Barbell row", 0.9]], "Iso-lateral high row": [["Barbell row", 0.9]], "Iso-lateral lat pulldown": [["Bench press", 0.8]],
+    "T-bar row": [["Barbell row", 0.8]], "Iso-lateral chest press": [["Bench press", 0.9]], "Iso-lateral incline press": [["Bench press", 0.75]],
+    "Smith machine bench press": [["Bench press", 0.9]], "Iso-lateral shoulder press": [["Overhead press", 0.9]], "Pendulum squat": [["Back squat", 0.7]],
+    "Belt squat": [["Back squat", 0.9]], "Hip thrust machine": [["Deadlift", 0.8]], "Seated dip machine": [["Bench press", 0.9]],
+    "Machine preacher curl": [["Bench press", 0.25]], "Ab crunch machine": [["Back squat", 0.35]],
+    "Iso-lateral low row": [["Barbell row", 0.9]], "Iso-lateral decline press": [["Bench press", 0.9]], "Pullover machine": [["Bench press", 0.4]],
+    "Shrug machine": [["Deadlift", 0.6]], "Kneeling leg curl": [["Deadlift", 0.15]], "Reverse hyper": [["Deadlift", 0.3]],
+    "V-squat machine": [["Back squat", 0.9]], "Glute kickback machine": [["Back squat", 0.25]], "Triceps extension machine": [["Bench press", 0.35]]
 };
 const BARBELL = /^(Bench press|Incline barbell press|Back squat|Front squat|Deadlift|Romanian deadlift|Overhead press|Barbell row|Hip thrust|Barbell curl)$/;
 function startMax(name, unit) {
@@ -2285,6 +2295,7 @@ function setupPrograms() {
             <div>
                 <h3>${escapeHtml(p.name)} &middot; ${state.goal === "custom" ? "1 session" : `${state.days} days`} <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
                 <p>${escapeHtml(p.summary)}</p>
+                ${state.goal === "custom" ? `<p class="plan-edit"><button type="button" class="btn btn-small" data-edit-custom>Edit this workout</button> <span>Swap, add, or remove exercises. Your logged sets stay.</span></p>` : ""}
                 ${p.source ? `<p class="plan-source">Based on <a href="${p.source[1]}" target="_blank" rel="noopener">${escapeHtml(p.source[0])}</a>. Adapted for this site; not affiliated.</p>` : ""}
             </div>
             ${!levelAtLeast("Intermediate") ? `<p class="plan-simple"><strong>When:</strong> ${escapeHtml(plan.schedule)} <strong>How hard:</strong> ${escapeHtml(p.effort)}</p>` : ""}
@@ -2648,6 +2659,7 @@ function setupPrograms() {
         state.days = Number(r.value);
         render({ syncUrl: true });
     }));
+    els.head.addEventListener("click", (e) => { if (e.target.closest("[data-edit-custom]")) editCustomWorkout(); });
     const homeKitBox = document.getElementById("home-kit");
     if (homeKitBox) homeKitBox.addEventListener("change", (e) => {
         if (e.target.name !== "home-kit" || !PROGRAMS[e.target.value]) return;
@@ -2928,7 +2940,7 @@ function setupLibrary() {
         // "Dumbbells" also shows bodyweight moves, since anyone with dumbbells can do those too
         const kitOk = (n) => !kit || equipOf(n) === kit || (kit === "db" && equipOf(n) === "body" && !isCardio(n));
         const shown = names.filter((n) => (!muscle || group[n] === muscle) && kitOk(n)
-            && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq}`.toLowerCase().includes(q)));
+            && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq} ${EXERCISES[n].aka || ""}`.toLowerCase().includes(q)));
         count.textContent = shown.length
             ? `${shown.length} exercise${shown.length === 1 ? "" : "s"}${muscle ? ` for ${label[muscle].toLowerCase()}` : ""}`
             : `No exercises match "${search.value}". Try a simpler word, like press or row.`;
@@ -2942,6 +2954,7 @@ function setupLibrary() {
                     <h3>${escapeHtml(n)}</h3>
                     <p class="library-muscles">${escapeHtml(x.m)}</p>
                     <p class="library-eq">${escapeHtml(x.eq)}</p>
+                    ${x.aka ? `<p class="library-aka">Also called: ${escapeHtml(x.aka)}</p>` : ""}
                     <p class="library-tip">${escapeHtml(x.tip)}</p>
                     <button type="button" class="btn btn-small" data-howto="${escapeHtml(n)}">How to do it</button>
                 </li>`;
@@ -3143,6 +3156,10 @@ function coachFindExercise(t) {
 }
 function coachFindExerciseExact(t) {
     let best = null;
+    Object.keys(EXERCISES).forEach((name) => {
+        String(EXERCISES[name].aka || "").toLowerCase().split(",").map((a) => a.trim()).filter((a) => a.length > 5)
+            .forEach((a) => { if (t.includes(a) && (!best || a.length > best.length)) best = name; });
+    });
     Object.keys(EXERCISES).forEach((name) => {
         const n = name.toLowerCase();
         const variants = [n, n.replace(/s$/, ""), `${n}s`, n.replace(/-/g, " ")];
@@ -3974,6 +3991,85 @@ function setupApp() {
    Beginner / Intermediate / Advanced / Expert switch.
    ========================================================= */
 /* =========================================================
+   FEATURE: Your plan bar (every page but Plans)
+   A bar along the bottom (above the phone tab bar) with the plan you're
+   on and today's workout. Tap to see the exercises; one tap opens the
+   full plan to log sets. Custom workouts get an Edit button.
+   ========================================================= */
+// Load "My workout" into the builder and open it, so it can be changed while it's in use
+function editCustomWorkout() {
+    const mine = loadCustomWorkout();
+    if (!mine) { location.assign("programs.html#build"); return; }
+    const day = mine.plans[1].days[0];
+    store.set(BUILDER_KEY, { title: day.title === "My workout" ? "" : day.title, goal: (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle", editing: true,
+        items: day.items.map((it) => {
+            const m = String(it.d).match(/^(\d+) × (.+?)( per side)?( at .*)?$/);
+            return { n: it.n, sets: m ? Number(m[1]) : 3, amount: m ? m[2] : it.d, rest: it.rest };
+        }) });
+    location.assign(`programs.html?edit=${Date.now()}#build`);
+}
+// Where you are in your current plan: today's day and its exercises
+function currentPlanInfo() {
+    const last = store.get("gu-last-plan");
+    if (!last || typeof last !== "object") return null;
+    if (last.goal === "custom" && !PROGRAMS.custom) { const c = loadCustomWorkout(); if (c) PROGRAMS.custom = c; }
+    const p = PROGRAMS[last.goal];
+    const days = Number(last.days);
+    if (!p || !p.plans[days]) return null;
+    const plan = p.plans[days];
+    const week = Math.max(1, weekOf(programStart(last.goal)));
+    const done = new Set(store.get(`gu-progress-${last.goal}-${days}-w${week}`, []) || []);
+    const swaps = store.get(`gu-swaps-${last.goal}-${days}`, {}) || {};
+    const list = weekDays(plan, week);
+    let di = list.findIndex((d, i) => !d.items.every((_, xi) => done.has(`${i}-${xi}`)));
+    const weekDone = di < 0;
+    if (weekDone) di = 0;
+    const day = list[di];
+    const items = dayLineup(last.goal, days, di, day.items, week, swaps).map((x, xi) => ({ name: x.name, d: x.d, done: done.has(`${di}-${xi}`) }));
+    return { goal: last.goal, days, week, di, weekDone, name: p.name, title: day.title, items, href: `programs.html#program-${last.goal}-${days}` };
+}
+
+function setupPlanBar() {
+    if (document.body.dataset.page === "programs" || !document.getElementById("site-footer") && !document.querySelector(".site-footer")) return;
+    const info = currentPlanInfo();
+    if (!info) return;
+    const custom = info.goal === "custom";
+    const doneCount = info.items.filter((x) => x.done).length;
+    const open = store.get("gu-planbar-open") === true;
+    document.body.insertAdjacentHTML("beforeend", `
+<section class="planbar${open ? " is-open" : ""}" id="planbar" aria-label="Your plan">
+    <div class="planbar-head">
+        <button type="button" class="planbar-toggle" aria-expanded="${open}" aria-controls="planbar-list">
+            <span class="planbar-kicker">Your plan${custom ? "" : ` · Week ${info.week}`}</span>
+            <strong>${info.weekDone ? "Week done. Nice work" : `${escapeHtml(custom ? info.title : `Day ${info.di + 1}: ${info.title}`)}`}</strong>
+            <span class="planbar-sub">${escapeHtml(info.name)} · ${doneCount} of ${info.items.length} done</span>
+        </button>
+        <a class="btn btn-primary btn-compact planbar-go" href="${info.href}">${doneCount ? "Continue" : "Start"}</a>
+    </div>
+    <div class="planbar-body" id="planbar-list"${open ? "" : " hidden"}>
+        <ol class="planbar-list">${info.items.map((x) => `<li class="${x.done ? "is-done" : ""}">${equipIcon(x.name)}<span><strong>${escapeHtml(x.name)}</strong> <small>${escapeHtml(x.d)}${x.done ? " · done" : ""}</small></span><button type="button" class="chip" data-howto="${escapeHtml(x.name)}">How to</button></li>`).join("")}</ol>
+        <div class="planbar-actions">
+            <a class="btn btn-compact" href="${info.href}">Open full plan</a>
+            ${custom ? `<button type="button" class="btn btn-compact" data-edit-custom>Edit this workout</button>` : ""}
+        </div>
+    </div>
+</section>`);
+    document.body.classList.add("has-planbar");
+    const bar = document.getElementById("planbar");
+    const toggle = bar.querySelector(".planbar-toggle"), body = bar.querySelector(".planbar-body");
+    toggle.addEventListener("click", () => {
+        const now = body.hidden;
+        body.hidden = !now;
+        bar.classList.toggle("is-open", now);
+        toggle.setAttribute("aria-expanded", String(now));
+        store.set("gu-planbar-open", now);
+        document.body.classList.toggle("planbar-open", now);
+    });
+    document.body.classList.toggle("planbar-open", open);
+    bar.addEventListener("click", (e) => { if (e.target.closest("[data-edit-custom]")) editCustomWorkout(); });
+}
+
+/* =========================================================
    FEATURE: Build your own workout (Plans page)
    Pick any exercises from the library; each gets sets, reps, and rest
    (changeable) and a weight to use: from your logged sets if you have
@@ -4055,7 +4151,7 @@ function builderClean(raw) {
         const list = kind === "time" ? BUILDER_TIMES : kind === "hold" ? BUILDER_HOLDS : kind === "steps" ? BUILDER_STEPS : BUILDER_REPS;
         return { n: x.n, sets: Number(x.sets) >= 1 && Number(x.sets) <= 6 ? Number(x.sets) : base.sets, amount: list.includes(x.amount) ? x.amount : base.amount, rest: BUILDER_RESTS.includes(x.rest) ? x.rest : base.rest };
     });
-    return { title: String(raw.title || "").replace(/[<>]/g, "").slice(0, 40), goal: BUILD_GOALS[raw.goal] ? raw.goal : "muscle", items };
+    return { title: String(raw.title || "").replace(/[<>]/g, "").slice(0, 40), goal: BUILD_GOALS[raw.goal] ? raw.goal : "muscle", editing: raw.editing === true, items };
 }
 // The weight to use, in plain words
 function builderWeight(x) {
@@ -4098,7 +4194,7 @@ function setupBuilder() {
             <div class="builder-intro">
                 <div>
                     <p class="kicker">Your way</p>
-                    <h2 id="builder-title">Build your own workout</h2>
+                    <h2 id="builder-title">${draft.editing ? "Edit your workout" : "Build your own workout"}</h2>
                     <p class="section-lede">Pick the exercises you want to hit today. Each one gets sets, reps, and rest you can change, plus the weight to use. Log your sets and the weights go up as you get stronger.</p>
                 </div>
                 <button type="button" class="btn btn-primary builder-open" aria-expanded="false" aria-controls="builder-body">${draft.items.length ? "Edit my workout" : "Start building"}</button>
@@ -4139,7 +4235,7 @@ function setupBuilder() {
                     <ol class="builder-list"></ol>
                     <p class="builder-note" hidden></p>
                     <div class="builder-actions">
-                        <button type="button" class="btn btn-primary builder-save">Save and start</button>
+                        <button type="button" class="btn btn-primary builder-save">${draft.editing ? "Save changes" : "Save and start"}</button>
                         <button type="button" class="text-button builder-clear">Clear</button>
                     </div>
                     <p class="log-status builder-status" role="status"></p>
@@ -4183,7 +4279,7 @@ function setupBuilder() {
         const muscle = (spot.querySelector('input[name="builder-muscle"]:checked') || {}).value || "";
         const kit = kitSel.value;
         const shown = names.filter((n) => (!muscle || libraryGroup(n) === muscle) && (!kit || equipOf(n) === kit)
-            && (!q || `${n} ${EXERCISES[n].m}`.toLowerCase().includes(q)) && !/stretch|mobility/i.test(n));
+            && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq} ${EXERCISES[n].aka || ""}`.toLowerCase().includes(q)) && !/stretch|mobility/i.test(n));
         $(".builder-count").textContent = `${shown.length} exercise${shown.length === 1 ? "" : "s"}`;
         const picked = new Set(draft.items.map((x) => x.n));
         const { by, trained } = tally();
@@ -4301,6 +4397,16 @@ function setupBuilder() {
     $(".builder-save").addEventListener("click", () => {
         if (!draft.items.length) return;
         const title = draft.title.trim() || "My workout";
+        // Editing the workout you're doing: keep the exercises you already checked off this week
+        const before = loadCustomWorkout();
+        if (before) {
+            const week = Math.max(1, weekOf(programStart("custom")));
+            const key = `gu-progress-custom-1-w${week}`;
+            const doneNames = new Set((store.get(key, []) || []).map((k) => { const it = before.plans[1].days[0].items[Number(String(k).split("-")[1])]; return it && it.n; }).filter(Boolean));
+            store.set(key, draft.items.map((x, i) => (doneNames.has(x.n) ? `0-${i}` : null)).filter(Boolean));
+        }
+        draft.editing = false;
+        save();
         store.set("gu-custom", { title, items: draft.items.map((x) => ({ n: x.n, d: builderDose(x), rest: builderKind(x.n) === "time" ? "" : x.rest })) });
         store.set("gu-last-plan", { goal: "custom", days: 1 });
         status.textContent = "Saved. Opening your workout…";

@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Your plan bar, edit your workout, and more gym machines)
+
+- **Your plan bar:** on every page (except Plans, where the plan already is), a bar along the bottom shows the plan you're on and today's workout, with how many exercises you've done. Tap it to see the exercises (with how-tos), or tap **Continue** to jump straight back in and log sets. On phones it sits just above the bottom tabs.
+- **Edit your workout while you're using it:** custom workouts now have an **Edit this workout** button (on the plan and in the bar). It opens the builder with your current exercises so you can swap, add, or remove. Saving keeps what you've already checked off, and your logged sets stay.
+- **23 more gym machines**, based on the selectorized and plate-loaded lines most gyms carry (Life Fitness / Hammer Strength): iso-lateral row, high row, low row, chest press, incline and decline press, shoulder press and pulldown, T-bar row, pullover, shrug machine, Smith machine bench, pendulum, belt and V-squat, hip thrust (glute drive), glute kickback machine, kneeling leg curl, reverse hyper, seated dip, triceps extension and preacher curl machines, and an ab crunch machine. Each has a how-to and a starting weight.
+- **Search by the names people actually use:** "seated chest press", "chest fly machine", "leg curl", "hammer strength row" and more now find the right exercise, and library cards show "Also called".
+
 ## 2026-10-12 (Easier to find Build your own workout)
 
 - **Build your own workout** is now easy to reach from anywhere: a big orange button on the front cover, an orange "+ Build a workout" button in the header on computers, and a new **Build** tab in the phone app's bottom bar.
