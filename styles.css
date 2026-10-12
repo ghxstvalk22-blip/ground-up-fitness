@@ -2029,3 +2029,10 @@ select, input, textarea {
     .flash, .jump[open], .spinner, .ex-target.just-saved { animation: none; }
     .sent-check circle, .sent-check path { animation: none !important; stroke-dashoffset: 0; }
 }
+/* ---------- Sharp corners everywhere (brand style) ----------
+   Older components were built with rounded corners; this keeps them in line. */
+.controls, .day-card, .panel, .path, .principles, .pro-card, .reality-check, .sent,
+.tool-results, .pro-cta, .segmented span, .segmented label:first-of-type span,
+.segmented label:last-of-type span, select, input, textarea, .jump, #jump-list li {
+    border-radius: 0;
+}

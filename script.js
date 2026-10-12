@@ -1266,7 +1266,10 @@ function setupPrograms() {
         const bits = [levels[profile.experience]];
         if (profile.bodyweight) bits.push(`${profile.bodyweight} ${profile.unit}`);
         if (profile.focus) bits.push(`focus: ${profile.focus}`);
-        els.profileSummary.textContent = bits.join(" · ");
+        // Until someone fills it in, invite them rather than guessing
+        els.profileSummary.textContent = store.get(PROFILE_KEY)
+            ? bits.join(" · ")
+            : "Tell us your experience and goals for personal targets";
         const notes = [];
         if (profile.bodyweight) {
             const kg = profile.unit === "kg" ? Number(profile.bodyweight) : Number(profile.bodyweight) / 2.20462;
