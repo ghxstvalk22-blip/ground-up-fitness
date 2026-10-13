@@ -3523,3 +3523,8 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .bc-head.is-2 { border-color: #7a1e00; box-shadow: inset 3px 0 0 #7a1e00; }
 .bc-warn-title { margin: 0 0 6px !important; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink) !important; }
 .day-edit .chip[data-move-day] { min-width: 44px; justify-content: center; font-size: 1rem; }
+
+/* Your plan: change the number of sets right on the day card */
+.ex-sets-adjust { display: inline-flex; gap: 6px; margin: 6px 0 2px; }
+.ex-sets-adjust .chip { min-width: 64px; justify-content: center; }
+.ex-sets-adjust .chip:disabled { opacity: 0.4; cursor: not-allowed; }

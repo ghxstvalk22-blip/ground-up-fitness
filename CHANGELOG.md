@@ -2,6 +2,15 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Smarter weight jumps, research-based sets and reps, and ± sets on your plan)
+
+- **Next time's weight is smarter.** The app looks at every set you did last time:
+  - Hit the top of your rep range on every set: the weight goes up about 2.5% on upper-body lifts and about 5% on legs (at least 5 lb and 10 lb; light lifts like lateral raises go up in the smallest step, 2.5 lb).
+  - Beat the top of the range by 2 or more reps on every set: a bigger jump (about 5% upper body, 10% legs), still within the 2 to 10% the research recommends.
+  - Did fewer sets than planned (say 1 of 3): the weight stays the same until you get all the sets in.
+- **Sets and reps follow your goal, based on the research** (the National Strength and Conditioning Association's guidelines and the American College of Sports Medicine's position stand): strength is 1 to 6 reps for 2 to 6 sets with 2 to 5 minutes of rest (main lifts: 4 × 3–5, or 3 × 5 if you're newer); muscle is 6 to 12 reps for 3 to 6 sets with 1 to 2 minutes of rest; endurance is 12 or more reps for 2 to 3 sets with short rests. This applies to Build your own workout, the Fitness Coach, and the main lift of a ready-made plan when your goal (Tailor it to you) is Get stronger. "Why these limits?" in the builder explains it with sources.
+- **± sets right on your plan.** On Your plan, each exercise now has **− set** and **+ set** buttons, so you can add or take away a set without rebuilding the workout.
+
 ## 2026-10-13 (Muscle check, simpler; fixes from three more test runs)
 
 - **Muscle check is simpler and easier to read.** It now sits under your exercise list as a fold-open **Muscle check** with a one-line peek (the muscles you're working, and how many things are worth a look). Inside: the front and back body, one line per muscle, and every head and part one tap further (from Intermediate up; Beginner sees plain muscle names).

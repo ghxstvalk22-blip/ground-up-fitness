@@ -578,7 +578,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForURL(/program-custom/);
             await page.waitForTimeout(400);
             const saved = await page.evaluate(() => store.get("gu-custom"));
-            check(saved && saved.items.length === 3 && /^\d × (4–6|5)$/.test(saved.items[0].d), `Save and start saves it as My workout (${saved && saved.items[0].d})`);
+            check(saved && saved.items.length === 3 && /^\d × (3–5|4–6|5)$/.test(saved.items[0].d), `Save and start saves it as My workout (${saved && saved.items[0].d})`);
             check(/Your plan/i.test(await page.locator("#program-head").textContent()) && /Start with about/.test(await page.locator(".ex-target").first().textContent()), "the saved workout opens with a starting weight on each lift");
             // Your plan bar: on other pages, shows today's exercises; the active custom workout can be edited
             await page.locator(".ex-row").nth(1).locator('input[type="checkbox"]').check({ force: true });
@@ -1192,6 +1192,43 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(300);
             await page.locator('[data-move-day="1"][data-dir="-1"]').click();
             check(await page.evaluate(() => /Biceps/.test(customDaysRaw()[0].title) && customDaysRaw()[1].title === "Back & Chest"), "days can be moved up and down");
+            const before = await page.evaluate(() => customDaysRaw()[0].items[0].d);
+            await page.locator('.day-card[data-day="0"] [data-sets-adjust="0-0"][data-dir="1"]').click();
+            const after = await page.evaluate(() => customDaysRaw()[0].items[0].d);
+            check(Number(after[0]) === Number(before[0]) + 1 && new RegExp(after).test(await page.locator('.day-card[data-day="0"] .ex-dose').first().textContent()), `+ set adds a set right on your plan (${before} -> ${after})`);
+            await page.locator('.day-card[data-day="0"] [data-sets-adjust="0-0"][data-dir="-1"]').click();
+            check(await page.evaluate((b) => customDaysRaw()[0].items[0].d === b, before), "− set takes it away again");
+            await page.evaluate(() => localStorage.clear());
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Progression: knows last time's sets and reps, goes up the right amount, and sets/reps follow the goal
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            const res = await page.evaluate(() => {
+                localStorage.clear();
+                const d = (k) => { const x = new Date(); x.setDate(x.getDate() - k); return x.toISOString().slice(0, 10); };
+                localStorage.setItem("gu-log", JSON.stringify({
+                    "Bench press": [{ date: d(3), unit: "lb", sets: [{ w: 225, r: 10 }, { w: 225, r: 10 }, { w: 225, r: 10 }] }],
+                    "Back squat": [{ date: d(3), unit: "lb", sets: [{ w: 300, r: 12 }, { w: 300, r: 12 }, { w: 300, r: 12 }] }],
+                    "Barbell row": [{ date: d(3), unit: "lb", sets: [{ w: 135, r: 10 }] }],
+                    "Lateral raise": [{ date: d(3), unit: "lb", sets: [{ w: 15, r: 15 }, { w: 15, r: 15 }] }]
+                }));
+                return {
+                    bench: nextTarget("Bench press", "3 × 8–10", "lb"),
+                    squat: nextTarget("Back squat", "3 × 8–10", "lb"),
+                    row: nextTarget("Barbell row", "3 × 8–10", "lb"),
+                    raise: nextTarget("Lateral raise", "2 × 12–15", "lb"),
+                    strength: coachDose("Back squat", true, "Intermediate", "strength")[0],
+                    strengthNew: coachDose("Back squat", true, "Beginner", "strength")[0]
+                };
+            });
+            check(res.bench.up && res.bench.weight === 230, `hitting the top of the range on every set adds about 2.5% on upper body (225 -> ${res.bench.weight})`);
+            check(res.squat.up && res.squat.weight >= 330 && res.squat.weight <= 330 && /bigger jump/.test(res.squat.text), `beating the top by 2+ reps on every set gives a bigger jump on legs, within 10% (300 -> ${res.squat.weight})`);
+            check(!res.row.up && /1 of 3 sets/.test(res.row.text), "doing fewer sets than planned keeps the weight and asks for all the sets first");
+            check(res.raise.up && res.raise.weight === 17.5, `light lifts go up in the smallest step (15 -> ${res.raise.weight})`);
+            check(/^4 × 3–5/.test(res.strength) && /^3 × 5/.test(res.strengthNew), `strength sets and reps follow the research ranges (${res.strength}, beginner ${res.strengthNew})`);
             await page.evaluate(() => localStorage.clear());
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();

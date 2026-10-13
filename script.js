@@ -1999,9 +1999,10 @@ function personalDose(program, item, slot, profile, week = 1, light = false) {
         if (profile.focus && muscleGroup(item.name) === profile.focus && d.sets < 5) { d.sets += 1; notes.push("+1 set for your focus"); changed = true; }
     }
     // Your answers in Your starting point
+    // Strength (NSCA: 1 to 6 reps, 2 to 6 sets, 2 to 5 min rest): the main lift goes heavy
     if (profile.goal === "strength" && slot === 0 && d.high >= 6 && !isCardio(item.name || item.n || "")) {
-        d.low = Math.max(3, d.low - 3); d.high = Math.max(d.low, d.high - 3);
-        if (d.sets < 5) d.sets += 1;
+        const newer = !levelAtLeast("Intermediate");
+        d.sets = newer ? 3 : 4; d.low = newer ? 5 : 3; d.high = 5;
         notes.push("Your goal: strength. Heavier, fewer reps"); changed = true;
     }
     if (profile.goal === "fatloss" && slot > 0 && d.high <= 12 && d.high >= 6) {
@@ -2158,12 +2159,16 @@ const e1rm = (w, r) => (r <= 1 ? w : w * (1 + Math.min(r, 15) / 30));
 const sessionBest = (entry, unit) => Math.max(...entry.sets.map((s) => e1rm(toUnit(s.w, entry.unit, unit), s.r)));
 
 // Weight jumps: bigger for leg compounds, smaller for everything else
-function weightStep(name, unit, current = Infinity) {
+function weightStep(name, unit, current = Infinity, big = false) {
     const legCompound = muscleGroup(name) === "legs" && !/curl|extension|bridge|calf|raise|kickback|abduction/i.test(name);
     // Lighter upper-body lifts use the smallest jump: 5 lb on a 15 lb lift is a 33% jump (common for newer lifters, often women)
     const light = !legCompound && current < (unit === "kg" ? 20 : 45);
     if (light) return unit === "kg" ? 1.25 : 2.5;
-    return unit === "kg" ? (legCompound ? 5 : 2.5) : (legCompound ? 10 : 5);
+    const base = unit === "kg" ? (legCompound ? 5 : 2.5) : (legCompound ? 10 : 5);
+    // Research (ACSM: 2 to 10%) : about 2.5% for upper body and 5% for legs, a bit more when you beat your reps by 2 or more
+    const pct = (legCompound ? 0.05 : 0.025) * (big ? 2 : 1);
+    if (!Number.isFinite(current)) return base;
+    return Math.max(base, Math.round((current * pct) / base) * base);
 }
 
 /* ---------- Starting weights ----------
@@ -2292,9 +2297,17 @@ function nextTarget(name, dose, unit) {
     if (top === 0) {
         return { weight: 0, lastText, text: allTop ? "You hit every rep. Add a rep or two, or try the harder version." : "Aim for one more rep than last time." };
     }
+    // Fewer sets than planned last time: get all the sets in before adding weight
+    if (working.length < d.sets && sets.length < d.sets) {
+        return { weight: top, reps: d.high, lastText, text: `Stay at ${trimNum(top)} ${unit}. Last time you did ${sets.length} of ${d.sets} sets; get all ${d.sets} in, then the weight goes up.` };
+    }
     if (allTop) {
-        const w = top + weightStep(name, unit, top);
-        return { weight: w, reps: d.low, lastText, up: true, text: `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You hit the top of the range on every set.` };
+        // Beat the top of the range by 2 or more on every set (the "2-for-2" idea): a bigger jump
+        const big = working.every((s) => s.r >= d.high + 2);
+        const w = top + weightStep(name, unit, top, big);
+        return { weight: w, reps: d.low, lastText, up: true, text: big
+            ? `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You beat ${d.high} reps by 2 or more on every set, so this is a bigger jump.`
+            : `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You hit the top of the range on every set.` };
     }
     if (anyLow) {
         const prev = entries[entries.length - 2];
@@ -2674,6 +2687,10 @@ function setupPrograms() {
                 <div class="ex-main">
                     <label for="${id}" class="ex-name">${equipIcon(x.name)}${escapeHtml(x.name)}</label>
                     <span class="ex-dose">${escapeHtml(dose.text)}${target && target.weight > 0 && !cardio ? ` <span class="ex-dose-weight">· ${trimNum(target.weight)} ${profile.unit}${target.each ? " each" : ""}</span>` : ""}</span>
+                    ${state.goal === "custom" && !parsed.timed && !cardio ? `<span class="ex-sets-adjust" role="group" aria-label="Sets for ${escapeHtml(x.name)}">
+                        <button type="button" class="chip" data-sets-adjust="${key}" data-dir="-1" aria-label="One less set of ${escapeHtml(x.name)}"${parsed.sets <= 1 ? " disabled" : ""}>&minus; set</button>
+                        <button type="button" class="chip" data-sets-adjust="${key}" data-dir="1" aria-label="One more set of ${escapeHtml(x.name)}"${parsed.sets >= 8 ? " disabled" : ""}>+ set</button>
+                    </span>` : ""}
                     ${badges ? `<span class="ex-badges">${badges}</span>` : ""}
                     ${x.rest ? (restSeconds(x.rest)
                         ? `<button type="button" class="rest-btn" data-rest="${restSeconds(x.rest)}" data-rest-name="${escapeHtml(x.name)}"><span aria-hidden="true">&#9654;</span> Rest ${escapeHtml(x.rest)}<span class="visually-hidden">: start rest timer</span></button>`
@@ -2970,6 +2987,26 @@ function setupPrograms() {
         if (cont) { continueFrom(Number(cont.dataset.continue)); return; }
         const ed = e.target.closest("[data-edit-day]");
         if (ed) { editCustomWorkout(Number(ed.dataset.editDay)); return; }
+        // Your plan: add or take away a set right here (no need to rebuild the workout)
+        const adj = e.target.closest("[data-sets-adjust]");
+        if (adj) {
+            const [di, xi] = adj.dataset.setsAdjust.split("-").map(Number);
+            const days = customDaysRaw();
+            const it = days[di] && days[di].items[xi];
+            if (!it) return;
+            const m = String(it.d).match(/^(\d+)(\s*×.*)$/);
+            if (!m) return;
+            const n = Math.min(8, Math.max(1, Number(m[1]) + Number(adj.dataset.dir)));
+            it.d = `${n}${m[2]}`;
+            saveCustomDays(days);
+            PROGRAMS.custom = loadCustomWorkout();
+            render();
+            const again = els.grid.querySelector(`[data-sets-adjust="${di}-${xi}"][data-dir="${adj.dataset.dir}"]`);
+            if (again && !again.disabled) again.focus();
+            const st = els.grid.querySelector(`[data-slot="${di}-${xi}"] .ex-dose`);
+            if (st) st.setAttribute("aria-live", "polite");
+            return;
+        }
         const mv = e.target.closest("[data-move-day]");
         if (mv) {
             const i = Number(mv.dataset.moveDay), j = i + Number(mv.dataset.dir), days = customDaysRaw();
@@ -3945,10 +3982,13 @@ function coachDose(name, compound, level, goal) {
     // A goal sets the reps: heavy and low for strength, moderate for muscle, light and high for endurance
     if (goal) {
         const newer = level === "Beginner", main = compound && COACH_HEAVY.test(name);
+        // Sets, reps, and rest by goal, from the NSCA's guidelines and the ACSM position stand on progression:
+        // strength 1 to 6 reps for 2 to 6 sets (2 to 5 min rest), muscle 6 to 12 reps for 3 to 6 sets (1 to 2 min),
+        // endurance 12+ reps for 2 to 3 sets (short rests). Newer lifters start a little lighter and higher.
         const g = {
-            strength: main ? (newer ? ["3 × 5", "2–3 min"] : ["4 × 4–6", "3 min"]) : compound ? ["3 × 6–8", "2 min"] : ["3 × 8–12", "90 s"],
-            muscle: compound ? (newer ? ["3 × 8–12", "90 s"] : ["4 × 8–10", "2 min"]) : ["3 × 10–15", "60–90 s"],
-            endurance: compound ? ["3 × 12–15", "60 s"] : ["2 × 15–20", "45 s"]
+            strength: main ? (newer ? ["3 × 5", "2–3 min"] : ["4 × 3–5", "3 min"]) : compound ? (newer ? ["3 × 6–8", "2 min"] : ["3 × 5–6", "2–3 min"]) : ["2 × 8–10", "90 s"],
+            muscle: compound ? (newer ? ["3 × 8–12", "90 s"] : ["4 × 6–10", "2 min"]) : ["3 × 10–15", "60–90 s"],
+            endurance: compound ? ["3 × 12–15", "60 s"] : ["2 × 15–20", "30–45 s"]
         }[goal];
         return [g[0] + per, g[1]];
     }
@@ -5158,7 +5198,7 @@ function builderKind(name) {
    (ACSM 2009 position stand). So: a few exercises per muscle, fewer when you train many. */
 const BUILD_GOALS = {
     muscle: { label: "Build muscle", for: "building muscle", dose: "muscle", per: [4, 3], total: 10, sets: 12, why: "3 or 4 exercises per muscle (about 9 to 12 hard sets) in one workout; past that, extra work mostly adds fatigue" },
-    strength: { label: "Get stronger", for: "getting stronger", dose: "strength", per: [3, 2], total: 8, sets: 10, why: "a main lift plus 1 or 2 helpers per muscle; strength gains level off after a few heavy sets" },
+    strength: { label: "Get stronger", for: "getting stronger", dose: "strength", per: [3, 2], total: 8, sets: 10, why: "heavy sets of 3 to 6 reps with long rests on a main lift, plus 1 or 2 helpers per muscle" },
     fit: { label: "Lose fat / get fit", for: "fat loss and fitness", dose: null, per: [3, 2], total: 10, sets: 10, why: "2 or 3 exercises per muscle, so you can train every muscle without spending all day" },
     endurance: { label: "Endurance (high reps)", for: "endurance", dose: "endurance", per: [3, 2], total: 10, sets: 10, why: "2 or 3 exercises per muscle with light weights and short rests" }
 };
@@ -5312,7 +5352,8 @@ function setupBuilder() {
                     <details class="builder-science">
                         <summary>Why these limits?</summary>
                         <p>Research on training volume shows muscle growth levels off at roughly 6 to 11 hard sets for one muscle in a single workout, and strength gains level off after a few heavy sets of a lift. Past that, extra exercises mostly add fatigue and soreness, not results. Spreading work across the week (training a muscle 2 times a week) beats piling it into one day.</p>
-                        <p>Sources: Remmert, Zourdos et al., 2025 meta-regression on sets per session (SportRxiv preprint); American College of Sports Medicine, <em>Progression Models in Resistance Training for Healthy Adults</em>, 2009.</p>
+                        <p><strong>Sets and reps by goal.</strong> Strength: 1 to 6 reps for 2 to 6 sets with 2 to 5 minutes of rest. Muscle: 6 to 12 reps for 3 to 6 sets with 1 to 2 minutes. Endurance: 12 or more reps for 2 to 3 sets with short rests. New lifters start lighter and a little higher. <strong>When the weight goes up:</strong> once you hit the top of your rep range on every set, the next target adds about 2.5% (upper body) or 5% (legs); beat it by 2 or more reps and it adds a bit more, within the 2 to 10% the research suggests.</p>
+                        <p>Sources: Remmert, Zourdos et al., 2025 meta-regression on sets per session (SportRxiv preprint); American College of Sports Medicine, <em>Progression Models in Resistance Training for Healthy Adults</em>, 2009; National Strength and Conditioning Association, <em>Essentials of Strength Training and Conditioning</em> (training-goal guidelines).</p>
                     </details>
                 </div>
             </div>
