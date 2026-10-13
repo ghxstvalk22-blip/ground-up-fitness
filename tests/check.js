@@ -1090,6 +1090,10 @@ async function openPage(browser, file, viewport, hash = "") {
             await Promise.all([page.waitForURL(/#build/), page.click("#me-dash [data-sug-edit]")]);
             await page.waitForTimeout(400);
             check(/Build Day 2/.test(await page.locator("#builder-title").textContent()) && await page.locator(".builder-list li").count() >= 3, "Customize it opens the builder as Day 2 with the exercises filled in");
+            await page.click(".builder-clear-all");
+            check(await page.locator(".builder-list li").count() === 0 && /Build Day 2/.test(await page.locator("#builder-title").textContent()) && await page.evaluate(() => document.activeElement && document.activeElement.id === "builder-search"), "Clear all empties the prefilled list, keeps it as Day 2, and jumps to the search");
+            await page.click(".builder-undo");
+            check(await page.locator(".builder-list li").count() >= 3, "Undo brings the cleared exercises back");
             await page.goto(url("me.html"), { waitUntil: "load" });
             await seed();
             await page.reload({ waitUntil: "load" });
@@ -1108,6 +1112,18 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(300);
             check(/again, and you trained them yesterday/.test(await page.locator("#me-dash .dash-next").textContent()) && /anyway/.test(await page.locator("#me-dash .dash-next").textContent()), "a plan day that repeats yesterday's muscles gets a heads-up and an alternative");
             await page.evaluate(() => localStorage.clear());
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // App intro: plays when the app opens (previewed here with ?intro=1), a tap skips it
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport, "?intro=1");
+            await page.waitForTimeout(400);
+            check(await page.locator(".intro").count() === 1 && /GROUND/.test((await page.locator(".intro-word").textContent()).replace(/\s/g, "")), "the app intro plays with the logo and name");
+            await page.locator(".intro").click();
+            await page.waitForTimeout(700);
+            check(await page.locator(".intro").count() === 0 && !(await page.evaluate(() => document.documentElement.classList.contains("app-splash"))), "a tap skips the intro and shows the app");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

@@ -5183,6 +5183,10 @@ function setupBuilder() {
                 </div>
                 <div class="builder-plan">
                     <h3>2. Your workout <span class="builder-n"></span></h3>
+                    <div class="builder-quick" hidden>
+                        <button type="button" class="btn btn-compact builder-clear-all">Clear all and start blank</button>
+                        <button type="button" class="btn btn-compact builder-to-pick">+ Add exercises</button>
+                    </div>
                     <div class="field">
                         <label for="builder-name">Name it <span class="field-hint">(optional)</span></label>
                         <input id="builder-name" type="text" maxlength="40" placeholder="e.g. Chest and back day">
@@ -5266,6 +5270,7 @@ function setupBuilder() {
             return `<li class="${over ? "is-over" : t.n === t.max ? "is-full" : ""}"><strong>${BUILD_MUSCLE_NAME[m]}</strong> ${t.n} of ${t.max} exercise${t.max === 1 ? "" : "s"} · ${t.sets} sets${over ? ` <span class="tally-warn">(${t.n > t.max ? "too many exercises" : "too many sets"})</span>` : ""}</li>`;
         }).join("") + (draft.items.length > g.total ? `<li class="is-over"><strong>Total</strong> ${draft.items.length} exercises <span class="tally-warn">(${g.total} is plenty for ${g.for})</span></li>` : "");
         $(".builder-empty").hidden = draft.items.length > 0;
+        $(".builder-quick").hidden = draft.items.length === 0;
         $(".builder-save").disabled = !draft.items.length;
         let needBody = false;
         list.innerHTML = draft.items.map((x, i) => {
@@ -5358,9 +5363,32 @@ function setupBuilder() {
         replaceBtn.remove();
         status.textContent = "Saving will start a new plan with just this workout.";
     });
-    $(".builder-clear").addEventListener("click", () => {
-        draft = { title: "", goal: goal(), items: [] }; nameIn.value = ""; save(); renderList(); renderResults();
-        status.textContent = "Cleared. Pick new exercises any time.";
+    // Clear every exercise (a suggestion or an old list) and start picking your own right away.
+    // Keeps what you're making (Day 2, or the day you're editing); Undo puts them back.
+    let cleared = null;
+    function clearAll(fromTop) {
+        if (!draft.items.length) return;
+        cleared = { items: draft.items.slice(), title: draft.title };
+        draft.items = []; draft.title = ""; nameIn.value = "";
+        save(); renderList(); renderResults();
+        status.innerHTML = `Cleared ${cleared.items.length} exercise${cleared.items.length === 1 ? "" : "s"}. Pick your own below. <button type="button" class="text-button builder-undo">Undo</button>`;
+        if (fromTop) {
+            const pick = spot.querySelector(".builder-pick") || search;
+            pick.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+            search.focus({ preventScroll: true });
+        }
+    }
+    $(".builder-clear").addEventListener("click", () => clearAll(false));
+    $(".builder-clear-all").addEventListener("click", () => clearAll(true));
+    $(".builder-to-pick").addEventListener("click", () => {
+        (spot.querySelector(".builder-pick") || search).scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
+        search.focus({ preventScroll: true });
+    });
+    status.addEventListener("click", (e) => {
+        if (!e.target.closest(".builder-undo") || !cleared) return;
+        draft.items = cleared.items; draft.title = cleared.title; nameIn.value = cleared.title;
+        cleared = null; save(); renderList(); renderResults();
+        status.textContent = "They're back.";
     });
     $(".builder-save").addEventListener("click", () => {
         if (!draft.items.length) return;
@@ -5397,7 +5425,7 @@ function setupBuilder() {
     window.addEventListener("logchange", () => { if (!body.hidden) renderList(); });
     window.addEventListener("levelchange", () => { if (!body.hidden) renderList(); });
     // Editing a workout you already have: open on its exercises, not the search list
-    addRoute(/^#build$/, () => { open(false); return { target: draft.editing && draft.items.length ? spot.querySelector(".builder-plan") || spot : spot }; });
+    addRoute(/^#build$/, () => { open(false); return { target: (draft.editing || draft.addDay) && draft.items.length ? spot.querySelector(".builder-plan") || spot : spot }; });
 }
 
 /* =========================================================

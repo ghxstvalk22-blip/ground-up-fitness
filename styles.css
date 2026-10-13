@@ -3255,40 +3255,35 @@ body:has(#rest-timer:not([hidden])) .planbar { display: none; }
     #lift-table .chip { min-height: 44px; }
 }
 
-/* Loading screen when the phone app opens (splash.js adds html.app-splash once per launch).
-   Black screen, the Ground Up bars, the name, and an orange line that fills, then it fades on its own. */
-html.app-splash::before,
-html.app-splash::after { position: fixed; z-index: 1000; pointer-events: none; animation: splash-out 0.35s ease 1.05s forwards; }
-html.app-splash::before {
-    content: "";
-    inset: 0;
-    background-color: #000000;
-    background-image: linear-gradient(#ffffff, #ffffff), linear-gradient(#ffffff, #ffffff), linear-gradient(var(--volt), var(--volt));
-    background-repeat: no-repeat;
-    background-size: 18px 24px, 18px 42px, 18px 66px;
-    background-position: calc(50% - 24px) calc(50% - 36px), 50% calc(50% - 45px), calc(50% + 24px) calc(50% - 57px);
-}
-html.app-splash::after {
-    content: "GROUND UP";
-    top: 50%;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 4px 2px 14px;
-    color: #ffffff;
-    font-family: var(--display, "Archivo"), "Arial Narrow", sans-serif;
-    font-size: 2rem;
-    font-weight: 900;
-    font-stretch: 80%;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    background: linear-gradient(var(--volt), var(--volt)) left bottom / 0% 3px no-repeat;
-    animation: splash-load 0.9s cubic-bezier(0.3, 0.7, 0.4, 1) 0.1s forwards, splash-out 0.35s ease 1.05s forwards;
-}
-@keyframes splash-load { to { background-size: 100% 3px; } }
+/* Intro when the phone app opens (splash.js). html.app-splash is a plain black cover that shows
+   before anything draws; the animated .intro plays on top and removes the cover when it ends.
+   If the script never runs, the cover fades out on its own. */
+html.app-splash::before { content: ""; position: fixed; inset: 0; z-index: 1000; background-color: #000000; pointer-events: none; animation: splash-out 0.35s ease 3.2s forwards; }
 @keyframes splash-out { to { opacity: 0; visibility: hidden; } }
+.intro { position: fixed; inset: 0; z-index: 1001; overflow: hidden; display: grid; place-items: center; background-color: #000000; color: #ffffff; cursor: pointer; transition: opacity 0.45s ease; }
+.intro.is-out { opacity: 0; pointer-events: none; }
+.intro-photo { position: absolute; inset: -4%; background: #000000 url("https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=60&w=900") center / cover no-repeat; filter: grayscale(1) contrast(1.15) brightness(0.55); animation: intro-zoom 3s ease-out both; }
+.intro-shade { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0.85) 75%); }
+.intro-center { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0 24px; text-align: center; }
+.intro-mark { display: flex; align-items: flex-end; gap: 6px; height: 66px; margin-bottom: 18px; }
+.intro-mark span { width: 18px; background-color: #ffffff; transform-origin: bottom; transform: scaleY(0); animation: intro-rise 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards; }
+.intro-mark span:nth-child(1) { height: 24px; animation-delay: 0.15s; }
+.intro-mark span:nth-child(2) { height: 42px; animation-delay: 0.3s; }
+.intro-mark span:nth-child(3) { height: 66px; background-color: var(--volt); animation-delay: 0.45s; }
+.intro-word { display: flex; font-family: var(--display, "Archivo"), "Arial Narrow", sans-serif; font-size: clamp(2.6rem, 13vw, 4.5rem); font-weight: 900; font-stretch: 75%; line-height: 0.95; letter-spacing: 0.02em; }
+.intro-word span { display: inline-block; opacity: 0; transform: translateY(0.5em); animation: intro-letter 0.4s cubic-bezier(0.2, 0.9, 0.3, 1) forwards; animation-delay: calc(0.65s + var(--i) * 0.05s); }
+.intro-line { width: 0; height: 4px; margin-top: 14px; background-color: var(--volt); animation: intro-line 0.6s cubic-bezier(0.3, 0.7, 0.3, 1) 1.15s forwards; }
+.intro-tag { margin: 14px 0 0; font-size: 0.8rem; font-weight: 800; font-stretch: 120%; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0; animation: intro-fade 0.5s ease 1.6s forwards; }
+.intro-tag b { color: var(--volt); }
+.intro-skip { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom)); left: 0; right: 0; margin: 0; text-align: center; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255, 255, 255, 0.45); opacity: 0; animation: intro-fade 0.4s ease 0.9s forwards; }
+@keyframes intro-zoom { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes intro-rise { to { transform: scaleY(1); } }
+@keyframes intro-letter { to { opacity: 1; transform: none; } }
+@keyframes intro-line { to { width: min(260px, 70vw); } }
+@keyframes intro-fade { to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
-    html.app-splash::after { background-size: 100% 3px; animation: splash-out 0.2s linear 0.7s forwards; }
-    html.app-splash::before { animation: splash-out 0.2s linear 0.7s forwards; }
+    .intro-photo, .intro-mark span, .intro-word span, .intro-line, .intro-tag, .intro-skip { animation: none; opacity: 1; transform: none; }
+    .intro-line { width: min(260px, 70vw); }
 }
 
 /* Room for the rest timer so it never covers the set boxes */
@@ -3416,3 +3411,6 @@ html:has(.me-tabs-wrap) { scroll-padding-top: calc(var(--header-h) + 64px); }
 /* Up next: a workout made for you */
 .dash-warn { margin: 0 0 10px; padding: 10px 12px; border-left: 3px solid var(--volt); background-color: var(--paper); font-size: 0.88rem; }
 .dash-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
+/* Builder: clear a prefilled list in one tap */
+.builder-quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+.builder-quick .btn { min-height: 44px; }
