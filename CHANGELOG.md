@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 · iPhone rest timer that actually rings
+
+- On iPhone the rest timer now says plainly that it can't ring once you leave the app (iPhone pauses web apps in the background), and the **Lock Screen timer** button is bright orange so it's easy to find. That button starts the iPhone's own Clock timer, which does ring.
+- After the one-time setup, an **Every rest** checkbox starts the Clock timer on its own each time you rest.
+- The "Resting" notification on iPhone now says it won't ring, instead of looking like an alarm that never comes.
+
 ## 2026-10-13 (Rest timer on your iPhone Lock Screen)
 
 - **Lock Screen timer (iPhone).** The rest timer now has a **Lock Screen timer** button. It starts your iPhone's own Clock timer with the exact rest you have left, so the countdown shows on your Lock Screen and in the Dynamic Island when you leave the app, and it rings when rest is over. (iPhones only allow their own Clock timer to count down there; web apps can't.)

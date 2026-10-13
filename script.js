@@ -3352,7 +3352,7 @@ function restNotify(kind, info) {
         const at = new Date(info.endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
         const opts = kind === "done"
             ? { body: info.name ? `Time for your next set of ${info.name}.` : "Time for your next set.", tag: "gu-rest", renotify: true, vibrate: [200, 100, 200], icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html" } }
-            : { body: `Next set at ${at}${info.name ? ` · ${info.name}` : ""}`, tag: "gu-rest", silent: true, icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html" } };
+            : { body: `Next set at ${at}${info.name ? ` · ${info.name}` : ""}${IS_IOS ? ". This won't ring: use Lock Screen timer for an alarm." : ""}`, tag: "gu-rest", silent: true, icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html" } };
         reg.showNotification(kind === "done" ? "Rest over. Go!" : `Resting${info.name ? `: ${info.name}` : ""}`, opts).catch(() => {});
     }).catch(() => {});
 }
@@ -3372,7 +3372,11 @@ function setupRestTimer() {
         </div>
         <p class="rest-timer-at" id="rest-timer-at"></p>
         <button type="button" class="rest-timer-alerts" id="rest-alerts" hidden>Show the timer on my lock screen</button>
-        <button type="button" class="chip rest-timer-ios" id="rest-ios" hidden>Lock Screen timer</button>
+        <div class="rest-ios-wrap" id="rest-ios-wrap" hidden>
+            <button type="button" class="chip rest-timer-ios" id="rest-ios">Lock Screen timer</button>
+            <label class="rest-ios-auto" id="rest-ios-auto-wrap" hidden><input type="checkbox" id="rest-ios-auto"> Every rest</label>
+            <p class="rest-ios-note" id="rest-ios-note">iPhone pauses web apps when you leave them, so this screen can't ring. The Lock Screen timer uses your iPhone's own Clock timer, which does.</p>
+        </div>
     </div>
     <p class="visually-hidden" id="rest-timer-announce" aria-live="assertive"></p>
 </div>`);
@@ -3384,6 +3388,11 @@ function setupRestTimer() {
     const atEl = document.getElementById("rest-timer-at");
     const alertsBtn = document.getElementById("rest-alerts");
     const iosBtn = document.getElementById("rest-ios");
+    const iosWrap = document.getElementById("rest-ios-wrap");
+    const iosAutoWrap = document.getElementById("rest-ios-auto-wrap");
+    const iosAuto = document.getElementById("rest-ios-auto");
+    iosAuto.checked = store.get("gu-ios-timer-auto") === true;
+    iosAuto.addEventListener("change", () => store.set("gu-ios-timer-auto", iosAuto.checked));
     let endAt = 0, total = 0, tick = null, audio = null, restName = "";
     /* iPhone: web apps can't put a live countdown on the Lock Screen, but the iPhone's own Clock timer can
        (it shows on the Lock Screen and in the Dynamic Island). A one-time Shortcut ("Ground Up Rest") starts
@@ -3392,6 +3401,7 @@ function setupRestTimer() {
     const runShortcut = () => {
         const left = Math.max(5, Math.round((endAt - Date.now()) / 1000));
         store.set("gu-ios-timer", true);
+        iosAutoWrap.hidden = false;
         location.href = restShortcutUrl(left);
     };
     iosBtn.addEventListener("click", () => {
@@ -3409,7 +3419,8 @@ function setupRestTimer() {
                     <li>Tap <strong>minutes</strong> and change it to <strong>seconds</strong>.</li>
                     <li>Tap the name at the top, rename it exactly <strong>${SHORTCUT}</strong>, and tap <strong>Done</strong>.</li>
                 </ol>
-                <p class="finish-tip">After that, tap <strong>Lock Screen timer</strong> during any rest. Your phone switches to Shortcuts for a moment to start the timer; swipe back to Ground Up. Lock your phone and the countdown is there. If you finish resting early, stop the timer from the Lock Screen.</p>
+                <label class="ios-auto-pick"><input type="checkbox" data-ios-auto> Start it on its own every time I rest</label>
+                <p class="finish-tip">After that, tap <strong>Lock Screen timer</strong> during any rest (or tick <strong>Every rest</strong>). Your phone switches to Shortcuts for a moment to start the timer; swipe back to Ground Up. Lock your phone and the countdown is there. If you finish resting early, stop the timer from the Lock Screen.</p>
                 <div class="finish-actions">
                     <button type="button" class="btn btn-primary" data-ios-go>It's set up. Start my timer</button>
                     <button type="button" class="btn" data-ios-close>Not now</button>
@@ -3418,7 +3429,11 @@ function setupRestTimer() {
             dlg = document.getElementById("ios-timer-setup");
             dlg.addEventListener("click", (e) => {
                 const shut = () => { if (dlg.open && typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); };
-                if (e.target.closest("[data-ios-go]")) { shut(); runShortcut(); }
+                if (e.target.closest("[data-ios-go]")) {
+                    const pick = dlg.querySelector("[data-ios-auto]");
+                    if (pick && pick.checked) { store.set("gu-ios-timer-auto", true); iosAuto.checked = true; }
+                    shut(); runShortcut();
+                }
                 else if (e.target.closest("[data-ios-close]") || e.target === dlg) shut();
             });
         }
@@ -3485,7 +3500,9 @@ function setupRestTimer() {
         label.textContent = name ? `Rest · ${name}` : "Rest";
         atEl.textContent = `Next set at ${new Date(endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
         alertsBtn.hidden = !canAsk() || IS_IOS;
-        iosBtn.hidden = !IS_IOS;
+        iosWrap.hidden = !IS_IOS;
+        iosAutoWrap.hidden = store.get("gu-ios-timer") !== true;
+        document.getElementById("rest-ios-note").hidden = store.get("gu-ios-timer") === true;
         box.hidden = false;
         box.classList.remove("is-done");
         announce.textContent = "";
@@ -3495,6 +3512,8 @@ function setupRestTimer() {
         update();
         // Unlock audio on phones while we still have the tap
         try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === "suspended") audio.resume(); } catch (e) { /* ignore */ }
+        // iPhone, set up, and "Every rest" on: start the Clock timer right away (we still have the tap)
+        if (IS_IOS && !resumeAt && store.get("gu-ios-timer") === true && store.get("gu-ios-timer-auto") === true) runShortcut();
     }
 
     document.addEventListener("click", (e) => {
