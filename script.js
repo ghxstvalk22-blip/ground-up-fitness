@@ -2155,7 +2155,7 @@ function nextTarget(name, dose, unit) {
         if (sw) {
             const how = sw.bar ? "just the empty bar" : `about ${trimNum(sw.w)} ${unit}${sw.each ? " in each hand" : ""}`;
             return { first: true, weight: sw.w, each: Boolean(sw.each), reps: d.high, start: true,
-                text: `First time? Start with ${how} (from your level and bodyweight). If ${d.high} reps feel easy, go up next set; if your form slips, go lighter.` };
+                text: `First time? Start with ${how}, from your level and bodyweight. Easy at ${d.high} reps? Go up next set. Form slipping? Go lighter.` };
         }
         if (equipOf(name) === "body" && !isCardio(name)) return { first: true, text: `Your bodyweight. Do ${d.high} clean reps; when every set feels easy, try the harder version in the how-to.` };
         const noBody = !Number(getProfile().bodyweight) && (START_MAX[name] || START_EXTRA[name]);
@@ -2488,7 +2488,7 @@ function setupPrograms() {
             if (!form || form.classList.contains("cardio-form") || form.dataset.exercise !== dr.ex) return;
             const num = (v) => (/^\d{0,4}(\.\d{0,2})?$/.test(String(v)) ? String(v) : "");
             form.querySelectorAll('input[name="w"]').forEach((i, k) => { if (Array.isArray(dr.w) && dr.w[k] != null) i.value = num(dr.w[k]); });
-            form.querySelectorAll('input[name="r"]').forEach((i, k) => { if (Array.isArray(dr.r) && dr.r[k] != null) i.value = num(dr.r[k]); });
+            form.querySelectorAll('input[name="r"]').forEach((i, k) => { if (Array.isArray(dr.r) && dr.r[k] != null) i.value = num(dr.r[k]); i.closest(".log-set").classList.toggle("is-done", Boolean(i.value)); });
             form.hidden = false;
             const btn = els.grid.querySelector(`[data-log="${slot}"]`);
             if (btn) btn.setAttribute("aria-expanded", "true");
@@ -2535,7 +2535,7 @@ function setupPrograms() {
                 <input type="checkbox" id="${id}" data-key="${key}" ${done.has(key) ? "checked" : ""} aria-label="Done: ${escapeHtml(x.name)}">
                 <div class="ex-main">
                     <label for="${id}" class="ex-name">${equipIcon(x.name)}${escapeHtml(x.name)}</label>
-                    <span class="ex-dose">${escapeHtml(dose.text)}</span>
+                    <span class="ex-dose">${escapeHtml(dose.text)}${target && target.weight > 0 && !cardio ? ` <span class="ex-dose-weight">· ${trimNum(target.weight)} ${profile.unit}${target.each ? " each" : ""}</span>` : ""}</span>
                     ${badges ? `<span class="ex-badges">${badges}</span>` : ""}
                     ${x.rest ? (restSeconds(x.rest)
                         ? `<button type="button" class="rest-btn" data-rest="${restSeconds(x.rest)}" data-rest-name="${escapeHtml(x.name)}"><span aria-hidden="true">&#9654;</span> Rest ${escapeHtml(x.rest)}<span class="visually-hidden">: start rest timer</span></button>`
@@ -2559,19 +2559,21 @@ function setupPrograms() {
         // Dumbbell moves are logged per hand, so say so right on the box
         const sw = typeof startWeight === "function" ? startWeight(x.name, dose.high || 10, unit) : null;
         const each = Boolean((target && target.each) || (sw && sw.each));
-        // Reps start at today's target (a real value, not a hint), so a set done as planned is one tap to save
+        // Today's target reps show as a hint; only sets you fill in (or tick done) are saved
         const reps = (target && target.reps) || dose.high || "";
-        const rows = Array.from({ length: dose.sets }, (_, i) => `
+        const head = `<div class="log-set log-set-head" aria-hidden="true"><span></span><span>${unit}${each ? " each" : ""}</span><span>Reps</span><span>Done</span></div>`;
+        const rows = head + Array.from({ length: dose.sets }, (_, i) => `
             <div class="log-set">
                 <span class="log-set-num">Set ${i + 1}</span>
                 <label><span class="visually-hidden">Set ${i + 1} weight${each ? " in each hand" : ""}</span><input type="number" inputmode="decimal" min="0" step="any" name="w" value="${weight}" placeholder="0"><span class="log-unit">${unit}${each ? " each" : ""}</span></label>
-                <label><span class="visually-hidden">Set ${i + 1} reps</span><input type="number" inputmode="numeric" min="0" step="1" name="r" value="${reps}" placeholder="${dose.high || ""}"><span class="log-unit">reps</span></label>
+                <label><span class="visually-hidden">Set ${i + 1} reps</span><input type="number" inputmode="numeric" min="0" step="1" name="r" placeholder="${reps}"><span class="log-unit">reps</span></label>
+                <button type="button" class="log-set-done" data-set-done aria-label="Set ${i + 1} done${reps ? `: ${reps} reps` : ""}, start rest"><span aria-hidden="true">&#10003;</span></button>
             </div>`).join("");
         return `
             <form class="log-form" id="log-${key}" data-exercise="${escapeHtml(x.name)}" hidden novalidate>
                 <div class="log-date"><label>Date <input type="date" name="date" value="${isoDate(new Date())}" max="${isoDate(new Date())}"></label></div>
                 ${rows}
-                <p class="log-help">${each ? "Enter the weight of one dumbbell. " : ""}Change set 1's weight and the rest follow. Leave weight at 0 for bodyweight moves.</p>
+                <p class="log-help">Tap <strong>&#10003;</strong> after each set: it fills in the target reps (change them if you did fewer) and starts your rest. ${each ? "Weight is for one dumbbell. " : ""}Change set 1's weight and the rest follow.</p>
                 <div class="log-buttons">
                     <button type="submit" class="btn btn-primary btn-compact">Save sets</button>
                     <button type="button" class="text-button" data-log-cancel="${key}">Cancel</button>
@@ -2705,13 +2707,15 @@ function setupPrograms() {
         const lines = items.map((x, xi) => {
             const dose = personalDose(state.goal, x, xi, profile, state.week, lightOn());
             const entry = (logFor(x.name) || []).find((en) => en.date === today);
-            if (entry) entry.sets.forEach((st) => { sets += 1; reps += st.r; volume += toUnit(st.w || 0, entry.unit, unit) * st.r; });
+            const hands = ((startWeight(x.name, 10, unit) || {}).each) ? 2 : 1; // per-hand weights count both dumbbells
+            if (entry) entry.sets.forEach((st) => { sets += 1; reps += st.r; volume += toUnit(st.w || 0, entry.unit, unit) * st.r * hands; });
             const cardio = isCardio(x.name);
             const t = cardio ? nextCardioTarget(x.name, unit) : nextTarget(x.name, dose.text, unit);
             const d = parseDose(dose.text);
             let next = "";
             if (t && t.weight > 0) next = `${t.first ? "Start with about " : ""}${trimNum(t.weight)} ${unit}${t.each ? " each hand" : ""} × ${d.sets} sets of ${t.reps || d.high}`;
             else if (t && t.text) next = t.text;
+            if (d.timed && !entry) return { name: x.name, logged: false, did: "", next: "", up: false, timed: true };
             return { name: x.name, logged: Boolean(entry), did: entry ? entry.sets.map((st) => (st.w ? `${trimNum(toUnit(st.w, entry.unit, unit))}×${st.r}` : `${st.r}`)).join(", ") : "", next, up: Boolean(t && t.up) };
         });
         // How many exercises were actually done: logged today or checked off (finishing with nothing marked counts the whole day)
@@ -2772,11 +2776,12 @@ function setupPrograms() {
             </ul>
             ${prs.length ? `<p class="finish-pr"><strong>New personal record${prs.length > 1 ? "s" : ""}:</strong> ${escapeHtml([...new Set(prs.map((r) => r.name))].join(", "))}</p>` : ""}
             <h3>Next time</h3>
-            <ul class="finish-next">${lines.map((l) => `<li>${equipIcon(l.name)}<span><strong>${escapeHtml(l.name)}</strong>${l.did ? `<small>Today: ${escapeHtml(l.did)}</small>` : `<small>Not logged today</small>`}</span><em class="${l.up ? "is-up" : ""}">${escapeHtml(l.next || "Log your sets to get a target")}</em></li>`).join("")}</ul>
+            <ul class="finish-next">${lines.map((l) => `<li>${equipIcon(l.name)}<span><strong>${escapeHtml(l.name)}</strong>${l.did ? `<small>Today: ${escapeHtml(l.did)}</small>` : l.timed ? `<small>Timed: just check it off</small>` : `<small>Not logged today</small>`}</span><em class="${l.up ? "is-up" : ""}">${escapeHtml(l.next || (l.timed ? "Hold a little longer next time" : "Log your sets to get a target"))}</em></li>`).join("")}</ul>
             ${sets ? "" : `<p class="finish-tip">Tip: log your weight and reps on each exercise (Log sets) and next time you'll get an exact weight to aim for.</p>`}
             <h3>What's next?</h3>
             ${state.goal !== "custom" && nextDay ? `<p class="finish-tip">Next time: <strong>Day ${di + 2}, ${escapeHtml(nextDay.title)}</strong>. This plan works best with a rest day in between, so your next training day is a good time for it.</p>` : ""}
             <div class="finish-nextup">
+                ${state.goal === "custom" ? "" : `<button type="button" class="btn btn-primary" data-finish-close>Done for today</button>`}
                 <button type="button" class="btn${state.goal === "custom" ? " btn-primary" : ""}" data-finish-continue="${di}">${escapeHtml(state.goal !== "custom" && nextDay ? `Do Day ${di + 2} now instead` : continueLabel(di))} &rarr;</button>
                 ${state.goal === "custom" && nextDay ? `<button type="button" class="btn" data-finish-editday="${di + 1}">Edit Day ${di + 2} first</button>` : ""}
                 ${state.goal === "custom" && nextDay && dayList.length < 7 ? `<button type="button" class="btn" data-finish-addday>+ Add Day ${dayList.length + 1}</button>` : ""}
@@ -2786,7 +2791,7 @@ function setupPrograms() {
             <p class="finish-saved">Saved on this device${typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG.apiKey ? " and to your account when you're signed in" : ""}. Your targets update every time you log.</p>
             <div class="finish-actions">
                 <a class="btn" href="me.html">See my progress</a>
-                <button type="button" class="btn${state.goal === "custom" ? "" : " btn-primary"}" data-finish-close>Done for today</button>
+                ${state.goal === "custom" ? `<button type="button" class="btn" data-finish-close>Done for today</button>` : ""}
             </div>`;
         if (dlg.open) dlg.close();
         if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e2) { dlg.setAttribute("open", ""); } }
@@ -2846,6 +2851,20 @@ function setupPrograms() {
             if (again) again.focus();
             return;
         }
+        const setDone = e.target.closest("[data-set-done]");
+        if (setDone) {
+            const row = setDone.closest(".log-set"), form = setDone.closest(".log-form");
+            const r = row.querySelector('input[name="r"]');
+            if (!r.value) r.value = r.placeholder;
+            row.classList.add("is-done");
+            saveDraft(form);
+            // Rest starts right away; the next set's boxes stay above the timer
+            const restBtn = form.closest(".ex-row") && form.closest(".ex-row").querySelector("[data-rest]");
+            if (restBtn) restBtn.click();
+            const next = row.nextElementSibling && row.nextElementSibling.matches(".log-set") ? row.nextElementSibling : form.querySelector("button[type=submit]");
+            setTimeout(() => next.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "center" }), 60);
+            return;
+        }
         const logBtn = e.target.closest("[data-log]");
         if (logBtn) {
             const form = document.getElementById(`log-${logBtn.dataset.log}`);
@@ -2853,8 +2872,10 @@ function setupPrograms() {
             form.hidden = !open;
             logBtn.setAttribute("aria-expanded", String(open));
             if (open) {
-                const firstEmpty = form.querySelector('input[name="r"]');
-                if (firstEmpty) firstEmpty.focus();
+                // Bring the set boxes into view (not just the date row)
+                form.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "nearest" });
+                const firstEmpty = [...form.querySelectorAll('input[name="r"]')].find((i) => !i.value);
+                if (firstEmpty) firstEmpty.focus({ preventScroll: true });
             }
             return;
         }
@@ -3070,6 +3091,11 @@ function setupPrograms() {
     });
 
     render();
+    // Opening Plans with no link (the tab bar): if you're on a plan, go straight to today's day
+    if (!location.hash && store.get("gu-last-plan") && !new URLSearchParams(location.search).has("add")) {
+        const day = els.grid.querySelector(".day-card.is-next");
+        if (day) requestAnimationFrame(() => day.scrollIntoView({ block: "start" }));
+    }
 }
 
 // "90 s" -> 90, "2 min" -> 120, "2–3 min" -> 120 (the shorter end)
@@ -3211,13 +3237,16 @@ function setupRestTimer() {
         save();
         update();
     });
-    document.getElementById("rest-stop").addEventListener("click", () => {
+    const stopRest = () => {
         clearInterval(tick);
         tick = null;
         box.hidden = true;
         save();
         restNotify("clear");
-    });
+    };
+    document.getElementById("rest-stop").addEventListener("click", stopRest);
+    // Finishing the workout ends any rest that's still counting
+    window.addEventListener("logchange", (e) => { if (e.detail && e.detail.finished) stopRest(); });
     alertsBtn.addEventListener("click", () => {
         Notification.requestPermission().then((p) => {
             alertsBtn.hidden = true;
@@ -5080,7 +5109,8 @@ function setupBuilder() {
     });
     window.addEventListener("logchange", () => { if (!body.hidden) renderList(); });
     window.addEventListener("levelchange", () => { if (!body.hidden) renderList(); });
-    addRoute(/^#build$/, () => { open(false); return { target: spot }; });
+    // Editing a workout you already have: open on its exercises, not the search list
+    addRoute(/^#build$/, () => { open(false); return { target: draft.editing && draft.items.length ? spot.querySelector(".builder-plan") || spot : spot }; });
 }
 
 /* =========================================================
@@ -5135,6 +5165,12 @@ function setupStartingPoint() {
         });
         form.addEventListener("input", (e) => { if (e.target.name === "bodyweight" || e.target.name === "pname") save(); });
         form.addEventListener("submit", (e) => e.preventDefault());
+        // Your first bodyweight also starts your weigh-in log (My progress and the weight tracker use it)
+        form.elements.bodyweight.addEventListener("change", () => {
+            const bw = Number(form.elements.bodyweight.value);
+            const log = store.get("gu-weights", []) || [];
+            if (bw >= 50 && bw <= 700 && Array.isArray(log) && !log.length) store.set("gu-weights", [{ date: isoDate(new Date()), w: bw, unit: ["lb", "kg"].includes(form.elements.unit.value) ? form.elements.unit.value : "lb" }]);
+        });
         function save() {
             const raw = store.get(PROFILE_KEY, {}) || {};
             const bw = Number(form.elements.bodyweight.value);

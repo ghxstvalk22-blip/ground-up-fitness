@@ -7,6 +7,19 @@ Newest changes first. Each daily update adds an entry here.
 - **Make this a light week:** on the Plans page, the dark week bar now has a **Make this a light week** button. Tap it when you feel run down, sore all over, or short on sleep, and that week's workouts drop to about half the sets, with suggested weights about 10% lighter. Each exercise is marked "Light week: half the sets" so it's clear why. It only changes the week you picked; next week goes back to normal on its own, and tapping the button again undoes it. A lighter week like this (lifters call it a "deload") helps you recover without losing the habit.
 - Couch to 5K doesn't show the button, since repeating a week is how that plan eases off.
 
+## 2026-10-13 (Second test round: logging one set at a time)
+
+The same four testers re-checked the fixes. Most held up. Their notes led to these changes:
+
+- **Log one set at a time.** Each set has a **✓** button. Tap it after the set: it fills in the target reps (change them if you did fewer) and starts your rest timer, and the next set moves above the timer. Only the sets you tick or type are saved, so a quick tap can't log sets you didn't do. (Earlier today the reps were pre-filled, which could save fake sets; that's undone.)
+- **Roomier set boxes on phones,** with the units ("lb each", "reps") in a small header instead of squeezed into every row.
+- **The weight is next to the sets** on every exercise: "3 × 8–10 · 15 lb", so you don't have to read the tip to find it. Tick boxes are bigger.
+- **Finish workout:** the rest timer stops, "Done for today" comes first on ready-made plans, "lb lifted" counts both dumbbells, and timed holds like the plank say "just check it off" instead of asking you to log them.
+- **Plans tab:** if you're on a plan, opening Plans goes straight to today's workout.
+- **Editing My workout** opens on your exercises, not the search list.
+- **Your first bodyweight** (in Your starting point) also starts your weigh-in log, so My progress shows it.
+- The Your plan bar steps aside while the rest timer is up.
+
 ## 2026-10-13 (Fixes from four test workouts)
 
 We had four testers go through the app on a phone like real gym-goers: a nervous first-timer, someone losing weight at home with dumbbells, an experienced lifter running his own split, and a regular who's been on a plan for 5 weeks. Then we fixed what got in their way.

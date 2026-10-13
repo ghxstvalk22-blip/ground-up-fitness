@@ -952,11 +952,15 @@ async function openPage(browser, file, viewport, hash = "") {
                 await row.locator("[data-log]").click();
                 const form = row.locator(".log-form");
                 const w0 = form.locator('input[name="w"]').first();
-                check(Number(await w0.inputValue()) > 0 && /each/.test(await form.locator(".log-unit").first().textContent()) && Number(await form.locator('input[name="r"]').first().inputValue()) > 0, "dumbbell log forms start with the per-hand weight and today's reps");
+                check(Number(await w0.inputValue()) > 0 && /each/.test(await form.locator(".log-unit").first().textContent()) && (await form.locator('input[name="r"]').first().inputValue()) === "" && Number(await form.locator('input[name="r"]').first().getAttribute("placeholder")) > 0, "dumbbell log forms start with the per-hand weight, and today's reps as a hint (not filled in)");
                 await w0.click();
                 await w0.fill("");
                 await w0.type("20");
                 check((await form.locator('input[name="w"]').nth(1).inputValue()) === "20", "changing set 1's weight fills the other sets");
+                await form.locator("[data-set-done]").first().click();
+                await page.waitForTimeout(200);
+                check(Number(await form.locator('input[name="r"]').first().inputValue()) > 0 && (await form.locator('input[name="r"]').nth(1).inputValue()) === "" && await page.locator("#rest-timer").isVisible(), "ticking a set fills its reps, leaves the others empty, and starts the rest timer");
+                await page.click("#rest-stop");
                 const formId = await form.getAttribute("id");
                 await page.reload({ waitUntil: "load" });
                 await page.waitForTimeout(400);
@@ -970,6 +974,7 @@ async function openPage(browser, file, viewport, hash = "") {
                 // A weighted lift saved with no weight asks first
                 const f2 = page.locator(`#${formId}`);
                 for (const inp of await f2.locator('input[name="w"]').all()) await inp.fill("0");
+                await f2.locator('input[name="r"]').first().fill("10");
                 await f2.locator("button[type=submit]").click();
                 check(/No weight entered/.test(await f2.locator(".log-status").textContent()) && await page.evaluate(() => Object.keys(getLog()).length === 0), "saving a dumbbell lift with no weight asks first");
                 await f2.locator('input[name="w"]').first().fill("20");

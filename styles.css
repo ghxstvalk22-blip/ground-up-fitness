@@ -3301,3 +3301,24 @@ html:has(body.rest-on) { scroll-padding-bottom: calc(var(--rest-h, 0px) + 12px);
     #lift-chart .chart-label, #progress-chart .chart-label { font-size: 22px; }
     svg .chart-label { font-size: 17px; }
 }
+
+/* Mid-workout: bigger tick boxes, the weight next to the sets, and a ✓ per set */
+@media screen {
+    .ex-list li { grid-template-columns: 28px 1fr; }
+    .ex-list li > input[type="checkbox"] { width: 28px; height: 28px; margin-top: 0; }
+}
+.ex-dose-weight { color: var(--ink); }
+.log-set { grid-template-columns: 44px 1fr 1fr 44px; }
+.log-set-done { width: 44px; height: 44px; display: grid; place-items: center; padding: 0; border: 2px solid var(--line); background-color: var(--surface); color: var(--muted); font-size: 1.1rem; font-weight: 900; cursor: pointer; }
+.log-set-done:hover { border-color: var(--ink); color: var(--ink); }
+.log-set-done:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+.log-set.is-done .log-set-done { background-color: var(--volt); border-color: var(--volt); color: #000000; }
+.log-set.is-done .log-set-num { color: var(--ink); }
+/* The plan bar steps aside while the rest timer is up */
+body.rest-on .planbar { display: none; }
+/* Units live in a small header row, so the number boxes get the room */
+.log-set .log-unit { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.log-set-head { margin-bottom: 2px; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.log-set-head span:last-child { text-align: center; }
+.log-set { grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) 44px; }
+.log-set input { min-height: 44px; font-size: 16px; }
