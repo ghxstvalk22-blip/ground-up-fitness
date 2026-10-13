@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-12 (Finish workout)
+
+- Every workout (ready-made plans and your own) now ends with a **Finish workout** button. Tap it and you get a **"Good job. Workout done."** screen with what you did: exercises, sets logged, total weight lifted, your week streak, and any new personal records.
+- It also shows **what to do next time** for every exercise, worked out from what you just logged. Hit the top of your reps on every set and it goes up ("110 lb × 3 sets of 8"); fall short and it holds the weight or eases off. Exercises you haven't logged yet get a starting weight from your level and bodyweight.
+- Each finished workout is saved and listed under **Finished workouts** on My progress, next to your records and charts. The day is checked off, and the Your plan bar moves on to the next day.
+- Everything is saved on your device. Once accounts are switched on, it's backed up to your account too.
+
 ## 2026-10-12 (Rest timer on your lock screen)
 
 - The rest timer now shows **"Next set at 7:42 PM"**, keeps running if you change pages, and picks up where it was when you come back to the app.

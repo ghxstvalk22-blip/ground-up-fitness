@@ -67,6 +67,7 @@ const FEATURES = [
     setupStartingPoint,
     setupBuilder,
     setupPlanBar,
+    setupSessions,
     setupApp,
     setupCoach,
     setupWeightTrend,
@@ -2360,6 +2361,7 @@ function setupPrograms() {
                 <ul class="ex-list">
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
                 </ul>
+                ${state.week === currentWeek() ? `<div class="day-finish"><button type="button" class="btn btn-primary" data-finish="${di}">Finish workout</button></div>` : ""}
             </article>`).join("");
 
         updateProgress();
@@ -2528,6 +2530,70 @@ function setupPrograms() {
         }
     }
 
+    /* ----- Finish workout: save the session, celebrate, and show next time's targets ----- */
+    function finishWorkout(di) {
+        const profile = getProfile(), unit = profile.unit;
+        const today = isoDate(new Date());
+        const p = PROGRAMS[state.goal];
+        const day = weekDays(p.plans[state.days], state.week)[di];
+        const items = lineups[di] || [];
+        let sets = 0, reps = 0, volume = 0;
+        const lines = items.map((x, xi) => {
+            const dose = personalDose(state.goal, x, xi, profile, state.week);
+            const entry = (logFor(x.name) || []).find((en) => en.date === today);
+            if (entry) entry.sets.forEach((st) => { sets += 1; reps += st.r; volume += toUnit(st.w || 0, entry.unit, unit) * st.r; });
+            const cardio = isCardio(x.name);
+            const t = cardio ? nextCardioTarget(x.name, unit) : nextTarget(x.name, dose.text, unit);
+            const d = parseDose(dose.text);
+            let next = "";
+            if (t && t.weight > 0) next = `${t.first ? "Start with about " : ""}${trimNum(t.weight)} ${unit} × ${d.sets} sets of ${t.reps || d.high}`;
+            else if (t && t.text) next = t.text;
+            return { name: x.name, logged: Boolean(entry), did: entry ? entry.sets.map((st) => (st.w ? `${trimNum(toUnit(st.w, entry.unit, unit))}×${st.r}` : `${st.r}`)).join(", ") : "", next, up: Boolean(t && t.up) };
+        });
+        // Check the whole day off and keep a record of the session
+        const keys = new Set(store.get(progressKey(), []));
+        items.forEach((_, xi) => keys.add(`${di}-${xi}`));
+        store.set(progressKey(), [...keys]);
+        const card = els.grid.querySelector(`.day-card[data-day="${di}"]`);
+        if (card) card.querySelectorAll('input[type="checkbox"]').forEach((b) => { b.checked = true; });
+        const sessions = (store.get("gu-sessions", []) || []).filter((x) => x && !(x.date === today && x.plan === state.goal && x.day === di));
+        sessions.push({ date: today, plan: state.goal, planName: p.name, days: state.days, day: di, title: day.title, exercises: items.length, sets, reps, volume: Math.round(volume), unit });
+        store.set("gu-sessions", sessions.slice(-200));
+        updateProgress();
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { finished: true } }));
+        const prs = getPRs().filter((r) => r.date === today);
+        const streak = weekStreak();
+        let dlg = document.getElementById("finish-dialog");
+        if (!dlg) {
+            document.body.insertAdjacentHTML("beforeend", `<dialog id="finish-dialog" class="finish-dialog" aria-labelledby="finish-title"><div class="finish-inner"></div></dialog>`);
+            dlg = document.getElementById("finish-dialog");
+            dlg.addEventListener("click", (ev) => { if (ev.target === dlg || ev.target.closest("[data-finish-close]")) dlg.close(); });
+        }
+        dlg.querySelector(".finish-inner").innerHTML = `
+            <div class="finish-burst" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            <p class="finish-kicker">${escapeHtml(day.title)} · ${escapeHtml(p.name)}</p>
+            <h2 id="finish-title">Good job. Workout done.</h2>
+            <ul class="finish-stats">
+                <li><strong>${items.length}</strong> exercises</li>
+                <li><strong>${sets}</strong> sets logged</li>
+                <li><strong>${fmt(volume)}</strong> ${unit} lifted</li>
+                ${streak >= 2 ? `<li><strong>${streak}</strong> week streak</li>` : ""}
+            </ul>
+            ${prs.length ? `<p class="finish-pr"><strong>New personal record${prs.length > 1 ? "s" : ""}:</strong> ${escapeHtml([...new Set(prs.map((r) => r.name))].join(", "))}</p>` : ""}
+            <h3>Next time</h3>
+            <ul class="finish-next">${lines.map((l) => `<li>${equipIcon(l.name)}<span><strong>${escapeHtml(l.name)}</strong>${l.did ? `<small>Today: ${escapeHtml(l.did)}</small>` : `<small>Not logged today</small>`}</span><em class="${l.up ? "is-up" : ""}">${escapeHtml(l.next || "Log your sets to get a target")}</em></li>`).join("")}</ul>
+            ${sets ? "" : `<p class="finish-tip">Tip: log your weight and reps on each exercise (Log sets) and next time you'll get an exact weight to aim for.</p>`}
+            <p class="finish-saved">Saved on this device${typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG.apiKey ? " and to your account when you're signed in" : ""}. Your targets update every time you log.</p>
+            <div class="finish-actions">
+                <a class="btn btn-primary" href="me.html">See my progress</a>
+                <button type="button" class="btn" data-finish-close>Done</button>
+            </div>`;
+        if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+        if (navigator.vibrate) navigator.vibrate(60);
+        const btn = dlg.querySelector("[data-finish-close]");
+        if (btn) btn.focus();
+    }
+
     /* ----- Events ----- */
     els.grid.addEventListener("change", (e) => {
         if (!e.target.matches('input[type="checkbox"]')) return;
@@ -2537,6 +2603,8 @@ function setupPrograms() {
     });
 
     els.grid.addEventListener("click", (e) => {
+        const fin = e.target.closest("[data-finish]");
+        if (fin) { finishWorkout(Number(fin.dataset.finish)); return; }
         const swapBtn = e.target.closest("[data-swap]");
         if (swapBtn) {
             const [di, xi] = swapBtn.dataset.swap.split("-").map(Number);
@@ -4046,6 +4114,26 @@ function setupApp() {
    FEATURE: Level picker. Any element with data-level-bar gets the
    Beginner / Intermediate / Advanced / Expert switch.
    ========================================================= */
+/* =========================================================
+   FEATURE: Finished workouts (My progress)
+   Every "Finish workout" is saved as gu-sessions; this lists the recent ones.
+   ========================================================= */
+function setupSessions() {
+    const box = document.getElementById("recent-sessions");
+    if (!box) return;
+    function render() {
+        const raw = store.get("gu-sessions", []);
+        const list = (Array.isArray(raw) ? raw : []).filter((x) => x && typeof x.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x.date)).slice(-8).reverse();
+        box.innerHTML = list.length ? `
+            <h2 class="me-h2 me-h2-gap">Finished workouts</h2>
+            <ul class="session-list">${list.map((x) => `<li><span class="session-date">${escapeHtml(shortDate(parseIso(x.date)))}</span>
+                <span><strong>${escapeHtml(String(x.title || "Workout").slice(0, 60))}</strong><small>${escapeHtml(String(x.planName || "").slice(0, 40))}</small></span>
+                <span class="session-nums">${Number(x.sets) || 0} sets · ${fmt(Number(x.volume) || 0)} ${x.unit === "kg" ? "kg" : "lb"}</span></li>`).join("")}</ul>` : "";
+    }
+    window.addEventListener("logchange", render);
+    render();
+}
+
 /* =========================================================
    FEATURE: Your plan bar (every page but Plans)
    A bar along the bottom (above the phone tab bar) with the plan you're
@@ -6201,7 +6289,7 @@ const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
    stays until the page is closed, in case it was a mistake.
    ========================================================= */
 const RESET_GROUPS = [
-    { id: "lifts", label: "Lifting log and personal records", keys: ["gu-log", "gu-prs"], on: true,
+    { id: "lifts", label: "Lifting log, finished workouts, and personal records", keys: ["gu-log", "gu-prs", "gu-sessions"], on: true,
         count: () => { const days = new Set(Object.values(getLog()).flatMap((e) => (Array.isArray(e) ? e.map((x) => x && x.date) : []))); const n = days.size; return n ? `${n} ${n === 1 ? "day" : "days"} of lifting logged` : ""; } },
     { id: "cardio", label: "Cardio log", keys: ["gu-cardio"], on: true,
         count: () => { const n = getCardio().length; return n ? `${n} ${n === 1 ? "entry" : "entries"}` : ""; } },

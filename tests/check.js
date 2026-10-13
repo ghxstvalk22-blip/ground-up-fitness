@@ -567,6 +567,13 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForURL(/program-custom/);
             await page.waitForTimeout(400);
             check(await page.evaluate(() => store.get("gu-custom").items.some((x) => x.n === "Iso-lateral row")) && await page.locator(".ex-row input[type=checkbox]:checked").count() === 1, "saving edits updates the workout and keeps what you already checked off");
+            // Finish workout: saves the session, celebrates, and shows next time's targets
+            await page.locator("[data-finish='0']").click();
+            await page.waitForTimeout(300);
+            const fin = await page.locator("#finish-dialog").textContent();
+            check(/Good job/i.test(fin) && /Next time/i.test(fin) && /Start with about \d+ lb/.test(fin), "Finish workout shows a good-job screen with next time's weights");
+            check(await page.evaluate(() => (store.get("gu-sessions") || []).length === 1) && await page.locator(".ex-row input[type=checkbox]:not(:checked)").count() === 0, "finishing saves the workout and checks the day off");
+            await page.click("[data-finish-close]");
             await page.evaluate(() => { localStorage.clear(); });
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
