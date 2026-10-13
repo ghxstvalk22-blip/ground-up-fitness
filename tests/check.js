@@ -579,7 +579,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(400);
             const saved = await page.evaluate(() => store.get("gu-custom"));
             check(saved && saved.items.length === 3 && /^\d × (4–6|5)$/.test(saved.items[0].d), `Save and start saves it as My workout (${saved && saved.items[0].d})`);
-            check(/My workout/i.test(await page.locator("#program-head").textContent()) && /Start with about/.test(await page.locator(".ex-target").first().textContent()), "the saved workout opens with a starting weight on each lift");
+            check(/Your plan/i.test(await page.locator("#program-head").textContent()) && /Start with about/.test(await page.locator(".ex-target").first().textContent()), "the saved workout opens with a starting weight on each lift");
             // Your plan bar: on other pages, shows today's exercises; the active custom workout can be edited
             await page.locator(".ex-row").nth(1).locator('input[type="checkbox"]').check({ force: true });
             await page.goto(url("tools.html"), { waitUntil: "load" });
@@ -693,7 +693,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator(".coach-msg.is-coach").last().locator("[data-coach-start]").click();
             await page.waitForURL(/programs\.html/);
             await page.waitForTimeout(300);
-            check(/My workout/.test(await page.locator(".program-head h3").textContent()) && /Chest & Triceps/.test(await page.locator(".day-card h4").first().textContent()), "Start this workout opens it as My workout on the Plans page");
+            check(/Your plan/.test(await page.locator(".program-head h3").textContent()) && /Chest & Triceps/.test(await page.locator(".day-card h4").first().textContent()), "Start this workout opens it as My workout on the Plans page");
             check(await page.locator(".day-card [data-log]").count() >= 3, "My workout can be logged like any plan");
             // A tampered saved chat can't run code when it's loaded back
             await page.evaluate(() => {
@@ -1124,6 +1124,28 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator(".intro").click();
             await page.waitForTimeout(700);
             check(await page.locator(".intro").count() === 0 && !(await page.evaluate(() => document.documentElement.classList.contains("app-splash"))), "a tap skips the intro and shows the app");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Build tab shows only the builder; Plans opens on your active plan, called "Your plan" when it's yours
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            await page.evaluate(() => localStorage.clear());
+            await page.goto(url("programs.html", "#build"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator("#build").isVisible() && await page.locator("#programs").isHidden(), "the Build tab shows only Build your own workout");
+            await page.fill("#builder-search", "Bench press");
+            await page.locator('[data-add="Bench press"]').click();
+            await Promise.all([page.waitForURL(/program-custom/), page.locator(".builder-save").click()]);
+            await page.waitForTimeout(400);
+            check(await page.locator("#programs").isVisible() && await page.locator("#build").isHidden(), "saving takes you to Plans");
+            check(/Your active plan/.test(await page.locator("#program-head").textContent()) && /Your plan/.test(await page.locator("#program-head h3").textContent()) && await page.locator('#goal-picker label.is-active-plan input[value="custom"]').count() === 1, "your workout shows on Plans as Your plan, marked as your active plan");
+            await page.goto(url("index.html"), { waitUntil: "load" });
+            await page.goto(url("programs.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator('input[name="goal"][value="custom"]').isChecked() && await page.locator("#build-cta").isVisible(), "the Plans tab opens on your active plan, with a link to build another");
+            await page.evaluate(() => localStorage.clear());
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

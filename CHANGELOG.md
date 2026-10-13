@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Build and Plans, each in its own place)
+
+- **The Build tab shows only Build your own workout.** No more plan pickers and ready-made plans underneath it.
+- **The Plans tab shows your plans,** opening on the plan you're actually doing, marked **Your active plan** (and "yours" in the plan list). A **+ Build your own workout** button at the top takes you to the builder.
+- **Your own workout is called "Your plan"** once you save and start it. Saving takes you straight to it on the Plans page.
+
 ## 2026-10-13 (More exercises per muscle in the builder)
 
 - **Build your own workout allows 3 or 4 exercises per muscle now, the way most people train.** Before, it could say "1 of 1" once your workout covered several muscles. New limits for Build muscle: big muscles (chest, back, quads, hamstrings, glutes) up to 4 exercises, smaller ones (shoulders, arms, calves, core) up to 3. Get stronger, Lose fat, and Endurance: 3 and 2. A full-body day (5 or more muscles) gets one fewer per muscle so it stays doable, but never fewer than 2.

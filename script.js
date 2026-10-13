@@ -69,6 +69,7 @@ const FEATURES = [
     setupLevelBar,
     setupStartingPoint,
     setupBuilder,
+    setupPlansView,
     setupPlanBar,
     setupSessions,
     setupMyDashboard,
@@ -1917,7 +1918,7 @@ function loadCustomWorkout() {
     const title = days.length > 1 ? `${days.length}-day plan` : days[0].title;
     return {
         level: "Beginner",
-        name: "My workout",
+        name: "Your plan",
         tagline: title,
         summary: `${title}: a session you built (or your Fitness Coach built) from this site's exercise guides. Do it once, or repeat it 1 to 3 times a week with a rest day between.`,
         session: `About ${Math.max(15, Math.round(items.length * 7.5))} minutes`,
@@ -2493,6 +2494,7 @@ function setupPrograms() {
 
         els.head.innerHTML = `
             <div>
+                ${(store.get("gu-last-plan") || {}).goal === state.goal ? `<p class="active-plan-tag"><span aria-hidden="true"></span>Your active plan</p>` : ""}
                 <h3>${escapeHtml(p.name)} &middot; ${state.goal === "custom" ? (state.days > 1 ? `${state.days} days` : "1 session") : `${state.days} days`} <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
                 <p>${escapeHtml(p.summary)}</p>
                 ${state.goal === "custom" ? `<p class="plan-edit">${state.days < 7 ? `<button type="button" class="btn btn-small" data-add-day>+ Add Day ${state.days + 1}</button>` : ""} <span>Tap Edit on a day to swap, add, or remove exercises. Your logged sets stay.</span></p>` : ""}
@@ -3217,6 +3219,7 @@ function setupPrograms() {
             const lvl = PROGRAMS[r.value] ? PROGRAMS[r.value].level : "Beginner";
             label.hidden = !PROGRAMS[r.value] || (levelRank(lvl) > rank && r.value !== state.goal) || (label.dataset.sub !== undefined && r.value !== state.goal);
             label.classList.toggle("is-above", levelRank(lvl) > rank);
+            label.classList.toggle("is-active-plan", (store.get("gu-last-plan") || {}).goal === r.value);
         });
         const note = document.getElementById("level-unlock");
         const next = LEVELS[rank + 1];
@@ -5425,6 +5428,31 @@ function setupBuilder() {
     window.addEventListener("levelchange", () => { if (!body.hidden) renderList(); });
     // Editing a workout you already have: open on its exercises, not the search list
     addRoute(/^#build$/, () => { open(false); return { target: (draft.editing || draft.addDay) && draft.items.length ? spot.querySelector(".builder-plan") || spot : spot }; });
+}
+
+/* =========================================================
+   FEATURE: Build vs Plans (programs.html)
+   The Build tab (programs.html#build) shows only Build your own workout.
+   The Plans tab shows the plans, opening on your active plan, with a
+   small link to the builder. Saving a workout takes you to Plans, where
+   it's "Your plan".
+   ========================================================= */
+function setupPlansView() {
+    const build = document.getElementById("build");
+    const plans = document.getElementById("programs");
+    if (!build || !plans || document.body.dataset.page !== "programs") return;
+    if (!document.getElementById("build-cta")) {
+        plans.querySelector(".container").insertAdjacentHTML("afterbegin", `<p class="build-cta" id="build-cta"><a class="btn btn-compact" href="programs.html#build">+ Build your own workout</a></p>`);
+    }
+    const set = () => {
+        const building = location.hash === "#build";
+        document.body.classList.toggle("view-build", building);
+        document.body.classList.toggle("view-plans", !building);
+    };
+    window.addEventListener("hashchange", set);
+    window.addEventListener("routechange", set);
+    window.addEventListener("popstate", set);
+    set();
 }
 
 /* =========================================================

@@ -3420,3 +3420,14 @@ html:has(.me-tabs-wrap) { scroll-padding-top: calc(var(--header-h) + 64px); }
 /* Builder: clear a prefilled list in one tap */
 .builder-quick { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
 .builder-quick .btn { min-height: 44px; }
+
+/* Build tab shows only the builder; Plans tab shows the plans (with a link to build) */
+body.view-build main > section:not(#build) { display: none; }
+body.view-build .next-steps, body.view-build .planbar { display: none; }
+body.view-plans #build { display: none; }
+.build-cta { margin: 0 0 16px; }
+/* Your active plan */
+.active-plan-tag { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 6px; padding: 4px 10px; background-color: var(--volt); color: #000000; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.active-plan-tag span { width: 8px; height: 8px; background-color: #000000; border-radius: 50%; }
+.goal-picker label.is-active-plan span::after { content: "\2022  yours"; margin-left: 6px; color: var(--volt); font-size: 0.72em; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.goal-picker label.is-active-plan input:checked + span::after { color: var(--volt); }
