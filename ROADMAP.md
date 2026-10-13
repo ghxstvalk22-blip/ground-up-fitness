@@ -14,7 +14,6 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 - [ ] Protein food guide: common foods and roughly how much protein a typical serving has.
 - [ ] Import a downloaded workout log (CSV) so people can move to a new phone. Export already exists.
-- [ ] Deload week: a button on the Programs page that shows a lighter week (about half the sets) for when someone feels run down.
 - [ ] More exercise variety: add guides for more machine and cable variations so the weekly rotation has even more options.
 - [ ] Muscle map: link each muscle to a ready-made plan that focuses on it, and let people pick muscles to build a custom workout.
 - [ ] Couch to 5K: a "Repeat this week" button, since repeating a week is a normal part of the plan.
@@ -22,6 +21,8 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 - [ ] Accounts: once Firebase is set up, show a small "Signed in" marker in the header on every page.
 - [ ] Habit check-in: a small weekly checklist on My progress for the six pro habits (logged sets, trained on planned days, slept 7+ hours most nights) to show which habit to work on next.
 - [ ] Link the "Train like a pro" box on the home page to a random habit's "How to start" guide, so returning visitors see a new tip.
+- [ ] Light week reminder: after about 6 to 8 straight weeks of logged training, gently suggest a light week in the week bar.
+- [ ] Show "Light week" on the Your plan bar and the My progress dashboard when the current week is a light week.
 
 ## Blocked
 
@@ -29,6 +30,7 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 ## Done
 
+- [x] 2026-10-13: Light week (deload): a "Make this a light week" button in the Programs week bar halves the sets and suggests about 10% lighter weights for that week only; tap again to undo. Not shown on Couch to 5K, where repeating a week does the same job.
 - [x] 2026-10-12: Pro principles deep dives: each of the six "Train like a pro" habits on the Pros page has a "How to start" guide that opens into practical beginner steps and a common mistake to avoid.
 - [x] 2026-10-12: Muscle map on the Exercises page: spin the body by dragging (mouse or finger) or with Front / Side / Back buttons; point at or tap any of 21 muscles to highlight it in red and see what it does, the best exercises (with how-tos), and a beginner tip.
 

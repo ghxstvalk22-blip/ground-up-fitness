@@ -1482,6 +1482,28 @@ select, input, textarea {
 .wave-dots span.done { background-color: color-mix(in srgb, var(--paper) 60%, transparent); }
 .wave-dots span.on { background-color: var(--volt); }
 
+/* Light week (deload) toggle in the week bar */
+.week-light { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 4px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--paper) 20%, transparent); }
+.week-light[hidden] { display: none; }
+.week-light-btn {
+    min-height: 44px;
+    padding: 0 14px;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--paper);
+    background: transparent;
+    border: 1px solid color-mix(in srgb, var(--paper) 45%, transparent);
+    cursor: pointer;
+}
+.week-light-btn:hover { border-color: var(--paper); }
+.week-light-btn:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
+.week-light.is-on .week-light-btn { color: #000000; background-color: var(--volt); border-color: var(--volt); }
+.week-light-note { flex: 1 1 260px; margin: 0; font-size: 0.85rem; opacity: 0.85; }
+.week-light.is-on .week-light-note { opacity: 1; }
+
 .jump-today { margin: -8px 0 24px; }
 @media (max-width: 600px) { .jump-today { width: 100%; } }
 
@@ -2666,6 +2688,7 @@ select, input, textarea {
     .program-head h3 { font-size: 16pt; margin: 0; }
     .program-head p, .program-meta, .week-variety, .day-status, .ex-badges, .ex-swap { display: none !important; }
     .week-bar { display: block; background: #ffffff; color: #000000; border: 0; padding: 0; margin: 0 0 8pt; }
+    .week-light-btn { display: none !important; }
     .week-info strong { font-size: 11pt; }
     .week-step, #week-today { display: none !important; }
     .day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; }

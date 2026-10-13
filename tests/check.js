@@ -258,6 +258,19 @@ async function openPage(browser, file, viewport, hash = "") {
             const setCount = (t) => Number(t.split("×")[0]);
             check(/Recover week/.test(await page.locator("#week-phase").textContent()) && setCount(await accessoryDose()) < setCount(w1Acc), "week 4 is a Recover week with fewer sets");
             await page.locator("#week-today").click();
+            // Light week (deload): one tap halves the sets for this week only, and tapping again undoes it
+            check(await page.locator("#week-light-btn").isVisible() && await page.locator("#week-light-btn").getAttribute("aria-pressed") === "false", "the week bar offers a light week");
+            await page.locator("#week-light-btn").click();
+            check(await page.locator("#week-light-btn").getAttribute("aria-pressed") === "true" && setCount(await accessoryDose()) < setCount(w1Acc) && await page.locator(".badge-you", { hasText: "Light week" }).count() >= 1, "a light week halves the sets and says so");
+            await page.locator("#week-next").click();
+            check(await page.locator("#week-light-btn").getAttribute("aria-pressed") === "false", "the light week only applies to the week you chose");
+            await page.locator("#week-today").click();
+            await page.locator("#week-light-btn").click();
+            check(setCount(await accessoryDose()) === setCount(w1Acc) && !(await page.evaluate(() => localStorage.getItem("gu-light-weeks") || "")).includes("classic"), "turning the light week off puts the sets back");
+            await pickGoal(page, "c25k");
+            check(await page.locator("#week-light").isHidden(), "Couch to 5K has no light-week button (you repeat a week instead)");
+            await pickGoal(page, "classic");
+            await page.locator('input[name="days"][value="4"]').check({ force: true });
 
             // Swap changes just that exercise
             const before = await page.locator(".ex-row").nth(1).locator(".ex-name").textContent();

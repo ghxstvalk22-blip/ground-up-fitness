@@ -1846,7 +1846,31 @@ function doseText(d) {
 }
 
 // The dose for this person this week: the wave first, then Classic Physique's personal tweaks
-function personalDose(program, item, slot, profile, week = 1) {
+/* ---------- Light week (deload) ----------
+   Anyone can turn a week into a light week: half the sets at about 10% lighter.
+   Saved per plan as { "goal-days": [week numbers] } in gu-light-weeks. */
+function lightWeeks() {
+    const raw = store.get("gu-light-weeks", {});
+    const out = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    Object.keys(raw).forEach((k) => {
+        if (!/^[a-z0-9-]{1,40}-\d{1,2}$/.test(k) || !Array.isArray(raw[k])) return;
+        const weeks = raw[k].filter((w) => Number.isInteger(w) && w >= 1 && w <= 520).slice(-60);
+        if (weeks.length) out[k] = weeks;
+    });
+    return out;
+}
+const isLightWeek = (goal, days, week) => (lightWeeks()[`${goal}-${days}`] || []).includes(week);
+function setLightWeek(goal, days, week, on) {
+    const all = lightWeeks();
+    const key = `${goal}-${days}`;
+    const weeks = new Set(all[key] || []);
+    if (on) weeks.add(week); else weeks.delete(week);
+    if (weeks.size) all[key] = [...weeks].sort((a, b) => a - b); else delete all[key];
+    store.set("gu-light-weeks", all);
+}
+
+function personalDose(program, item, slot, profile, week = 1, light = false) {
     const d = parseDose(item.d);
     const notes = [];
     if (d.timed) return { text: item.d, notes };
@@ -1868,6 +1892,8 @@ function personalDose(program, item, slot, profile, week = 1) {
         }
         if (phase === "recover" && d.sets > 1) { d.sets = Math.max(1, Math.ceil(d.sets / 2)); notes.push("Recover week: half the sets"); changed = true; }
     }
+    // A light week the person chose (skipped if the Recover week already halved it)
+    if (light && !notes.some((n) => n.startsWith("Recover week")) && d.sets > 1) { d.sets = Math.max(1, Math.ceil(d.sets / 2)); notes.push("Light week: half the sets"); changed = true; }
     return { text: changed ? doseText(d) : item.d, notes };
 }
 
@@ -2275,6 +2301,8 @@ function setupPrograms() {
     const progressKey = () => `gu-progress-${state.goal}-${state.days}-w${state.week}`;
     const viewHash = () => `#program-${state.goal}-${state.days}`;
     const currentWeek = () => Math.max(1, weekOf(programStart(state.goal)));
+    // Week-by-week plans (Couch to 5K) repeat a week instead, so they don't get the light-week button
+    const lightOn = () => !PROGRAMS[state.goal].plans[state.days].weeks && isLightWeek(state.goal, state.days, state.week);
     let lineups = []; // what's on screen, per day
     let firstTipShown = new Set();
     // Plan details start open on big screens, folded on phones so the workout is closer
@@ -2364,6 +2392,19 @@ function setupPrograms() {
                     <strong>${ph.name}.</strong> ${ph.tip} <span class="week-challenge">This week's challenge: ${ph.challenge}</span>`;
             }
         }
+        const lightBox = document.getElementById("week-light");
+        if (lightBox) {
+            lightBox.hidden = Boolean(plan.weeks);
+            const on = lightOn();
+            const btn = document.getElementById("week-light-btn");
+            const note = document.getElementById("week-light-note");
+            lightBox.classList.toggle("is-on", on);
+            btn.setAttribute("aria-pressed", String(on));
+            btn.textContent = on ? "Light week on \u2713 \u00b7 Back to normal" : "Make this a light week";
+            note.textContent = on
+                ? "Half the sets at about 10% lighter. Stop each set with a few reps to spare. Next week goes back to normal on its own."
+                : "Feeling run down, sore all over, or short on sleep? A light week keeps the habit going while your body catches up.";
+        }
         els.variety.hidden = !seasoned;
         els.variety.textContent = combos > 1
             ? `This plan can be put together ${bigNumber(combos)} different ways. ${p.rotation === "block" ? "Exercises change every 4 weeks." : "Accessories rotate weekly; main lifts every 4 weeks."}`
@@ -2401,7 +2442,7 @@ function setupPrograms() {
     function exerciseRow(x, di, xi, done, profile, isNew) {
         const key = `${di}-${xi}`;
         const id = `ex-${key}`;
-        const dose = personalDose(state.goal, x, xi, profile, state.week);
+        const dose = personalDose(state.goal, x, xi, profile, state.week, lightOn());
         const parsed = parseDose(x.d);
         const info = typeof EXERCISES === "object" ? EXERCISES[x.name] : null;
         const easier = x.name === x.n && x.swap ? x.swap : (info && info.easier) || "";
@@ -2418,6 +2459,11 @@ function setupPrograms() {
         if (target && target.weight > 0 && PROGRAMS[state.goal].waves !== false && levelAtLeast("Advanced") && wavePhase(state.week).key === "recover") {
             const w = roundWeight(target.weight * 0.9, profile.unit);
             target = { ...target, up: false, weight: w, text: `Recover week: about ${trimNum(w)} ${profile.unit}, roughly 10% lighter than usual. Easy on purpose.` };
+        }
+        // Light week: the same, when the person asked for it
+        else if (target && target.weight > 0 && lightOn()) {
+            const w = roundWeight(target.weight * 0.9, profile.unit);
+            target = { ...target, up: false, weight: w, text: `Light week: about ${trimNum(w)} ${profile.unit}, roughly 10% lighter than usual. Stop each set with a few reps to spare.` };
         }
         const badges = [
             xi === 0 && x.canRotate && !cardio && PROGRAMS[state.goal].rotation !== "none" ? `<span class="badge">Main lift</span>` : "",
@@ -2593,7 +2639,7 @@ function setupPrograms() {
         const items = lineups[di] || [];
         let sets = 0, reps = 0, volume = 0;
         const lines = items.map((x, xi) => {
-            const dose = personalDose(state.goal, x, xi, profile, state.week);
+            const dose = personalDose(state.goal, x, xi, profile, state.week, lightOn());
             const entry = (logFor(x.name) || []).find((en) => en.date === today);
             if (entry) entry.sets.forEach((st) => { sets += 1; reps += st.r; volume += toUnit(st.w || 0, entry.unit, unit) * st.r; });
             const cardio = isCardio(x.name);
@@ -2823,6 +2869,12 @@ function setupPrograms() {
     els.weekPrev.addEventListener("click", () => goToWeek(state.week - 1));
     els.weekNext.addEventListener("click", () => goToWeek(state.week + 1));
     els.weekToday.addEventListener("click", () => goToWeek(currentWeek()));
+    const lightBtn = document.getElementById("week-light-btn");
+    if (lightBtn) lightBtn.addEventListener("click", () => {
+        setLightWeek(state.goal, state.days, state.week, !lightOn());
+        render();
+        lightBtn.focus({ preventScroll: true });
+    });
 
     els.goalInputs.forEach((r) => r.addEventListener("change", () => {
         state.goal = r.value;

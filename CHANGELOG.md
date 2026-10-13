@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Light week)
+
+- **Make this a light week:** on the Plans page, the dark week bar now has a **Make this a light week** button. Tap it when you feel run down, sore all over, or short on sleep, and that week's workouts drop to about half the sets, with suggested weights about 10% lighter. Each exercise is marked "Light week: half the sets" so it's clear why. It only changes the week you picked; next week goes back to normal on its own, and tapping the button again undoes it. A lighter week like this (lifters call it a "deload") helps you recover without losing the habit.
+- Couch to 5K doesn't show the button, since repeating a week is how that plan eases off.
+
 ## 2026-10-13 (Continue to the next day, and add exercises from the library)
 
 - **Continue to Day 2:** once you finish a day, its card says "Finished today" and gives you one big **Continue to Day 2** button (it takes you straight to that day, or helps you build it if it doesn't exist yet). On your own plan there's also **Edit Day 2 first**, so you can change the next day and keep going. After the last day of the week, it moves you to next week.
