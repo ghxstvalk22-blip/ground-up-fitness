@@ -909,6 +909,12 @@ async function openPage(browser, file, viewport, hash = "") {
             // Log tab: every set, newest first, filter by exercise, remove with undo
             await page.click('[data-me-go="log"]');
             check(await page.locator("#log").isVisible() && await page.locator("#log-days .log-day").count() === 3 && /140 lb × 6/.test(await page.locator("#log-days .log-day").first().textContent()), "the Log tab lists every logged set by day, newest first");
+            check(await page.locator("#log-days .log-week").count() === 3 && await page.locator("#log-days .log-week").first().evaluate((d) => d.open) && /This week/.test(await page.locator("#log-days .log-week summary").first().textContent()) && /1 day · 3 sets · 17 reps/.test(await page.locator("#log-days .log-week summary").first().textContent()), "the log is grouped by week, with days, sets and reps for each");
+            const olderWeek = page.locator("#log-days .log-week").nth(1);
+            check(!(await olderWeek.evaluate((d) => d.open)), "older weeks start closed");
+            await olderWeek.locator("summary").first().click();
+            await olderWeek.locator(".log-day > summary").first().click();
+            check(await olderWeek.locator(".log-sets").first().isVisible(), "tapping a week, then a day, shows its sets");
             check(/53/.test(await page.locator("#log-totals").textContent()) && /reps/.test(await page.locator("#log-totals").textContent()), "the Log tab totals your reps");
             await page.locator('#log-days [data-log-remove]').first().click();
             check(await page.locator("#log-days .log-day").count() === 2 && await page.evaluate(() => logFor("Bench press").length === 2), "a mistaken entry can be removed from the log");
@@ -1019,6 +1025,34 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.goto(url("exercises.html"), { waitUntil: "load" });
             await page.fill("#library-search", "bench");
             check(/^Bench/.test(await page.locator(".library-card h3").first().textContent()), "searching bench lists bench exercises first");
+            await page.evaluate(() => localStorage.clear());
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Cancel workout hides the plan until you tap Continue
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            await page.evaluate(() => { localStorage.clear(); localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "beginner", days: 3 })); });
+            await page.reload({ waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator("#planbar").count() === 1, "the Your plan bar shows while you're on a plan");
+            await page.evaluate(() => { localStorage.setItem("gu-rest", JSON.stringify({ endAt: Date.now() + 60000, total: 60, name: "Squat" })); localStorage.setItem("gu-log-draft", JSON.stringify({ x: { date: "2026-01-01" } })); });
+            await page.locator("#planbar .planbar-toggle").click();
+            await page.locator("#planbar [data-cancel-workout]").click();
+            check(await page.locator("#planbar").count() === 0 && await page.evaluate(() => store.get("gu-plan-paused") === true && !localStorage.getItem("gu-log-draft")), "Cancel workout hides the plan bar and drops half-typed sets");
+            await page.goto(url("tools.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator("#planbar").count() === 0, "the plan stays hidden on other pages");
+            await page.goto(url("index.html"), { waitUntil: "load" });
+            const cont = page.locator('a[href*="?today=1"]').first();
+            check(await cont.count() === 1, "the home page still offers Continue");
+            await page.goto(url("programs.html", "?today=1#program-beginner-3"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.evaluate(() => !store.get("gu-plan-paused")), "Continue brings the plan back");
+            await page.goto(url("tools.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator("#planbar").count() === 1, "after Continue, the plan bar is back");
             await page.evaluate(() => localStorage.clear());
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();

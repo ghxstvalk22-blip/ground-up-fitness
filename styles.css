@@ -3356,3 +3356,21 @@ body.rest-on .planbar { display: none; }
 #log-more { margin-top: 6px; }
 @media (max-width: 640px) { .me-tab { font-size: 0.62rem; letter-spacing: 0.06em; padding: 0 2px; } }
 html:has(.me-tabs-wrap) { scroll-padding-top: calc(var(--header-h) + 64px); }
+
+/* Log tab: weeks that open to days, days that open to sets */
+.log-week { margin-bottom: 12px; background-color: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--ink); }
+.log-week > summary, .log-day > summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 12px; min-height: 56px; padding: 12px 44px 12px 16px; position: relative; cursor: pointer; list-style: none; }
+.log-week > summary::-webkit-details-marker, .log-day > summary::-webkit-details-marker { display: none; }
+.log-week > summary::after, .log-day > summary::after { content: "+"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 1.3rem; font-weight: 900; color: var(--volt); }
+.log-week[open] > summary::after, .log-day[open] > summary::after { content: "\2212"; }
+.log-week > summary:focus-visible, .log-day > summary:focus-visible { outline: 3px solid var(--volt); outline-offset: -3px; }
+.log-week-title { display: flex; flex-direction: column; font-family: var(--display); font-size: 1.25rem; font-weight: 900; font-stretch: 85%; text-transform: uppercase; line-height: 1.1; }
+.log-week-title small { font-family: var(--sans); font-size: 0.75rem; font-weight: 600; font-stretch: 100%; text-transform: none; color: var(--muted); }
+.log-week-stats { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
+.log-day { margin: 0; border: 0; border-top: 1px solid var(--line); background: none; }
+.log-day > summary { min-height: 52px; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.log-day > summary small { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--muted); }
+.log-day[open] > summary { background-color: var(--paper); }
+.log-day .log-day-list > li { padding-left: 24px; }
+.planbar-cancel { min-height: 44px; color: var(--muted); }
+.day-finish .text-button[data-cancel-workout], .day-finish .text-button[data-resume-plan] { min-height: 44px; }

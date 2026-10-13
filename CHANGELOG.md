@@ -2,6 +2,15 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Cancel workout)
+
+- **Cancel workout:** open the Your plan bar at the bottom of any page (or go to the day on the Plans page) and tap **Cancel workout**. It stops the rest timer, throws away half-typed sets, and hides your plan from every page so it's out of your way. Sets you already saved are kept.
+- **Getting it back:** tap **Continue** on the home page, or **Continue my workout** on My progress, and your plan is back where you left it.
+
+## 2026-10-13 (Log by week)
+
+- **The Log tab is now organized by week.** Each week (This week, Last week, Week of Sep 28…) shows how many days you worked out and your total sets and reps. Tap a week to open it and see each day you trained, with that day's sets and reps. Tap a day to see every exercise and set. The newest week and day start open; older ones stay closed until you tap them, and what you open stays open while you use the page.
+
 ## 2026-10-13 (Log: every set you've logged)
 
 - **New Log tab on My progress** (website and app: Progress, then Log). It lists every set and rep you've logged, newest first, grouped by day: "Set 1: 160 lb × 8". The top shows your total reps, sets, and days.

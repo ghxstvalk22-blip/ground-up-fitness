@@ -2503,7 +2503,7 @@ function setupPrograms() {
                 </ul>
                 ${state.week === currentWeek() ? (() => { const doneToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === isoDate(new Date()) && x.plan === state.goal && x.day === di); return doneToday
                     ? `<div class="day-finish is-done"><p class="day-finish-note">Finished today \u2713</p><button type="button" class="btn${state.goal === "custom" ? " btn-primary" : ""}" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>${state.goal === "custom" && thisWeek[di + 1] ? `<button type="button" class="text-button" data-edit-day="${di + 1}">Edit Day ${di + 2} first</button>` : ""}<button type="button" class="text-button" data-finish="${di}">See summary</button></div>`
-                    : `<div class="day-finish"><button type="button" class="btn btn-primary" data-finish="${di}">Finish workout</button></div>`; })() : ""}
+                    : `<div class="day-finish"><button type="button" class="btn btn-primary" data-finish="${di}">Finish workout</button>${planPaused() ? `<button type="button" class="text-button" data-resume-plan>Continue this plan</button>` : `<button type="button" class="text-button" data-cancel-workout>Cancel workout</button>`}</div>`; })() : ""}
             </article>`).join("");
 
         updateProgress();
@@ -3016,6 +3016,15 @@ function setupPrograms() {
         if (btn) btn.focus();
     });
 
+    // Cancel / continue from the day card
+    window.addEventListener("planpause", () => { els.grid.querySelectorAll(".log-form").forEach((f) => { f.hidden = true; }); render(); });
+    els.grid.addEventListener("click", (e) => {
+        if (!e.target.closest("[data-resume-plan]")) return;
+        resumePlan();
+        render();
+        showToast("Welcome back", "Your plan is back on every page. Pick up where you left off.");
+    });
+
     const jumpToday = document.getElementById("jump-today");
     if (jumpToday) jumpToday.addEventListener("click", () => {
         const next = els.grid.querySelector(".day-card.is-next");
@@ -3133,6 +3142,7 @@ function setupPrograms() {
         const mine = (store.get("gu-last-plan") || {}).goal === m[1];
         const params = new URLSearchParams(location.search);
         const doing = mine || m[1] === "custom" || ["today", "w", "a", "edit"].some((k) => params.has(k));
+        if (params.has("today") || params.has("w")) resumePlan();
         if (state.goal !== m[1]) state.week = null;
         state.goal = m[1];
         if (m[2] && PROGRAMS[m[1]].plans[m[2]]) state.days = Number(m[2]);
@@ -3299,6 +3309,7 @@ function setupRestTimer() {
     document.getElementById("rest-stop").addEventListener("click", stopRest);
     // Finishing the workout ends any rest that's still counting
     window.addEventListener("logchange", (e) => { if (e.detail && e.detail.finished) stopRest(); });
+    window.addEventListener("reststop", stopRest);
     alertsBtn.addEventListener("click", () => {
         Notification.requestPermission().then((p) => {
             alertsBtn.hidden = true;
@@ -4663,7 +4674,7 @@ function setupMyDashboard() {
                     ${info ? `<p class="dash-big">${escapeHtml(info.weekDone ? "Week done" : info.title)}</p>
                         <p class="dash-sub">${escapeHtml(info.name)}${info.weekDone ? " · next week's plan is ready" : ` · ${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
                         ${nextTargets.length ? `<ul class="dash-targets">${nextTargets.map((t) => `<li>${equipIcon(t.name)}<span>${escapeHtml(t.name)}</span><strong>${escapeHtml(t.text)}</strong></li>`).join("")}</ul>` : ""}
-                        <a class="btn btn-primary btn-compact" href="${info.href}">${info.weekDone ? "See my plan" : "Start this workout"}</a>`
+                        <a class="btn btn-primary btn-compact" href="${info.href}">${info.weekDone ? "See my plan" : planPaused() ? "Continue my workout" : "Start this workout"}</a>${planPaused() ? `<p class="dash-sub">You canceled your last workout. Tap Continue when you're ready.</p>` : ""}`
                     : `<p class="dash-sub">You're not on a plan yet.</p><a class="btn btn-primary btn-compact" href="programs.html">Pick a plan</a> <a class="btn btn-compact" href="programs.html#build">Build my own</a>`}
                 </article>
                 <article class="dash-card">
@@ -4752,8 +4763,25 @@ function currentPlanInfo() {
     return { goal: last.goal, days, week, di, weekDone, name: p.name, title: day.title, items, href: `programs.html?today=1#program-${last.goal}-${days}` };
 }
 
+// Cancel workout: stop the rest timer, drop half-typed sets, and hide the Your plan bar until you tap Continue.
+// Sets you already saved stay saved. Continue (home page, My progress, or Plans with ?today=1) brings it back.
+const PAUSE_KEY = "gu-plan-paused";
+const planPaused = () => store.get(PAUSE_KEY) === true;
+function cancelWorkout() {
+    store.set(PAUSE_KEY, true);
+    store.remove("gu-log-draft");
+    window.dispatchEvent(new CustomEvent("reststop"));
+    const bar = document.getElementById("planbar");
+    if (bar) bar.remove();
+    document.body.classList.remove("has-planbar", "planbar-open");
+    window.dispatchEvent(new CustomEvent("planpause"));
+    showToast("Workout canceled", "Your plan is hidden until you tap Continue on the home page or My progress. Sets you already saved are kept.");
+}
+function resumePlan() { if (planPaused()) store.remove(PAUSE_KEY); }
+
 function setupPlanBar() {
     if (["programs", "me"].includes(document.body.dataset.page) || !document.getElementById("site-footer") && !document.querySelector(".site-footer")) return;
+    if (planPaused()) return;
     const info = currentPlanInfo();
     if (!info) return;
     const custom = info.goal === "custom";
@@ -4774,6 +4802,7 @@ function setupPlanBar() {
         <div class="planbar-actions">
             <a class="btn btn-compact" href="${info.href}">Open full plan</a>
             ${custom ? `<button type="button" class="btn btn-compact" data-edit-custom>Edit this workout</button>` : ""}
+            <button type="button" class="text-button planbar-cancel" data-cancel-workout>Cancel workout</button>
         </div>
     </div>
 </section>`);
@@ -4791,6 +4820,7 @@ function setupPlanBar() {
     document.body.classList.toggle("planbar-open", open);
     bar.addEventListener("click", (e) => { if (e.target.closest("[data-edit-custom]")) editCustomWorkout(info.di); });
 }
+document.addEventListener("click", (e) => { if (e.target.closest("[data-cancel-workout]")) cancelWorkout(); });
 
 /* =========================================================
    FEATURE: Build your own workout (Plans page)
@@ -5956,8 +5986,11 @@ function setupLogHistory() {
     const totals = document.getElementById("log-totals");
     const more = document.getElementById("log-more");
     const status = document.getElementById("log-history-status");
-    const PAGE = 14;
+    const PAGE = 8; // weeks at a time
     let shown = PAGE, undo = null;
+    // Which weeks and days you opened stay open when the list redraws (null = not touched yet)
+    let opened = null;
+    const isOpen = (key, fallback) => (opened ? opened.has(key) : fallback);
 
     // One row per exercise per day: { date, name, unit, sets }
     function rows() {
@@ -5995,40 +6028,69 @@ function setupLogHistory() {
             more.hidden = true;
             return;
         }
-        // Group by day, newest first
+        // Group by week (Monday to Sunday), then by day, newest first
         const byDay = new Map();
         list.slice().sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name)).forEach((r) => {
             if (!byDay.has(r.date)) byDay.set(r.date, []);
             byDay.get(r.date).push(r);
         });
-        const days = [...byDay.entries()];
-        daysEl.innerHTML = days.slice(0, shown).map(([date, items]) => {
-            const d = parseIso(date);
-            const dayReps = items.reduce((t, r) => t + r.sets.reduce((u, st) => u + (Number(st.r) || 0), 0), 0);
-            const daySets = items.reduce((t, r) => t + r.sets.length, 0);
-            return `<article class="log-day">
-                <h3><span>${escapeHtml(d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" }))}</span>
-                    <small>${items.length} exercise${items.length === 1 ? "" : "s"} · ${daySets} set${daySets === 1 ? "" : "s"} · ${dayReps} rep${dayReps === 1 ? "" : "s"}</small></h3>
-                <ul class="log-day-list">${items.map((r) => `
-                    <li>
-                        <div class="log-day-top">
-                            <button type="button" class="log-day-name" data-log-only="${escapeHtml(r.name)}" aria-label="Show only ${escapeHtml(r.name)}">${typeof equipIcon === "function" ? equipIcon(r.name) : ""}${escapeHtml(r.name)}</button>
-                            <button type="button" class="text-button log-day-remove" data-log-remove="${escapeHtml(r.name)}|${date}" aria-label="Remove ${escapeHtml(r.name)} on ${escapeHtml(shortDate(d))}">Remove</button>
-                        </div>
-                        <ol class="log-sets">${r.sets.map((st, i) => `<li><span class="log-set-n">Set ${i + 1}</span>${escapeHtml(setText(st, r.unit, unit))}</li>`).join("")}</ol>
-                    </li>`).join("")}</ul>
-            </article>`;
+        const byWeek = new Map();
+        [...byDay.entries()].forEach(([date, items]) => {
+            const wk = isoDate(mondayOf(parseIso(date)));
+            if (!byWeek.has(wk)) byWeek.set(wk, []);
+            byWeek.get(wk).push([date, items]);
+        });
+        const weeks = [...byWeek.entries()];
+        const count = (items) => ({ sets: items.reduce((t, r) => t + r.sets.length, 0), reps: items.reduce((t, r) => t + r.sets.reduce((u, st) => u + (Number(st.r) || 0), 0), 0) });
+        const plural = (n, w) => `${fmt(n)} ${w}${n === 1 ? "" : "s"}`;
+        const thisWeek = isoDate(mondayOf(new Date()));
+        const fmtDay = (d, opts) => d.toLocaleDateString("en-US", { ...opts, year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+        daysEl.innerHTML = weeks.slice(0, shown).map(([wk, dayList], wi) => {
+            const start = parseIso(wk), end = addDays(start, 6);
+            const all = dayList.flatMap(([, items]) => items);
+            const c = count(all);
+            const label = wk === thisWeek ? "This week" : wk === isoDate(addDays(mondayOf(new Date()), -7)) ? "Last week" : `Week of ${fmtDay(start, { month: "short", day: "numeric" })}`;
+            return `<details class="log-week" data-key="w${wk}"${isOpen(`w${wk}`, wi === 0) ? " open" : ""}>
+                <summary>
+                    <span class="log-week-title">${escapeHtml(label)}<small>${escapeHtml(fmtDay(start, { month: "short", day: "numeric" }))} – ${escapeHtml(fmtDay(end, { month: "short", day: "numeric" }))}</small></span>
+                    <span class="log-week-stats">${plural(dayList.length, "day")} · ${plural(c.sets, "set")} · ${plural(c.reps, "rep")}</span>
+                </summary>
+                ${dayList.map(([date, items], di) => {
+                    const d = parseIso(date), dc = count(items);
+                    return `<details class="log-day" data-key="d${date}"${isOpen(`d${date}`, wi === 0 && di === 0) ? " open" : ""}>
+                        <summary><span>${escapeHtml(fmtDay(d, { weekday: "short", month: "short", day: "numeric" }))}</span>
+                            <small>${plural(items.length, "exercise")} · ${plural(dc.sets, "set")} · ${plural(dc.reps, "rep")}</small></summary>
+                        <ul class="log-day-list">${items.map((r) => `
+                            <li>
+                                <div class="log-day-top">
+                                    <button type="button" class="log-day-name" data-log-only="${escapeHtml(r.name)}" aria-label="Show only ${escapeHtml(r.name)}">${typeof equipIcon === "function" ? equipIcon(r.name) : ""}${escapeHtml(r.name)}</button>
+                                    <button type="button" class="text-button log-day-remove" data-log-remove="${escapeHtml(r.name)}|${date}" aria-label="Remove ${escapeHtml(r.name)} on ${escapeHtml(shortDate(d))}">Remove</button>
+                                </div>
+                                <ol class="log-sets">${r.sets.map((st, i) => `<li><span class="log-set-n">Set ${i + 1}</span>${escapeHtml(setText(st, r.unit, unit))}</li>`).join("")}</ol>
+                            </li>`).join("")}</ul>
+                    </details>`;
+                }).join("")}
+            </details>`;
         }).join("");
-        more.hidden = days.length <= shown;
+        more.textContent = "Show older weeks";
+        more.hidden = weeks.length <= shown;
     }
+    // Remember what was opened or closed
+    daysEl.addEventListener("toggle", (e) => {
+        const el = e.target;
+        if (!el.matches || !el.matches("details[data-key]")) return;
+        if (!opened) opened = new Set([...daysEl.querySelectorAll("details[data-key][open]")].map((x) => x.dataset.key));
+        if (el.open) opened.add(el.dataset.key); else opened.delete(el.dataset.key);
+    }, true);
 
-    filter.addEventListener("change", () => { shown = PAGE; render(); });
+    filter.addEventListener("change", () => { shown = PAGE; opened = null; render(); });
     more.addEventListener("click", () => { shown += PAGE; render(); });
     daysEl.addEventListener("click", (e) => {
         const only = e.target.closest("[data-log-only]");
         if (only) {
             filter.value = only.dataset.logOnly;
             shown = PAGE;
+            opened = null;
             render();
             filter.focus();
             return;
