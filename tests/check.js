@@ -1150,6 +1150,39 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // Building after Day 1 makes Day 2 (never wipes your plan), and an arm day after back & chest isn't flagged
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            await page.evaluate(() => {
+                localStorage.clear();
+                saveCustomDays([{ title: "Back & Chest", items: [{ n: "Bench press", d: "3 × 8–10", rest: "2 min" }, { n: "Lat pulldown", d: "3 × 10–12", rest: "90 s" }] }]);
+                localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "custom", days: 1 }));
+                const t = new Date(), td = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+                localStorage.setItem("gu-sessions", JSON.stringify([{ date: td, plan: "custom", days: 1, day: 0, title: "Back & Chest", names: ["Bench press", "Lat pulldown"], exercises: 2, sets: 6, reps: 60, volume: 0, unit: "lb" }]));
+            });
+            await page.goto(url("programs.html", "#build"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(/Build Day 2/.test(await page.locator("#builder-title").textContent()) && await page.locator(".builder-list li").count() === 0, "with a plan of your own, the builder starts empty as Day 2");
+            for (const ex of ["Overhead press", "Dumbbell curl", "Hammer curl"]) { await page.fill("#builder-search", ex); await page.locator(`[data-add="${ex}"]`).click(); }
+            await Promise.all([page.waitForURL(/program-custom-2/), page.locator(".builder-save").click()]);
+            await page.waitForTimeout(400);
+            const days = await page.evaluate(() => customDaysRaw().map((d) => d.title));
+            check(days.length === 2 && days[0] === "Back & Chest" && /Biceps/.test(days[1]), `saving adds it as Day 2 and names it after its muscles (${days.join(" / ")})`);
+            // Day 1 was finished today (ticked off), so Day 2 is up next
+            await page.evaluate(() => { const wk = Math.max(1, weekOf(programStart("custom"))); store.set(`gu-progress-custom-2-w${wk}`, ["0-0", "0-1"]); });
+            await page.goto(url("me.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            const next = await page.locator("#me-dash .dash-next").textContent();
+            check(!/again, and you trained/.test(next) && /Biceps/.test(next), "an arm day after back and chest isn't flagged as the same muscles");
+            await page.goto(url("programs.html", "#program-custom-2"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            await page.locator('[data-move-day="1"][data-dir="-1"]').click();
+            check(await page.evaluate(() => /Biceps/.test(customDaysRaw()[0].title) && customDaysRaw()[1].title === "Back & Chest"), "days can be moved up and down");
+            await page.evaluate(() => localStorage.clear());
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
         // Cancel workout hides the plan until you tap Continue
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);

@@ -2571,7 +2571,7 @@ function setupPrograms() {
                 <header>
                     <span class="day-num">Day ${di + 1} <span class="day-status"></span></span>
                     <h4>${escapeHtml(day.title)}</h4>
-                    ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button>${thisWeek.length > 1 ? `<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
+                    ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
                 </header>
                 <ul class="ex-list">
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
@@ -2866,7 +2866,7 @@ function setupPrograms() {
         const card = els.grid.querySelector(`.day-card[data-day="${di}"]`);
         if (card) card.querySelectorAll('input[type="checkbox"]').forEach((b) => { b.checked = true; });
         const sessions = (store.get("gu-sessions", []) || []).filter((x) => x && !(x.date === today && x.plan === state.goal && x.day === di));
-        sessions.push({ date: today, plan: state.goal, planName: p.name, days: state.days, day: di, title: day.title, exercises: doneCount, sets, reps, volume: Math.round(volume), unit });
+        sessions.push({ date: today, plan: state.goal, planName: p.name, days: state.days, day: di, title: day.title, names: items.map((x) => x.name).slice(0, 20), exercises: doneCount, sets, reps, volume: Math.round(volume), unit });
         store.set("gu-sessions", sessions.slice(-200));
         updateProgress();
         window.dispatchEvent(new CustomEvent("logchange", { detail: { finished: true } }));
@@ -2958,6 +2958,23 @@ function setupPrograms() {
         if (cont) { continueFrom(Number(cont.dataset.continue)); return; }
         const ed = e.target.closest("[data-edit-day]");
         if (ed) { editCustomWorkout(Number(ed.dataset.editDay)); return; }
+        const mv = e.target.closest("[data-move-day]");
+        if (mv) {
+            const i = Number(mv.dataset.moveDay), j = i + Number(mv.dataset.dir), days = customDaysRaw();
+            if (!days[i] || !days[j]) return;
+            [days[i], days[j]] = [days[j], days[i]];
+            // Check-offs follow their day
+            const key = progressKey();
+            const swapIdx = (k) => { const [d, x] = String(k).split("-"); const n = Number(d); return `${n === i ? j : n === j ? i : n}-${x}`; };
+            store.set(key, (store.get(key, []) || []).map(swapIdx));
+            clearCustomSwaps();
+            saveCustomDays(days);
+            PROGRAMS.custom = loadCustomWorkout();
+            render();
+            const again = els.grid.querySelector(`[data-move-day="${j}"]`) || els.grid.querySelector(`.day-card[data-day="${j}"]`);
+            if (again) again.focus();
+            return;
+        }
         const rm = e.target.closest("[data-remove-day]");
         if (rm) {
             const i = Number(rm.dataset.removeDay), days = customDaysRaw();
@@ -4764,12 +4781,17 @@ function setupMyDashboard() {
         const streak = weekStreak();
         // Smart next step: never the same muscles two days running, and a ready-made Day 2 when your split runs out
         const recent = recentlyTrained();
-        const clash = recent && info && !info.weekDone ? [...regionsOf(info.items.map((x) => x.name))].filter((r) => recent.regions.has(r)) : [];
+        const musclesOf = (names) => new Set(names.filter((n) => EXERCISES[n] && !isCardio(n)).map((n) => builderMuscle(n)).filter((m) => m !== "core" && m !== "cardio"));
+        const nextM = info && !info.weekDone ? musclesOf(info.items.map((x) => x.name)) : new Set();
+        const recentM = recent ? musclesOf(recent.names) : new Set();
+        const same = [...nextM].filter((m) => recentM.has(m));
+        // Same muscles as today/yesterday for at least half of this workout? Then suggest something else
+        const clash = same.length && same.length * 2 >= nextM.size ? same : [];
         const needSug = info ? (info.weekDone && info.goal === "custom") || clash.length > 0 : Boolean(recent);
         sug = needSug ? suggestNextWorkout() : null;
         const when = recent && recent.date === isoDate(new Date()) ? "today" : "yesterday";
         const sugCard = sug ? `
-            ${clash.length ? `<p class="dash-warn"><strong>${escapeHtml(info.title)}</strong> works your ${escapeHtml(clash.map((r) => REGION_WORD[r]).join(" and "))} again, and you trained ${when === "today" ? "them today" : "them yesterday"}. Muscles grow on the days between, so try this instead:</p>` : ""}
+            ${clash.length ? `<p class="dash-warn"><strong>${escapeHtml(info.title)}</strong> works your ${escapeHtml(clash.map((m) => BUILD_MUSCLE_NAME[m].toLowerCase()).join(", "))} again, and you trained ${when === "today" ? "them today" : "them yesterday"}. Muscles grow on the days between, so try this instead:</p>` : ""}
             <p class="dash-big">${escapeHtml(info && info.goal === "custom" && info.weekDone ? `Day ${customDaysRaw().length + 1}: ${sug.title}` : sug.title)}</p>
             <p class="dash-sub">Made for you${recent ? ` · skips what you trained ${when}` : ""} · ${sug.items.length} exercises</p>
             <ul class="dash-targets">${sug.items.slice(0, 4).map((x) => { const t = isCardio(x.n) ? null : nextTarget(x.n, x.d, unit); const dose = String(x.d).replace(/ at .*$/, ""); return `<li>${equipIcon(x.n)}<span>${escapeHtml(x.n)}</span><strong>${escapeHtml(t && t.weight > 0 ? `${dose} · ${trimNum(t.weight)} ${unit}${t.each ? " each" : ""}` : dose)}</strong></li>`; }).join("")}</ul>
@@ -4910,7 +4932,9 @@ const REGION_WORD = { push: "chest, shoulders, and triceps", pull: "back and bic
 const regionsOf = (names) => new Set(names.filter((n) => typeof EXERCISES === "object" && EXERCISES[n] && !isCardio(n)).map((n) => REGION_OF[builderMuscle(n)]).filter(Boolean));
 function sessionExercises(x) {
     if (!x) return [];
-    if (x.plan === "custom") { const d = customDaysRaw()[Number(x.day)]; return d ? d.items.map((it) => it && it.n).filter(Boolean) : []; }
+    if (Array.isArray(x.names)) return x.names.filter((n) => typeof n === "string");
+    // Older saves only know the day number: trust it only if that day still has the same name
+    if (x.plan === "custom") { const d = customDaysRaw()[Number(x.day)]; return d && d.title === x.title ? d.items.map((it) => it && it.n).filter(Boolean) : []; }
     const p = PROGRAMS[x.plan], plan = p && p.plans[x.days];
     const d = plan ? weekDays(plan, 1)[Number(x.day)] : null;
     return d ? d.items.map((it) => it.n) : [];
@@ -5109,7 +5133,7 @@ function builderClean(raw) {
         return { n: x.n, sets: Number(x.sets) >= 1 && Number(x.sets) <= 6 ? Number(x.sets) : base.sets, amount: list.includes(x.amount) ? x.amount : base.amount, rest: BUILDER_RESTS.includes(x.rest) ? x.rest : base.rest };
     });
     const editDay = Number.isInteger(raw.editDay) && raw.editDay >= 0 && raw.editDay < 7 ? raw.editDay : 0;
-    return { title: String(raw.title || "").replace(/[<>]/g, "").slice(0, 40), goal: BUILD_GOALS[raw.goal] ? raw.goal : "muscle", editing: raw.editing === true, editDay, addDay: raw.addDay === true && raw.editing !== true, items };
+    return { title: String(raw.title || "").replace(/[<>]/g, "").slice(0, 40), goal: BUILD_GOALS[raw.goal] ? raw.goal : "muscle", editing: raw.editing === true, editDay, addDay: raw.addDay === true && raw.editing !== true, newPlan: raw.newPlan === true && raw.editing !== true, items };
 }
 // The weight to use, in plain words
 function builderWeight(x) {
@@ -5138,15 +5162,9 @@ function setupBuilder() {
     if (!spot || typeof EXERCISES !== "object") return;
     const names = Object.keys(EXERCISES).sort((a, b) => a.localeCompare(b));
     const groupLabel = { "": "All", chest: "Chest", back: "Back", shoulders: "Shoulders", arms: "Arms", legs: "Legs", core: "Core", cardio: "Cardio" };
-    let draft = builderClean(store.get(BUILDER_KEY)) || (() => {
-        const mine = loadCustomWorkout();
-        if (!mine) return { title: "", goal: getProfile().trainFor === "endurance" ? "endurance" : "muscle", items: [] };
-        const day = Object.values(mine.plans)[0].days[0];
-        return builderClean({ title: day.title === "My workout" ? "" : day.title, items: day.items.map((it) => {
-            const m = String(it.d).match(/^(\d+) × (.+?)( per side)?( at .*)?$/);
-            return { n: it.n, sets: m ? Number(m[1]) : 3, amount: m ? m[2] : it.d, rest: it.rest };
-        }) }) || { title: "", goal: "muscle", items: [] };
-    })();
+    let draft = builderClean(store.get(BUILDER_KEY)) || { title: "", goal: getProfile().trainFor === "endurance" ? "endurance" : "muscle", items: [] };
+    // Already have your own plan? What you build next becomes its next day (Day 2, Day 3...) unless you choose a new plan
+    if (!draft.editing && !draft.addDay && !draft.newPlan && customDaysRaw().length && customDaysRaw().length < 7 && (store.get("gu-last-plan") || {}).goal === "custom") draft.addDay = true;
     spot.innerHTML = `
         <div class="builder">
             <div class="builder-intro">
@@ -5359,7 +5377,7 @@ function setupBuilder() {
     nameIn.addEventListener("input", () => { draft.title = nameIn.value.replace(/[<>]/g, "").slice(0, 40); save(); });
     const replaceBtn = $(".builder-replace");
     if (replaceBtn) replaceBtn.addEventListener("click", () => {
-        draft.addDay = false; save();
+        draft.addDay = false; draft.newPlan = true; save();
         $(".builder-save").textContent = "Save and start";
         $("#builder-title").textContent = "Build your own workout";
         replaceBtn.remove();
@@ -5394,7 +5412,12 @@ function setupBuilder() {
     });
     $(".builder-save").addEventListener("click", () => {
         if (!draft.items.length) return;
-        const title = draft.title.trim() || "My workout";
+        // No name? Name it after its main muscles ("Shoulders & Biceps")
+        const counts = {};
+        draft.items.forEach((x) => { const m = builderMuscle(x.n); if (m !== "cardio") counts[m] = (counts[m] || 0) + 1; });
+        const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([m]) => BUILD_MUSCLE_NAME[m]);
+        const autoTitle = top.length > 1 ? `${top.slice(0, -1).join(", ")} & ${top[top.length - 1]}` : top[0] || "Workout";
+        const title = draft.title.trim() || autoTitle;
         const newDay = { title, items: draft.items.map((x) => ({ n: x.n, d: builderDose(x), rest: builderKind(x.n) === "time" ? "" : x.rest })) };
         let days = customDaysRaw();
         const oldN = days.length;
@@ -5417,7 +5440,7 @@ function setupBuilder() {
         }
         store.remove(oldKey);
         store.set(`gu-progress-custom-${days.length}-w${week}`, done);
-        draft.editing = false; draft.addDay = false;
+        draft.editing = false; draft.addDay = false; draft.newPlan = false; draft.items = []; draft.title = "";
         save();
         saveCustomDays(days);
         store.set("gu-last-plan", { goal: "custom", days: days.length });

@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Your next workout becomes Day 2)
+
+- **Building after Day 1 makes Day 2.** If you're on your own plan, Build your own workout now starts empty as **Build Day 2** (then Day 3, and so on), and saving adds it to your plan. Before, it could open with Day 1's exercises and **Save and start** replaced your whole plan, which is how a Back & Chest day could disappear. Want a brand-new plan instead? Tap **Start a new plan instead** in the builder.
+- **Workouts are named for you.** Save without a name and it's called after its main muscles, like "Shoulders & Biceps", instead of "My workout".
+- **Move days up and down.** On your plan, each day has ↑ and ↓ buttons next to Edit, so you can put your split in the order you train it. Ticked-off exercises move with their day.
+- **The "same muscles" heads-up is accurate now.** Finished workouts remember their exercises, and the check looks at the actual muscles (chest, back, shoulders, biceps...) instead of broad groups, so an arm day after back and chest isn't flagged.
+
 ## 2026-10-13 (Build and Plans, each in its own place)
 
 - **The Build tab shows only Build your own workout.** No more plan pickers and ready-made plans underneath it.
