@@ -3342,6 +3342,9 @@ function restSeconds(text) {
    (gu-rest), and with notifications allowed it puts "next set at 7:42 PM" on the lock screen
    and, where the phone lets the app run in the background, a "Rest over" alert. */
 const REST_KEY = "gu-rest";
+// Opens the "Ground Up Rest" Shortcut with the seconds left (Apple's run-shortcut link format)
+const restShortcutUrl = (seconds) => `shortcuts://run-shortcut?name=${encodeURIComponent("Ground Up Rest")}&input=text&text=${Math.max(5, Math.round(seconds))}`;
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 function restNotify(kind, info) {
     if (!("Notification" in window) || Notification.permission !== "granted" || !("serviceWorker" in navigator)) return;
     navigator.serviceWorker.ready.then((reg) => {
@@ -3369,6 +3372,7 @@ function setupRestTimer() {
         </div>
         <p class="rest-timer-at" id="rest-timer-at"></p>
         <button type="button" class="rest-timer-alerts" id="rest-alerts" hidden>Show the timer on my lock screen</button>
+        <button type="button" class="chip rest-timer-ios" id="rest-ios" hidden>Lock Screen timer</button>
     </div>
     <p class="visually-hidden" id="rest-timer-announce" aria-live="assertive"></p>
 </div>`);
@@ -3379,7 +3383,47 @@ function setupRestTimer() {
     const announce = document.getElementById("rest-timer-announce");
     const atEl = document.getElementById("rest-timer-at");
     const alertsBtn = document.getElementById("rest-alerts");
+    const iosBtn = document.getElementById("rest-ios");
     let endAt = 0, total = 0, tick = null, audio = null, restName = "";
+    /* iPhone: web apps can't put a live countdown on the Lock Screen, but the iPhone's own Clock timer can
+       (it shows on the Lock Screen and in the Dynamic Island). A one-time Shortcut ("Ground Up Rest") starts
+       that timer with the seconds left; the app opens it with a shortcuts:// link. */
+    const SHORTCUT = "Ground Up Rest";
+    const runShortcut = () => {
+        const left = Math.max(5, Math.round((endAt - Date.now()) / 1000));
+        store.set("gu-ios-timer", true);
+        location.href = restShortcutUrl(left);
+    };
+    iosBtn.addEventListener("click", () => {
+        if (store.get("gu-ios-timer") === true) { runShortcut(); return; }
+        let dlg = document.getElementById("ios-timer-setup");
+        if (!dlg) {
+            document.body.insertAdjacentHTML("beforeend", `<dialog id="ios-timer-setup" class="finish-dialog" aria-labelledby="ios-timer-title"><div class="finish-inner">
+                <p class="finish-kicker">One-time setup · about 1 minute</p>
+                <h2 id="ios-timer-title">Rest timer on your Lock Screen</h2>
+                <p>iPhones only let their own Clock timer count down on the Lock Screen and in the Dynamic Island. This sets up a tiny shortcut so Ground Up can start that timer for you with your exact rest time.</p>
+                <ol class="ios-steps">
+                    <li>Open the <strong>Shortcuts</strong> app and tap <strong>+</strong> to make a new shortcut.</li>
+                    <li>Tap <strong>Search Actions</strong>, type <strong>Start Timer</strong>, and tap it.</li>
+                    <li>In the action, tap the number (it says 30), then tap <strong>Select Variable</strong> and pick <strong>Shortcut Input</strong>.</li>
+                    <li>Tap <strong>minutes</strong> and change it to <strong>seconds</strong>.</li>
+                    <li>Tap the name at the top, rename it exactly <strong>${SHORTCUT}</strong>, and tap <strong>Done</strong>.</li>
+                </ol>
+                <p class="finish-tip">After that, tap <strong>Lock Screen timer</strong> during any rest. Your phone switches to Shortcuts for a moment to start the timer; swipe back to Ground Up. Lock your phone and the countdown is there. If you finish resting early, stop the timer from the Lock Screen.</p>
+                <div class="finish-actions">
+                    <button type="button" class="btn btn-primary" data-ios-go>It's set up. Start my timer</button>
+                    <button type="button" class="btn" data-ios-close>Not now</button>
+                </div>
+            </div></dialog>`);
+            dlg = document.getElementById("ios-timer-setup");
+            dlg.addEventListener("click", (e) => {
+                const shut = () => { if (dlg.open && typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); };
+                if (e.target.closest("[data-ios-go]")) { shut(); runShortcut(); }
+                else if (e.target.closest("[data-ios-close]") || e.target === dlg) shut();
+            });
+        }
+        if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+    });
     // While the timer is up, keep room for it so it never covers the set boxes you're typing in
     const room = () => {
         const h = box.hidden ? 0 : Math.ceil(box.getBoundingClientRect().height);
@@ -3440,7 +3484,8 @@ function setupRestTimer() {
         restName = name || "";
         label.textContent = name ? `Rest · ${name}` : "Rest";
         atEl.textContent = `Next set at ${new Date(endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
-        alertsBtn.hidden = !canAsk();
+        alertsBtn.hidden = !canAsk() || IS_IOS;
+        iosBtn.hidden = !IS_IOS;
         box.hidden = false;
         box.classList.remove("is-done");
         announce.textContent = "";

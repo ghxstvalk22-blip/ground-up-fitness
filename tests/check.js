@@ -1234,6 +1234,25 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // iPhone: the rest timer can start the iPhone's own Clock timer (Lock Screen countdown) through a Shortcut
+        {
+            const ctx = await browser.newContext({ viewport, userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1" });
+            const page = await ctx.newPage();
+            const errors = [];
+            page.on("pageerror", (e) => errors.push(e.message));
+            await page.route(/script\.js/, (r) => r.fulfill({ contentType: "application/javascript", body: fs.readFileSync(path.join(ROOT, "script.js"), "utf8").replace(/const COACH_AI_URL = "[^"]*";/, 'const COACH_AI_URL = "";') }));
+            await page.goto(url("programs.html", "#program-beginner-3"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            await page.locator(".rest-btn").first().click();
+            check(await page.locator("#rest-ios").isVisible(), "on iPhone the rest timer offers a Lock Screen timer");
+            await page.click("#rest-ios");
+            check(await page.locator("#ios-timer-setup").isVisible() && /Ground Up Rest/.test(await page.locator("#ios-timer-setup").textContent()), "the first time, it shows the one-time Shortcut setup");
+            check(await page.evaluate(() => restShortcutUrl(90)) === "shortcuts://run-shortcut?name=Ground%20Up%20Rest&input=text&text=90", "the Lock Screen timer opens the Shortcut with the seconds left");
+            await page.click("[data-ios-close]").catch(() => {});
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await ctx.close();
+        }
+
         // Cancel workout hides the plan until you tap Continue
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);

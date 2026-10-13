@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Rest timer on your iPhone Lock Screen)
+
+- **Lock Screen timer (iPhone).** The rest timer now has a **Lock Screen timer** button. It starts your iPhone's own Clock timer with the exact rest you have left, so the countdown shows on your Lock Screen and in the Dynamic Island when you leave the app, and it rings when rest is over. (iPhones only allow their own Clock timer to count down there; web apps can't.)
+- **One-time setup:** the first tap shows 5 short steps to make a tiny shortcut called "Ground Up Rest" in the Shortcuts app. After that, it's one tap during any rest. Your phone switches to Shortcuts for a moment to start the timer; swipe back to Ground Up.
+
 ## 2026-10-13 (Smarter weight jumps, research-based sets and reps, and ± sets on your plan)
 
 - **Next time's weight is smarter.** The app looks at every set you did last time:
