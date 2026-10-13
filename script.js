@@ -62,6 +62,7 @@ const FEATURES = [
     setupChecklists,
     setupRestTimer,
     setupLibrary,
+    setupAddToWorkout,
     setupMuscleMap,
     setupLevelBar,
     setupStartingPoint,
@@ -1987,6 +1988,7 @@ function showToast(title, text) {
         box = document.getElementById("toast");
         box.querySelector(".toast-close").addEventListener("click", () => { box.hidden = true; });
     }
+    box.querySelectorAll(".toast-link").forEach((l) => l.remove());
     box.querySelector("strong").textContent = title;
     box.querySelector("span").textContent = text;
     box.hidden = false;
@@ -2259,6 +2261,13 @@ function setupPrograms() {
     const custom = loadCustomWorkout();
     if (custom) PROGRAMS.custom = custom;
 
+    // An exercise added from a how-to while on this page: show it right away
+    window.addEventListener("customchange", () => {
+        const mine = loadCustomWorkout();
+        if (!mine) return;
+        PROGRAMS.custom = mine;
+        if (state.goal === "custom") { state.days = Number(Object.keys(mine.plans)[0]); render({ syncUrl: true }); }
+    });
     // Open on the plan this person used last time
     const last = store.get("gu-last-plan", {}) || {};
     const state = { goal: PROGRAMS[last.goal] ? last.goal : "beginner", days: Number(last.days) || 3, week: null };
@@ -2378,7 +2387,9 @@ function setupPrograms() {
                 <ul class="ex-list">
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
                 </ul>
-                ${state.week === currentWeek() ? (() => { const doneToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === isoDate(new Date()) && x.plan === state.goal && x.day === di); return `<div class="day-finish"><button type="button" class="btn btn-primary${doneToday ? " is-saved" : ""}" data-finish="${di}">${doneToday ? "Finished today \u2713 · See summary" : "Finish workout"}</button></div>`; })() : ""}
+                ${state.week === currentWeek() ? (() => { const doneToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === isoDate(new Date()) && x.plan === state.goal && x.day === di); return doneToday
+                    ? `<div class="day-finish is-done"><p class="day-finish-note">Finished today \u2713</p><button type="button" class="btn btn-primary" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>${state.goal === "custom" && thisWeek[di + 1] ? `<button type="button" class="text-button" data-edit-day="${di + 1}">Edit Day ${di + 2} first</button>` : ""}<button type="button" class="text-button" data-finish="${di}">See summary</button></div>`
+                    : `<div class="day-finish"><button type="button" class="btn btn-primary" data-finish="${di}">Finish workout</button></div>`; })() : ""}
             </article>`).join("");
 
         updateProgress();
@@ -2547,6 +2558,32 @@ function setupPrograms() {
         }
     }
 
+    /* ----- Continue: from a finished day to the next one (or build it, or next week) ----- */
+    function continueFrom(di) {
+        const list = weekDays(PROGRAMS[state.goal].plans[state.days], state.week);
+        if (list[di + 1]) {
+            const card = els.grid.querySelector(`.day-card[data-day="${di + 1}"]`);
+            if (card) {
+                card.scrollIntoView({ behavior: "smooth", block: "start" });
+                card.classList.add("is-flash");
+                setTimeout(() => card.classList.remove("is-flash"), 1600);
+                const first = card.querySelector("[data-log], .rest-btn, input");
+                if (first) setTimeout(() => first.focus({ preventScroll: true }), 500);
+            }
+        } else if (state.goal === "custom" && list.length < 7) {
+            addCustomDay();
+        } else {
+            goToWeek(state.week + 1);
+            window.scrollTo({ top: els.grid.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" });
+        }
+    }
+    const continueLabel = (di) => {
+        const list = weekDays(PROGRAMS[state.goal].plans[state.days], state.week);
+        if (list[di + 1]) return `Continue to Day ${di + 2}: ${list[di + 1].title}`;
+        if (state.goal === "custom" && list.length < 7) return `Continue to Day ${di + 2}: build it`;
+        return "Week done. Go to next week";
+    };
+
     /* ----- Finish workout: save the session, celebrate, and show next time's targets ----- */
     function finishWorkout(di) {
         const profile = getProfile(), unit = profile.unit;
@@ -2579,8 +2616,7 @@ function setupPrograms() {
         updateProgress();
         window.dispatchEvent(new CustomEvent("logchange", { detail: { finished: true } }));
         // Saved. Say so on the button right away, whatever happens with the pop-up
-        const finBtn = els.grid.querySelector(`[data-finish="${di}"]`);
-        if (finBtn) { finBtn.textContent = "Workout saved \u2713 · See summary"; finBtn.classList.add("is-saved"); }
+        render();
         try { showFinish(); }
         catch (err) { showToast("Workout saved. Good job!", lines.filter((l) => l.next).slice(0, 3).map((l) => `${l.name}: ${l.next}`).join(" · ") || "Your targets update every time you log."); }
         function showFinish() {
@@ -2594,13 +2630,10 @@ function setupPrograms() {
             dlg = document.getElementById("finish-dialog");
             dlg.addEventListener("click", (ev) => {
                 const shut = () => { if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); document.body.classList.remove("finish-open"); };
-                const go = ev.target.closest("[data-finish-goto]");
-                if (go) {
-                    shut();
-                    const card = els.grid.querySelector(`.day-card[data-day="${go.dataset.finishGoto}"]`);
-                    if (card) { card.scrollIntoView({ behavior: "smooth", block: "start" }); card.classList.add("is-flash"); setTimeout(() => card.classList.remove("is-flash"), 1600); }
-                    return;
-                }
+                const go = ev.target.closest("[data-finish-continue]");
+                if (go) { shut(); continueFrom(Number(go.dataset.finishContinue)); return; }
+                const ed = ev.target.closest("[data-finish-editday]");
+                if (ed) { shut(); editCustomWorkout(Number(ed.dataset.finishEditday)); return; }
                 if (ev.target.closest("[data-finish-addday]")) { shut(); addCustomDay(); return; }
                 if (ev.target.closest("[data-finish-plans]")) {
                     shut();
@@ -2630,11 +2663,11 @@ function setupPrograms() {
             ${sets ? "" : `<p class="finish-tip">Tip: log your weight and reps on each exercise (Log sets) and next time you'll get an exact weight to aim for.</p>`}
             <h3>What's next?</h3>
             <div class="finish-nextup">
-                ${nextDay ? `<button type="button" class="btn btn-primary" data-finish-goto="${di + 1}">Day ${di + 2}: ${escapeHtml(nextDay.title)} &rarr;</button>` : ""}
-                ${state.goal === "custom"
-                    ? (dayList.length < 7 ? `<button type="button" class="btn${nextDay ? "" : " btn-primary"}" data-finish-addday>Build Day ${dayList.length + 1}: a new workout</button>` : "")
-                    : `<a class="btn" href="programs.html#build">Build my own workout</a>`}
-                <button type="button" class="btn" data-finish-plans>Pick a workout plan</button>
+                <button type="button" class="btn btn-primary" data-finish-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>
+                ${state.goal === "custom" && nextDay ? `<button type="button" class="btn" data-finish-editday="${di + 1}">Edit Day ${di + 2} first</button>` : ""}
+                ${state.goal === "custom" && nextDay && dayList.length < 7 ? `<button type="button" class="btn" data-finish-addday>+ Add Day ${dayList.length + 1}</button>` : ""}
+                ${state.goal === "custom" ? "" : `<a class="btn" href="programs.html#build">Build my own workout</a>`}
+                <button type="button" class="btn" data-finish-plans>Pick a different plan</button>
             </div>
             <p class="finish-saved">Saved on this device${typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG.apiKey ? " and to your account when you're signed in" : ""}. Your targets update every time you log.</p>
             <div class="finish-actions">
@@ -2663,6 +2696,8 @@ function setupPrograms() {
     els.grid.addEventListener("click", (e) => {
         const fin = e.target.closest("[data-finish]");
         if (fin) { finishWorkout(Number(fin.dataset.finish)); return; }
+        const cont = e.target.closest("[data-continue]");
+        if (cont) { continueFrom(Number(cont.dataset.continue)); return; }
         const ed = e.target.closest("[data-edit-day]");
         if (ed) { editCustomWorkout(Number(ed.dataset.editDay)); return; }
         const rm = e.target.closest("[data-remove-day]");
@@ -3154,7 +3189,10 @@ function setupLibrary() {
                     <p class="library-eq">${escapeHtml(x.eq)}</p>
                     ${x.aka ? `<p class="library-aka">Also called: ${escapeHtml(x.aka)}</p>` : ""}
                     <p class="library-tip">${escapeHtml(x.tip)}</p>
-                    <button type="button" class="btn btn-small" data-howto="${escapeHtml(n)}">How to do it</button>
+                    <div class="library-actions">
+                        <button type="button" class="btn btn-small" data-howto="${escapeHtml(n)}">How to do it</button>
+                        <button type="button" class="btn btn-small btn-primary" data-add-ex="${escapeHtml(n)}" aria-label="Add ${escapeHtml(n)} to my workout">+ Add</button>
+                    </div>
                 </li>`;
         }).join("");
     }
@@ -3177,6 +3215,135 @@ function setupLibrary() {
     const match = radios.find((r) => r.value && r.value === fromHash);
     if (match) match.checked = true;
     render();
+}
+
+/* =========================================================
+   FEATURE: Add to my workout (Exercise library, Muscle map, how-tos)
+   Any [data-add-ex="Name"] button asks "Add this to your workout this
+   week?" and which day of My workout it goes on (or a new day). The
+   exercise gets the same sets, reps, and starting weight as the builder.
+   ========================================================= */
+// Put one exercise into My workout. dayIndex = a day number from 0, or "new". Returns the day it went to (0-based) or -1.
+function addExerciseToCustom(name, dayIndex) {
+    if (typeof EXERCISES !== "object" || !EXERCISES[name]) return -1;
+    let days = customDaysRaw();
+    const oldN = days.length;
+    const week = Math.max(1, weekOf(programStart("custom")));
+    const done = store.get(`gu-progress-custom-${oldN}-w${week}`, []) || [];
+    const base = builderDefault(name, (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle");
+    const item = { n: name, d: builderDose(base), rest: builderKind(name) === "time" ? "" : base.rest };
+    let di;
+    if (dayIndex === "new" || !oldN) {
+        if (oldN >= 7) return -1;
+        days.push({ title: oldN ? `Day ${oldN + 1}` : "My workout", items: [item] });
+        di = days.length - 1;
+    } else {
+        di = Math.min(Math.max(0, Number(dayIndex) || 0), oldN - 1);
+        if (days[di].items.some((x) => x && x.n === name)) return di;
+        if (days[di].items.length >= 12) return -1;
+        days[di].items.push(item); // added at the end, so this week's check-offs stay put
+    }
+    if (days.length !== oldN) {
+        store.remove(`gu-progress-custom-${oldN}-w${week}`);
+        store.set(`gu-progress-custom-${days.length}-w${week}`, done);
+    }
+    saveCustomDays(days);
+    // Start using My workout if it's new, or if it's already the plan you're on
+    const last = store.get("gu-last-plan");
+    if (!oldN && !(last && last.goal && last.goal !== "custom") || (last && last.goal === "custom")) store.set("gu-last-plan", { goal: "custom", days: days.length });
+    window.dispatchEvent(new CustomEvent("customchange"));
+    return di;
+}
+
+function setupAddToWorkout() {
+    if (typeof EXERCISES !== "object") return;
+    let dlg = null, current = "", opener = null;
+    const shut = () => { if (!dlg) return; if (typeof dlg.close === "function" && dlg.open) dlg.close(); else dlg.removeAttribute("open"); if (opener && document.contains(opener)) opener.focus(); };
+
+    function open(name) {
+        if (!EXERCISES[name]) return;
+        current = name;
+        if (!dlg) {
+            document.body.insertAdjacentHTML("beforeend", `<dialog id="add-dialog" class="finish-dialog add-dialog" aria-labelledby="add-title"><div class="finish-inner"></div></dialog>`);
+            dlg = document.getElementById("add-dialog");
+            dlg.addEventListener("click", (e) => {
+                if (e.target === dlg || e.target.closest("[data-add-cancel]")) { shut(); return; }
+                if (e.target.closest("[data-add-confirm]")) confirm();
+            });
+            dlg.addEventListener("change", (e) => { if (e.target.name === "add-day") note(); });
+        }
+        const days = customDaysRaw();
+        const last = store.get("gu-last-plan");
+        const onOther = last && last.goal && last.goal !== "custom" && PROGRAMS[last.goal];
+        let pick = 0;
+        if (last && last.goal === "custom") { const info = currentPlanInfo(); if (info && !info.weekDone) pick = info.di; }
+        const base = builderDefault(name, (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle");
+        let weight = builderWeight(base);
+        if (weight === "NEED_BODYWEIGHT") weight = "Pick a weight you could lift a couple more times than the top of the range. Log it and you'll get a target next time.";
+        const choices = days.length
+            ? days.map((d, i) => `<label class="add-day"><input type="radio" name="add-day" value="${i}"${i === pick ? " checked" : ""}><span><strong>Day ${i + 1}</strong>${d.title && d.title !== `Day ${i + 1}` ? `: ${escapeHtml(String(d.title).slice(0, 40))}` : ""} <small>${d.items.length} exercise${d.items.length === 1 ? "" : "s"}</small></span></label>`).join("")
+                + (days.length < 7 ? `<label class="add-day"><input type="radio" name="add-day" value="new"><span><strong>New day</strong> <small>Start Day ${days.length + 1} with it</small></span></label>` : "")
+            : "";
+        dlg.querySelector(".finish-inner").innerHTML = `
+            <p class="finish-kicker">Add to my workout</p>
+            <h2 id="add-title">${escapeHtml(name)}</h2>
+            <p>${days.length ? "Would you like to add this to your workout for this week? Pick the day." : "Would you like to start your own workout with this? You can add more exercises from the library or the muscle map."}</p>
+            <ul class="finish-next"><li>${equipIcon(name)}<span><strong>${escapeHtml(builderDose(base))}</strong><small>${escapeHtml(weight)}</small></span></li></ul>
+            ${days.length ? `<fieldset class="add-days"><legend>Which day?</legend>${choices}</fieldset>` : ""}
+            ${onOther ? `<p class="finish-tip">This goes into My workout, your own plan. ${escapeHtml(PROGRAMS[last.goal].name)} stays as it is.</p>` : ""}
+            <p class="add-note finish-tip" role="status"></p>
+            <div class="finish-actions">
+                <button type="button" class="btn btn-primary" data-add-confirm>${days.length ? "Add it" : "Start my workout"}</button>
+                <button type="button" class="btn" data-add-cancel>Not now</button>
+            </div>`;
+        note();
+        if (typeof dlg.showModal === "function") { if (!dlg.open) dlg.showModal(); } else dlg.setAttribute("open", "");
+        const first = dlg.querySelector("input[name=add-day]:checked") || dlg.querySelector("[data-add-confirm]");
+        first.focus();
+    }
+    // A heads-up when the day already has it, or already has plenty for that muscle (it never blocks)
+    function note() {
+        const out = dlg.querySelector(".add-note");
+        const choice = (dlg.querySelector("input[name=add-day]:checked") || {}).value;
+        const day = customDaysRaw()[Number(choice)];
+        out.textContent = "";
+        if (!day || choice === "new") return;
+        if (day.items.some((x) => x && x.n === current)) { out.textContent = "It's already on this day."; return; }
+        const muscle = builderMuscle(current);
+        const items = day.items.filter((x) => x && EXERCISES[x.n]);
+        const trained = new Set(items.map((x) => builderMuscle(x.n)).concat(muscle)).size;
+        const same = items.filter((x) => builderMuscle(x.n) === muscle).length;
+        const goal = (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle";
+        if (muscle && same >= builderLimit(goal, muscle, trained)) out.textContent = `Heads-up: this day already has ${same} exercise${same === 1 ? "" : "s"} for that muscle. More usually doesn't mean more results, but you can still add it.`;
+        else if (items.length >= 8) out.textContent = `Heads-up: this day already has ${items.length} exercises. That's a long session.`;
+    }
+    function confirm() {
+        const choice = (dlg.querySelector("input[name=add-day]:checked") || {}).value;
+        const before = customDaysRaw().length;
+        const di = addExerciseToCustom(current, choice === undefined ? 0 : choice === "new" ? "new" : Number(choice));
+        if (di < 0) { dlg.querySelector(".add-note").textContent = "That day is full (12 exercises). Pick another day or start a new one."; return; }
+        const days = customDaysRaw();
+        shut();
+        const n = days.length;
+        showToast(`Added to Day ${di + 1}`, `${current} is in My workout${n > before ? ` (now ${n} day${n === 1 ? "" : "s"})` : ""}. Open Plans to do it.`);
+        const toast = document.getElementById("toast");
+        if (toast && !toast.querySelector(".toast-link")) toast.insertAdjacentHTML("beforeend", '<a class="toast-link text-link" href="programs.html">Open my workout</a>');
+        const link = toast && toast.querySelector(".toast-link");
+        if (link) link.href = `programs.html?a=${Date.now()}#program-custom-${n}`;
+        // refresh the plan bar so it shows the change
+        const bar = document.getElementById("planbar");
+        if (bar) bar.remove();
+        setupPlanBar();
+    }
+
+    document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-add-ex]");
+        if (!btn || !btn.dataset.addEx) return;
+        const howto = document.getElementById("howto");
+        opener = howto && howto.contains(btn) ? null : btn;
+        if (howto && howto.open && howto.contains(btn)) howto.close();
+        open(btn.dataset.addEx);
+    });
 }
 
 /* =========================================================
@@ -5182,7 +5349,7 @@ function setupMuscleMap() {
         root.querySelectorAll("[data-mm-pick]").forEach((b) => b.setAttribute("aria-pressed", String(Boolean(g) && b.dataset.mmPick === g.id)));
         draw();
         if (!g) { panel.innerHTML = panelIntro; return; }
-        const exList = (ex) => `<ul class="mm-ex">${ex.map((n) => `<li><button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button></li>`).join("")}</ul>`;
+        const exList = (ex) => `<ul class="mm-ex">${ex.map((n) => `<li><button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button><button type="button" class="chip mm-add" data-add-ex="${escapeHtml(n)}" aria-label="Add ${escapeHtml(n)} to my workout">+</button></li>`).join("")}</ul>`;
         const single = g.parts.length === 1;
         const picked = sel.part ? g.parts.find((p) => p.id === sel.part) : null;
         // the top pick for each part, so one list covers the whole muscle
@@ -5196,8 +5363,9 @@ function setupMuscleMap() {
             <h3 class="mm-title"><span class="mm-dot" aria-hidden="true"></span>${escapeHtml(picked && !single ? picked.name : g.name)}</h3>
             ${picked && !single ? `<p class="mm-aka">${lvl >= 2 ? `${escapeHtml(picked.aka)} &middot; ` : ""}part of the ${escapeHtml(g.name.toLowerCase())}</p>` : ""}
             <p>${escapeHtml(g.does)}</p>
-            <h4>Best exercises</h4>${exList(picked && !single ? picked.ex : best)}
-            ${single ? (lvl >= 2 ? `<p class="mm-aka">${escapeHtml(g.parts[0].aka)}: ${escapeHtml(g.parts[0].where)}</p>` : "") : lvl < 1 ? `<p class="mm-aka">Want to see its ${g.parts.length} ${partWord}? <button type="button" class="text-button" data-set-level="Intermediate">Switch to Intermediate</button></p>` : `
+            <h4>Best exercises</h4>
+            <p class="mm-add-hint">Tap <strong>+</strong> to add one to your workout.</p>${exList(picked && !single ? picked.ex : best)}
+            ${single ? (lvl >= 2 ? `<p class="mm-aka">${escapeHtml(g.parts[0].aka)}: ${escapeHtml(g.parts[0].where)}</p>` : "") : `
             <details class="mm-parts-wrap"${picked || partsOpen || lvl >= 2 ? " open" : ""}>
             <summary>See each part (${g.parts.length} ${partWord})</summary>
             <ol class="mm-parts">${g.parts.map((p) => `
@@ -5732,8 +5900,9 @@ function setupExerciseGuide() {
             </div>
             <button type="button" class="howto-close" id="howto-close" aria-label="Close">&times;</button>
         </div>
-        <div class="howto-level" data-level-bar data-compact></div>
+        ${document.body.dataset.page === "exercises" ? "" : '<div class="howto-level" data-level-bar data-compact></div>'}
         <div class="howto-body" id="howto-body"></div>
+        <div class="howto-add"><button type="button" class="btn btn-primary" id="howto-add" data-add-ex="">+ Add to my workout</button></div>
     </div>
 </dialog>`);
     const dialog = document.getElementById("howto");
@@ -5774,6 +5943,7 @@ function setupExerciseGuide() {
         const demo = `https://www.youtube.com/results?search_query=${encodeURIComponent(name + " proper form")}`;
         const fam = (familyFor(name) || []).filter((n) => n !== name);
         document.getElementById("howto-title").textContent = name;
+        document.getElementById("howto-add").dataset.addEx = name;
         document.getElementById("howto-muscles").textContent = x.m;
         document.getElementById("howto-eq").textContent = x.eq;
         document.getElementById("howto-body").innerHTML = `
@@ -5792,7 +5962,7 @@ function setupExerciseGuide() {
             ${lvl >= 2 ? deeper(name, x).adv : ""}
             ${lvl >= 2 && fam.length ? `<h3>Works the same muscles</h3><p class="howto-alts">${fam.map((n) => `<button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join(" ")}</p>` : ""}
             ${lvl >= 3 ? deeper(name, x).exp : ""}
-            ${lvl < 3 ? `<p class="howto-more">Want more detail? Switch the detail level above to ${LEVELS[lvl + 1]}.</p>` : ""}
+            ${lvl < 3 && document.body.dataset.page !== "exercises" ? `<p class="howto-more">Want more detail? Switch the detail level above to ${LEVELS[lvl + 1]}.</p>` : ""}
             <p class="fine-print">Stop if something hurts (sharp or joint pain, not muscle burn). Form guides are general advice, not medical advice.</p>`;
         if (!dialog.open) dialog.showModal();
         dialog.querySelector(".howto-inner").scrollTop = 0;

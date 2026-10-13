@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Continue to the next day, and add exercises from the library)
+
+- **Continue to Day 2:** once you finish a day, its card says "Finished today" and gives you one big **Continue to Day 2** button (it takes you straight to that day, or helps you build it if it doesn't exist yet). On your own plan there's also **Edit Day 2 first**, so you can change the next day and keep going. After the last day of the week, it moves you to next week.
+- **Add any exercise to your workout:** every exercise in the library, every exercise in the Muscle map (the **+** button), and every How-to now has **Add**. It asks "Would you like to add this to your workout for this week?", lets you pick the day (or start a new day), and fills in sets, reps and a starting weight. It gives a heads-up if that day already has plenty for that muscle, but never blocks you.
+- **Simpler library:** the level picker is gone from the Exercise library, and the Muscle map shows each part of a muscle (like the upper, middle and lower chest) for everyone, so you can choose exactly what to hit.
+
 ## 2026-10-13 (Day 2 and a personal progress page)
 
 - **What's next after a workout:** the "Good job" screen now has a **What's next?** section. Go straight to Day 2 of your plan, **build Day 2** as a brand-new workout, or pick a ready-made workout plan.
