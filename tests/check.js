@@ -491,6 +491,11 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(300);
             check(/Dumbbells only/.test(await page.locator("#program-head").textContent()) && await page.locator(".ex-name .equip-db").count() >= 1, "picking Dumbbells switches to the dumbbell plan");
             await page.evaluate(() => { ["gu-profile", "gu-level", "gu-last-plan"].forEach((k) => localStorage.removeItem(k)); });
+            // My progress is personal: your name and your next workout
+            await page.evaluate(() => { const p = JSON.parse(localStorage.getItem("gu-profile") || "{}"); p.name = "Chris"; localStorage.setItem("gu-profile", JSON.stringify(p)); });
+            await page.goto(url("me.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(/Chris's progress/i.test(await page.locator(".page-banner h1").textContent()) && /Up next/i.test(await page.locator("#me-dash").textContent()), "My progress shows your name and your next workout");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }
@@ -581,6 +586,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(300);
             check(await page.locator("#finish-dialog").isVisible(), "the summary still shows on browsers without pop-up support");
             await page.click("[data-finish-close]");
+            check(await page.locator("#finish-dialog [data-finish-addday]").count() === 1 && await page.locator("#finish-dialog [data-finish-plans]").count() === 1, "after finishing, you can build Day 2 or pick a plan");
             await page.evaluate(() => { localStorage.clear(); });
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();

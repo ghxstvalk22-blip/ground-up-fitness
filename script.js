@@ -68,6 +68,7 @@ const FEATURES = [
     setupBuilder,
     setupPlanBar,
     setupSessions,
+    setupMyDashboard,
     setupApp,
     setupCoach,
     setupWeightTrend,
@@ -1739,6 +1740,7 @@ function getProfile() {
     return {
         experience: pick(p.experience, ["new", "some", "lots"], "new"),
         bodyweight: bw > 0 && bw < 1000 ? String(p.bodyweight) : "",
+        name: typeof p.name === "string" && /^[\p{L}' .-]{1,30}$/u.test(p.name.trim()) ? p.name.trim() : "",
         unit: pick(p.unit, ["lb", "kg"], store.get("gu-unit") === "kg" ? "kg" : "lb"),
         focus: pick(p.focus, ["", "shoulders", "back", "chest", "arms", "legs"], ""),
         sex: pick(p.sex, ["", "female", "male"], ""),
@@ -1775,14 +1777,28 @@ function setLevel(l) {
 /* ---------- "My workout" (built by Coach) ----------
    Saved on this device as "gu-custom": { title, items: [{ n, d, rest }] }. Only exercises
    that exist in the library get through, and text is checked before it's used. */
-function loadCustomWorkout() {
+// My workout can have up to 7 days: { days: [{ title, items }] } (older saves had one { title, items })
+function customDaysRaw() {
     const raw = store.get("gu-custom");
-    if (!raw || typeof raw !== "object" || !Array.isArray(raw.items) || typeof EXERCISES !== "object") return null;
+    if (!raw || typeof raw !== "object") return [];
+    const days = Array.isArray(raw.days) ? raw.days : Array.isArray(raw.items) ? [{ title: raw.title, items: raw.items }] : [];
+    return days.filter((d) => d && typeof d === "object" && Array.isArray(d.items)).slice(0, 7);
+}
+function saveCustomDays(days) {
+    const list = days.slice(0, 7);
+    // day 1 is also kept at the top level for older parts of the site
+    store.set("gu-custom", { title: list[0] ? list[0].title : "My workout", items: list[0] ? list[0].items : [], days: list });
+}
+function loadCustomWorkout() {
+    if (typeof EXERCISES !== "object") return null;
     const clean = (v, max) => String(v == null ? "" : v).replace(/[<>]/g, "").slice(0, max);
-    const items = raw.items.filter((x) => x && EXERCISES[x.n]).slice(0, 12)
-        .map((x) => ex(x.n, clean(x.d, 40), clean(x.rest, 20)));
-    if (!items.length) return null;
-    const title = clean(raw.title, 60) || "My workout";
+    const days = customDaysRaw().map((d, i) => ({
+        title: clean(d.title, 60) || (i ? `Day ${i + 1}` : "My workout"),
+        items: d.items.filter((x) => x && EXERCISES[x.n]).slice(0, 12).map((x) => ex(x.n, clean(x.d, 40), clean(x.rest, 20)))
+    })).filter((d) => d.items.length);
+    if (!days.length) return null;
+    const items = days[0].items;
+    const title = days.length > 1 ? `${days.length}-day plan` : days[0].title;
     return {
         level: "Beginner",
         name: "My workout",
@@ -1793,7 +1809,7 @@ function loadCustomWorkout() {
         progression: "Log your sets. Next time you'll get a target for each exercise.",
         rotation: "none",
         waves: false,
-        plans: { 1: { schedule: "Whenever you like.", days: [{ title, items }] } }
+        plans: { [days.length]: { schedule: days.length > 1 ? `${days.length} days a week, with a rest day between when you can.` : "Whenever you like.", days } }
     };
 }
 
@@ -2294,9 +2310,9 @@ function setupPrograms() {
 
         els.head.innerHTML = `
             <div>
-                <h3>${escapeHtml(p.name)} &middot; ${state.goal === "custom" ? "1 session" : `${state.days} days`} <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
+                <h3>${escapeHtml(p.name)} &middot; ${state.goal === "custom" ? (state.days > 1 ? `${state.days} days` : "1 session") : `${state.days} days`} <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
                 <p>${escapeHtml(p.summary)}</p>
-                ${state.goal === "custom" ? `<p class="plan-edit"><button type="button" class="btn btn-small" data-edit-custom>Edit this workout</button> <span>Swap, add, or remove exercises. Your logged sets stay.</span></p>` : ""}
+                ${state.goal === "custom" ? `<p class="plan-edit">${state.days < 7 ? `<button type="button" class="btn btn-small" data-add-day>+ Add Day ${state.days + 1}</button>` : ""} <span>Tap Edit on a day to swap, add, or remove exercises. Your logged sets stay.</span></p>` : ""}
                 ${p.source ? `<p class="plan-source">Based on <a href="${p.source[1]}" target="_blank" rel="noopener">${escapeHtml(p.source[0])}</a>. Adapted for this site; not affiliated.</p>` : ""}
             </div>
             ${!levelAtLeast("Intermediate") ? `<p class="plan-simple"><strong>When:</strong> ${escapeHtml(plan.schedule)} <strong>How hard:</strong> ${escapeHtml(p.effort)}</p>` : ""}
@@ -2357,6 +2373,7 @@ function setupPrograms() {
                 <header>
                     <span class="day-num">Day ${di + 1} <span class="day-status"></span></span>
                     <h4>${escapeHtml(day.title)}</h4>
+                    ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button>${thisWeek.length > 1 ? `<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
                 </header>
                 <ul class="ex-list">
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
@@ -2569,11 +2586,28 @@ function setupPrograms() {
         function showFinish() {
         const prs = getPRs().filter((r) => r.date === today);
         const streak = weekStreak();
+        const dayList = weekDays(p.plans[state.days], state.week);
+        const nextDay = dayList[di + 1] || null;
         let dlg = document.getElementById("finish-dialog");
         if (!dlg) {
             document.body.insertAdjacentHTML("beforeend", `<dialog id="finish-dialog" class="finish-dialog" aria-labelledby="finish-title"><div class="finish-inner"></div></dialog>`);
             dlg = document.getElementById("finish-dialog");
             dlg.addEventListener("click", (ev) => {
+                const shut = () => { if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); document.body.classList.remove("finish-open"); };
+                const go = ev.target.closest("[data-finish-goto]");
+                if (go) {
+                    shut();
+                    const card = els.grid.querySelector(`.day-card[data-day="${go.dataset.finishGoto}"]`);
+                    if (card) { card.scrollIntoView({ behavior: "smooth", block: "start" }); card.classList.add("is-flash"); setTimeout(() => card.classList.remove("is-flash"), 1600); }
+                    return;
+                }
+                if (ev.target.closest("[data-finish-addday]")) { shut(); addCustomDay(); return; }
+                if (ev.target.closest("[data-finish-plans]")) {
+                    shut();
+                    const picker = document.getElementById("all-plans") || document.getElementById("goal-picker");
+                    if (picker) picker.scrollIntoView({ behavior: "smooth", block: "start" });
+                    return;
+                }
                 if (ev.target === dlg || ev.target.closest("[data-finish-close]")) {
                     if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open");
                     document.body.classList.remove("finish-open");
@@ -2594,10 +2628,18 @@ function setupPrograms() {
             <h3>Next time</h3>
             <ul class="finish-next">${lines.map((l) => `<li>${equipIcon(l.name)}<span><strong>${escapeHtml(l.name)}</strong>${l.did ? `<small>Today: ${escapeHtml(l.did)}</small>` : `<small>Not logged today</small>`}</span><em class="${l.up ? "is-up" : ""}">${escapeHtml(l.next || "Log your sets to get a target")}</em></li>`).join("")}</ul>
             ${sets ? "" : `<p class="finish-tip">Tip: log your weight and reps on each exercise (Log sets) and next time you'll get an exact weight to aim for.</p>`}
+            <h3>What's next?</h3>
+            <div class="finish-nextup">
+                ${nextDay ? `<button type="button" class="btn btn-primary" data-finish-goto="${di + 1}">Day ${di + 2}: ${escapeHtml(nextDay.title)} &rarr;</button>` : ""}
+                ${state.goal === "custom"
+                    ? (dayList.length < 7 ? `<button type="button" class="btn${nextDay ? "" : " btn-primary"}" data-finish-addday>Build Day ${dayList.length + 1}: a new workout</button>` : "")
+                    : `<a class="btn" href="programs.html#build">Build my own workout</a>`}
+                <button type="button" class="btn" data-finish-plans>Pick a workout plan</button>
+            </div>
             <p class="finish-saved">Saved on this device${typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG.apiKey ? " and to your account when you're signed in" : ""}. Your targets update every time you log.</p>
             <div class="finish-actions">
-                <a class="btn btn-primary" href="me.html">See my progress</a>
-                <button type="button" class="btn" data-finish-close>Done</button>
+                <a class="btn" href="me.html">See my progress</a>
+                <button type="button" class="btn" data-finish-close>Done for today</button>
             </div>`;
         if (dlg.open) dlg.close();
         if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e2) { dlg.setAttribute("open", ""); } }
@@ -2621,6 +2663,19 @@ function setupPrograms() {
     els.grid.addEventListener("click", (e) => {
         const fin = e.target.closest("[data-finish]");
         if (fin) { finishWorkout(Number(fin.dataset.finish)); return; }
+        const ed = e.target.closest("[data-edit-day]");
+        if (ed) { editCustomWorkout(Number(ed.dataset.editDay)); return; }
+        const rm = e.target.closest("[data-remove-day]");
+        if (rm) {
+            const i = Number(rm.dataset.removeDay), days = customDaysRaw();
+            if (days.length > 1 && days[i] && window.confirm(`Remove Day ${i + 1} (${days[i].title || "workout"}) from My workout? Your logged sets stay.`)) {
+                days.splice(i, 1);
+                saveCustomDays(days);
+                store.set("gu-last-plan", { goal: "custom", days: days.length });
+                location.assign(`programs.html?w=${Date.now()}#program-custom-${days.length}`);
+            }
+            return;
+        }
         const swapBtn = e.target.closest("[data-swap]");
         if (swapBtn) {
             const [di, xi] = swapBtn.dataset.swap.split("-").map(Number);
@@ -2743,7 +2798,10 @@ function setupPrograms() {
         state.days = Number(r.value);
         render({ syncUrl: true });
     }));
-    els.head.addEventListener("click", (e) => { if (e.target.closest("[data-edit-custom]")) editCustomWorkout(); });
+    els.head.addEventListener("click", (e) => {
+        if (e.target.closest("[data-edit-custom]")) editCustomWorkout(0);
+        if (e.target.closest("[data-add-day]")) addCustomDay();
+    });
     const homeKitBox = document.getElementById("home-kit");
     if (homeKitBox) homeKitBox.addEventListener("change", (e) => {
         if (e.target.name !== "home-kit" || !PROGRAMS[e.target.value]) return;
@@ -4039,6 +4097,7 @@ function setupCoach() {
         if (!last || !last.items.length) return;
         const unit = last.unit || getProfile().unit;
         store.set("gu-custom", { title: last.title, items: last.items.map((x) => ({ n: x.n, d: x.w ? `${x.d} at ${x.guess ? "about " : ""}${trimNum(x.w)} ${unit}${x.each ? " each" : ""}` : x.d, rest: x.rest })) });
+        saveCustomDays([store.get("gu-custom")]);
         store.set("gu-last-plan", { goal: "custom", days: 1 });
         say(`<p>Saved as <strong>My workout</strong>. Opening it on the Plans page, where you can log your sets.</p>`);
         if (phone()) store.set(OPEN_KEY, false);
@@ -4131,6 +4190,71 @@ function setupApp() {
    Beginner / Intermediate / Advanced / Expert switch.
    ========================================================= */
 /* =========================================================
+   FEATURE: Your dashboard (top of My progress)
+   A personal summary: your name, level, the plan you're on and your
+   next workout, this week, your last workout, and your best lifts.
+   ========================================================= */
+function setupMyDashboard() {
+    const box = document.getElementById("me-dash");
+    if (!box) return;
+    const h1 = document.querySelector(".page-banner h1");
+    function render() {
+        const prof = getProfile(), unit = prof.unit, lvl = getLevel();
+        if (h1) h1.textContent = prof.name ? `${prof.name}'s progress` : "My progress";
+        const info = currentPlanInfo();
+        const sessions = (store.get("gu-sessions", []) || []).filter((x) => x && typeof x.date === "string");
+        const monday = isoDate(mondayOf(new Date()));
+        const thisWeek = sessions.filter((x) => x.date >= monday);
+        const last = sessions[sessions.length - 1];
+        const log = getLog();
+        const best = Object.keys(log).filter((n) => EXERCISES[n] && !isCardio(n)).map((n) => {
+            const entries = logFor(n).filter((e) => e.sets && e.sets.some((st) => st.w > 0));
+            if (!entries.length) return null;
+            const top = Math.max(...entries.map((e) => sessionBest(e, unit)));
+            const first = sessionBest(entries[0], unit);
+            return { n, top, gain: top - first, sessions: entries.length };
+        }).filter(Boolean).sort((a, b) => b.top - a.top).slice(0, 4);
+        const sets = Object.values(log).reduce((sum, list) => sum + (Array.isArray(list) ? list.reduce((t, e) => t + (e.sets ? e.sets.length : 0), 0) : 0), 0);
+        const streak = weekStreak();
+        const nextTargets = info && !info.weekDone ? info.items.slice(0, 3).map((x) => {
+            const t = isCardio(x.name) ? null : nextTarget(x.name, x.d, unit);
+            return { name: x.name, text: t && t.weight > 0 ? `${trimNum(t.weight)} ${unit} × ${t.reps || parseDose(x.d).high}` : x.d };
+        }) : [];
+        box.innerHTML = `
+            <div class="dash-hello">
+                <p class="kicker">${prof.name ? `Hey ${escapeHtml(prof.name)}` : "Your dashboard"}</p>
+                <h2>${thisWeek.length ? `${thisWeek.length} workout${thisWeek.length === 1 ? "" : "s"} this week. Keep it going.` : sessions.length ? "New week. Let's get the first one in." : "Your progress starts with one workout."}</h2>
+                <p class="dash-meta"><span class="level-tag level-${lvl.toLowerCase()}">${lvl}</span>${prof.bodyweight ? ` · ${escapeHtml(prof.bodyweight)} ${unit}` : ""}${streak >= 2 ? ` · ${streak}-week streak` : ""}${!prof.name ? ` · <a href="#setup">Add your name</a>` : ""}</p>
+            </div>
+            <div class="dash-grid">
+                <article class="dash-card dash-next">
+                    <h3>Up next</h3>
+                    ${info ? `<p class="dash-big">${escapeHtml(info.weekDone ? "Week done" : info.title)}</p>
+                        <p class="dash-sub">${escapeHtml(info.name)}${info.weekDone ? " · next week's plan is ready" : ` · ${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
+                        ${nextTargets.length ? `<ul class="dash-targets">${nextTargets.map((t) => `<li>${equipIcon(t.name)}<span>${escapeHtml(t.name)}</span><strong>${escapeHtml(t.text)}</strong></li>`).join("")}</ul>` : ""}
+                        <a class="btn btn-primary btn-compact" href="${info.href}">${info.weekDone ? "See my plan" : "Start this workout"}</a>`
+                    : `<p class="dash-sub">You're not on a plan yet.</p><a class="btn btn-primary btn-compact" href="programs.html">Pick a plan</a> <a class="btn btn-compact" href="programs.html#build">Build my own</a>`}
+                </article>
+                <article class="dash-card">
+                    <h3>Last workout</h3>
+                    ${last ? `<p class="dash-big">${escapeHtml(String(last.title || "Workout").slice(0, 40))}</p>
+                        <p class="dash-sub">${escapeHtml(shortDate(parseIso(last.date)))} · ${Number(last.sets) || 0} sets · ${fmt(Number(last.volume) || 0)} ${last.unit === "kg" ? "kg" : "lb"} lifted</p>`
+                    : `<p class="dash-sub">Tap <strong>Finish workout</strong> after a session and it shows up here.</p>`}
+                    <p class="dash-sub">${sessions.length} workout${sessions.length === 1 ? "" : "s"} finished · ${fmt(sets)} sets logged in all</p>
+                </article>
+                <article class="dash-card">
+                    <h3>Your best lifts</h3>
+                    ${best.length ? `<ul class="dash-best">${best.map((b) => `<li><span>${escapeHtml(b.n)}</span><strong>${fmt(roundWeight(b.top, unit))} ${unit}</strong>${b.gain > 0.5 ? `<em>+${fmt(roundWeight(b.gain, unit))}</em>` : ""}</li>`).join("")}</ul>
+                        <p class="dash-fine">Estimated one-rep max from your logged sets, and how much it's gone up since your first log.</p>`
+                    : `<p class="dash-sub">Log your sets (weight and reps) and your strongest lifts show up here, with how much they've improved.</p>`}
+                </article>
+            </div>`;
+    }
+    ["logchange", "levelchange", "profilechange"].forEach((ev) => window.addEventListener(ev, render));
+    render();
+}
+
+/* =========================================================
    FEATURE: Finished workouts (My progress)
    Every "Finish workout" is saved as gu-sessions; this lists the recent ones.
    ========================================================= */
@@ -4157,11 +4281,18 @@ function setupSessions() {
    full plan to log sets. Custom workouts get an Edit button.
    ========================================================= */
 // Load "My workout" into the builder and open it, so it can be changed while it's in use
-function editCustomWorkout() {
+function addCustomDay() {
+    const n = customDaysRaw().length;
+    store.set(BUILDER_KEY, { title: "", goal: (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle", addDay: n > 0, items: [] });
+    location.assign(`programs.html?add=${Date.now()}#build`);
+}
+function editCustomWorkout(dayIndex = 0) {
     const mine = loadCustomWorkout();
     if (!mine) { location.assign("programs.html#build"); return; }
-    const day = mine.plans[1].days[0];
-    store.set(BUILDER_KEY, { title: day.title === "My workout" ? "" : day.title, goal: (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle", editing: true,
+    const all = Object.values(mine.plans)[0].days;
+    const di = Math.min(Math.max(0, dayIndex), all.length - 1);
+    const day = all[di];
+    store.set(BUILDER_KEY, { title: day.title === "My workout" ? "" : day.title, goal: (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle", editing: true, editDay: di,
         items: day.items.map((it) => {
             const m = String(it.d).match(/^(\d+) × (.+?)( per side)?( at .*)?$/);
             return { n: it.n, sets: m ? Number(m[1]) : 3, amount: m ? m[2] : it.d, rest: it.rest };
@@ -4190,7 +4321,7 @@ function currentPlanInfo() {
 }
 
 function setupPlanBar() {
-    if (document.body.dataset.page === "programs" || !document.getElementById("site-footer") && !document.querySelector(".site-footer")) return;
+    if (["programs", "me"].includes(document.body.dataset.page) || !document.getElementById("site-footer") && !document.querySelector(".site-footer")) return;
     const info = currentPlanInfo();
     if (!info) return;
     const custom = info.goal === "custom";
@@ -4226,7 +4357,7 @@ function setupPlanBar() {
         document.body.classList.toggle("planbar-open", now);
     });
     document.body.classList.toggle("planbar-open", open);
-    bar.addEventListener("click", (e) => { if (e.target.closest("[data-edit-custom]")) editCustomWorkout(); });
+    bar.addEventListener("click", (e) => { if (e.target.closest("[data-edit-custom]")) editCustomWorkout(info.di); });
 }
 
 /* =========================================================
@@ -4311,7 +4442,8 @@ function builderClean(raw) {
         const list = kind === "time" ? BUILDER_TIMES : kind === "hold" ? BUILDER_HOLDS : kind === "steps" ? BUILDER_STEPS : BUILDER_REPS;
         return { n: x.n, sets: Number(x.sets) >= 1 && Number(x.sets) <= 6 ? Number(x.sets) : base.sets, amount: list.includes(x.amount) ? x.amount : base.amount, rest: BUILDER_RESTS.includes(x.rest) ? x.rest : base.rest };
     });
-    return { title: String(raw.title || "").replace(/[<>]/g, "").slice(0, 40), goal: BUILD_GOALS[raw.goal] ? raw.goal : "muscle", editing: raw.editing === true, items };
+    const editDay = Number.isInteger(raw.editDay) && raw.editDay >= 0 && raw.editDay < 7 ? raw.editDay : 0;
+    return { title: String(raw.title || "").replace(/[<>]/g, "").slice(0, 40), goal: BUILD_GOALS[raw.goal] ? raw.goal : "muscle", editing: raw.editing === true, editDay, addDay: raw.addDay === true && raw.editing !== true, items };
 }
 // The weight to use, in plain words
 function builderWeight(x) {
@@ -4343,7 +4475,7 @@ function setupBuilder() {
     let draft = builderClean(store.get(BUILDER_KEY)) || (() => {
         const mine = loadCustomWorkout();
         if (!mine) return { title: "", goal: getProfile().trainFor === "endurance" ? "endurance" : "muscle", items: [] };
-        const day = mine.plans[1].days[0];
+        const day = Object.values(mine.plans)[0].days[0];
         return builderClean({ title: day.title === "My workout" ? "" : day.title, items: day.items.map((it) => {
             const m = String(it.d).match(/^(\d+) × (.+?)( per side)?( at .*)?$/);
             return { n: it.n, sets: m ? Number(m[1]) : 3, amount: m ? m[2] : it.d, rest: it.rest };
@@ -4354,7 +4486,7 @@ function setupBuilder() {
             <div class="builder-intro">
                 <div>
                     <p class="kicker">Your way</p>
-                    <h2 id="builder-title">${draft.editing ? "Edit your workout" : "Build your own workout"}</h2>
+                    <h2 id="builder-title">${draft.editing ? `Edit your workout${customDaysRaw().length > 1 ? ` (Day ${draft.editDay + 1})` : ""}` : draft.addDay ? `Build Day ${customDaysRaw().length + 1}` : "Build your own workout"}</h2>
                     <p class="section-lede">Pick the exercises you want to hit today. Each one gets sets, reps, and rest you can change, plus the weight to use. Log your sets and the weights go up as you get stronger.</p>
                 </div>
                 <button type="button" class="btn btn-primary builder-open" aria-expanded="false" aria-controls="builder-body">${draft.items.length ? "Edit my workout" : "Start building"}</button>
@@ -4395,7 +4527,8 @@ function setupBuilder() {
                     <ol class="builder-list"></ol>
                     <p class="builder-note" hidden></p>
                     <div class="builder-actions">
-                        <button type="button" class="btn btn-primary builder-save">${draft.editing ? "Save changes" : "Save and start"}</button>
+                        <button type="button" class="btn btn-primary builder-save">${draft.editing ? "Save changes" : draft.addDay ? `Save Day ${customDaysRaw().length + 1}` : "Save and start"}</button>
+                        ${draft.addDay ? `<button type="button" class="text-button builder-replace">Start a new plan instead</button>` : ""}
                         <button type="button" class="text-button builder-clear">Clear</button>
                     </div>
                     <p class="log-status builder-status" role="status"></p>
@@ -4550,6 +4683,14 @@ function setupBuilder() {
         }
     });
     nameIn.addEventListener("input", () => { draft.title = nameIn.value.replace(/[<>]/g, "").slice(0, 40); save(); });
+    const replaceBtn = $(".builder-replace");
+    if (replaceBtn) replaceBtn.addEventListener("click", () => {
+        draft.addDay = false; save();
+        $(".builder-save").textContent = "Save and start";
+        $("#builder-title").textContent = "Build your own workout";
+        replaceBtn.remove();
+        status.textContent = "Saving will start a new plan with just this workout.";
+    });
     $(".builder-clear").addEventListener("click", () => {
         draft = { title: "", goal: goal(), items: [] }; nameIn.value = ""; save(); renderList(); renderResults();
         status.textContent = "Cleared. Pick new exercises any time.";
@@ -4557,20 +4698,32 @@ function setupBuilder() {
     $(".builder-save").addEventListener("click", () => {
         if (!draft.items.length) return;
         const title = draft.title.trim() || "My workout";
-        // Editing the workout you're doing: keep the exercises you already checked off this week
-        const before = loadCustomWorkout();
-        if (before) {
-            const week = Math.max(1, weekOf(programStart("custom")));
-            const key = `gu-progress-custom-1-w${week}`;
-            const doneNames = new Set((store.get(key, []) || []).map((k) => { const it = before.plans[1].days[0].items[Number(String(k).split("-")[1])]; return it && it.n; }).filter(Boolean));
-            store.set(key, draft.items.map((x, i) => (doneNames.has(x.n) ? `0-${i}` : null)).filter(Boolean));
+        const newDay = { title, items: draft.items.map((x) => ({ n: x.n, d: builderDose(x), rest: builderKind(x.n) === "time" ? "" : x.rest })) };
+        let days = customDaysRaw();
+        const oldN = days.length;
+        const week = Math.max(1, weekOf(programStart("custom")));
+        const oldKey = `gu-progress-custom-${oldN}-w${week}`;
+        let done = store.get(oldKey, []) || [];
+        if (draft.editing && days[draft.editDay]) {
+            // Editing a day you're doing: keep the exercises you already checked off this week
+            const d = draft.editDay;
+            const doneNames = new Set(done.filter((k) => String(k).startsWith(`${d}-`)).map((k) => { const it = days[d].items[Number(String(k).split("-")[1])]; return it && it.n; }).filter(Boolean));
+            done = done.filter((k) => !String(k).startsWith(`${d}-`)).concat(newDay.items.map((x, i) => (doneNames.has(x.n) ? `${d}-${i}` : null)).filter(Boolean));
+            days[d] = newDay;
+        } else if (draft.addDay && oldN > 0 && oldN < 7) {
+            days.push(newDay);
+        } else {
+            days = [newDay];
+            done = [];
         }
-        draft.editing = false;
+        store.remove(oldKey);
+        store.set(`gu-progress-custom-${days.length}-w${week}`, done);
+        draft.editing = false; draft.addDay = false;
         save();
-        store.set("gu-custom", { title, items: draft.items.map((x) => ({ n: x.n, d: builderDose(x), rest: builderKind(x.n) === "time" ? "" : x.rest })) });
-        store.set("gu-last-plan", { goal: "custom", days: 1 });
+        saveCustomDays(days);
+        store.set("gu-last-plan", { goal: "custom", days: days.length });
         status.textContent = "Saved. Opening your workout…";
-        setTimeout(() => location.assign(`programs.html?w=${Date.now()}#program-custom-1`), 250);
+        setTimeout(() => location.assign(`programs.html?w=${Date.now()}#program-custom-${days.length}`), 250);
     });
     window.addEventListener("logchange", () => { if (!body.hidden) renderList(); });
     window.addEventListener("levelchange", () => { if (!body.hidden) renderList(); });
@@ -4600,6 +4753,10 @@ function setupStartingPoint() {
                         ${LEVELS.map((l) => `<label><input type="radio" name="setup-level-${n}" value="${l}"><span>${l}</span></label>`).join("")}
                     </fieldset>
                     <p class="setup-level-info"></p>
+                    <div class="field">
+                        <label for="setup-name-${n}">Your first name <span class="field-hint">(optional, makes My progress yours)</span></label>
+                        <input id="setup-name-${n}" name="pname" type="text" maxlength="30" autocomplete="given-name" placeholder="e.g. Chris">
+                    </div>
                     <div class="field-row">
                         <div class="field">
                             <label for="setup-bw-${n}">Bodyweight</label>
@@ -4623,7 +4780,7 @@ function setupStartingPoint() {
             if (e.target.name === `setup-level-${n}`) { setLevel(e.target.value); return; }
             save();
         });
-        form.addEventListener("input", (e) => { if (e.target.name === "bodyweight") save(); });
+        form.addEventListener("input", (e) => { if (e.target.name === "bodyweight" || e.target.name === "pname") save(); });
         form.addEventListener("submit", (e) => e.preventDefault());
         function save() {
             const raw = store.get(PROFILE_KEY, {}) || {};
@@ -4631,7 +4788,10 @@ function setupStartingPoint() {
             raw.bodyweight = bw >= 50 && bw <= 700 ? String(bw) : "";
             raw.unit = ["lb", "kg"].includes(form.elements.unit.value) ? form.elements.unit.value : "lb";
             raw.sex = ["", "female", "male"].includes(form.elements.sex.value) ? form.elements.sex.value : "";
+            const nm = form.elements.pname.value.trim();
+            raw.name = /^[\p{L}' .-]{1,30}$/u.test(nm) ? nm : "";
             store.set(PROFILE_KEY, raw);
+            window.dispatchEvent(new CustomEvent("profilechange"));
             render(false);
         }
     });
@@ -4643,6 +4803,7 @@ function setupStartingPoint() {
             if (fill) {
                 form.querySelectorAll(".setup-level input").forEach((r) => { r.checked = r.value === lvl; });
                 if (document.activeElement !== form.elements.bodyweight) form.elements.bodyweight.value = p.bodyweight;
+                if (document.activeElement !== form.elements.pname) form.elements.pname.value = p.name;
                 form.elements.unit.value = p.unit;
                 form.elements.sex.value = p.sex;
             }

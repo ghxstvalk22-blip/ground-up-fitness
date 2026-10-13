@@ -3141,3 +3141,28 @@ body:has(#rest-timer:not([hidden])) .planbar { display: none; }
 /* Works even where the browser has no built-in pop-up support: pin it to the middle of the screen */
 .finish-dialog[open] { position: fixed; inset: 0; z-index: 200; }
 .day-finish .btn.is-saved { background-color: var(--surface); color: var(--ink); border-color: var(--volt); }
+
+.finish-nextup { display: flex; flex-direction: column; gap: 8px; }
+.finish-nextup .btn { min-height: 48px; justify-content: center; text-align: center; }
+.day-edit { display: flex; gap: 6px; margin-top: 6px; }
+.day-card.is-flash { outline: 3px solid var(--volt); outline-offset: 2px; }
+
+/* ---------- Your dashboard (My progress) ---------- */
+.me-dash-block { padding-bottom: 0; }
+.dash-hello h2 { margin: 0 0 8px; max-width: 26ch; }
+.dash-meta { margin: 0 0 18px; color: var(--muted); }
+.dash-meta a { color: var(--ink); }
+.dash-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 12px; }
+.dash-card { padding: 18px; background-color: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--ink); display: flex; flex-direction: column; gap: 6px; }
+.dash-next { border-top-color: var(--volt); }
+.dash-card h3 { margin: 0; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.dash-big { margin: 0; font-family: var(--display); font-size: 1.6rem; font-weight: 900; font-stretch: 80%; text-transform: uppercase; line-height: 1; }
+.dash-sub { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.dash-card .btn { align-self: flex-start; margin-top: auto; }
+.dash-targets, .dash-best { list-style: none; margin: 6px 0; padding: 0; }
+.dash-targets li, .dash-best li { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+.dash-targets li span:not(.equip), .dash-best li span { flex: 1; min-width: 0; }
+.dash-targets .equip { margin-right: 0; }
+.dash-best em { font-style: normal; font-size: 0.8rem; font-weight: 800; color: var(--good, #1a7f37); }
+.dash-fine { margin: 0; font-size: 0.78rem; color: var(--muted); }
+@media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }

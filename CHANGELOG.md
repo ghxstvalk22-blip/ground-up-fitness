@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Day 2 and a personal progress page)
+
+- **What's next after a workout:** the "Good job" screen now has a **What's next?** section. Go straight to Day 2 of your plan, **build Day 2** as a brand-new workout, or pick a ready-made workout plan.
+- **Your own multi-day plan:** My workout can now have up to 7 days. Build Day 2, Day 3 and so on; each day has its own **Edit** and **Remove day** buttons, plus **+ Add Day** on the plan. Your check-offs and logged sets stay when you change things. The Your plan bar and the Up next card always point to the next day you haven't done.
+- **My progress is now yours:** add your first name in Your starting point and the page becomes "Chris's progress". A new dashboard at the top shows your next workout with the weights to use, this week's workouts and streak, your last workout, and your best lifts with how much they've gone up since you started.
+
 ## 2026-10-13 (Finish workout fix)
 
 - **Finish workout** now saves your workout first and says so on the button ("Workout saved ✓"), so it's clear it went through, even if the summary pop-up can't open on your phone. If the pop-up fails, a short "Workout saved. Good job!" message shows instead with your next targets. Workouts you've already finished today show "Finished today ✓".
