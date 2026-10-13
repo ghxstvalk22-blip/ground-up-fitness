@@ -7,6 +7,20 @@ Newest changes first. Each daily update adds an entry here.
 - **Make this a light week:** on the Plans page, the dark week bar now has a **Make this a light week** button. Tap it when you feel run down, sore all over, or short on sleep, and that week's workouts drop to about half the sets, with suggested weights about 10% lighter. Each exercise is marked "Light week: half the sets" so it's clear why. It only changes the week you picked; next week goes back to normal on its own, and tapping the button again undoes it. A lighter week like this (lifters call it a "deload") helps you recover without losing the habit.
 - Couch to 5K doesn't show the button, since repeating a week is how that plan eases off.
 
+## 2026-10-13 (Fixes from four test workouts)
+
+We had four testers go through the app on a phone like real gym-goers: a nervous first-timer, someone losing weight at home with dumbbells, an experienced lifter running his own split, and a regular who's been on a plan for 5 weeks. Then we fixed what got in their way.
+
+- **Start takes you to today's workout.** Start, Continue, the Your plan bar, and saving a workout now land right on the day you're doing, not the plan settings 2 to 3 screens above it.
+- **Logging is faster and safer.** The suggested weight and today's reps are already filled in, so a set done as planned is one tap. Dumbbell exercises say "lb each" and fill in the per-hand weight (before, they saved as 0 lb). Change set 1's weight and the other sets follow. Saving a weighted lift with no weight asks first. Half-typed sets come back if the app reloads or you switch apps.
+- **The rest timer no longer covers the set boxes** you're typing in.
+- **Finish workout tells the truth.** It counts only the exercises you actually did. On ready-made plans, "Done for today" is the main button and it reminds you the plan works best with a rest day between (your own split still gets "Continue to Day 2" first).
+- **Swap can't undo your edits.** Editing a day of My workout clears old swaps on that day.
+- **Rotated exercises get the right sets and reps** (a plank that replaces a dead bug is timed, not "8 per side"), and bodyweight moves no longer say "pick a weight."
+- **My progress:** bodyweight moves show your reps instead of "NaN"; the chart starts on the lift with the most history; chart labels are readable on phones.
+- **Smaller fixes:** at-home plans no longer scroll sideways; search puts names that start with your word first (bench finds Bench press first); Add to my workout suggests the day that already trains those muscles (curls go on Pull day); the cardio log starts on Brisk walk or the last thing you logged; the You tab no longer has two "Your data" headings.
+- **Weak signal at the gym:** the app opens its saved copy if the network takes more than 3 seconds.
+
 ## 2026-10-13 (Loading screen and a simpler My progress)
 
 - **Loading screen:** when you open the app from your home screen, you now see the Ground Up logo with an orange line that fills, then it fades into the app. It only shows once each time you open the app, not on every page, and never on the regular website.

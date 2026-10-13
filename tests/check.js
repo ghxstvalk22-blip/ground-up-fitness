@@ -186,7 +186,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator('#qs-days input').count() === 1, "quick start only offers the days a plan has");
             await Promise.all([page.waitForNavigation(), page.locator(".qs-go").click()]);
             await page.waitForTimeout(250);
-            check(page.url().endsWith("programs.html#program-build-3"), "quick start opens the Programs page");
+            check(page.url().endsWith("programs.html?today=1#program-build-3") && await page.locator(".day-card").first().isVisible(), "quick start opens the Programs page on Day 1");
             check(/Build muscle · 3 days/.test(await page.locator("#program-head h3").textContent()), "and shows Build muscle, 3 days");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
@@ -934,6 +934,71 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(300);
             check(await page.locator("#cardio").isVisible() && (await page.locator('.me-tab[aria-selected="true"]').textContent()) === "Cardio", "a link to me.html#cardio opens the Cardio tab");
             await page.evaluate(() => store.remove("gu-level"));
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Things testers hit mid-workout (phone walkthroughs): landing spot, logging, timer, finish, numbers
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            await page.evaluate(() => { localStorage.clear(); localStorage.setItem("gu-profile", JSON.stringify({ bodyweight: 150, sex: "female", unit: "lb" })); });
+            await page.goto(url("programs.html", "?today=1#program-beginner-3"), { waitUntil: "load" });
+            await page.waitForTimeout(500);
+            const dayBox = await page.locator(".day-card").first().boundingBox();
+            check(dayBox && dayBox.y > -60 && dayBox.y < viewport.height * 0.5, `Start lands on today's workout, not the plan settings (${dayBox && Math.round(dayBox.y)})`);
+            const row = page.locator(".day-card[data-day='0'] .ex-row", { hasText: "in each hand" }).first();
+            check(await row.count() === 1, "the beginner plan suggests a per-hand dumbbell weight");
+            if (await row.count()) {
+                await row.locator("[data-log]").click();
+                const form = row.locator(".log-form");
+                const w0 = form.locator('input[name="w"]').first();
+                check(Number(await w0.inputValue()) > 0 && /each/.test(await form.locator(".log-unit").first().textContent()) && Number(await form.locator('input[name="r"]').first().inputValue()) > 0, "dumbbell log forms start with the per-hand weight and today's reps");
+                await w0.click();
+                await w0.fill("");
+                await w0.type("20");
+                check((await form.locator('input[name="w"]').nth(1).inputValue()) === "20", "changing set 1's weight fills the other sets");
+                const formId = await form.getAttribute("id");
+                await page.reload({ waitUntil: "load" });
+                await page.waitForTimeout(400);
+                check(await page.locator(`#${formId}`).isVisible() && (await page.locator(`#${formId} input[name="w"]`).first().inputValue()) === "20", "half-typed sets come back after a reload");
+                // Rest timer leaves room for the set boxes
+                await page.locator(".day-card[data-day='0'] .rest-btn").first().click();
+                await page.waitForTimeout(200);
+                const pad = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("main")).paddingBottom));
+                check(await page.evaluate(() => document.body.classList.contains("rest-on")) && pad >= 60, `the rest timer makes room so it doesn't cover the set boxes (${pad}px)`);
+                await page.click("#rest-stop");
+                // A weighted lift saved with no weight asks first
+                const f2 = page.locator(`#${formId}`);
+                for (const inp of await f2.locator('input[name="w"]').all()) await inp.fill("0");
+                await f2.locator("button[type=submit]").click();
+                check(/No weight entered/.test(await f2.locator(".log-status").textContent()) && await page.evaluate(() => Object.keys(getLog()).length === 0), "saving a dumbbell lift with no weight asks first");
+                await f2.locator('input[name="w"]').first().fill("20");
+                await f2.locator("button[type=submit]").click();
+                await page.waitForTimeout(200);
+                check(await page.evaluate(() => Object.values(getLog()).some((en) => en[0].sets[0].w === 20)), "the per-hand weight is saved");
+                await page.click("[data-finish='0']");
+                await page.waitForTimeout(300);
+                check(/^1 exercise$/.test((await page.locator("#finish-dialog .finish-stats li").first().textContent()).trim()), "Finish counts only the exercises you did");
+                check(await page.locator("#finish-dialog [data-finish-close].btn-primary").count() === 1 && /rest day/.test(await page.locator("#finish-dialog").textContent()), "on a ready-made plan, Done for today is the main button and it suggests a rest day");
+                await page.click("[data-finish-close]");
+            }
+            // The at-home switch doesn't make the page scroll sideways
+            await page.goto(url("programs.html", "#program-home"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "home plans don't scroll sideways");
+            // A stand-in exercise gets its own sets and reps; swaps can't undo an edit to My workout
+            check(await page.evaluate(() => /s$/.test(dayLineup("beginner", 3, 0, [{ n: "Dead bug", d: "3 × 8 per side", rest: "45 s" }], 1, { "w1:0-0": "Plank" })[0].d)), "a plank swapped in for a dead bug is timed, not 8 per side");
+            check(await page.evaluate(() => { store.set("gu-swaps-custom-2", { "w1:0-1": "Push-up", "w1:1-0": "Pull-up" }); clearCustomSwaps(0); const sw = store.get("gu-swaps-custom-2"); return !sw["w1:0-1"] && sw["w1:1-0"] === "Pull-up"; }), "editing a day clears its swaps (and only its swaps)");
+            // Bodyweight moves don't show NaN on My progress
+            await page.evaluate(() => { const d = new Date().toISOString().slice(0, 10); localStorage.setItem("gu-log", JSON.stringify({ "Glute bridge": [{ date: d, unit: "lb", sets: [{ w: 0, r: 15 }] }] })); });
+            await page.goto(url("me.html", "#lifts"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(!/NaN/.test(await page.locator("#lifts").textContent()) && /15 reps/.test(await page.locator("#lift-table").textContent()), "bodyweight moves show reps, not NaN, on My progress");
+            // Search puts names that start with your word first
+            await page.goto(url("exercises.html"), { waitUntil: "load" });
+            await page.fill("#library-search", "bench");
+            check(/^Bench/.test(await page.locator(".library-card h3").first().textContent()), "searching bench lists bench exercises first");
+            await page.evaluate(() => localStorage.clear());
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

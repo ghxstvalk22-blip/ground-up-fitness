@@ -30,13 +30,23 @@ self.addEventListener("fetch", (event) => {
     if (req.method !== "GET") return;
     const url = new URL(req.url);
 
-    // Our own pages and files: network first, saved copy when offline
+    // Our own pages and files: network first, saved copy when offline.
+    // On weak signal (a gym basement), don't wait more than 3 seconds: show the saved copy
+    // and let the network finish in the background so the next visit is up to date.
     if (url.origin === self.location.origin) {
-        event.respondWith(fetch(req).then((res) => {
+        const network = fetch(req).then((res) => {
             if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)); }
             return res;
-        }).catch(() => caches.match(req, { ignoreSearch: true })
-            .then((hit) => hit || (req.mode === "navigate" ? caches.match("index.html") : Response.error()))));
+        });
+        const saved = () => caches.match(req, { ignoreSearch: true });
+        event.respondWith(new Promise((resolve) => {
+            let done = false;
+            const finish = (res) => { if (!done && res) { done = true; resolve(res); } };
+            const timer = setTimeout(() => saved().then(finish), 3000);
+            network.then((res) => { clearTimeout(timer); finish(res); })
+                .catch(() => { clearTimeout(timer); saved().then((hit) => hit || (req.mode === "navigate" ? caches.match("index.html") : null)).then((r) => finish(r || Response.error())); });
+        }));
+        event.waitUntil(network.catch(() => null));
         return;
     }
 

@@ -1688,7 +1688,15 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
         const swapped = swaps[`w${week}:${dayIndex}-${slot}`];
         if (swapped) name = swapped;
         used.add(name);
-        return { ...x, name, mode, swapped: Boolean(swapped), canRotate: Boolean(fam && fam.length > 1) };
+        // A stand-in that's done differently (a plank for a dead bug, a one-leg move for a two-leg one) gets its own sets and reps
+        let d = x.d, rest = x.rest;
+        if (name !== x.n && typeof EXERCISES === "object" && EXERCISES[name]) {
+            const kind = (t) => (/steps/.test(t) ? "steps" : /\d\s*s\b/.test(t) ? "hold" : /min\b/.test(t) && !/×/.test(t) ? "time" : "reps");
+            const [def, defRest] = coachDose(name, COACH_COMPOUND.test(name), getLevel());
+            if (kind(String(x.d)) !== kind(def)) { d = def; if (rest) rest = defRest; }
+            else if (/per side/.test(x.d) !== /per side/.test(def)) d = /per side/.test(def) ? `${x.d} per side` : String(x.d).replace(/ per side/, "");
+        }
+        return { ...x, d, rest, name, mode, swapped: Boolean(swapped), canRotate: Boolean(fam && fam.length > 1) };
     });
 }
 
@@ -1785,6 +1793,17 @@ function customDaysRaw() {
     if (!raw || typeof raw !== "object") return [];
     const days = Array.isArray(raw.days) ? raw.days : Array.isArray(raw.items) ? [{ title: raw.title, items: raw.items }] : [];
     return days.filter((d) => d && typeof d === "object" && Array.isArray(d.items)).slice(0, 7);
+}
+// Swaps on My workout are tied to a day's old list: when a day is edited, its swaps go (so they can't undo the edit)
+function clearCustomSwaps(dayIndex = null) {
+    try {
+        Object.keys(localStorage).filter((k) => k.startsWith("gu-swaps-custom-")).forEach((k) => {
+            if (dayIndex === null) { localStorage.removeItem(k); return; }
+            const sw = store.get(k, {}) || {};
+            Object.keys(sw).forEach((slot) => { if (slot.split(":").pop().split("-")[0] === String(dayIndex)) delete sw[slot]; });
+            store.set(k, sw);
+        });
+    } catch (e) { /* storage blocked */ }
 }
 function saveCustomDays(days) {
     const list = days.slice(0, 7);
@@ -2135,9 +2154,10 @@ function nextTarget(name, dose, unit) {
         const sw = startWeight(name, d.high, unit);
         if (sw) {
             const how = sw.bar ? "just the empty bar" : `about ${trimNum(sw.w)} ${unit}${sw.each ? " in each hand" : ""}`;
-            return { first: true, weight: sw.each ? 0 : sw.w, reps: d.high, start: true,
+            return { first: true, weight: sw.w, each: Boolean(sw.each), reps: d.high, start: true,
                 text: `First time? Start with ${how} (from your level and bodyweight). If ${d.high} reps feel easy, go up next set; if your form slips, go lighter.` };
         }
+        if (equipOf(name) === "body" && !isCardio(name)) return { first: true, text: `Your bodyweight. Do ${d.high} clean reps; when every set feels easy, try the harder version in the how-to.` };
         const noBody = !Number(getProfile().bodyweight) && (START_MAX[name] || START_EXTRA[name]);
         return { first: true, text: `First time? Pick a weight you could do for about 2 more reps than ${d.high}. Log it and you'll get a target next time.${noBody ? " Add your bodyweight under Your starting point (home page) for a suggested weight." : ""}` };
     }
@@ -2430,14 +2450,52 @@ function setupPrograms() {
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
                 </ul>
                 ${state.week === currentWeek() ? (() => { const doneToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === isoDate(new Date()) && x.plan === state.goal && x.day === di); return doneToday
-                    ? `<div class="day-finish is-done"><p class="day-finish-note">Finished today \u2713</p><button type="button" class="btn btn-primary" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>${state.goal === "custom" && thisWeek[di + 1] ? `<button type="button" class="text-button" data-edit-day="${di + 1}">Edit Day ${di + 2} first</button>` : ""}<button type="button" class="text-button" data-finish="${di}">See summary</button></div>`
+                    ? `<div class="day-finish is-done"><p class="day-finish-note">Finished today \u2713</p><button type="button" class="btn${state.goal === "custom" ? " btn-primary" : ""}" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>${state.goal === "custom" && thisWeek[di + 1] ? `<button type="button" class="text-button" data-edit-day="${di + 1}">Edit Day ${di + 2} first</button>` : ""}<button type="button" class="text-button" data-finish="${di}">See summary</button></div>`
                     : `<div class="day-finish"><button type="button" class="btn btn-primary" data-finish="${di}">Finish workout</button></div>`; })() : ""}
             </article>`).join("");
 
         updateProgress();
         renderProfileNote(profile);
         store.set("gu-last-plan", { goal: state.goal, days: state.days });
+        restoreDrafts();
         if (syncUrl) history.replaceState(null, "", viewHash());
+    }
+
+    /* ----- Half-typed sets survive a reload or switching apps (kept for today only) ----- */
+    const DRAFT_KEY = "gu-log-draft";
+    const draftId = (form) => `${state.goal}-${state.days}-w${state.week}:${form.id.replace("log-", "")}`;
+    function saveDraft(form) {
+        const all = store.get(DRAFT_KEY, {}) || {};
+        all[draftId(form)] = { date: isoDate(new Date()), ex: form.dataset.exercise,
+            w: [...form.querySelectorAll('input[name="w"]')].map((i) => i.value.slice(0, 8)),
+            r: [...form.querySelectorAll('input[name="r"]')].map((i) => i.value.slice(0, 4)) };
+        store.set(DRAFT_KEY, all);
+    }
+    function dropDraft(form) {
+        const all = store.get(DRAFT_KEY, {}) || {};
+        delete all[draftId(form)];
+        store.set(DRAFT_KEY, all);
+    }
+    function restoreDrafts() {
+        const all = store.get(DRAFT_KEY, {}) || {};
+        const today = isoDate(new Date());
+        let changed = false;
+        Object.entries(all).forEach(([id, dr]) => {
+            if (!dr || dr.date !== today) { delete all[id]; changed = true; return; }
+            const [plan, slot] = id.split(":");
+            if (plan !== `${state.goal}-${state.days}-w${state.week}`) return;
+            const form = document.getElementById(`log-${slot}`);
+            if (!form || form.classList.contains("cardio-form") || form.dataset.exercise !== dr.ex) return;
+            const num = (v) => (/^\d{0,4}(\.\d{0,2})?$/.test(String(v)) ? String(v) : "");
+            form.querySelectorAll('input[name="w"]').forEach((i, k) => { if (Array.isArray(dr.w) && dr.w[k] != null) i.value = num(dr.w[k]); });
+            form.querySelectorAll('input[name="r"]').forEach((i, k) => { if (Array.isArray(dr.r) && dr.r[k] != null) i.value = num(dr.r[k]); });
+            form.hidden = false;
+            const btn = els.grid.querySelector(`[data-log="${slot}"]`);
+            if (btn) btn.setAttribute("aria-expanded", "true");
+            const st = form.querySelector(".log-status");
+            if (st) st.textContent = "Picked up where you left off. Tap Save sets when you're done.";
+        });
+        if (changed) store.set(DRAFT_KEY, all);
     }
 
     function exerciseRow(x, di, xi, done, profile, isNew) {
@@ -2459,12 +2517,12 @@ function setupPrograms() {
         // Recover week: same exercise, about 10% lighter on purpose
         if (target && target.weight > 0 && PROGRAMS[state.goal].waves !== false && levelAtLeast("Advanced") && wavePhase(state.week).key === "recover") {
             const w = roundWeight(target.weight * 0.9, profile.unit);
-            target = { ...target, up: false, weight: w, text: `Recover week: about ${trimNum(w)} ${profile.unit}, roughly 10% lighter than usual. Easy on purpose.` };
+            target = { ...target, up: false, weight: w, text: `Recover week: about ${trimNum(w)} ${profile.unit}${target.each ? " in each hand" : ""}, roughly 10% lighter than usual. Easy on purpose.` };
         }
         // Light week: the same, when the person asked for it
         else if (target && target.weight > 0 && lightOn()) {
             const w = roundWeight(target.weight * 0.9, profile.unit);
-            target = { ...target, up: false, weight: w, text: `Light week: about ${trimNum(w)} ${profile.unit}, roughly 10% lighter than usual. Stop each set with a few reps to spare.` };
+            target = { ...target, up: false, weight: w, text: `Light week: about ${trimNum(w)} ${profile.unit}${target.each ? " in each hand" : ""}, roughly 10% lighter than usual. Stop each set with a few reps to spare.` };
         }
         const badges = [
             xi === 0 && x.canRotate && !cardio && PROGRAMS[state.goal].rotation !== "none" ? `<span class="badge">Main lift</span>` : "",
@@ -2498,17 +2556,22 @@ function setupPrograms() {
 
     function logForm(x, key, dose, target, unit) {
         const weight = target && target.weight ? trimNum(target.weight) : "";
+        // Dumbbell moves are logged per hand, so say so right on the box
+        const sw = typeof startWeight === "function" ? startWeight(x.name, dose.high || 10, unit) : null;
+        const each = Boolean((target && target.each) || (sw && sw.each));
+        // Reps start at today's target (a real value, not a hint), so a set done as planned is one tap to save
+        const reps = (target && target.reps) || dose.high || "";
         const rows = Array.from({ length: dose.sets }, (_, i) => `
             <div class="log-set">
                 <span class="log-set-num">Set ${i + 1}</span>
-                <label><span class="visually-hidden">Set ${i + 1} weight</span><input type="number" inputmode="decimal" min="0" step="any" name="w" value="${weight}" placeholder="0"><span class="log-unit">${unit}</span></label>
-                <label><span class="visually-hidden">Set ${i + 1} reps</span><input type="number" inputmode="numeric" min="0" step="1" name="r" placeholder="${dose.high || ""}"><span class="log-unit">reps</span></label>
+                <label><span class="visually-hidden">Set ${i + 1} weight${each ? " in each hand" : ""}</span><input type="number" inputmode="decimal" min="0" step="any" name="w" value="${weight}" placeholder="0"><span class="log-unit">${unit}${each ? " each" : ""}</span></label>
+                <label><span class="visually-hidden">Set ${i + 1} reps</span><input type="number" inputmode="numeric" min="0" step="1" name="r" value="${reps}" placeholder="${dose.high || ""}"><span class="log-unit">reps</span></label>
             </div>`).join("");
         return `
             <form class="log-form" id="log-${key}" data-exercise="${escapeHtml(x.name)}" hidden novalidate>
                 <div class="log-date"><label>Date <input type="date" name="date" value="${isoDate(new Date())}" max="${isoDate(new Date())}"></label></div>
                 ${rows}
-                <p class="log-help">Leave weight at 0 for bodyweight moves. Change the date to add a past workout.</p>
+                <p class="log-help">${each ? "Enter the weight of one dumbbell. " : ""}Change set 1's weight and the rest follow. Leave weight at 0 for bodyweight moves.</p>
                 <div class="log-buttons">
                     <button type="submit" class="btn btn-primary btn-compact">Save sets</button>
                     <button type="button" class="text-button" data-log-cancel="${key}">Cancel</button>
@@ -2647,10 +2710,13 @@ function setupPrograms() {
             const t = cardio ? nextCardioTarget(x.name, unit) : nextTarget(x.name, dose.text, unit);
             const d = parseDose(dose.text);
             let next = "";
-            if (t && t.weight > 0) next = `${t.first ? "Start with about " : ""}${trimNum(t.weight)} ${unit} × ${d.sets} sets of ${t.reps || d.high}`;
+            if (t && t.weight > 0) next = `${t.first ? "Start with about " : ""}${trimNum(t.weight)} ${unit}${t.each ? " each hand" : ""} × ${d.sets} sets of ${t.reps || d.high}`;
             else if (t && t.text) next = t.text;
             return { name: x.name, logged: Boolean(entry), did: entry ? entry.sets.map((st) => (st.w ? `${trimNum(toUnit(st.w, entry.unit, unit))}×${st.r}` : `${st.r}`)).join(", ") : "", next, up: Boolean(t && t.up) };
         });
+        // How many exercises were actually done: logged today or checked off (finishing with nothing marked counts the whole day)
+        const before = new Set(store.get(progressKey(), []));
+        const doneCount = items.filter((_, xi) => lines[xi].logged || before.has(`${di}-${xi}`)).length || items.length;
         // Check the whole day off and keep a record of the session
         const keys = new Set(store.get(progressKey(), []));
         items.forEach((_, xi) => keys.add(`${di}-${xi}`));
@@ -2658,7 +2724,7 @@ function setupPrograms() {
         const card = els.grid.querySelector(`.day-card[data-day="${di}"]`);
         if (card) card.querySelectorAll('input[type="checkbox"]').forEach((b) => { b.checked = true; });
         const sessions = (store.get("gu-sessions", []) || []).filter((x) => x && !(x.date === today && x.plan === state.goal && x.day === di));
-        sessions.push({ date: today, plan: state.goal, planName: p.name, days: state.days, day: di, title: day.title, exercises: items.length, sets, reps, volume: Math.round(volume), unit });
+        sessions.push({ date: today, plan: state.goal, planName: p.name, days: state.days, day: di, title: day.title, exercises: doneCount, sets, reps, volume: Math.round(volume), unit });
         store.set("gu-sessions", sessions.slice(-200));
         updateProgress();
         window.dispatchEvent(new CustomEvent("logchange", { detail: { finished: true } }));
@@ -2699,7 +2765,7 @@ function setupPrograms() {
             <p class="finish-kicker">${escapeHtml(day.title)} · ${escapeHtml(p.name)}</p>
             <h2 id="finish-title">Good job. Workout done.</h2>
             <ul class="finish-stats">
-                <li><strong>${items.length}</strong> exercises</li>
+                <li><strong>${doneCount}</strong> exercise${doneCount === 1 ? "" : "s"}</li>
                 <li><strong>${sets}</strong> sets logged</li>
                 <li><strong>${fmt(volume)}</strong> ${unit} lifted</li>
                 ${streak >= 2 ? `<li><strong>${streak}</strong> week streak</li>` : ""}
@@ -2709,8 +2775,9 @@ function setupPrograms() {
             <ul class="finish-next">${lines.map((l) => `<li>${equipIcon(l.name)}<span><strong>${escapeHtml(l.name)}</strong>${l.did ? `<small>Today: ${escapeHtml(l.did)}</small>` : `<small>Not logged today</small>`}</span><em class="${l.up ? "is-up" : ""}">${escapeHtml(l.next || "Log your sets to get a target")}</em></li>`).join("")}</ul>
             ${sets ? "" : `<p class="finish-tip">Tip: log your weight and reps on each exercise (Log sets) and next time you'll get an exact weight to aim for.</p>`}
             <h3>What's next?</h3>
+            ${state.goal !== "custom" && nextDay ? `<p class="finish-tip">Next time: <strong>Day ${di + 2}, ${escapeHtml(nextDay.title)}</strong>. This plan works best with a rest day in between, so your next training day is a good time for it.</p>` : ""}
             <div class="finish-nextup">
-                <button type="button" class="btn btn-primary" data-finish-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>
+                <button type="button" class="btn${state.goal === "custom" ? " btn-primary" : ""}" data-finish-continue="${di}">${escapeHtml(state.goal !== "custom" && nextDay ? `Do Day ${di + 2} now instead` : continueLabel(di))} &rarr;</button>
                 ${state.goal === "custom" && nextDay ? `<button type="button" class="btn" data-finish-editday="${di + 1}">Edit Day ${di + 2} first</button>` : ""}
                 ${state.goal === "custom" && nextDay && dayList.length < 7 ? `<button type="button" class="btn" data-finish-addday>+ Add Day ${dayList.length + 1}</button>` : ""}
                 ${state.goal === "custom" ? "" : `<a class="btn" href="programs.html#build">Build my own workout</a>`}
@@ -2719,7 +2786,7 @@ function setupPrograms() {
             <p class="finish-saved">Saved on this device${typeof FIREBASE_CONFIG === "object" && FIREBASE_CONFIG.apiKey ? " and to your account when you're signed in" : ""}. Your targets update every time you log.</p>
             <div class="finish-actions">
                 <a class="btn" href="me.html">See my progress</a>
-                <button type="button" class="btn" data-finish-close>Done for today</button>
+                <button type="button" class="btn${state.goal === "custom" ? "" : " btn-primary"}" data-finish-close>Done for today</button>
             </div>`;
         if (dlg.open) dlg.close();
         if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e2) { dlg.setAttribute("open", ""); } }
@@ -2752,6 +2819,7 @@ function setupPrograms() {
             const i = Number(rm.dataset.removeDay), days = customDaysRaw();
             if (days.length > 1 && days[i] && window.confirm(`Remove Day ${i + 1} (${days[i].title || "workout"}) from My workout? Your logged sets stay.`)) {
                 days.splice(i, 1);
+                clearCustomSwaps();
                 saveCustomDays(days);
                 store.set("gu-last-plan", { goal: "custom", days: days.length });
                 location.assign(`programs.html?w=${Date.now()}#program-custom-${days.length}`);
@@ -2793,11 +2861,29 @@ function setupPrograms() {
         const cancel = e.target.closest("[data-log-cancel]");
         if (cancel) {
             const key = cancel.dataset.logCancel;
+            dropDraft(document.getElementById(`log-${key}`));
             document.getElementById(`log-${key}`).hidden = true;
             const btn = els.grid.querySelector(`[data-log="${key}"]`);
             btn.setAttribute("aria-expanded", "false");
             btn.focus();
         }
+    });
+
+    // Changing set 1's weight fills the sets below that still had the old value
+    els.grid.addEventListener("focusin", (e) => { if (e.target.matches('.log-form input[name="w"]')) e.target.dataset.was = e.target.value; });
+    els.grid.addEventListener("input", (e) => {
+        const inp = e.target;
+        if (inp.matches('.log-form:not(.cardio-form) input[name="r"]')) { saveDraft(inp.closest(".log-form")); return; }
+        if (!inp.matches('.log-form input[name="w"]')) return;
+        const form = inp.closest(".log-form");
+        form.dataset.zeroOk = "";
+        const ws = [...form.querySelectorAll('input[name="w"]')];
+        const i = ws.indexOf(inp);
+        const was = inp.dataset.was ?? "";
+        ws.slice(i + 1).forEach((w) => { if (w.value === was || w.dataset.follow === "1") { w.value = inp.value; w.dataset.follow = "1"; } });
+        inp.dataset.follow = "";
+        inp.dataset.was = inp.value;
+        if (!form.classList.contains("cardio-form")) saveDraft(form);
     });
 
     els.grid.addEventListener("submit", (e) => {
@@ -2834,7 +2920,15 @@ function setupPrograms() {
         const maxW = unit === "kg" ? 700 : 1500;
         const odd = sets.findIndex((st) => st.w < 0 || st.w > maxW || st.r > 100 || !Number.isInteger(st.r));
         if (odd >= 0) { status.textContent = `Check set ${odd + 1}: weight between 0 and ${maxW} ${unit}, and whole reps up to 100.`; rs[odd].focus(); return; }
+        // A weighted lift saved with no weight breaks next time's target: ask once
+        if (sets.every((st) => !st.w) && typeof equipOf === "function" && equipOf(form.dataset.exercise) !== "body" && form.dataset.zeroOk !== "1") {
+            form.dataset.zeroOk = "1";
+            status.textContent = "No weight entered. Add the weight you used, or tap Save again if it really was 0.";
+            ws[0].focus();
+            return;
+        }
         const date = form.elements.date.value || isoDate(new Date());
+        dropDraft(form);
         saveSession(form.dataset.exercise, date, unit, sets);
         const slot = form.id.replace("log-", "");
         const box = document.getElementById(`ex-${slot}`);
@@ -2962,11 +3056,17 @@ function setupPrograms() {
     // Links like #program-fatloss or #program-strength-4
     addRoute(/^#program-([a-z0-9]+)(?:-(\d))?$/, (m) => {
         if (!PROGRAMS[m[1]]) return null;
+        // Opening the plan you're doing (or "Start" / "Continue" / a saved workout): go straight to today's day, not the settings
+        const mine = (store.get("gu-last-plan") || {}).goal === m[1];
+        const params = new URLSearchParams(location.search);
+        const doing = mine || m[1] === "custom" || ["today", "w", "a", "edit"].some((k) => params.has(k));
         if (state.goal !== m[1]) state.week = null;
         state.goal = m[1];
         if (m[2] && PROGRAMS[m[1]].plans[m[2]]) state.days = Number(m[2]);
         render();
-        return { target: document.getElementById("programs") };
+        const day = doing ? (els.grid.querySelector(".day-card.is-next") || els.grid.querySelector(".day-card")) : null;
+        if (day) { day.classList.add("is-flash"); setTimeout(() => day.classList.remove("is-flash"), 1800); }
+        return { target: day || document.getElementById("programs") };
     });
 
     render();
@@ -3027,6 +3127,19 @@ function setupRestTimer() {
     const atEl = document.getElementById("rest-timer-at");
     const alertsBtn = document.getElementById("rest-alerts");
     let endAt = 0, total = 0, tick = null, audio = null, restName = "";
+    // While the timer is up, keep room for it so it never covers the set boxes you're typing in
+    const room = () => {
+        const h = box.hidden ? 0 : Math.ceil(box.getBoundingClientRect().height);
+        document.documentElement.style.setProperty("--rest-h", `${h}px`);
+        document.body.classList.toggle("rest-on", h > 0);
+    };
+    if ("ResizeObserver" in window) new ResizeObserver(room).observe(box);
+    new MutationObserver(room).observe(box, { attributes: true, attributeFilter: ["hidden"] });
+    document.addEventListener("focusin", (e) => {
+        if (box.hidden || !e.target.matches(".log-form input, .log-form select")) return;
+        const r = e.target.getBoundingClientRect();
+        if (r.bottom > box.getBoundingClientRect().top - 8) e.target.scrollIntoView({ block: "center" });
+    });
     const save = () => store.set(REST_KEY, tick ? { endAt, total, name: restName } : null);
     // Offer lock-screen alerts once: needs notifications, which iPhones allow for home-screen apps
     const canAsk = () => "Notification" in window && Notification.permission === "default" && store.get("gu-rest-alerts-no") !== true;
@@ -3206,6 +3319,15 @@ function libSprite(sex) {
     document.body.insertAdjacentHTML("beforeend", `<svg class="lib-sprite" aria-hidden="true" focusable="false" width="0" height="0"><defs>${views}</defs></svg>`);
 }
 
+// Search results: names that start with what you typed first, then names that contain it, then other names (aka), then muscles
+function searchRank(n, q) {
+    if (!q) return 0;
+    const name = n.toLowerCase();
+    if (name.startsWith(q)) return 0;
+    if (name.includes(` ${q}`) || name.includes(`-${q}`)) return 1;
+    if ((EXERCISES[n].aka || "").toLowerCase().includes(q)) return 2;
+    return 3;
+}
 function setupLibrary() {
     const grid = document.getElementById("library-grid");
     if (!grid || typeof EXERCISES !== "object") return;
@@ -3226,7 +3348,8 @@ function setupLibrary() {
         // "Dumbbells" also shows bodyweight moves, since anyone with dumbbells can do those too
         const kitOk = (n) => !kit || equipOf(n) === kit || (kit === "db" && equipOf(n) === "body" && !isCardio(n));
         const shown = names.filter((n) => (!muscle || group[n] === muscle) && kitOk(n)
-            && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq} ${EXERCISES[n].aka || ""}`.toLowerCase().includes(q)));
+            && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq} ${EXERCISES[n].aka || ""}`.toLowerCase().includes(q)))
+            .sort((a, b) => searchRank(a, q) - searchRank(b, q));
         count.textContent = shown.length
             ? `${shown.length} exercise${shown.length === 1 ? "" : "s"}${muscle ? ` for ${label[muscle].toLowerCase()}` : ""}`
             : `No exercises match "${search.value}". Try a simpler word, like press or row.`;
@@ -3330,6 +3453,13 @@ function setupAddToWorkout() {
         const onOther = last && last.goal && last.goal !== "custom" && PROGRAMS[last.goal];
         let pick = 0;
         if (last && last.goal === "custom") { const info = currentPlanInfo(); if (info && !info.weekDone) pick = info.di; }
+        // Better: the day that already trains the same muscles (curls go on Pull day, not Push)
+        const m = builderMuscle(name);
+        const near = { biceps: ["biceps", "back"], back: ["back", "biceps"], triceps: ["triceps", "chest", "shoulders"], chest: ["chest", "triceps", "shoulders"], shoulders: ["shoulders", "chest", "triceps"],
+            quads: ["quads", "glutes", "hamstrings", "calves"], glutes: ["glutes", "quads", "hamstrings"], hamstrings: ["hamstrings", "glutes", "quads"], calves: ["calves", "quads", "hamstrings"] }[m] || [m];
+        const score = (d) => d.items.reduce((t, x) => t + (x && EXERCISES[x.n] ? (builderMuscle(x.n) === m ? 2 : near.includes(builderMuscle(x.n)) ? 1 : 0) : 0), 0);
+        const best = days.map((d, i) => [score(d), i]).sort((a, b) => b[0] - a[0])[0];
+        if (best && best[0] > 0) pick = best[1];
         const base = builderDefault(name, (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle");
         let weight = builderWeight(base);
         if (weight === "NEED_BODYWEIGHT") weight = "Pick a weight you could lift a couple more times than the top of the range. Log it and you'll get a target next time.";
@@ -4369,7 +4499,7 @@ function setupCoach() {
    once to add Ground Up to the home screen so it opens like an app.
    ========================================================= */
 function setupApp() {
-    if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    if ("serviceWorker" in navigator && window.isSecureContext && location.protocol !== "file:") {
         navigator.serviceWorker.register("sw.js").catch(() => { /* offline support is a bonus */ });
     }
     const standalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
@@ -4438,7 +4568,7 @@ function setupMyDashboard() {
         const streak = weekStreak();
         const nextTargets = info && !info.weekDone ? info.items.slice(0, 3).map((x) => {
             const t = isCardio(x.name) ? null : nextTarget(x.name, x.d, unit);
-            return { name: x.name, text: t && t.weight > 0 ? `${trimNum(t.weight)} ${unit} × ${t.reps || parseDose(x.d).high}` : x.d };
+            return { name: x.name, text: t && t.weight > 0 ? `${trimNum(t.weight)} ${unit}${t.each ? " each" : ""} × ${t.reps || parseDose(x.d).high}` : x.d };
         }) : [];
         box.innerHTML = `
             <div class="dash-hello">
@@ -4537,7 +4667,7 @@ function currentPlanInfo() {
     if (weekDone) di = 0;
     const day = list[di];
     const items = dayLineup(last.goal, days, di, day.items, week, swaps).map((x, xi) => ({ name: x.name, d: x.d, done: done.has(`${di}-${xi}`) }));
-    return { goal: last.goal, days, week, di, weekDone, name: p.name, title: day.title, items, href: `programs.html#program-${last.goal}-${days}` };
+    return { goal: last.goal, days, week, di, weekDone, name: p.name, title: day.title, items, href: `programs.html?today=1#program-${last.goal}-${days}` };
 }
 
 function setupPlanBar() {
@@ -4792,7 +4922,8 @@ function setupBuilder() {
         const muscle = (spot.querySelector('input[name="builder-muscle"]:checked') || {}).value || "";
         const kit = kitSel.value;
         const shown = names.filter((n) => (!muscle || libraryGroup(n) === muscle) && (!kit || equipOf(n) === kit)
-            && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq} ${EXERCISES[n].aka || ""}`.toLowerCase().includes(q)) && !/stretch|mobility/i.test(n));
+            && (!q || `${n} ${EXERCISES[n].m} ${EXERCISES[n].eq} ${EXERCISES[n].aka || ""}`.toLowerCase().includes(q)) && !/stretch|mobility/i.test(n))
+            .sort((a, b) => searchRank(a, q) - searchRank(b, q));
         $(".builder-count").textContent = `${shown.length} exercise${shown.length === 1 ? "" : "s"}`;
         const picked = new Set(draft.items.map((x) => x.n));
         const { by, trained } = tally();
@@ -4930,11 +5061,13 @@ function setupBuilder() {
             const doneNames = new Set(done.filter((k) => String(k).startsWith(`${d}-`)).map((k) => { const it = days[d].items[Number(String(k).split("-")[1])]; return it && it.n; }).filter(Boolean));
             done = done.filter((k) => !String(k).startsWith(`${d}-`)).concat(newDay.items.map((x, i) => (doneNames.has(x.n) ? `${d}-${i}` : null)).filter(Boolean));
             days[d] = newDay;
+            clearCustomSwaps(d);
         } else if (draft.addDay && oldN > 0 && oldN < 7) {
             days.push(newDay);
         } else {
             days = [newDay];
             done = [];
+            clearCustomSwaps();
         }
         store.remove(oldKey);
         store.set(`gu-progress-custom-${days.length}-w${week}`, done);
@@ -5819,8 +5952,10 @@ function setupDashboard() {
             const lastText = x.lastSets.map((s) => (s.w ? `${trimNum(s.w)}×${s.r}` : `${s.r}`)).join(", ");
             const strength = [`${fmt(x.nowMax)} ${u} max`, `${fmt(x.laterMax)} ${u} max`];
             const endurance = x.top ? [`${x.nowReps} reps @ ${trimNum(x.top)}`, `${x.laterReps} reps @ ${trimNum(x.top)}`] : ["Bodyweight", "Bodyweight"];
-            const cells = mode === "strength" ? strength : mode === "endurance" ? endurance
+            let cells = mode === "strength" ? strength : mode === "endurance" ? endurance
                 : [`${strength[0]}<small>${endurance[0]}</small>`, `${strength[1]}<small>${endurance[1]}</small>`];
+            // Bodyweight moves: no max to estimate, so show reps
+            if (!x.top || !Number.isFinite(x.nowMax)) cells = [`${Math.max(...x.lastSets.map((st) => st.r))} reps<small>best set last time</small>`, `More reps<small>then the harder version</small>`];
             return `<tr${n === selected ? ' class="is-selected"' : ""}>
                 <th scope="row">${escapeHtml(n)}</th>
                 <td data-label="Last time">${shortDate(parseIso(x.last.date))}<small>${escapeHtml(lastText)}</small></td>
@@ -5829,7 +5964,9 @@ function setupDashboard() {
                 <td class="lift-chart-cell"><button type="button" class="chip" data-chart="${escapeHtml(n)}" aria-label="Show the ${escapeHtml(n)} chart">Chart</button></td>
             </tr>`;
         }).join("");
-        drawLift(selected && names.includes(selected) ? selected : names[0], profile, mode);
+        // Default chart: the lift with the most sessions (the clearest trend)
+        const most = names.slice().sort((a, b) => logFor(b).length - logFor(a).length)[0];
+        drawLift(selected && names.includes(selected) ? selected : most, profile, mode);
     }
 
     function drawLift(name, profile, mode) {
@@ -5838,6 +5975,13 @@ function setupDashboard() {
         const x = liftSummary(name, profile);
         const svg = $("lift-chart");
         const u = profile.unit;
+        if (!x.top || !Number.isFinite(x.nowMax)) {
+            const pts = x.entries.map((en) => ({ date: parseIso(en.date), value: Math.max(...en.sets.map((st) => st.r)) }));
+            $("lift-chart-title").textContent = `${name}: best set (reps)`;
+            drawTrendChart(svg, pts, [], { unit: "reps", label: (v) => String(Math.round(v)) });
+            $("lift-chart-note").textContent = `Your best set each session. Bodyweight moves get harder by adding reps, then moving to the harder version in the how-to.`;
+            return;
+        }
         if (mode === "endurance" && x.top) {
             const pts = x.proj.points.map((p) => ({ date: p.date, value: repsAt(p.value, x.top) }));
             const prj = x.proj.projection.map((p) => ({ date: p.date, value: repsAt(p.value, x.top) }));
@@ -5926,8 +6070,11 @@ function setupDashboard() {
 
     // Quick cardio form
     const qc = $("quick-cardio");
-    const acts = Object.keys(EXERCISES).filter(isCardio);
+    // Walking first (the most common), and the last activity you logged picked for you
+    const acts = Object.keys(EXERCISES).filter(isCardio).sort((a, b) => (b === "Brisk walk") - (a === "Brisk walk"));
     $("qc-activity").innerHTML = acts.map((n) => `<option>${escapeHtml(n)}</option>`).join("") + "<option>Other cardio</option>";
+    const lastAct = (getCardio().slice(-1)[0] || {}).activity;
+    if (lastAct && [...$("qc-activity").options].some((o) => o.value === lastAct)) $("qc-activity").value = lastAct;
     qc.elements.date.value = isoDate(new Date());
     qc.elements.date.max = isoDate(new Date());
     qc.addEventListener("submit", (e) => {
@@ -6244,7 +6391,7 @@ function setupHero() {
         });
         form.addEventListener("submit", (e) => {
             e.preventDefault();
-            if (PROGRAMS[goal()]) navigate(`programs.html#program-${goal()}-${days}`);
+            if (PROGRAMS[goal()]) navigate(`programs.html?today=1#program-${goal()}-${days}`);
         });
         renderDays();
     }
@@ -6270,7 +6417,7 @@ function setupHero() {
     if (last && PROGRAMS[last.goal] && actions) {
         const week = Math.max(1, weekOf(programStart(last.goal)));
         actions.insertAdjacentHTML("afterbegin",
-            `<a class="btn btn-light" href="programs.html#program-${last.goal}-${last.days}">Continue: ${escapeHtml(PROGRAMS[last.goal].name)}, week ${week}</a>`);
+            `<a class="btn btn-light" href="programs.html?today=1#program-${last.goal}-${last.days}">Continue: ${escapeHtml(PROGRAMS[last.goal].name)}, week ${week}</a>`);
         const second = actions.querySelector('a[href="#get-plan"]');
         if (second) { second.classList.remove("btn-light"); second.classList.add("btn-outline-light"); second.textContent = "Pick a different plan"; }
         const never = actions.querySelector('a[href="start.html"]');
@@ -6753,7 +6900,7 @@ const FIREBASE_SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
    stays until the page is closed, in case it was a mistake.
    ========================================================= */
 const RESET_GROUPS = [
-    { id: "lifts", label: "Lifting log, finished workouts, and personal records", keys: ["gu-log", "gu-prs", "gu-sessions"], on: true,
+    { id: "lifts", label: "Lifting log, finished workouts, and personal records", keys: ["gu-log", "gu-prs", "gu-sessions", "gu-log-draft"], on: true,
         count: () => { const days = new Set(Object.values(getLog()).flatMap((e) => (Array.isArray(e) ? e.map((x) => x && x.date) : []))); const n = days.size; return n ? `${n} ${n === 1 ? "day" : "days"} of lifting logged` : ""; } },
     { id: "cardio", label: "Cardio log", keys: ["gu-cardio"], on: true,
         count: () => { const n = getCardio().length; return n ? `${n} ${n === 1 ? "entry" : "entries"}` : ""; } },
@@ -6874,8 +7021,8 @@ function setupAccount() {
     if (!configured) {
         if (card) card.innerHTML = `
             <div class="account-box">
-                <h2 class="me-h2">Your data</h2>
-                <p>Everything you log is saved on this device only, so nothing is sent anywhere. Accounts that sync between your phone and computer are coming soon. Until then, use <strong>Download everything</strong> at the bottom of this page to keep a backup.</p>
+                <h2 class="me-h2">Account</h2>
+                <p>Everything you log is saved on this device only, so nothing is sent anywhere. Accounts that sync between your phone and computer are coming soon. Until then, use <strong>Download everything</strong> just below to keep a backup.</p>
             </div>`;
         return;
     }

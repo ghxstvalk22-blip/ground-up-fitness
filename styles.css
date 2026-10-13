@@ -3290,3 +3290,14 @@ html.app-splash::after {
     html.app-splash::after { background-size: 100% 3px; animation: splash-out 0.2s linear 0.7s forwards; }
     html.app-splash::before { animation: splash-out 0.2s linear 0.7s forwards; }
 }
+
+/* Room for the rest timer so it never covers the set boxes */
+body.rest-on main { padding-bottom: var(--rest-h, 0px); }
+html:has(body.rest-on) { scroll-padding-bottom: calc(var(--rest-h, 0px) + 12px); }
+/* A hidden label on a switch must stay hidden (it was 390px wide and made home plans scroll sideways) */
+.segmented legend.visually-hidden { float: none; width: 1px; height: 1px; margin: -1px; padding: 0; }
+/* Charts shrink on phones, so their small labels need to be bigger to stay readable */
+@media (max-width: 640px) {
+    #lift-chart .chart-label, #progress-chart .chart-label { font-size: 22px; }
+    svg .chart-label { font-size: 17px; }
+}
