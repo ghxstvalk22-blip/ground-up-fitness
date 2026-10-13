@@ -3487,3 +3487,39 @@ body.view-plans #build { display: none; }
 .aw-sets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .aw-sets span { padding: 3px 8px; border: 1px solid var(--line); background-color: var(--paper); font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) { .me-tab { font-size: 0.56rem; letter-spacing: 0.04em; } }
+
+/* Muscle check, simpler: two clearly different colors, short summary first */
+.builder-cover { --bc-once: #ff5a1f; --bc-twice: #111111; --bc-twice-line: #ff5a1f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .builder-cover { --bc-twice: #ffffff; } }
+:root[data-theme="dark"] .builder-cover { --bc-twice: #ffffff; }
+.bc-body .mm-muscle path.hit-1 { fill: var(--bc-once); stroke: #b23c0f; }
+.bc-body .mm-muscle path.hit-2 { fill: var(--bc-twice); stroke: var(--bc-twice-line); stroke-width: 5; }
+.bc-k1 { background-color: var(--bc-once); }
+.bc-k2 { background-color: var(--bc-twice); outline: 2px solid var(--bc-twice-line); outline-offset: -2px; }
+.bc-sum { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
+.bc-sum li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 8px 10px; border-left: 4px solid var(--bc-once); background-color: var(--paper); font-size: 0.9rem; }
+.bc-sum li.is-2 { border-left-color: var(--bc-twice); box-shadow: inset 4px 0 0 var(--bc-twice-line); }
+.bc-sum strong { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.bc-x2 { padding: 0 5px; background-color: var(--bc-twice); color: var(--paper); font-size: 0.75rem; }
+.bc-more > summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.bc-more > summary:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+.bc-more .bc-list { margin-top: 6px; }
+.bc-head.is-1 { border-color: var(--bc-once); box-shadow: inset 3px 0 0 var(--bc-once); }
+.bc-head.is-2 { border-color: var(--bc-twice); box-shadow: inset 3px 0 0 var(--bc-twice); }
+
+/* Muscle check v3: folds open, sits under your list, striped "worked twice" */
+details.builder-cover { padding: 0; }
+details.builder-cover > summary { position: relative; display: flex; flex-direction: column; gap: 2px; min-height: 52px; padding: 12px 44px 12px 14px; cursor: pointer; list-style: none; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+details.builder-cover > summary::-webkit-details-marker { display: none; }
+details.builder-cover > summary::after { content: "+"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); font-size: 1.3rem; color: var(--volt); }
+details.builder-cover[open] > summary::after { content: "\2212"; }
+details.builder-cover > summary:focus-visible { outline: 3px solid var(--volt); outline-offset: -3px; }
+.bc-peek { font-size: 0.78rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+details.builder-cover > :not(summary) { margin-left: 14px; margin-right: 14px; }
+details.builder-cover > .bc-warn { margin-bottom: 14px; }
+.bc-k2 { background: repeating-linear-gradient(45deg, #7a1e00 0 4px, #ff5a1f 4px 8px); outline: 0; }
+.bc-x2 { background-color: #7a1e00; color: #ffffff; }
+.bc-sum li.is-2 { border-left-color: #7a1e00; box-shadow: none; background-image: linear-gradient(90deg, rgba(255, 90, 31, 0.12), transparent 60%); }
+.bc-head.is-2 { border-color: #7a1e00; box-shadow: inset 3px 0 0 #7a1e00; }
+.bc-warn-title { margin: 0 0 6px !important; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink) !important; }
+.day-edit .chip[data-move-day] { min-width: 44px; justify-content: center; font-size: 1rem; }

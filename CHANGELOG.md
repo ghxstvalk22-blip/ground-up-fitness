@@ -2,6 +2,16 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Muscle check, simpler; fixes from three more test runs)
+
+- **Muscle check is simpler and easier to read.** It now sits under your exercise list as a fold-open **Muscle check** with a one-line peek (the muscles you're working, and how many things are worth a look). Inside: the front and back body, one line per muscle, and every head and part one tap further (from Intermediate up; Beginner sees plain muscle names).
+- **Colors you can tell apart:** solid orange = worked, orange with dark stripes = worked twice or more (instead of a near-black that looked like a shadow). The faint "helps" color is gone.
+- **Smarter tips:** a tip only shows when two exercises really do the same job for the same muscle, and the swap it offers is a real alternative with similar equipment (no more "swap Romanian deadlift for hip abduction"). The previous-day note only appears when the two days are mostly the same muscles.
+- **Ticked sets are never lost:** sets you ticked with ✓ (or typed) but didn't tap Save on are saved when you tap Finish workout.
+- **✓ fills the low end of the rep range,** so weights don't jump up after one session. Type more reps when you do more, and the next target goes up.
+- **A half-done workout shows as in progress:** logged sets count toward "done", and Start turns into Continue on the plan bar, Up next, and the Active tab. Exercise cards say "Today so far" for sets from today.
+- **Smaller fixes:** Build your own workout starts on the goal from Tailor it to you; days get named "Upper body", "Lower body", or "Full body" when that's what they are; the ↑/↓ day buttons are bigger; the Active tab says "See what's next" when your week is done.
+
 ## 2026-10-13 (See what your workout hits, an Active tab, and only finished workouts in your log)
 
 - **What this workout hits (Build your own workout).** As you add exercises, a body map (front and back) lights up the muscles they work: orange for worked, red for worked twice or more, light pink for muscles that help. Under it, every muscle you're training is broken into its heads and parts (upper, middle, lower chest; front, side, rear delt; the 3 triceps heads; inner and outer biceps and brachialis; the 3 quad heads; and so on), with how many of your exercises work each one and which ones aren't worked yet. All 138 exercises in the library are mapped this way.

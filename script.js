@@ -2679,7 +2679,7 @@ function setupPrograms() {
                         ? `<button type="button" class="rest-btn" data-rest="${restSeconds(x.rest)}" data-rest-name="${escapeHtml(x.name)}"><span aria-hidden="true">&#9654;</span> Rest ${escapeHtml(x.rest)}<span class="visually-hidden">: start rest timer</span></button>`
                         : `<span class="ex-rest">Rest ${escapeHtml(x.rest)}</span>`) : ""}
                     ${easier ? `<span class="ex-swap">Easier option: ${escapeHtml(easier)}</span>` : ""}
-                    ${target ? `<span class="ex-target${target.up ? " is-up" : ""}">${target.lastText ? `<span class="ex-last">Last time: ${escapeHtml(target.lastText)}</span>` : ""}${escapeHtml(target.text)}</span>` : ""}
+                    ${target ? `<span class="ex-target${target.up ? " is-up" : ""}">${target.lastText ? `<span class="ex-last">${(logFor(x.name).slice(-1)[0] || {}).date === isoDate(new Date()) ? "Today so far" : "Last time"}: ${escapeHtml(target.lastText)}</span>` : ""}${escapeHtml(target.text)}</span>` : ""}
                     <span class="ex-actions">
                         ${info ? `<button type="button" class="chip" data-howto="${escapeHtml(x.name)}">How to</button>` : ""}
                         ${x.canRotate ? `<button type="button" class="chip" data-swap="${key}">Swap</button>` : ""}
@@ -2698,7 +2698,7 @@ function setupPrograms() {
         const sw = typeof startWeight === "function" ? startWeight(x.name, dose.high || 10, unit) : null;
         const each = Boolean((target && target.each) || (sw && sw.each));
         // Today's target reps show as a hint; only sets you fill in (or tick done) are saved
-        const reps = (target && target.reps) || dose.high || "";
+        const reps = (target && !target.first && target.reps) || dose.low || dose.high || "";
         const head = `<div class="log-set log-set-head" aria-hidden="true"><span></span><span>${unit}${each ? " each" : ""}</span><span>Reps</span><span>Done</span></div>`;
         const rows = head + Array.from({ length: dose.sets }, (_, i) => `
             <div class="log-set">
@@ -2837,6 +2837,17 @@ function setupPrograms() {
     /* ----- Finish workout: save the session, celebrate, and show next time's targets ----- */
     function finishWorkout(di) {
         adopt();
+        // Sets you ticked or typed but didn't tap Save on still count
+        const card0 = els.grid.querySelector(`.day-card[data-day="${di}"]`);
+        if (card0) card0.querySelectorAll(".log-form:not(.cardio-form)").forEach((form) => {
+            const ws = [...form.querySelectorAll('input[name="w"]')], rs = [...form.querySelectorAll('input[name="r"]')];
+            const sets = rs.map((r, i) => ({ w: Number(ws[i].value) || 0, r: Number(r.value) })).filter((st) => Number.isInteger(st.r) && st.r > 0 && st.r <= 100 && st.w >= 0 && st.w <= 1500);
+            if (!sets.length) return;
+            const date = (form.elements.date && form.elements.date.value) || isoDate(new Date());
+            const already = (logFor(form.dataset.exercise) || []).some((e) => e.date === date && e.sets.length >= sets.length);
+            if (!already) saveSession(form.dataset.exercise, date, getProfile().unit, sets);
+            dropDraft(form);
+        });
         const profile = getProfile(), unit = profile.unit;
         const today = isoDate(new Date());
         const p = PROGRAMS[state.goal];
@@ -4818,7 +4829,7 @@ function setupMyDashboard() {
                     ${sugCard || (info ? `<p class="dash-big">${escapeHtml(info.weekDone ? "Week done" : info.title)}</p>
                         <p class="dash-sub">${escapeHtml(info.name)}${info.weekDone ? " · next week's plan is ready" : ` · ${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
                         ${nextTargets.length ? `<ul class="dash-targets">${nextTargets.map((t) => `<li>${equipIcon(t.name)}<span>${escapeHtml(t.name)}</span><strong>${escapeHtml(t.text)}</strong></li>`).join("")}</ul>` : ""}
-                        <a class="btn btn-primary btn-compact" href="${info.href}">${info.weekDone ? "See my plan" : planPaused() ? "Continue my workout" : "Start this workout"}</a>${planPaused() ? `<p class="dash-sub">You canceled your last workout. Tap Continue when you're ready.</p>` : ""}`
+                        <a class="btn btn-primary btn-compact" href="${info.href}">${info.weekDone ? "See my plan" : planPaused() || info.started ? "Continue my workout" : "Start this workout"}</a>${planPaused() ? `<p class="dash-sub">You canceled your last workout. Tap Continue when you're ready.</p>` : ""}`
                     : `<p class="dash-sub">You're not on a plan yet.</p><a class="btn btn-primary btn-compact" href="programs.html">Pick a plan</a> <a class="btn btn-compact" href="programs.html#build">Build my own</a>`)}
                 </article>
                 <article class="dash-card">
@@ -4905,8 +4916,10 @@ function currentPlanInfo() {
     const weekDone = di < 0;
     if (weekDone) di = 0;
     const day = list[di];
-    const items = dayLineup(last.goal, days, di, day.items, week, swaps).map((x, xi) => ({ name: x.name, d: x.d, done: done.has(`${di}-${xi}`) }));
-    return { goal: last.goal, days, week, di, weekDone, name: p.name, title: day.title, items, href: `programs.html?today=1#program-${last.goal}-${days}` };
+    const today = isoDate(new Date());
+    const items = dayLineup(last.goal, days, di, day.items, week, swaps).map((x, xi) => ({ name: x.name, d: x.d, done: done.has(`${di}-${xi}`) || logFor(x.name).some((e) => e.date === today) }));
+    const started = !weekDone && items.some((x) => x.done);
+    return { goal: last.goal, days, week, di, weekDone, started, name: p.name, title: day.title, items, href: `programs.html?today=1#program-${last.goal}-${days}` };
 }
 
 // Cancel workout: stop the rest timer, drop half-typed sets, and hide the Your plan bar until you tap Continue.
@@ -5103,6 +5116,11 @@ const HEAD_RULES = [
     [/plank|bird dog/i, ["abs-upper", "abs-lower"], ["obliques", "erectors"]],
     [/crunch|sit-up|rollout|ab wheel/i, ["abs-upper"], ["abs-lower"]]
 ];
+// The one muscle an exercise is mostly for (its first main head's muscle)
+function primaryGroup(name) {
+    const h = exerciseHeads(name).main.find((id) => typeof mmPart === "function" && mmPart(id));
+    return h ? mmPart(h).g.id : null;
+}
 function exerciseHeads(name) {
     if (typeof EXERCISES !== "object" || !EXERCISES[name] || isCardio(name)) return { main: [], also: [] };
     const rule = HEAD_RULES.find(([re]) => re.test(name));
@@ -5223,7 +5241,8 @@ function setupBuilder() {
     if (!spot || typeof EXERCISES !== "object") return;
     const names = Object.keys(EXERCISES).sort((a, b) => a.localeCompare(b));
     const groupLabel = { "": "All", chest: "Chest", back: "Back", shoulders: "Shoulders", arms: "Arms", legs: "Legs", core: "Core", cardio: "Cardio" };
-    let draft = builderClean(store.get(BUILDER_KEY)) || { title: "", goal: getProfile().trainFor === "endurance" ? "endurance" : "muscle", items: [] };
+    const profGoal = { fatloss: "fit", strength: "strength", muscle: "muscle", health: "fit" }[getProfile().goal];
+    let draft = builderClean(store.get(BUILDER_KEY)) || { title: "", goal: profGoal || (getProfile().trainFor === "endurance" ? "endurance" : "muscle"), items: [] };
     // Already have your own plan? What you build next becomes its next day (Day 2, Day 3...) unless you choose a new plan
     if (!draft.editing && !draft.addDay && !draft.newPlan && customDaysRaw().length && customDaysRaw().length < 7 && (store.get("gu-last-plan") || {}).goal === "custom") draft.addDay = true;
     spot.innerHTML = `
@@ -5273,15 +5292,16 @@ function setupBuilder() {
                         <input id="builder-name" type="text" maxlength="40" placeholder="e.g. Chest and back day">
                     </div>
                     <ul class="builder-tally" aria-label="Exercises per muscle"></ul>
-                    <section class="builder-cover" aria-labelledby="bc-title" hidden>
-                        <h4 id="bc-title">What this workout hits</h4>
-                        <div class="bc-bodies" aria-hidden="true"></div>
-                        <p class="bc-key" aria-hidden="true"><span class="bc-k bc-k1"></span>Worked <span class="bc-k bc-k2"></span>Worked twice or more <span class="bc-k bc-ka"></span>Helps</p>
-                        <ul class="bc-list"></ul>
-                        <div class="bc-warn" role="status"></div>
-                    </section>
                     <p class="builder-empty">Nothing here yet. Tap <strong>Add</strong> next to an exercise.</p>
                     <ol class="builder-list"></ol>
+                    <details class="builder-cover" hidden${levelAtLeast("Intermediate") ? " open" : ""}>
+                        <summary id="bc-title">Muscle check <span class="bc-peek"></span></summary>
+                        <div class="bc-bodies" aria-hidden="true"></div>
+                        <p class="bc-key" aria-hidden="true"><span class="bc-k bc-k1"></span>Worked <span class="bc-k bc-k2"></span>Worked twice or more</p>
+                        <ul class="bc-sum"></ul>
+                        ${levelAtLeast("Intermediate") ? `<details class="bc-more"><summary>See every head and part</summary><ul class="bc-list"></ul></details>` : `<ul class="bc-list" hidden></ul>`}
+                        <div class="bc-warn" role="status"></div>
+                    </details>
                     <p class="builder-note" hidden></p>
                     <div class="builder-actions">
                         <button type="button" class="btn btn-primary builder-save">${draft.editing ? "Save changes" : draft.addDay ? `Save Day ${customDaysRaw().length + 1}` : "Save and start"}</button>
@@ -5381,43 +5401,64 @@ function setupBuilder() {
             bodies.querySelectorAll("path[data-parts]").forEach((pth) => {
                 const ids = pth.getAttribute("data-parts").split(" ");
                 const n = Math.max(0, ...ids.map((i) => mainCount[i] || 0));
-                if (n >= 2) pth.classList.add("hit-2"); else if (n === 1) pth.classList.add("hit-1"); else if (ids.some((i) => alsoSet.has(i))) pth.classList.add("hit-a");
+                if (n >= 2) pth.classList.add("hit-2"); else if (n === 1) pth.classList.add("hit-1");
+            });
+            // "Worked twice" is orange with dark stripes, so more work looks like more (not like a shadow)
+            bodies.querySelectorAll("svg").forEach((svg, k) => {
+                const defs = svg.querySelector("defs");
+                if (defs) defs.insertAdjacentHTML("beforeend", `<pattern id="bc-hatch-${k}" patternUnits="userSpaceOnUse" width="22" height="22" patternTransform="rotate(45)"><rect width="22" height="22" fill="#ff5a1f"/><rect width="9" height="22" fill="#7a1e00"/></pattern>`);
+                svg.querySelectorAll("path.hit-2").forEach((pth) => pth.setAttribute("style", `fill:url(#bc-hatch-${k})`));
             });
             bodies.querySelectorAll(".mm-muscle").forEach((g) => { g.removeAttribute("tabindex"); g.removeAttribute("role"); });
         }
         // Each muscle you're working, with all of its heads or parts
         const groups = MUSCLE_MAP.filter((g) => g.parts.some((pt) => mainCount[pt.id]));
+        // Short version: one line per muscle, only the heads you're working
+        $(".bc-sum").innerHTML = groups.map((g) => {
+            const hit = g.parts.filter((pt) => mainCount[pt.id]);
+            const words = !levelAtLeast("Intermediate") ? (hit.some((pt) => mainCount[pt.id] >= 2) ? `<b class="bc-x2">worked twice</b>` : "") : g.parts.length > 1 ? hit.map((pt) => `${pt.name.replace(new RegExp(`\\s*${g.name}$`, "i"), "").toLowerCase()}${mainCount[pt.id] >= 2 ? ` <b class="bc-x2">×${mainCount[pt.id]}</b>` : ""}`).join(", ") : (mainCount[hit[0].id] >= 2 ? `<b class="bc-x2">×${mainCount[hit[0].id]}</b>` : "");
+            return `<li class="${hit.some((pt) => mainCount[pt.id] >= 2) ? "is-2" : ""}"><strong>${escapeHtml(g.name)}</strong>${words ? `<span>${words}</span>` : ""}</li>`;
+        }).join("");
         $(".bc-list").innerHTML = groups.map((g) => `<li><strong>${escapeHtml(g.name)}</strong><span class="bc-heads">${g.parts.map((pt) => {
             const n = mainCount[pt.id] || 0;
-            const cls = n >= 2 ? "is-2" : n ? "is-1" : alsoSet.has(pt.id) ? "is-a" : "";
-            return `<span class="bc-head ${cls}">${escapeHtml(pt.name)}${n ? ` <b>×${n}</b>` : alsoSet.has(pt.id) ? " <i>helps</i>" : " <i>not worked</i>"}</span>`;
+            const cls = n >= 2 ? "is-2" : n ? "is-1" : "";
+            return `<span class="bc-head ${cls}">${escapeHtml(pt.name)}${n ? ` <b>×${n}</b>` : alsoSet.has(pt.id) ? " <i>a little</i>" : " <i>not worked</i>"}</span>`;
         }).join("")}</span></li>`).join("");
         // Heads-ups: the same head twice, and the same muscles as the day before
         const warns = [];
-        // One heads-up per group of exercises that overlap (pushdown + rope pushdown both hit the lateral and medial heads)
+        // One heads-up per pair of exercises that are really doing the same job (both mainly for that muscle, same heads)
         const seen = new Map();
         Object.entries(mainCount).filter(([, n]) => n >= 2).forEach(([id]) => {
-            const key = `${mmPart(id).g.id}|${byHead[id].join("|")}`;
-            if (!seen.has(key)) seen.set(key, { g: mmPart(id).g, ids: [], names: byHead[id] });
+            const g = mmPart(id).g;
+            const names = byHead[id].filter((n) => primaryGroup(n) === g.id);
+            if (names.length < 2 || g.parts.length < 2) return;
+            const key = `${g.id}|${names.join("|")}`;
+            if (!seen.has(key)) seen.set(key, { g, ids: [], names });
             seen.get(key).ids.push(id);
         });
+        const beginner = !levelAtLeast("Intermediate");
+        const offered = new Set();
         seen.forEach(({ g, ids, names }) => {
-            const open = g.parts.filter((pt) => !mainCount[pt.id]);
-            let sugg = null, forPart = null;
-            for (const pt of open) { const e = pt.ex.find((n) => EXERCISES[n] && !draft.items.some((x) => x.n === n)); if (e) { sugg = e; forPart = pt; break; } }
-            const heads = ids.map((id) => mmPart(id).p.name.toLowerCase());
-            const label = g.parts.length > 1 ? `Your ${g.name.toLowerCase()} (${heads.join(" and ")})` : `Your ${g.name.toLowerCase()}`;
             const last = names[names.length - 1];
-            warns.push(`<li><strong>${escapeHtml(label)}</strong> ${names.length > 2 ? "is" : "gets"} worked by ${escapeHtml(names.join(" and "))}.${sugg ? ` For more balanced ${escapeHtml(g.name.toLowerCase())}, swap ${escapeHtml(last)} for <button type="button" class="text-button" data-swap-in="${escapeHtml(last)}|${escapeHtml(sugg)}">${escapeHtml(sugg)}</button>, which works the ${escapeHtml(forPart.name.toLowerCase())}.` : " That's fine if it's your focus today."}</li>`);
+            const open = g.parts.filter((pt) => !mainCount[pt.id]);
+            const pool = open.flatMap((pt) => pt.ex.filter((n) => EXERCISES[n] && !draft.items.some((x) => x.n === n) && !offered.has(n) && primaryGroup(n) === g.id).map((n) => ({ n, pt })));
+            const pick = pool.find((c) => equipOf(c.n) === equipOf(last)) || pool[0];
+            if (!pick) return;
+            offered.add(pick.n);
+            const what = beginner ? `${names.join(" and ")} are almost the same move for your ${g.name.toLowerCase()}.` : `${names.join(" and ")} both work your ${g.name.toLowerCase()} (${ids.map((id) => mmPart(id).p.name.toLowerCase()).join(" and ")}).`;
+            warns.push(`<li>${escapeHtml(what)} That's fine, or swap ${escapeHtml(last)} for <button type="button" class="text-button" data-swap-in="${escapeHtml(last)}|${escapeHtml(pick.n)}">${escapeHtml(pick.n)}</button>${beginner ? "" : ` to work the ${escapeHtml(pick.pt.name.toLowerCase())}`}.</li>`);
         });
         const days = customDaysRaw();
         const prevIdx = draft.editing ? draft.editDay - 1 : draft.addDay ? days.length - 1 : -1;
         if (prevIdx >= 0 && days[prevIdx]) {
-            const prevG = new Set(days[prevIdx].items.flatMap((it) => (EXERCISES[it.n] ? exerciseHeads(it.n).main : [])).map((id) => (mmPart(id) || {}).g).filter(Boolean).map((g) => g.name));
-            const both = [...new Set(Object.keys(mainCount).map((id) => mmPart(id).g.name))].filter((n) => prevG.has(n));
-            if (both.length) warns.push(`<li>Day ${prevIdx + 1} (${escapeHtml(days[prevIdx].title || "")}) also works your <strong>${escapeHtml(both.join(", ").toLowerCase())}</strong>. Done on back-to-back days, those muscles won't have had a rest day.</li>`);
+            const prim = (list) => new Set(list.map((n) => (EXERCISES[n] ? primaryGroup(n) : null)).filter(Boolean));
+            const prevG = prim(days[prevIdx].items.map((it) => it && it.n));
+            const nowG = prim(items.map((x) => x.n));
+            const both = [...nowG].filter((gid) => prevG.has(gid));
+            if (both.length && both.length * 2 >= nowG.size) warns.push(`<li>Day ${prevIdx + 1} (${escapeHtml(days[prevIdx].title || "")}) is mostly the same muscles (${escapeHtml(both.map((gid) => mmGroup(gid).name.toLowerCase()).join(", "))}). Leave a rest day between them, or pick different muscles for this day.</li>`);
         }
-        $(".bc-warn").innerHTML = warns.length ? `<ul>${warns.join("")}</ul>` : `<p>No head or part is worked twice. Nicely balanced.</p>`;
+        $(".bc-peek").textContent = `${groups.map((g) => g.name.toLowerCase()).join(", ")}${warns.length ? ` · ${warns.length} to look at` : ""}`;
+        $(".bc-warn").innerHTML = warns.length ? `<p class="bc-warn-title">Worth a look</p><ul>${warns.join("")}</ul>` : `<p>Nicely balanced. No two exercises are doing the same job.</p>`;
     }
     spot.addEventListener("click", (e) => {
         const b = e.target.closest("[data-swap-in]");
@@ -5565,7 +5606,9 @@ function setupBuilder() {
         const counts = {};
         draft.items.forEach((x) => { const m = builderMuscle(x.n); if (m !== "cardio") counts[m] = (counts[m] || 0) + 1; });
         const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([m]) => BUILD_MUSCLE_NAME[m]);
-        const autoTitle = top.length > 1 ? `${top.slice(0, -1).join(", ")} & ${top[top.length - 1]}` : top[0] || "Workout";
+        const UPPER = ["chest", "back", "shoulders", "biceps", "triceps"], LOWER = ["quads", "hamstrings", "glutes", "calves"];
+        const ups = Object.keys(counts).filter((m) => UPPER.includes(m)).length, lows = Object.keys(counts).filter((m) => LOWER.includes(m)).length;
+        const autoTitle = ups >= 2 && lows >= 2 ? "Full body" : ups >= 3 && !lows ? "Upper body" : lows >= 3 && !ups ? "Lower body" : top.length > 1 ? `${top.slice(0, -1).join(", ")} & ${top[top.length - 1]}` : top[0] || "Workout";
         const title = draft.title.trim() || autoTitle;
         const newDay = { title, items: draft.items.map((x) => ({ n: x.n, d: builderDose(x), rest: builderKind(x.n) === "time" ? "" : x.rest })) };
         let days = customDaysRaw();
@@ -6533,7 +6576,7 @@ function setupActiveWorkout() {
             <div class="aw-bar" aria-hidden="true"><div style="width:${info.items.length ? Math.round((doneN / info.items.length) * 100) : 0}%"></div></div>
             ${info.weekDone ? `<p class="section-lede">Nice work. Up next on the Overview tab has a workout ready for your next training day.</p>` : `<ul class="aw-list">${rows}</ul>`}
             <p class="dash-actions">
-                <a class="btn btn-primary btn-compact" href="${info.href}">${paused ? "Continue workout" : doneN ? "Continue workout" : "Start workout"}</a>
+                ${info.weekDone ? `<button type="button" class="btn btn-primary btn-compact" data-me-open="overview">See what's next</button>` : `<a class="btn btn-primary btn-compact" href="${info.href}">${paused || doneN ? "Continue workout" : "Start workout"}</a>`}
                 ${!paused && !info.weekDone ? `<button type="button" class="btn btn-compact" data-cancel-workout>Cancel workout</button>` : ""}
             </p>`;
     }

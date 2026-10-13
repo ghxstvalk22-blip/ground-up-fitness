@@ -295,7 +295,7 @@ async function openPage(browser, file, viewport, hash = "") {
             }
             await form.locator('button[type="submit"]').click();
             const target = await page.locator(".ex-row").nth(2).locator(".ex-target").textContent();
-            check(/Last time: 100×12/.test(target) && /Go up to/.test(target), `logging the top of the range suggests more weight next time`);
+            check(/(Last time|Today so far): 100×12/.test(target) && /Go up to/.test(target), `logging the top of the range suggests more weight next time`);
             check(await page.locator(".ex-row").nth(2).locator('input[type="checkbox"]').isChecked(), "logging today's sets checks the exercise off");
             check(await page.locator("#progress-exercise").inputValue() === exName, "progress panel picks up the logged exercise");
             check(await page.locator("#progress-chart .chart-proj").count() === 1, "progress chart draws a projection");
@@ -1161,6 +1161,7 @@ async function openPage(browser, file, viewport, hash = "") {
                 localStorage.clear();
                 saveCustomDays([{ title: "Back & Chest", items: [{ n: "Bench press", d: "3 × 8–10", rest: "2 min" }, { n: "Lat pulldown", d: "3 × 10–12", rest: "90 s" }] }]);
                 localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "custom", days: 1 }));
+                localStorage.setItem("gu-level", JSON.stringify("Intermediate"));
                 const t = new Date(), td = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
                 localStorage.setItem("gu-sessions", JSON.stringify([{ date: td, plan: "custom", days: 1, day: 0, title: "Back & Chest", names: ["Bench press", "Lat pulldown"], exercises: 2, sets: 6, reps: 60, volume: 0, unit: "lb" }]));
             });
@@ -1169,12 +1170,13 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/Build Day 2/.test(await page.locator("#builder-title").textContent()) && await page.locator(".builder-list li").count() === 0, "with a plan of your own, the builder starts empty as Day 2");
             for (const ex of ["Triceps pushdown", "Rope pushdown"]) { await page.fill("#builder-search", ex); await page.locator(`[data-add="${ex}"]`).click(); }
             await page.waitForTimeout(500);
-            check(await page.locator(".builder-cover").isVisible() && /Long head/.test(await page.locator(".bc-list").textContent()) && /Lateral head ×2/.test(await page.locator(".bc-list").textContent()), "the builder shows each muscle's heads and how often each is worked");
+            check(await page.locator(".builder-cover").isVisible() && /lateral head ×2/i.test(await page.locator(".bc-sum").textContent()) && /Long head/.test(await page.locator(".bc-list").textContent()) && !(await page.locator(".bc-list").isVisible()), "the builder sums up the heads you're working, with every head one tap away");
             check(await page.locator(".bc-bodies path.hit-2").count() > 0, "the body map lights up the muscles the workout hits");
             await page.locator(".bc-warn [data-swap-in]").first().click();
-            check(await page.locator(".builder-item", { hasText: "Overhead triceps extension" }).count() === 1, "a head worked twice gets a one-tap swap for a head that isn't");
+            const swappedIn = await page.evaluate(() => JSON.parse(localStorage.getItem("gu-builder")).items.map((x) => x.n));
+            check(swappedIn.includes("Triceps pushdown") && !swappedIn.includes("Rope pushdown") && await page.evaluate((list) => list.some((n) => exerciseHeads(n).main.includes("triceps-long")), swappedIn), `two moves doing the same job get a one-tap swap for one that works a different head (${swappedIn.join(", ")})`);
             check(await page.evaluate(() => Object.keys(EXERCISES).filter((n) => !isCardio(n) && !/stretch|mobility/i.test(n) && !exerciseHeads(n).main.length).length === 0), "every exercise in the library maps to the muscle heads it works");
-            for (const ex of ["Triceps pushdown", "Overhead triceps extension"]) await page.locator(".builder-item", { hasText: ex }).locator("[data-remove]").click();
+            for (const ex of swappedIn) await page.locator(".builder-item", { hasText: ex }).first().locator("[data-remove]").click();
             for (const ex of ["Overhead press", "Dumbbell curl", "Hammer curl"]) { await page.fill("#builder-search", ex); await page.locator(`[data-add="${ex}"]`).click(); }
             await Promise.all([page.waitForURL(/program-custom-2/), page.locator(".builder-save").click()]);
             await page.waitForTimeout(400);
