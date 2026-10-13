@@ -1726,6 +1726,7 @@ function rotatedName(name, ctx) {
 // Every exercise in a day for a given week, with swaps applied and no repeats within the day
 function dayLineup(program, days, dayIndex, items, week, swaps) {
     const used = new Set();
+    const avoid = getProfile().avoid;
     return items.map((x, slot) => {
         const mode = PROGRAMS[program].rotation === "block" || slot === 0 ? "block" : "weekly";
         let name = PROGRAMS[program].rotation === "none" ? x.n : rotatedName(x.n, { program, days, day: dayIndex, slot, week, mode });
@@ -1733,16 +1734,25 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
         if (fam && used.has(name) && PROGRAMS[program].rotation !== "none") name = fam.find((n) => !used.has(n)) || name;
         const swapped = swaps[`w${week}:${dayIndex}-${slot}`];
         if (swapped) name = swapped;
+        // Moves you asked to skip get a stand-in from the same family
+        let skipped = null, skipDose = null;
+        if (avoid.length && avoidedBy(name, avoid)) {
+            const kit = PROGRAMS[program] ? PROGRAMS[program].kit : null;
+            const fits = (n) => typeof EXERCISES === "object" && EXERCISES[n] && !avoidedBy(n, avoid) && !used.has(n) && kitAllows(kit, EXERCISES[n].kit);
+            const alt = (fam || []).find(fits) || (AVOID_SUBS[avoidedBy(name, avoid)] || []).find(fits);
+            if (alt) { skipped = AVOID_MOVES[avoidedBy(name, avoid)][0]; name = alt; }
+            if (alt) skipDose = coachDose(alt, COACH_COMPOUND.test(alt), getLevel());
+        }
         used.add(name);
         // A stand-in that's done differently (a plank for a dead bug, a one-leg move for a two-leg one) gets its own sets and reps
-        let d = x.d, rest = x.rest;
-        if (name !== x.n && typeof EXERCISES === "object" && EXERCISES[name]) {
+        let d = skipDose ? skipDose[0] : x.d, rest = skipDose && x.rest ? skipDose[1] : x.rest;
+        if (!skipDose && name !== x.n && typeof EXERCISES === "object" && EXERCISES[name]) {
             const kind = (t) => (/steps/.test(t) ? "steps" : /\d\s*s\b/.test(t) ? "hold" : /min\b/.test(t) && !/×/.test(t) ? "time" : "reps");
             const [def, defRest] = coachDose(name, COACH_COMPOUND.test(name), getLevel());
             if (kind(String(x.d)) !== kind(def)) { d = def; if (rest) rest = defRest; }
             else if (/per side/.test(x.d) !== /per side/.test(def)) d = /per side/.test(def) ? `${x.d} per side` : String(x.d).replace(/ per side/, "");
         }
-        return { ...x, d, rest, name, mode, swapped: Boolean(swapped), canRotate: Boolean(fam && fam.length > 1) };
+        return { ...x, d, rest, name, mode, swapped: Boolean(swapped), skipped, canRotate: Boolean(fam && fam.length > 1) };
     });
 }
 
@@ -1800,8 +1810,47 @@ function getProfile() {
         unit: pick(p.unit, ["lb", "kg"], store.get("gu-unit") === "kg" ? "kg" : "lb"),
         focus: pick(p.focus, ["", "shoulders", "back", "chest", "arms", "legs"], ""),
         sex: pick(p.sex, ["", "female", "male"], ""),
-        trainFor: pick(p.trainFor, ["strength", "endurance", "both"], "both")
+        trainFor: pick(p.trainFor, ["strength", "endurance", "both"], "both"),
+        // "About you" answers that tailor every plan (all optional)
+        goal: pick(p.goal, ["", "muscle", "strength", "fatloss", "health"], ""),
+        place: pick(p.place, ["", "gym", "homedb", "home"], ""),
+        days: pick(String(p.days || ""), ["", "2", "3", "4", "5", "6"], ""),
+        minutes: pick(String(p.minutes || ""), ["", "30", "45", "60", "90"], ""),
+        age: pick(p.age, ["", "18-29", "30-39", "40-49", "50-59", "60+"], ""),
+        avoid: Array.isArray(p.avoid) ? p.avoid.filter((k) => Object.keys(AVOID_MOVES).includes(k)) : []
     };
+}
+// Moves someone can ask to skip (for any reason); plans swap them for a stand-in from the same family
+const AVOID_MOVES = {
+    squat: ["Barbell squats", /^(Back squat|Front squat|Smith machine squat)$/],
+    deadlift: ["Deadlifts from the floor", /^(Deadlift|Trap bar deadlift|Dumbbell or trap bar deadlift)$/],
+    overhead: ["Pressing overhead", /overhead press|shoulder press|Arnold press|Pike push-up/i],
+    lunge: ["Lunges and split squats", /lunge|split squat|step-up/i],
+    pullup: ["Pull-ups and chin-ups", /^(Pull-up|Chin-up)$/],
+    dip: ["Dips", /\bdip\b/i],
+    jump: ["Running and jumping", /jump|burpee|sprint|run\/walk|^Running/i]
+};
+const avoidedBy = (name, keys) => keys.find((k) => AVOID_MOVES[k][1].test(name)) || null;
+// Stand-ins when a skipped move has no family (first one the plan's equipment allows)
+const AVOID_SUBS = {
+    squat: ["Leg press", "Goblet squat", "Bodyweight squat"],
+    deadlift: ["Romanian deadlift", "Dumbbell Romanian deadlift", "Glute bridge"],
+    overhead: ["Lateral raise", "Push-up"],
+    lunge: ["Leg press", "Goblet squat", "Glute bridge"],
+    pullup: ["Lat pulldown", "Single-arm dumbbell row", "Backpack row"],
+    dip: ["Triceps pushdown", "Push-up"],
+    jump: ["Incline walk or easy bike", "Brisk walk"]
+};
+// The ready-made plan that fits someone's answers best
+function recommendPlan(p = getProfile()) {
+    const lvl = levelRank(getLevel());
+    if (p.place === "home") return "home";
+    if (p.place === "homedb") return "homedb";
+    if (p.minutes === "30") return "busy";
+    if (p.goal === "fatloss") return "fatloss";
+    if (p.goal === "strength") return lvl >= 1 ? "strength" : "beginner";
+    if (p.goal === "muscle") return lvl >= 1 ? "build" : "beginner";
+    return "beginner";
 }
 
 /* ---------- Your level ----------
@@ -1947,6 +1996,19 @@ function personalDose(program, item, slot, profile, week = 1, light = false) {
         if (profile.experience === "new" && slot > 0 && d.sets > 2) { d.sets -= 1; notes.push("1 fewer set while you're new"); changed = true; }
         if (profile.focus && muscleGroup(item.name) === profile.focus && d.sets < 5) { d.sets += 1; notes.push("+1 set for your focus"); changed = true; }
     }
+    // Your answers in Your starting point
+    if (profile.goal === "strength" && slot === 0 && d.high >= 6 && !isCardio(item.name || item.n || "")) {
+        d.low = Math.max(3, d.low - 3); d.high = Math.max(d.low, d.high - 3);
+        if (d.sets < 5) d.sets += 1;
+        notes.push("Your goal: strength. Heavier, fewer reps"); changed = true;
+    }
+    if (profile.goal === "fatloss" && slot > 0 && d.high <= 12 && d.high >= 6) {
+        d.low += 2; d.high += 3;
+        notes.push("Your goal: lose fat. A few more reps, short rests"); changed = true;
+    }
+    if (profile.minutes === "30" && slot >= 2 && d.sets > 2) { d.sets -= 1; notes.push("1 fewer set: 30-minute sessions"); changed = true; }
+    if (profile.minutes === "90" && slot <= 1 && d.sets < 5 && profile.goal !== "health") { d.sets += 1; notes.push("+1 set: you have time"); changed = true; }
+    if ((profile.age === "50-59" || profile.age === "60+") && slot === 0) notes.push("Warm up with 1 or 2 light sets first");
     // ...then the week's wave changes it from there
     if (plan.waves !== false && levelAtLeast("Advanced")) {
         const phase = wavePhase(week).key;
@@ -2165,15 +2227,23 @@ const BARBELL = /^(Bench press|Incline barbell press|Back squat|Front squat|Dead
 function startMax(name, unit) {
     const p = getProfile();
     const bw = Number(p.bodyweight);
-    if (!bw) return null;
-    const body = toUnit(bw, p.unit, unit);
+    const body = bw ? toUnit(bw, p.unit, unit) : 0;
     const i = levelRank(getLevel());
-    const base = (n) => (START_MAX[n] ? body * START_MAX[n][i] * (p.sex === "male" ? 1 : START_WOMEN[n]) : null);
-    if (START_MAX[name]) return { m: base(name), each: false };
+    // A little gentler to start from age 50 (you can always go up next set)
+    const ageEase = p.age === "60+" ? 0.85 : p.age === "50-59" ? 0.9 : 1;
+    // Lifts you told us (Your starting point or the Fitness Coach) beat any guess
+    const told = typeof coachMaxes === "function" ? coachMaxes() : {};
+    let fromTold = false;
+    const base = (n) => {
+        if (told[n]) { fromTold = true; return toUnit(told[n].m, told[n].u, unit); }
+        fromTold = false;
+        return START_MAX[n] && body ? body * START_MAX[n][i] * (p.sex === "male" ? 1 : START_WOMEN[n]) * ageEase : null;
+    };
+    if (START_MAX[name] || told[name]) { const m = base(name); return m ? { m, each: false, told: fromTold } : null; }
     const via = [...(typeof COACH_RATIOS === "object" && COACH_RATIOS[name] ? COACH_RATIOS[name] : []), ...(START_EXTRA[name] || [])];
     for (const [from, share, each] of via) {
         const b = base(from);
-        if (b) return { m: b * share, each: !!each };
+        if (b) return { m: b * share, each: !!each, told: fromTold };
     }
     return null;
 }
@@ -2186,7 +2256,7 @@ function startWeight(name, high, unit) {
     let w = Math.round(s.m / (1 + (high + 1) / 30) / step) * step;
     if (BARBELL.test(name)) w = Math.max(w, unit === "kg" ? 20 : 45);   // the empty bar is the lightest a barbell gets
     else w = Math.max(w, step);
-    return { w, each: s.each, bar: BARBELL.test(name) && w <= (unit === "kg" ? 20 : 45) };
+    return { w, each: s.each, told: Boolean(s.told), bar: BARBELL.test(name) && w <= (unit === "kg" ? 20 : 45) };
 }
 
 // What to lift next time, based on last time (double progression)
@@ -2203,7 +2273,7 @@ function nextTarget(name, dose, unit) {
         if (sw) {
             const how = sw.bar ? "just the empty bar" : `about ${trimNum(sw.w)} ${unit}${sw.each ? " in each hand" : ""}`;
             return { first: true, weight: sw.w, each: Boolean(sw.each), reps: d.high, start: true,
-                text: `First time? Start with ${how}, from your level and bodyweight. Easy at ${d.high} reps? Go up next set. Form slipping? Go lighter.` };
+                text: `First time? Start with ${how}, ${sw.told ? "from the numbers you entered" : "from your level and bodyweight"}. Easy at ${d.high} reps? Go up next set. Form slipping? Go lighter.` };
         }
         if (equipOf(name) === "body" && !isCardio(name)) return { first: true, text: `Your bodyweight. Do ${d.high} clean reps; when every set feels easy, try the harder version in the how-to.` };
         const noBody = !Number(getProfile().bodyweight) && (START_MAX[name] || START_EXTRA[name]);
@@ -2365,7 +2435,7 @@ function setupPrograms() {
     });
     // Open on the plan this person used last time
     const last = store.get("gu-last-plan", {}) || {};
-    const state = { goal: PROGRAMS[last.goal] ? last.goal : "beginner", days: Number(last.days) || 3, week: null };
+    const state = { goal: PROGRAMS[last.goal] ? last.goal : recommendPlan(), days: Number(last.days) || Number(getProfile().days) || 3, week: null };
     const swapsKey = () => `gu-swaps-${state.goal}-${state.days}`;
     const progressKey = () => `gu-progress-${state.goal}-${state.days}-w${state.week}`;
     const viewHash = () => `#program-${state.goal}-${state.days}`;
@@ -2374,6 +2444,9 @@ function setupPrograms() {
     const lightOn = () => !PROGRAMS[state.goal].plans[state.days].weeks && isLightWeek(state.goal, state.days, state.week);
     let lineups = []; // what's on screen, per day
     let firstTipShown = new Set();
+    // Make the plan on screen "your plan": when you start it, log in it, tick something, or tap Switch
+    const adopt = () => { store.set("gu-last-plan", { goal: state.goal, days: state.days }); };
+    if (!document.getElementById("adopt-note")) els.head.insertAdjacentHTML("beforebegin", '<p class="adopt-note" id="adopt-note" role="status" hidden></p>');
     // Plan details start open on big screens, folded on phones so the workout is closer
     let planDetailsOpen = false;
 
@@ -2508,7 +2581,15 @@ function setupPrograms() {
 
         updateProgress();
         renderProfileNote(profile);
-        store.set("gu-last-plan", { goal: state.goal, days: state.days });
+        // Only the plan you're actually doing is "your plan" (looking at another one doesn't switch it)
+        const cur = store.get("gu-last-plan") || {};
+        if (!PROGRAMS[cur.goal] || (cur.goal === state.goal && Number(cur.days) !== state.days)) adopt();
+        const adoptNote = document.getElementById("adopt-note");
+        if (adoptNote) {
+            const mine = PROGRAMS[cur.goal] && cur.goal !== state.goal ? PROGRAMS[cur.goal] : null;
+            adoptNote.hidden = !mine;
+            if (mine) adoptNote.innerHTML = `You're looking at <strong>${escapeHtml(p.name)}</strong>. Your plan is still <strong>${escapeHtml(mine.name)}</strong>. <button type="button" class="btn btn-compact" data-adopt-plan>Switch to this plan</button> <a class="text-link" href="programs.html?today=1#program-${cur.goal}-${cur.days}">Back to my plan</a>`;
+        }
         restoreDrafts();
         if (syncUrl) history.replaceState(null, "", viewHash());
     }
@@ -2580,6 +2661,8 @@ function setupPrograms() {
             xi === 0 && x.canRotate && !cardio && PROGRAMS[state.goal].rotation !== "none" ? `<span class="badge">Main lift</span>` : "",
             isNew && !x.swapped ? `<span class="badge badge-new">New this week</span>` : "",
             x.swapped ? `<span class="badge">Swapped</span>` : "",
+            x.skipped ? `<span class="badge badge-you">Instead of ${escapeHtml(x.skipped.toLowerCase())}</span>` : "",
+            profile.minutes && xi >= ({ 30: 4, 45: 5, 60: 6 }[profile.minutes] || 99) && !cardio ? `<span class="badge">Optional if you're short on time</span>` : "",
             ...dose.notes.map((n) => `<span class="badge badge-you">${escapeHtml(n)}</span>`)
         ].join("");
         return `
@@ -2750,6 +2833,7 @@ function setupPrograms() {
 
     /* ----- Finish workout: save the session, celebrate, and show next time's targets ----- */
     function finishWorkout(di) {
+        adopt();
         const profile = getProfile(), unit = profile.unit;
         const today = isoDate(new Date());
         const p = PROGRAMS[state.goal];
@@ -2861,6 +2945,7 @@ function setupPrograms() {
         if (!e.target.matches('input[type="checkbox"]')) return;
         const keys = [...els.grid.querySelectorAll('input[type="checkbox"]:checked')].map((b) => b.dataset.key);
         store.set(progressKey(), keys);
+        if (e.target.checked) adopt();
         updateProgress();
     });
 
@@ -2905,6 +2990,7 @@ function setupPrograms() {
         }
         const setDone = e.target.closest("[data-set-done]");
         if (setDone) {
+            adopt();
             const row = setDone.closest(".log-set"), form = setDone.closest(".log-form");
             const r = row.querySelector('input[name="r"]');
             if (!r.value) r.value = r.placeholder;
@@ -2963,6 +3049,7 @@ function setupPrograms() {
         const form = e.target.closest(".log-form");
         if (!form) return;
         e.preventDefault();
+        adopt();
         const unit = getProfile().unit;
         if (form.classList.contains("cardio-form")) {
             const f = form.elements;
@@ -3025,8 +3112,15 @@ function setupPrograms() {
         showToast("Welcome back", "Your plan is back on every page. Pick up where you left off.");
     });
 
+    document.addEventListener("click", (e) => {
+        if (!e.target.closest("[data-adopt-plan]")) return;
+        adopt();
+        render();
+        showToast("Plan switched", `${PROGRAMS[state.goal].name} is now your plan. Your old plan's history is still saved.`);
+    });
     const jumpToday = document.getElementById("jump-today");
     if (jumpToday) jumpToday.addEventListener("click", () => {
+        adopt();
         const next = els.grid.querySelector(".day-card.is-next");
         if (!next) return;
         next.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
@@ -3143,9 +3237,11 @@ function setupPrograms() {
         const params = new URLSearchParams(location.search);
         const doing = mine || m[1] === "custom" || ["today", "w", "a", "edit"].some((k) => params.has(k));
         if (params.has("today") || params.has("w")) resumePlan();
+        const intent = ["today", "w", "a", "edit"].some((k) => params.has(k));
         if (state.goal !== m[1]) state.week = null;
         state.goal = m[1];
         if (m[2] && PROGRAMS[m[1]].plans[m[2]]) state.days = Number(m[2]);
+        if (intent) adopt();
         render();
         const day = doing ? (els.grid.querySelector(".day-card.is-next") || els.grid.querySelector(".day-card")) : null;
         if (day) { day.classList.add("is-flash"); setTimeout(() => day.classList.remove("is-flash"), 1800); }
@@ -4640,6 +4736,11 @@ function setupMyDashboard() {
     const box = document.getElementById("me-dash");
     if (!box) return;
     const h1 = document.querySelector(".page-banner h1");
+    let sug = null;
+    box.addEventListener("click", (e) => {
+        if (e.target.closest("[data-sug-start]")) startSuggested(sug);
+        if (e.target.closest("[data-sug-edit]")) customizeSuggested(sug);
+    });
     function render() {
         const prof = getProfile(), unit = prof.unit, lvl = getLevel();
         if (h1) h1.textContent = prof.name ? `${prof.name}'s progress` : "My progress";
@@ -4658,6 +4759,23 @@ function setupMyDashboard() {
         }).filter(Boolean).sort((a, b) => b.top - a.top).slice(0, 4);
         const sets = Object.values(log).reduce((sum, list) => sum + (Array.isArray(list) ? list.reduce((t, e) => t + (e.sets ? e.sets.length : 0), 0) : 0), 0);
         const streak = weekStreak();
+        // Smart next step: never the same muscles two days running, and a ready-made Day 2 when your split runs out
+        const recent = recentlyTrained();
+        const clash = recent && info && !info.weekDone ? [...regionsOf(info.items.map((x) => x.name))].filter((r) => recent.regions.has(r)) : [];
+        const needSug = info ? (info.weekDone && info.goal === "custom") || clash.length > 0 : Boolean(recent);
+        sug = needSug ? suggestNextWorkout() : null;
+        const when = recent && recent.date === isoDate(new Date()) ? "today" : "yesterday";
+        const sugCard = sug ? `
+            ${clash.length ? `<p class="dash-warn"><strong>${escapeHtml(info.title)}</strong> works your ${escapeHtml(clash.map((r) => REGION_WORD[r]).join(" and "))} again, and you trained ${when === "today" ? "them today" : "them yesterday"}. Muscles grow on the days between, so try this instead:</p>` : ""}
+            <p class="dash-big">${escapeHtml(info && info.goal === "custom" && info.weekDone ? `Day ${customDaysRaw().length + 1}: ${sug.title}` : sug.title)}</p>
+            <p class="dash-sub">Made for you${recent ? ` · skips what you trained ${when}` : ""} · ${sug.items.length} exercises</p>
+            <ul class="dash-targets">${sug.items.slice(0, 4).map((x) => { const t = isCardio(x.n) ? null : nextTarget(x.n, x.d, unit); const dose = String(x.d).replace(/ at .*$/, ""); return `<li>${equipIcon(x.n)}<span>${escapeHtml(x.n)}</span><strong>${escapeHtml(t && t.weight > 0 ? `${dose} · ${trimNum(t.weight)} ${unit}${t.each ? " each" : ""}` : dose)}</strong></li>`; }).join("")}</ul>
+            <div class="dash-actions">
+                <button type="button" class="btn btn-primary btn-compact" data-sug-start>Start it</button>
+                <button type="button" class="btn btn-compact" data-sug-edit>Customize it</button>
+                <a class="btn btn-compact" href="programs.html#all-plans">Pick a plan</a>
+            </div>
+            ${clash.length ? `<a class="text-link" href="${info.href}">Do ${escapeHtml(info.title)} anyway</a>` : ""}` : "";
         const nextTargets = info && !info.weekDone ? info.items.slice(0, 3).map((x) => {
             const t = isCardio(x.name) ? null : nextTarget(x.name, x.d, unit);
             return { name: x.name, text: t && t.weight > 0 ? `${trimNum(t.weight)} ${unit}${t.each ? " each" : ""} × ${t.reps || parseDose(x.d).high}` : x.d };
@@ -4671,11 +4789,11 @@ function setupMyDashboard() {
             <div class="dash-grid">
                 <article class="dash-card dash-next">
                     <h3>Up next</h3>
-                    ${info ? `<p class="dash-big">${escapeHtml(info.weekDone ? "Week done" : info.title)}</p>
+                    ${sugCard || (info ? `<p class="dash-big">${escapeHtml(info.weekDone ? "Week done" : info.title)}</p>
                         <p class="dash-sub">${escapeHtml(info.name)}${info.weekDone ? " · next week's plan is ready" : ` · ${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
                         ${nextTargets.length ? `<ul class="dash-targets">${nextTargets.map((t) => `<li>${equipIcon(t.name)}<span>${escapeHtml(t.name)}</span><strong>${escapeHtml(t.text)}</strong></li>`).join("")}</ul>` : ""}
                         <a class="btn btn-primary btn-compact" href="${info.href}">${info.weekDone ? "See my plan" : planPaused() ? "Continue my workout" : "Start this workout"}</a>${planPaused() ? `<p class="dash-sub">You canceled your last workout. Tap Continue when you're ready.</p>` : ""}`
-                    : `<p class="dash-sub">You're not on a plan yet.</p><a class="btn btn-primary btn-compact" href="programs.html">Pick a plan</a> <a class="btn btn-compact" href="programs.html#build">Build my own</a>`}
+                    : `<p class="dash-sub">You're not on a plan yet.</p><a class="btn btn-primary btn-compact" href="programs.html">Pick a plan</a> <a class="btn btn-compact" href="programs.html#build">Build my own</a>`)}
                 </article>
                 <article class="dash-card">
                     <h3>Last workout</h3>
@@ -4726,7 +4844,9 @@ function setupSessions() {
 // Load "My workout" into the builder and open it, so it can be changed while it's in use
 function addCustomDay() {
     const n = customDaysRaw().length;
-    store.set(BUILDER_KEY, { title: "", goal: (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle", addDay: n > 0, items: [] });
+    // Start the new day from a suggestion that skips what you trained yesterday (change anything you like)
+    const sug = n > 0 ? suggestNextWorkout() : null;
+    store.set(BUILDER_KEY, { title: sug ? sug.title : "", goal: (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle", addDay: n > 0, items: sug ? toBuilderItems(sug.items) : [] });
     location.assign(`programs.html?add=${Date.now()}#build`);
 }
 function editCustomWorkout(dayIndex = 0) {
@@ -4778,6 +4898,88 @@ function cancelWorkout() {
     showToast("Workout canceled", "Your plan is hidden until you tap Continue on the home page or My progress. Sets you already saved are kept.");
 }
 function resumePlan() { if (planPaused()) store.remove(PAUSE_KEY); }
+
+/* ---------- What you trained lately, and a smart next workout ----------
+   Muscles from the last day or two (finished workouts and logged sets) are grouped into push,
+   pull, and legs. The next workout avoids hitting the same ones two days in a row. */
+const REGION_OF = { chest: "push", shoulders: "push", triceps: "push", back: "pull", biceps: "pull", quads: "legs", hamstrings: "legs", glutes: "legs", calves: "legs" };
+const REGION_WORD = { push: "chest, shoulders, and triceps", pull: "back and biceps", legs: "legs" };
+const regionsOf = (names) => new Set(names.filter((n) => typeof EXERCISES === "object" && EXERCISES[n] && !isCardio(n)).map((n) => REGION_OF[builderMuscle(n)]).filter(Boolean));
+function sessionExercises(x) {
+    if (!x) return [];
+    if (x.plan === "custom") { const d = customDaysRaw()[Number(x.day)]; return d ? d.items.map((it) => it && it.n).filter(Boolean) : []; }
+    const p = PROGRAMS[x.plan], plan = p && p.plans[x.days];
+    const d = plan ? weekDays(plan, 1)[Number(x.day)] : null;
+    return d ? d.items.map((it) => it.n) : [];
+}
+// What you trained today and yesterday: { regions, names, title, date } or null
+function recentlyTrained() {
+    const since = isoDate(addDays(new Date(), -1));
+    const sessions = (store.get("gu-sessions", []) || []).filter((x) => x && typeof x.date === "string" && x.date >= since);
+    const log = getLog();
+    const logged = Object.keys(log).filter((n) => Array.isArray(log[n]) && log[n].some((e) => e && typeof e.date === "string" && e.date >= since));
+    const names = [...new Set([...sessions.flatMap(sessionExercises), ...logged])];
+    if (!names.length) return null;
+    const last = sessions[sessions.length - 1];
+    return { regions: regionsOf(names), names, title: last ? String(last.title || "") : "", date: last ? last.date : since };
+}
+// A workout that skips what you just trained (and moves you asked to skip): { title, items, regions } or null
+const NEXT_TEMPLATES = [
+    ["Legs & Abs", ["quads", "glutes", "hamstrings", "calves", "abs"], ["legs"]],
+    ["Back & Biceps", ["lats", "upper-back", "biceps", "abs"], ["pull"]],
+    ["Chest, Shoulders & Triceps", ["chest", "shoulders", "triceps"], ["push"]],
+    ["Upper body", ["chest", "lats", "shoulders", "upper-back", "biceps", "triceps"], ["push", "pull"]],
+    ["Full body", ["quads", "chest", "lats", "shoulders", "hamstrings", "abs"], ["push", "pull", "legs"]]
+];
+function suggestNextWorkout() {
+    if (typeof MUSCLE_MAP === "undefined" || typeof coachMake !== "function") return null;
+    const recent = recentlyTrained();
+    const busy = recent ? recent.regions : new Set();
+    // Also lean toward what your own split doesn't cover yet
+    const covered = regionsOf(customDaysRaw().flatMap((d) => d.items.map((it) => it && it.n)));
+    const pick = NEXT_TEMPLATES
+        .map(([title, groups, regions], i) => ({ title, groups, regions, clash: regions.filter((r) => busy.has(r)).length, fresh: regions.filter((r) => !covered.has(r)).length, i }))
+        .sort((a, b) => a.clash - b.clash || b.fresh - a.fresh || a.i - b.i)[0];
+    if (!pick) return null;
+    const p = getProfile();
+    const req = { groups: pick.groups, parts: [], exclude: [], title: [pick.title], intensity: null,
+        kit: p.place === "home" ? "none" : p.place === "homedb" ? "db" : null,
+        minutes: Number(p.minutes) || null, goal: p.goal === "strength" ? "strength" : p.goal === "muscle" ? "muscle" : null };
+    let w;
+    try { w = coachMake(req, getLevel()); } catch (e) { return null; }
+    const items = (w.items || []).filter((x) => !avoidedBy(x.n, p.avoid)).slice(0, 7);
+    if (!items.length) return null;
+    return { title: pick.title, items, regions: pick.regions, clash: pick.clash, recent };
+}
+// Builder rows from saved items ("3 × 8–12 at 135 lb")
+const toBuilderItems = (items) => items.map((it) => {
+    const m = String(it.d).match(/^(\d+) × (.+?)( per side)?( at .*)?$/);
+    return { n: it.n, sets: m ? Number(m[1]) : 3, amount: m ? m[2] : it.d, rest: it.rest };
+});
+// Start the suggestion as the next day of My workout (or as My workout if you don't have one)
+function startSuggested(sug) {
+    if (!sug) return;
+    const days = customDaysRaw();
+    const oldN = days.length;
+    const week = Math.max(1, weekOf(programStart("custom")));
+    const done = store.get(`gu-progress-custom-${oldN}-w${week}`, []) || [];
+    const onCustom = (store.get("gu-last-plan") || {}).goal === "custom";
+    const list = onCustom && oldN && oldN < 7 ? days.concat([{ title: sug.title, items: sug.items }]) : [{ title: sug.title, items: sug.items }];
+    if (list.length !== oldN || !onCustom) store.remove(`gu-progress-custom-${oldN}-w${week}`);
+    store.set(`gu-progress-custom-${list.length}-w${week}`, onCustom ? done : []);
+    if (!onCustom) clearCustomSwaps();
+    saveCustomDays(list);
+    store.set("gu-last-plan", { goal: "custom", days: list.length });
+    resumePlan();
+    location.assign(`programs.html?today=1#program-custom-${list.length}`);
+}
+// Open the suggestion in the builder to change it first
+function customizeSuggested(sug) {
+    if (!sug) return;
+    const onCustom = (store.get("gu-last-plan") || {}).goal === "custom";
+    store.set(BUILDER_KEY, { title: sug.title, goal: (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle", addDay: onCustom && customDaysRaw().length > 0, items: toBuilderItems(sug.items) });
+    location.assign(`programs.html?add=${Date.now()}#build`);
+}
 
 function setupPlanBar() {
     if (["programs", "me"].includes(document.body.dataset.page) || !document.getElementById("site-footer") && !document.querySelector(".site-footer")) return;
@@ -5204,6 +5406,7 @@ function setupBuilder() {
    Fitness Coach suggest starting weights that fit. Saved on this device only,
    in the same profile the Plans page uses.
    ========================================================= */
+const SETUP_LIFTS = ["Bench press", "Back squat", "Deadlift", "Overhead press"];
 function setupStartingPoint() {
     const spots = [...document.querySelectorAll("[data-setup]")];
     if (!spots.length) return;
@@ -5235,6 +5438,48 @@ function setupStartingPoint() {
                             <select id="setup-sex-${n}" name="sex"><option value="">Prefer not to say</option><option value="female">Female</option><option value="male">Male</option></select>
                         </div>
                     </div>
+                    <details class="setup-more"${spot.hasAttribute("data-setup-open") ? " open" : ""}>
+                        <summary>Tailor it to you <span>goal, time, the weights you already lift, moves to skip</span></summary>
+                        <div class="setup-more-body">
+                            <fieldset class="segmented compact setup-choice">
+                                <legend>Main goal</legend>
+                                ${[["", "Not sure"], ["muscle", "Build muscle"], ["strength", "Get stronger"], ["fatloss", "Lose fat"], ["health", "Stay healthy"]].map(([v, t]) => `<label><input type="radio" name="goal" value="${v}"><span>${t}</span></label>`).join("")}
+                            </fieldset>
+                            <fieldset class="segmented compact setup-choice">
+                                <legend>Where you train</legend>
+                                ${[["gym", "A gym"], ["homedb", "Home, dumbbells"], ["home", "Home, nothing"]].map(([v, t]) => `<label><input type="radio" name="place" value="${v}"><span>${t}</span></label>`).join("")}
+                            </fieldset>
+                            <div class="field-row">
+                                <div class="field">
+                                    <label for="setup-days-${n}">Days a week</label>
+                                    <select id="setup-days-${n}" name="days"><option value="">Not sure</option>${[2, 3, 4, 5, 6].map((d) => `<option value="${d}">${d} days</option>`).join("")}</select>
+                                </div>
+                                <div class="field">
+                                    <label for="setup-min-${n}">Time per workout</label>
+                                    <select id="setup-min-${n}" name="minutes"><option value="">Not sure</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option><option value="90">60–90 min</option></select>
+                                </div>
+                                <div class="field">
+                                    <label for="setup-age-${n}">Age <span class="field-hint">(optional)</span></label>
+                                    <select id="setup-age-${n}" name="age"><option value="">Prefer not to say</option>${["18-29", "30-39", "40-49", "50-59", "60+"].map((a) => `<option value="${a}">${a.replace("-", " to ")}</option>`).join("")}</select>
+                                </div>
+                            </div>
+                            <fieldset class="setup-lifts">
+                                <legend>Weights you already lift <span class="field-hint">(optional: a recent set you did with good form)</span></legend>
+                                ${SETUP_LIFTS.map((name, k) => `<div class="setup-lift">
+                                    <span class="setup-lift-name" id="setup-lift-${n}-${k}">${escapeHtml(name)}</span>
+                                    <label><span class="visually-hidden">${escapeHtml(name)} weight</span><input type="number" inputmode="decimal" min="0" max="1500" step="any" name="lift-w-${k}" placeholder="${getProfile().unit}" aria-describedby="setup-lift-${n}-${k}"></label>
+                                    <span aria-hidden="true">×</span>
+                                    <label><span class="visually-hidden">${escapeHtml(name)} reps</span><input type="number" inputmode="numeric" min="1" max="20" step="1" name="lift-r-${k}" placeholder="reps" aria-describedby="setup-lift-${n}-${k}"></label>
+                                </div>`).join("")}
+                            </fieldset>
+                            <fieldset class="setup-avoid">
+                                <legend>Moves to skip <span class="field-hint">(plans swap them for something similar)</span></legend>
+                                ${Object.entries(AVOID_MOVES).map(([k, [label]]) => `<label class="check"><input type="checkbox" name="avoid" value="${k}"><span>${escapeHtml(label)}</span></label>`).join("")}
+                                <p class="fine-print">Pain or an injury? Check with a doctor or physical therapist before training around it.</p>
+                            </fieldset>
+                        </div>
+                    </details>
+                    <div class="setup-tailored" aria-live="polite"></div>
                     <div class="setup-preview" aria-live="polite"></div>
                     <p class="fine-print">Saved only on this device. These are starting points: your logged sets take over from the first workout.</p>
                 </form>
@@ -5243,7 +5488,7 @@ function setupStartingPoint() {
         form.addEventListener("change", (e) => {
             save();
         });
-        form.addEventListener("input", (e) => { if (e.target.name === "bodyweight" || e.target.name === "pname") save(); });
+        form.addEventListener("input", (e) => { if (e.target.name === "bodyweight" || e.target.name === "pname" || /^lift-/.test(e.target.name)) save(); });
         form.addEventListener("submit", (e) => e.preventDefault());
         // Your first bodyweight also starts your weigh-in log (My progress and the weight tracker use it)
         form.elements.bodyweight.addEventListener("change", () => {
@@ -5259,17 +5504,62 @@ function setupStartingPoint() {
             raw.sex = ["", "female", "male"].includes(form.elements.sex.value) ? form.elements.sex.value : "";
             const nm = form.elements.pname.value.trim();
             raw.name = /^[\p{L}' .-]{1,30}$/u.test(nm) ? nm : "";
+            // Tailoring answers (checked again in getProfile)
+            const radio = (nameAttr) => (form.querySelector(`input[name="${nameAttr}"]:checked`) || {}).value || "";
+            raw.goal = radio("goal");
+            raw.place = radio("place");
+            raw.days = form.elements.days.value;
+            raw.minutes = form.elements.minutes.value;
+            raw.age = form.elements.age.value;
+            raw.avoid = [...form.querySelectorAll('input[name="avoid"]:checked')].map((c) => c.value).filter((k) => AVOID_MOVES[k]);
             store.set(PROFILE_KEY, raw);
+            // Weights you already lift become your estimated maxes (the Fitness Coach uses the same list)
+            const maxes = store.get(MAXES_KEY, {}) || {};
+            SETUP_LIFTS.forEach((lift, k) => {
+                const w = Number(form.elements[`lift-w-${k}`].value), r = Number(form.elements[`lift-r-${k}`].value);
+                if (w > 0 && w <= (raw.unit === "kg" ? 700 : 1500) && Number.isInteger(r) && r >= 1 && r <= 20) maxes[lift] = { m: Math.round(e1rm(w, r) * 10) / 10, u: raw.unit, w, r };
+                else if (!form.elements[`lift-w-${k}`].value) delete maxes[lift];
+            });
+            store.set(MAXES_KEY, maxes);
             window.dispatchEvent(new CustomEvent("profilechange"));
             render(false);
         }
     });
     const LIFTS = [["Bench press", "Bench press"], ["Back squat", "Squat"], ["Deadlift", "Deadlift"], ["Overhead press", "Overhead press"]];
+    // What your answers change, in plain words
+    function tailoredText(p) {
+        const bits = [];
+        const rec = recommendPlan(p);
+        if (p.goal === "strength") bits.push("Main lifts: heavier, with fewer reps and an extra set.");
+        if (p.goal === "fatloss") bits.push("Extra exercises: a few more reps with short rests.");
+        if (p.minutes === "30") bits.push("Longer workouts: 1 fewer set on extras, and anything past 4 exercises is marked optional.");
+        else if (p.minutes === "45") bits.push("Anything past 5 exercises is marked optional.");
+        else if (p.minutes === "90") bits.push("Main lifts: 1 more set.");
+        if (p.age === "50-59" || p.age === "60+") bits.push("Starting weights a little lighter, and a reminder to warm up.");
+        if (p.avoid.length) bits.push(`Skipped and swapped: ${p.avoid.map((k) => AVOID_MOVES[k][0].toLowerCase()).join(", ")}.`);
+        const told = SETUP_LIFTS.filter((l) => coachMaxes()[l]);
+        if (told.length) bits.push(`Weights for ${told.map((l) => l.toLowerCase()).join(", ")} (and the moves like them) come from the numbers you entered.`);
+        return { rec, bits };
+    }
     function render(fill = true) {
         const p = getProfile(), lvl = getLevel();
         spots.forEach((spot) => {
             const form = spot.querySelector("form");
             if (fill) {
+                form.querySelectorAll('input[name="goal"]').forEach((r) => { r.checked = r.value === p.goal; });
+                form.querySelectorAll('input[name="place"]').forEach((r) => { r.checked = r.value === p.place; });
+                form.elements.days.value = p.days;
+                form.elements.minutes.value = p.minutes;
+                form.elements.age.value = p.age;
+                form.querySelectorAll('input[name="avoid"]').forEach((c) => { c.checked = p.avoid.includes(c.value); });
+                const maxes = coachMaxes();
+                SETUP_LIFTS.forEach((lift, k) => {
+                    const m = maxes[lift];
+                    if (document.activeElement !== form.elements[`lift-w-${k}`] && document.activeElement !== form.elements[`lift-r-${k}`]) {
+                        form.elements[`lift-w-${k}`].value = m && m.w ? trimNum(m.w) : "";
+                        form.elements[`lift-r-${k}`].value = m && m.w ? m.r : "";
+                    }
+                });
                 if (document.activeElement !== form.elements.bodyweight) form.elements.bodyweight.value = p.bodyweight;
                 if (document.activeElement !== form.elements.pname) form.elements.pname.value = p.name;
                 form.elements.unit.value = p.unit;
@@ -5278,8 +5568,13 @@ function setupStartingPoint() {
             spot.querySelector(".setup-level-info").innerHTML = `Your level: <strong>${escapeHtml(lvl)}</strong>. Change it on <a href="programs.html#all-plans">any plan</a> or when you build your own workout.`;
             const link = document.querySelector(".hero-setup-link");
             if (link) link.textContent = Number(p.bodyweight) ? "See your starting weights" : "Add your bodyweight for starting weights";
+            const t = tailoredText(p), recP = PROGRAMS[t.rec];
+            spot.querySelector(".setup-tailored").innerHTML = (p.goal || p.place || p.minutes || p.age || p.avoid.length || p.days) && recP ? `
+                <div class="setup-rec"><p class="setup-preview-title">Best fit for you: <strong>${escapeHtml(recP.name)}</strong></p>
+                ${t.bits.length ? `<ul class="setup-rec-list">${t.bits.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>` : ""}
+                <a class="btn btn-compact" href="programs.html#program-${t.rec}${p.days && recP.plans[p.days] ? `-${p.days}` : ""}">See ${escapeHtml(recP.name)}</a></div>` : "";
             const preview = spot.querySelector(".setup-preview");
-            if (!Number(p.bodyweight)) {
+            if (!Number(p.bodyweight) && !SETUP_LIFTS.some((l) => coachMaxes()[l])) {
                 preview.innerHTML = `<p>Add your bodyweight to see your starting weights.</p>`;
                 return;
             }

@@ -2,6 +2,25 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (A smart next workout)
+
+- **Up next is made for you.** On My progress, when your own split runs out (you finished Day 1 and there's no Day 2 yet), Up next now shows a ready-made **Day 2** that skips the muscles you just trained. After Back & Chest, for example, it suggests Legs & Abs, with sets, reps, and weights. Tap **Start it** to add it to your split and go, **Customize it** to change anything first in Build your own workout, or **Pick a plan** instead.
+- **No more back-to-back muscles.** If your next day would work the same muscles you trained today or yesterday (like bench the day after chest), Up next says so and offers a workout for different muscles instead, with a "do it anyway" link.
+- **+ Add Day** (and "Continue to Day 2: build it") now opens the builder with that suggestion already filled in.
+- **Looking at a plan no longer switches your plan.** Before, just opening a ready-made plan made it your plan, which is why Up next could jump to a plan you weren't doing. Now your plan only changes when you start one (Start, log a set, tick an exercise, or tap **Switch to this plan**). While you look around, a note shows which plan is still yours, with a link back.
+
+## 2026-10-13 (Tailor it to you)
+
+- **Fix: the bottom tab bar stays put on iPhones.** In the installed app, scrolling past the top or bottom could make the whole page bounce and drag the black tab bar with it. The bounce is off in the app now, and the bar stays pinned to the bottom.
+- **Your starting point goes deeper.** Under **Tailor it to you** (home page, and Progress → You), tell the site your main goal, where you train, how many days a week, how long a workout you have, your age range, the weights you already lift, and any moves you want to skip. All optional, all saved only on your device.
+- **Every plan changes to fit your answers:**
+  - **Weights you already lift** (bench, squat, deadlift, overhead press: a recent weight × reps) set your starting weights on every plan, in Build your own workout, and in the Fitness Coach, for those lifts and the moves like them.
+  - **Goal:** "Get stronger" makes the main lift heavier with fewer reps and an extra set; "Lose fat" adds a few reps with short rests on the extra exercises.
+  - **Time:** with 30 minutes, extras get 1 fewer set and anything past 4 exercises is marked optional (45 minutes: past 5). With 60 to 90 minutes, main lifts get an extra set.
+  - **Age 50 and up:** starting weights are a little lighter, with a reminder to warm up first.
+  - **Moves to skip** (like barbell squats or overhead pressing) are swapped for a similar move, marked "Instead of…". If it's pain or an injury, the form reminds you to see a doctor or physical therapist.
+- **Best fit for you:** your answers suggest the plan that suits you, with a list of exactly what was tailored.
+
 ## 2026-10-13 (Cancel workout)
 
 - **Cancel workout:** open the Your plan bar at the bottom of any page (or go to the day on the Plans page) and tap **Cancel workout**. It stops the rest timer, throws away half-typed sets, and hides your plan from every page so it's out of your way. Sets you already saved are kept.

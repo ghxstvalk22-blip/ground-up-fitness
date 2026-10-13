@@ -356,6 +356,11 @@ async function openPage(browser, file, viewport, hash = "") {
 
             await pickGoal(page, "busy");
             check(await page.locator(".day-card").count() === 2 && await page.locator('input[name="days"][value="2"]').isChecked(), "Short on time shows 2 days");
+            // Ticking an exercise makes it your plan; just looking at another plan doesn't switch it
+            await page.locator(".day-card .ex-row input[type=checkbox]").first().check({ force: true });
+            await pickGoal(page, "home");
+            check(await page.locator("#adopt-note").isVisible() && /Your plan is still/.test(await page.locator("#adopt-note").textContent()), "looking at another plan says your plan hasn't changed, with a Switch button");
+            await pickGoal(page, "busy");
 
             await page.locator(".theme-toggle").click();
             check(await page.evaluate(() => document.documentElement.dataset.theme === "dark"), "dark mode toggles");
@@ -1025,6 +1030,83 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.goto(url("exercises.html"), { waitUntil: "load" });
             await page.fill("#library-search", "bench");
             check(/^Bench/.test(await page.locator(".library-card h3").first().textContent()), "searching bench lists bench exercises first");
+            await page.evaluate(() => localStorage.clear());
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Tailor it to you: goal, time, known lifts, and moves to skip change the plans
+        {
+            const { page, errors } = await openPage(browser, "index.html", viewport);
+            await page.evaluate(() => { localStorage.clear(); setLevel("Intermediate"); });
+            await page.reload({ waitUntil: "load" });
+            const form = page.locator("#setup .setup-form");
+            await form.locator(".setup-more > summary").click();
+            await form.locator('input[name="bodyweight"]').fill("180");
+            await form.locator('select[name="sex"]').selectOption("male");
+            await form.locator('input[name="goal"][value="strength"]').check({ force: true });
+            await form.locator('input[name="place"][value="gym"]').check({ force: true });
+            await form.locator('select[name="minutes"]').selectOption("30");
+            await form.locator('input[name="avoid"][value="squat"]').check({ force: true });
+            await form.locator('input[name="lift-w-0"]').fill("185");
+            await form.locator('input[name="lift-r-0"]').fill("8");
+            await page.waitForTimeout(200);
+            const prof = await page.evaluate(() => getProfile());
+            check(prof.goal === "strength" && prof.minutes === "30" && prof.avoid.includes("squat") && await page.evaluate(() => Math.round(coachMaxes()["Bench press"].m) === 234), "Tailor it to you saves your goal, time, moves to skip, and the weights you lift");
+            check(/Best fit for you/.test(await page.locator("#setup .setup-tailored").textContent()), "your answers suggest the plan that fits best");
+            await page.goto(url("programs.html", "#program-strength-3"), { waitUntil: "load" });
+            await page.waitForTimeout(400);
+            const cards = (await page.locator(".day-card").allTextContents()).join(" ");
+            check(!/Back squat/.test(cards.replace(/Instead of barbell squats/g, "")) && /Instead of barbell squats/.test(cards), "a move you skip is swapped for a stand-in");
+            check(/from the numbers you entered/.test(cards), "weights come from the numbers you entered");
+            await page.goto(url("programs.html", "#program-build-3"), { waitUntil: "load" });
+            await page.waitForTimeout(400);
+            check(/Your goal: strength/.test(await page.locator(".day-card[data-day='0'] .ex-row").first().textContent()), "the main lift follows your goal");
+            await page.goto(url("programs.html", "#program-strength-3"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator(".badge", { hasText: "Optional if you're short on time" }).count() >= 1 || !(await page.locator(".day-card[data-day='0'] .ex-row").count() > 4), "with 30 minutes, extra exercises are marked optional");
+            await page.evaluate(() => localStorage.clear());
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Smart next workout: no same muscles two days in a row, and a ready-made Day 2
+        {
+            const { page, errors } = await openPage(browser, "me.html", viewport);
+            const seed = () => page.evaluate(() => {
+                localStorage.clear();
+                const y = new Date(); y.setDate(y.getDate() - 1);
+                const yd = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+                saveCustomDays([{ title: "Back & Chest", items: [{ n: "Bench press", d: "3 × 8–10", rest: "2 min" }, { n: "Lat pulldown", d: "3 × 10–12", rest: "90 s" }, { n: "Iso-lateral row", d: "3 × 10–12", rest: "90 s" }] }]);
+                localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "custom", days: 1 }));
+                localStorage.setItem("gu-sessions", JSON.stringify([{ date: yd, plan: "custom", planName: "My workout", days: 1, day: 0, title: "Back & Chest", exercises: 3, sets: 0, reps: 0, volume: 0, unit: "lb" }]));
+            });
+            await seed();
+            await page.reload({ waitUntil: "load" });
+            await page.waitForTimeout(300);
+            const dash = await page.locator("#me-dash .dash-next").textContent();
+            check(/Legs/.test(dash) && /skips what you trained yesterday/.test(dash) && !/Bench press/.test(dash), `after back and chest yesterday, Up next suggests legs (${dash.replace(/\s+/g, " ").slice(0, 80)})`);
+            check(await page.locator("#me-dash [data-sug-start]").count() === 1 && await page.locator("#me-dash [data-sug-edit]").count() === 1, "the suggestion can be started or customized");
+            await Promise.all([page.waitForURL(/#build/), page.click("#me-dash [data-sug-edit]")]);
+            await page.waitForTimeout(400);
+            check(/Build Day 2/.test(await page.locator("#builder-title").textContent()) && await page.locator(".builder-list li").count() >= 3, "Customize it opens the builder as Day 2 with the exercises filled in");
+            await page.goto(url("me.html"), { waitUntil: "load" });
+            await seed();
+            await page.reload({ waitUntil: "load" });
+            await page.waitForTimeout(300);
+            await Promise.all([page.waitForURL(/program-custom-2/), page.click("#me-dash [data-sug-start]")]);
+            await page.waitForTimeout(400);
+            check(await page.evaluate(() => customDaysRaw().length === 2 && /Legs/.test(customDaysRaw()[1].title)), "Start it adds it to your split as Day 2");
+            // A ready-made plan whose next day hits the same muscles gets a heads-up and an alternative
+            await page.evaluate(() => {
+                const y = new Date(); y.setDate(y.getDate() - 1);
+                const yd = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
+                localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "beginner", days: 3 }));
+                localStorage.setItem("gu-log", JSON.stringify({ "Dumbbell bench press": [{ date: yd, unit: "lb", sets: [{ w: 30, r: 10 }] }], "Goblet squat": [{ date: yd, unit: "lb", sets: [{ w: 30, r: 10 }] }] }));
+            });
+            await page.goto(url("me.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(/again, and you trained them yesterday/.test(await page.locator("#me-dash .dash-next").textContent()) && /anyway/.test(await page.locator("#me-dash .dash-next").textContent()), "a plan day that repeats yesterday's muscles gets a heads-up and an alternative");
             await page.evaluate(() => localStorage.clear());
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();

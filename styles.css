@@ -3374,3 +3374,45 @@ html:has(.me-tabs-wrap) { scroll-padding-top: calc(var(--header-h) + 64px); }
 .log-day .log-day-list > li { padding-left: 24px; }
 .planbar-cancel { min-height: 44px; color: var(--muted); }
 .day-finish .text-button[data-cancel-workout], .day-finish .text-button[data-resume-plan] { min-height: 44px; }
+
+/* Your starting point: Tailor it to you */
+.setup-more { margin: 18px 0 6px; border: 1px solid var(--line); background-color: var(--paper); }
+.setup-more > summary { position: relative; display: flex; flex-direction: column; gap: 2px; min-height: 56px; padding: 12px 44px 12px 16px; cursor: pointer; list-style: none; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.setup-more > summary::-webkit-details-marker { display: none; }
+.setup-more > summary span { font-size: 0.78rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.setup-more > summary::after { content: "+"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 1.3rem; font-weight: 900; color: var(--volt); }
+.setup-more[open] > summary::after { content: "\2212"; }
+.setup-more > summary:focus-visible { outline: 3px solid var(--volt); outline-offset: -3px; }
+.setup-more-body { display: grid; gap: 16px; padding: 4px 16px 18px; }
+.setup-choice legend, .setup-lifts legend, .setup-avoid legend { margin-bottom: 8px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); }
+.setup-lifts legend .field-hint, .setup-avoid legend .field-hint { font-size: 0.75rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.setup-choice span { min-height: 44px; display: flex !important; align-items: center; }
+.setup-lifts, .setup-avoid { margin: 0; padding: 0; border: 0; }
+.setup-lift { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) auto minmax(0, 0.8fr); gap: 6px 8px; align-items: center; margin-bottom: 6px; }
+.setup-lift-name { font-weight: 700; font-size: 0.92rem; }
+.setup-lift input { width: 100%; min-height: 44px; font-size: 16px; padding: 6px 8px; }
+.setup-avoid .check { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.setup-avoid .check input { width: 22px; height: 22px; accent-color: var(--volt); flex: none; }
+.setup-rec { margin: 14px 0; padding: 14px 16px; border-left: 4px solid var(--volt); background-color: var(--surface); }
+.setup-rec-list { margin: 6px 0 12px; padding-left: 18px; font-size: 0.9rem; }
+.setup-rec-list li { margin-bottom: 4px; }
+.setup-tailored:empty { display: none; }
+
+/* Keep the bottom tab bar (and the header) pinned on iPhones.
+   In the installed app the whole page could bounce when you scrolled past the top or bottom,
+   dragging the "fixed" bars with it. Stop the bounce there, and give the bars their own layer. */
+@media (display-mode: standalone) {
+    html, body { overscroll-behavior-y: none; }
+}
+@media (max-width: 760px) {
+    .tabbar { -webkit-transform: translateZ(0); transform: translateZ(0); -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+}
+.site-header { position: -webkit-sticky; position: sticky; }
+
+/* Looking at a plan that isn't yours */
+.adopt-note { margin: 0 0 16px; padding: 12px 14px; border-left: 4px solid var(--volt); background-color: var(--surface); font-size: 0.92rem; }
+.adopt-note .btn { margin: 8px 8px 0 0; }
+.adopt-note .text-link { display: inline-block; margin-top: 8px; }
+/* Up next: a workout made for you */
+.dash-warn { margin: 0 0 10px; padding: 10px 12px; border-left: 3px solid var(--volt); background-color: var(--paper); font-size: 0.88rem; }
+.dash-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }

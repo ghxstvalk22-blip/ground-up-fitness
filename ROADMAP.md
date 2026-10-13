@@ -11,7 +11,6 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), still to do, most important first:
 
 - [ ] Swap shows a short list to pick from (same muscles and equipment, with your last weight for each), and every exercise gets Swap. Today it replaces blindly in one tap.
-- [ ] "I know my numbers": let lifters type their current weights (bench, squat, etc.) in Your starting point so first sessions don't start too light.
 - [ ] After the plan changes exercises (every 4 weeks for beginners), base the first weight on the exercise it replaced, and show "Replaces Leg press (last 95×10)".
 - [ ] My workout: move days up/down, and an Undo message after removing a day (today it's a confirm box).
 - [ ] Fitness Coach: when someone says "dumbbells" or "at home", build without bench moves, and Start this workout should land on the day's exercises.
