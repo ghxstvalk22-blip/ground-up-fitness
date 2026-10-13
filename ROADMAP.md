@@ -10,6 +10,10 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), still to do, most important first:
 
+- [ ] My progress counts the same way everywhere: Overview, milestones, and Lifts should count finished workouts like the Log tab does (testers saw "1 workout this week" next to "2 workout days, 20 sets"), and best-lift numbers should match between Overview and Lifts (1 lb rounding differences; show "+20 lb" with the unit).
+- [ ] Home page for returning users: open with Up next / Continue and fold Your starting point once it's filled in.
+- [ ] Editing a day: show Your workout and the muscle check first and fold the 136-exercise list behind "+ Add exercises".
+- [ ] Beginner "Your best lifts": show the heaviest set actually lifted ("25 lb × 15"), with estimated max from Intermediate up.
 - [ ] Swap shows a short list to pick from (same muscles and equipment, with your last weight for each), and every exercise gets Swap. Today it replaces blindly in one tap.
 - [ ] After the plan changes exercises (every 4 weeks for beginners), base the first weight on the exercise it replaced, and show "Replaces Leg press (last 95×10)".
 - [ ] Your plan: an Undo message after removing a day (today it's a confirm box). (Moving days up/down is done.)
