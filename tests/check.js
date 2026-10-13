@@ -500,9 +500,13 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.goto(url("programs.html", "#program-home"), { waitUntil: "load" });
             await page.waitForTimeout(300);
             check(await page.locator("#home-kit").isVisible(), "home plans ask what equipment you have");
-            await page.locator('#home-kit input[value="dumbbell"]').check({ force: true });
+            await page.locator('#home-kit input[value="homedb"]').check({ force: true });
             await page.waitForTimeout(300);
-            check(/Dumbbells only/.test(await page.locator("#program-head").textContent()) && await page.locator(".ex-name .equip-db").count() >= 1, "picking Dumbbells switches to the dumbbell plan");
+            const homeDb = await page.locator(".day-card").allTextContents();
+            check(/Home with dumbbells/.test(await page.locator("#program-head").textContent()) && await page.locator(".ex-name .equip-db").count() >= 1 && !homeDb.some((t) => /Dumbbell bench press|Incline dumbbell|Seated dumbbell|Hip thrust/.test(t)), "picking Dumbbells switches to a beginner dumbbell plan that needs no bench");
+            await page.goto(url("programs.html", "#program-fatloss"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator('#home-kit input[value="homedb"]').count() === 1, "Lose fat offers the at-home versions");
             await page.evaluate(() => { ["gu-profile", "gu-level", "gu-last-plan"].forEach((k) => localStorage.removeItem(k)); });
             // My progress is personal: your name and your next workout
             await page.evaluate(() => { const p = JSON.parse(localStorage.getItem("gu-profile") || "{}"); p.name = "Chris"; localStorage.setItem("gu-profile", JSON.stringify(p)); });

@@ -319,6 +319,14 @@ const EXERCISES = {
         mistakes: ["Elbows flared straight out.", "Clanking the dumbbells together at the top.", "Dropping them to the floor carelessly at the end."],
         easier: "Push-ups with hands on a bench", harder: "Pause 1 second at the bottom"
     },
+    "Dumbbell floor press": {
+        kit: "db", m: "Chest, triceps, front shoulders", eq: "Two dumbbells and the floor", aka: "floor press",
+        setup: "Lie on your back on the floor, knees bent, feet flat. Hold the dumbbells over your chest with straight arms, palms facing your feet.",
+        steps: ["Lower the dumbbells until your upper arms touch the floor, elbows at about 45 degrees.", "Pause for a moment with your arms resting on the floor.", "Press back up until your arms are straight.", "Keep your shoulder blades pulled together the whole time."],
+        tip: "Let your elbows touch the floor softly, then press. The floor keeps your shoulders safe.",
+        mistakes: ["Bouncing your elbows off the floor.", "Flaring your elbows straight out to the sides.", "Lifting your hips off the floor."],
+        easier: "Push-ups with hands on a counter, or lighter dumbbells", harder: "Pause 2 seconds with your elbows on the floor"
+    },
     "Machine chest press": {
         m: "Chest, front shoulders, triceps", eq: "Chest press machine", aka: "seated chest press, chest press machine, selectorized chest press",
         setup: "Adjust the seat so the handles line up with your mid-chest. Sit tall with your back against the pad.",
@@ -464,6 +472,14 @@ const EXERCISES = {
         tip: "Pull toward your hip, not your armpit, to hit your lats.",
         mistakes: ["Twisting your torso to heave the weight up.", "Rounding your back."],
         easier: "Lighter dumbbell", harder: "Pause at the top"
+    },
+    "Bent-over dumbbell row": {
+        kit: "db", m: "Upper back, lats, biceps", eq: "Two dumbbells", aka: "dumbbell row, two-arm dumbbell row",
+        setup: "Stand with feet hip-width apart, a dumbbell in each hand. Push your hips back and lean forward until your chest is about 45 degrees to the floor, back flat, knees soft.",
+        steps: ["Let the dumbbells hang straight down, palms facing each other.", "Row them up toward your hips, elbows close to your sides.", "Squeeze your shoulder blades together at the top.", "Lower slowly until your arms are straight."],
+        tip: "Keep your back flat and still: only your arms and shoulder blades move.",
+        mistakes: ["Standing up taller with every rep.", "Rounding your lower back.", "Shrugging the weight up toward your ears."],
+        easier: "Lighter dumbbells, or one arm at a time with your other hand on a couch", harder: "Pause 1 second at the top"
     },
     "Single-arm cable row": {
         m: "Lats, upper back", eq: "Cable machine with a single handle",

@@ -7,6 +7,12 @@ Newest changes first. Each daily update adds an entry here.
 - **Make this a light week:** on the Plans page, the dark week bar now has a **Make this a light week** button. Tap it when you feel run down, sore all over, or short on sleep, and that week's workouts drop to about half the sets, with suggested weights about 10% lighter. Each exercise is marked "Light week: half the sets" so it's clear why. It only changes the week you picked; next week goes back to normal on its own, and tapping the button again undoes it. A lighter week like this (lifters call it a "deload") helps you recover without losing the habit.
 - Couch to 5K doesn't show the button, since repeating a week is how that plan eases off.
 
+## 2026-10-13 (A beginner plan for home with dumbbells)
+
+- **New plan: Home with dumbbells.** Three full-body workouts for the living room with a pair of dumbbells (adjustable ones are perfect) and the floor, no bench needed, each ending with a 20-minute walk. Good for losing fat at home. Find it on **No gym** (pick "Dumbbells") or on **Lose fat** (pick "Home, dumbbells"). The older "Dumbbells only" plan (it needs a bench) is still there as "Dumbbells + bench" from Intermediate up.
+- **Two new exercise guides:** Dumbbell floor press and Bent-over dumbbell row, with starting weights from your level and bodyweight.
+- The rest of the testers' list is now in the roadmap, most important first.
+
 ## 2026-10-13 (Second test round: logging one set at a time)
 
 The same four testers re-checked the fixes. Most held up. Their notes led to these changes:

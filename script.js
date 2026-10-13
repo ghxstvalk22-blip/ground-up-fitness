@@ -1351,6 +1351,49 @@ const PROGRAMS = {
         }
     },
 
+    homedb: {
+        level: "Beginner",
+        name: "Home with dumbbells",
+        tagline: "a pair of dumbbells, no bench",
+        kit: "db",
+        rotation: "none",
+        summary: "Three full-body workouts for your living room with just a pair of dumbbells (adjustable ones are perfect) and the floor. No bench needed. Each session ends with a walk, which makes this a good plan for losing fat at home: lifting keeps your muscle while you eat a little less, and the walking adds up.",
+        session: "30 to 40 minutes, plus a 20-minute walk",
+        effort: "Stop each set with 2 or 3 good reps left. Move slowly and with control, especially on the way down.",
+        progression: "When you hit the top of the rep range on every set, go up to the next dumbbell setting (usually 5 lb or 2 kg). If your dumbbells max out, slow down the lowering, add a pause, or add reps.",
+        plans: {
+            3: {
+                schedule: "Any 3 days with a rest day between, like Mon, Wed, Fri. Walk on the other days too if you can.",
+                days: [
+                    { title: "Full body A", items: [
+                        ex("Goblet squat", "3 × 10–12", "60 s", "Bodyweight squat to a chair"),
+                        ex("Dumbbell floor press", "3 × 8–12", "60 s", "Push-ups with hands on a counter"),
+                        ex("Bent-over dumbbell row", "3 × 10–12", "60 s", "One arm at a time, other hand on a couch"),
+                        ex("Dumbbell Romanian deadlift", "3 × 10–12", "60 s"),
+                        ex("Dead bug", "3 × 8 per side", "45 s"),
+                        ex("Brisk walk", "20 min", "")
+                    ] },
+                    { title: "Full body B", items: [
+                        ex("Reverse lunge", "3 × 8–10 per leg", "60 s", "Hold a chair for balance"),
+                        ex("Dumbbell shoulder press", "3 × 8–12", "60 s", "Sit on a sturdy chair"),
+                        ex("Bent-over dumbbell row", "3 × 10–12", "60 s"),
+                        ex("Glute bridge", "3 × 12–15", "45 s", "No dumbbell on your hips"),
+                        ex("Farmer carry", "3 × 40 steps", "60 s"),
+                        ex("Brisk walk", "20 min", "")
+                    ] },
+                    { title: "Full body C", items: [
+                        ex("Step-up", "3 × 10 per leg", "60 s", "Use a lower step"),
+                        ex("Push-up", "3 × 5–10", "60 s", "Hands on a counter"),
+                        ex("Bent-over dumbbell row", "3 × 10–12", "60 s"),
+                        ex("Dumbbell Romanian deadlift", "3 × 10–12", "60 s"),
+                        ex("Plank", "3 × 20–40 s", "45 s", "Plank on your knees"),
+                        ex("Brisk walk", "20 min", "")
+                    ] }
+                ]
+            }
+        }
+    },
+
     busy: {
         level: "Beginner", main: true,
         name: "Short on time",
@@ -2076,6 +2119,8 @@ const START_EXTRA = {
     "Close-grip lat pulldown": [["Bench press", 0.8]],
     "Seated cable row": [["Bench press", 0.8]],
     "Single-arm dumbbell row": [["Barbell row", 0.4, true]],
+    "Bent-over dumbbell row": [["Barbell row", 0.33, true]],
+    "Dumbbell floor press": [["Bench press", 0.33, true]],
     "Chest-supported dumbbell row": [["Barbell row", 0.3, true]],
     "Dumbbell curl": [["Bench press", 0.14, true]],
     "Hammer curl": [["Bench press", 0.15, true]],
@@ -2354,13 +2399,17 @@ function setupPrograms() {
         // At home: switch between bodyweight only and dumbbells
         const homeKit = document.getElementById("home-kit");
         if (homeKit) {
-            const atHome = state.goal === "home" || state.goal === "dumbbell";
+            // Shown on the home plans, and on Lose fat (so people losing weight at home find their version)
+            const atHome = ["home", "homedb", "dumbbell", "fatloss"].includes(state.goal);
             homeKit.hidden = !atHome;
-            if (atHome && PROGRAMS.dumbbell) {
-                homeKit.innerHTML = `<p>Training at home? What do you have?</p>
+            if (atHome && PROGRAMS.homedb) {
+                const opt = (value, icon, text) => `<label><input type="radio" name="home-kit" value="${value}"${state.goal === value ? " checked" : ""}><span>${icon ? `<span class="equip equip-${icon}" aria-hidden="true"></span>` : ""}${text}</span></label>`;
+                homeKit.innerHTML = `<p>${state.goal === "fatloss" ? "Where are you training?" : "Training at home? What do you have?"}</p>
                     <fieldset class="segmented compact"><legend class="visually-hidden">Equipment at home</legend>
-                        <label><input type="radio" name="home-kit" value="home"${state.goal === "home" ? " checked" : ""}><span><span class="equip equip-body" aria-hidden="true"></span>Nothing</span></label>
-                        <label><input type="radio" name="home-kit" value="dumbbell"${state.goal === "dumbbell" ? " checked" : ""}><span><span class="equip equip-db" aria-hidden="true"></span>Dumbbells</span></label>
+                        ${state.goal === "fatloss" ? opt("fatloss", "", "Gym") : ""}
+                        ${opt("home", "body", state.goal === "fatloss" ? "Home, nothing" : "Nothing")}
+                        ${opt("homedb", "db", state.goal === "fatloss" ? "Home, dumbbells" : "Dumbbells")}
+                        ${PROGRAMS.dumbbell && (levelAtLeast("Intermediate") || state.goal === "dumbbell") && state.goal !== "fatloss" ? opt("dumbbell", "db", "Dumbbells + bench") : ""}
                     </fieldset>
                     ${state.goal === "dumbbell" && !levelAtLeast("Intermediate") ? `<p class="home-kit-note">This plan is written for Intermediate lifters. As a beginner, start with light dumbbells and stop each set with 2 or 3 reps left.</p>` : ""}`;
             }
@@ -3060,7 +3109,7 @@ function setupPrograms() {
         els.goalInputs.forEach((r) => {
             const label = r.closest("label");
             const lvl = PROGRAMS[r.value] ? PROGRAMS[r.value].level : "Beginner";
-            label.hidden = !PROGRAMS[r.value] || (levelRank(lvl) > rank && r.value !== state.goal);
+            label.hidden = !PROGRAMS[r.value] || (levelRank(lvl) > rank && r.value !== state.goal) || (label.dataset.sub !== undefined && r.value !== state.goal);
             label.classList.toggle("is-above", levelRank(lvl) > rank);
         });
         const note = document.getElementById("level-unlock");
