@@ -2361,7 +2361,7 @@ function setupPrograms() {
                 <ul class="ex-list">
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
                 </ul>
-                ${state.week === currentWeek() ? `<div class="day-finish"><button type="button" class="btn btn-primary" data-finish="${di}">Finish workout</button></div>` : ""}
+                ${state.week === currentWeek() ? (() => { const doneToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === isoDate(new Date()) && x.plan === state.goal && x.day === di); return `<div class="day-finish"><button type="button" class="btn btn-primary${doneToday ? " is-saved" : ""}" data-finish="${di}">${doneToday ? "Finished today \u2713 · See summary" : "Finish workout"}</button></div>`; })() : ""}
             </article>`).join("");
 
         updateProgress();
@@ -2561,13 +2561,24 @@ function setupPrograms() {
         store.set("gu-sessions", sessions.slice(-200));
         updateProgress();
         window.dispatchEvent(new CustomEvent("logchange", { detail: { finished: true } }));
+        // Saved. Say so on the button right away, whatever happens with the pop-up
+        const finBtn = els.grid.querySelector(`[data-finish="${di}"]`);
+        if (finBtn) { finBtn.textContent = "Workout saved \u2713 · See summary"; finBtn.classList.add("is-saved"); }
+        try { showFinish(); }
+        catch (err) { showToast("Workout saved. Good job!", lines.filter((l) => l.next).slice(0, 3).map((l) => `${l.name}: ${l.next}`).join(" · ") || "Your targets update every time you log."); }
+        function showFinish() {
         const prs = getPRs().filter((r) => r.date === today);
         const streak = weekStreak();
         let dlg = document.getElementById("finish-dialog");
         if (!dlg) {
             document.body.insertAdjacentHTML("beforeend", `<dialog id="finish-dialog" class="finish-dialog" aria-labelledby="finish-title"><div class="finish-inner"></div></dialog>`);
             dlg = document.getElementById("finish-dialog");
-            dlg.addEventListener("click", (ev) => { if (ev.target === dlg || ev.target.closest("[data-finish-close]")) dlg.close(); });
+            dlg.addEventListener("click", (ev) => {
+                if (ev.target === dlg || ev.target.closest("[data-finish-close]")) {
+                    if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open");
+                    document.body.classList.remove("finish-open");
+                }
+            });
         }
         dlg.querySelector(".finish-inner").innerHTML = `
             <div class="finish-burst" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
@@ -2588,10 +2599,15 @@ function setupPrograms() {
                 <a class="btn btn-primary" href="me.html">See my progress</a>
                 <button type="button" class="btn" data-finish-close>Done</button>
             </div>`;
-        if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+        if (dlg.open) dlg.close();
+        if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e2) { dlg.setAttribute("open", ""); } }
+        else dlg.setAttribute("open", "");
+        document.body.classList.add("finish-open");
+        dlg.addEventListener("close", () => document.body.classList.remove("finish-open"), { once: true });
         if (navigator.vibrate) navigator.vibrate(60);
         const btn = dlg.querySelector("[data-finish-close]");
         if (btn) btn.focus();
+        }
     }
 
     /* ----- Events ----- */

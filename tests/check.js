@@ -574,6 +574,13 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/Good job/i.test(fin) && /Next time/i.test(fin) && /Start with about \d+ lb/.test(fin), "Finish workout shows a good-job screen with next time's weights");
             check(await page.evaluate(() => (store.get("gu-sessions") || []).length === 1) && await page.locator(".ex-row input[type=checkbox]:not(:checked)").count() === 0, "finishing saves the workout and checks the day off");
             await page.click("[data-finish-close]");
+            check(/saved|Finished/i.test(await page.locator("[data-finish='0']").textContent()), "the Finish button confirms the workout was saved");
+            // Phones without built-in pop-up support still see the summary
+            await page.evaluate(() => { HTMLDialogElement.prototype.showModal = undefined; });
+            await page.locator("[data-finish='0']").click();
+            await page.waitForTimeout(300);
+            check(await page.locator("#finish-dialog").isVisible(), "the summary still shows on browsers without pop-up support");
+            await page.click("[data-finish-close]");
             await page.evaluate(() => { localStorage.clear(); });
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();

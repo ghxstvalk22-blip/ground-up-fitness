@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Finish workout fix)
+
+- **Finish workout** now saves your workout first and says so on the button ("Workout saved ✓"), so it's clear it went through, even if the summary pop-up can't open on your phone. If the pop-up fails, a short "Workout saved. Good job!" message shows instead with your next targets. Workouts you've already finished today show "Finished today ✓".
+
 ## 2026-10-12 (Finish workout)
 
 - Every workout (ready-made plans and your own) now ends with a **Finish workout** button. Tap it and you get a **"Good job. Workout done."** screen with what you did: exercises, sets logged, total weight lifted, your week streak, and any new personal records.

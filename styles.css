@@ -3137,3 +3137,7 @@ body:has(#rest-timer:not([hidden])) .planbar { display: none; }
 .session-nums { font-size: 0.85rem; font-weight: 700; white-space: nowrap; }
 @media (max-width: 480px) { .session-list li { grid-template-columns: 56px 1fr; } .session-nums { grid-column: 2; } }
 .finish-inner h2, .finish-kicker { padding-right: 76px; }
+
+/* Works even where the browser has no built-in pop-up support: pin it to the middle of the screen */
+.finish-dialog[open] { position: fixed; inset: 0; z-index: 200; }
+.day-finish .btn.is-saved { background-color: var(--surface); color: var(--ink); border-color: var(--volt); }
