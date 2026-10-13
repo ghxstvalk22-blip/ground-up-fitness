@@ -3322,3 +3322,7 @@ body.rest-on .planbar { display: none; }
 .log-set-head span:last-child { text-align: center; }
 .log-set { grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1fr) 44px; }
 .log-set input { min-height: 44px; font-size: 16px; }
+.builder-level { grid-column: 1 / -1; padding: 20px 24px 4px; }
+.builder-level .level-info { margin: 8px 0 0; font-size: 0.9rem; color: var(--muted); }
+.builder-level + .builder-goal { padding-top: 12px; }
+@media (max-width: 760px) { .builder-level { padding: 16px 16px 4px; } }

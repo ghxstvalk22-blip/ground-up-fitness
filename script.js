@@ -4920,6 +4920,7 @@ function setupBuilder() {
                 <button type="button" class="btn btn-primary builder-open" aria-expanded="false" aria-controls="builder-body">${draft.items.length ? "Edit my workout" : "Start building"}</button>
             </div>
             <div class="builder-body" id="builder-body" hidden>
+                <div class="builder-level" data-level-bar data-label="Your level: sets your reps and weights"></div>
                 <div class="builder-goal">
                     <fieldset class="segmented builder-goals">
                         <legend>What's this workout for?</legend>
@@ -4970,6 +4971,7 @@ function setupBuilder() {
         </div>`;
     const $ = (sel) => spot.querySelector(sel);
     const body = $("#builder-body"), openBtn = $(".builder-open"), results = $(".builder-results"), list = $(".builder-list");
+    mountLevelBar($(".builder-level"));
     const search = $("#builder-search"), kitSel = $("#builder-kit"), nameIn = $("#builder-name"), status = $(".builder-status");
     nameIn.value = draft.title;
     const save = () => store.set(BUILDER_KEY, draft);
@@ -5177,13 +5179,9 @@ function setupStartingPoint() {
                 <div class="setup-intro">
                     <p class="kicker">Your starting point</p>
                     <h2 id="setup-title-${n}">Get weights that fit you</h2>
-                    <p class="section-lede">Pick your level and add your bodyweight. Every plan and the Fitness Coach will suggest a starting weight for each lift, and push you up as you log your sets.</p>
+                    <p class="section-lede">Add your bodyweight. Every plan and the Fitness Coach will suggest a starting weight for each lift, and push you up as you log your sets.</p>
                 </div>
                 <form class="setup-form" novalidate aria-labelledby="setup-title-${n}">
-                    <fieldset class="segmented setup-level">
-                        <legend>Your level</legend>
-                        ${LEVELS.map((l) => `<label><input type="radio" name="setup-level-${n}" value="${l}"><span>${l}</span></label>`).join("")}
-                    </fieldset>
                     <p class="setup-level-info"></p>
                     <div class="field">
                         <label for="setup-name-${n}">Your first name <span class="field-hint">(optional, makes My progress yours)</span></label>
@@ -5209,7 +5207,6 @@ function setupStartingPoint() {
             </div>`;
         const form = spot.querySelector("form");
         form.addEventListener("change", (e) => {
-            if (e.target.name === `setup-level-${n}`) { setLevel(e.target.value); return; }
             save();
         });
         form.addEventListener("input", (e) => { if (e.target.name === "bodyweight" || e.target.name === "pname") save(); });
@@ -5239,13 +5236,12 @@ function setupStartingPoint() {
         spots.forEach((spot) => {
             const form = spot.querySelector("form");
             if (fill) {
-                form.querySelectorAll(".setup-level input").forEach((r) => { r.checked = r.value === lvl; });
                 if (document.activeElement !== form.elements.bodyweight) form.elements.bodyweight.value = p.bodyweight;
                 if (document.activeElement !== form.elements.pname) form.elements.pname.value = p.name;
                 form.elements.unit.value = p.unit;
                 form.elements.sex.value = p.sex;
             }
-            spot.querySelector(".setup-level-info").textContent = LEVEL_INFO[lvl];
+            spot.querySelector(".setup-level-info").innerHTML = `Your level: <strong>${escapeHtml(lvl)}</strong>. Change it on <a href="programs.html#all-plans">any plan</a> or when you build your own workout.`;
             const link = document.querySelector(".hero-setup-link");
             if (link) link.textContent = Number(p.bodyweight) ? "See your starting weights" : "Add your bodyweight for starting weights";
             const preview = spot.querySelector(".setup-preview");
@@ -5266,10 +5262,11 @@ function setupStartingPoint() {
     render(true);
 }
 
-function setupLevelBar() {
-    const bars = [...document.querySelectorAll("[data-level-bar]")];
-    if (!bars.length) return;
-    bars.forEach((bar, n) => {
+// Level pickers live where they change your sets, reps, and weights: the ready-made plans and Build your own workout
+let levelBarCount = 0;
+function mountLevelBar(bar) {
+    const n = levelBarCount++;
+    {
         const compact = bar.hasAttribute("data-compact");
         bar.innerHTML = `
             <fieldset class="segmented level-bar${compact ? " is-compact" : ""}">
@@ -5278,7 +5275,14 @@ function setupLevelBar() {
             </fieldset>
             ${compact ? "" : `<p class="level-info" aria-live="polite"></p>`}`;
         bar.addEventListener("change", (e) => { if (e.target.name === `level-${n}`) setLevel(e.target.value); });
-    });
+        bar.querySelectorAll(".level-bar input").forEach((r) => { r.checked = r.value === getLevel(); });
+        const info = bar.querySelector(".level-info");
+        if (info) info.textContent = LEVEL_INFO[getLevel()];
+    }
+}
+function setupLevelBar() {
+    const bars = [...document.querySelectorAll("[data-level-bar]")];
+    bars.forEach(mountLevelBar);
     const sync = () => {
         const l = getLevel();
         document.querySelectorAll(".level-bar input").forEach((r) => { r.checked = r.value === l; });
@@ -6249,7 +6253,7 @@ function setupExerciseGuide() {
             </div>
             <button type="button" class="howto-close" id="howto-close" aria-label="Close">&times;</button>
         </div>
-        ${document.body.dataset.page === "exercises" ? "" : '<div class="howto-level" data-level-bar data-compact></div>'}
+        ${document.body.dataset.page === "programs" ? '<div class="howto-level" data-level-bar data-compact></div>' : ""}
         <div class="howto-body" id="howto-body"></div>
         <div class="howto-add"><button type="button" class="btn btn-primary" id="howto-add" data-add-ex="">+ Add to my workout</button></div>
     </div>
@@ -6311,7 +6315,7 @@ function setupExerciseGuide() {
             ${lvl >= 2 ? deeper(name, x).adv : ""}
             ${lvl >= 2 && fam.length ? `<h3>Works the same muscles</h3><p class="howto-alts">${fam.map((n) => `<button type="button" class="chip" data-howto="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join(" ")}</p>` : ""}
             ${lvl >= 3 ? deeper(name, x).exp : ""}
-            ${lvl < 3 && document.body.dataset.page !== "exercises" ? `<p class="howto-more">Want more detail? Switch the detail level above to ${LEVELS[lvl + 1]}.</p>` : ""}
+            ${lvl < 3 && document.body.dataset.page === "programs" ? `<p class="howto-more">Want more detail? Switch the detail level above to ${LEVELS[lvl + 1]}.</p>` : ""}
             <p class="fine-print">Stop if something hurts (sharp or joint pain, not muscle burn). Form guides are general advice, not medical advice.</p>`;
         if (!dialog.open) dialog.showModal();
         dialog.querySelector(".howto-inner").scrollTop = 0;

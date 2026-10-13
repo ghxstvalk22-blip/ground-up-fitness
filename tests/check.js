@@ -479,14 +479,14 @@ async function openPage(browser, file, viewport, hash = "") {
         // Your starting point: level + bodyweight give starting weights everywhere
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);
-            check(await page.locator(".hero-level .level-bar input").count() === 4 && await page.locator("#setup .setup-form").count() === 1, "the cover has a level picker and the home page has Your starting point");
+            check(await page.locator("[data-level-bar], .level-bar").count() === 0 && await page.locator("#setup .setup-form").count() === 1 && /Your level: Beginner/.test(await page.locator("#setup").textContent()), "the home page has no level picker (it's on the plans), and has Your starting point");
             await page.fill("#setup-bw-0", "180");
             await page.selectOption("#setup-sex-0", "male");
-            await page.locator('#setup input[value="Intermediate"]').check({ force: true });
+            await page.evaluate(() => setLevel("Intermediate"));
             await page.waitForTimeout(100);
             const benchMid = Number((await page.locator(".setup-weights li").first().textContent()).replace(/\D+/g, ""));
-            check(benchMid >= 120 && benchMid <= 160 && await page.locator('.hero-level input[value="Intermediate"]').isChecked(), `starting weights show for your level, and the cover picker follows (bench ${benchMid} lb)`);
-            await page.locator('.hero-level input[value="Expert"]').check({ force: true });
+            check(benchMid >= 120 && benchMid <= 160 , `starting weights show for your level (bench ${benchMid} lb)`);
+            await page.evaluate(() => setLevel("Expert"));
             await page.waitForTimeout(100);
             const benchTop = Number((await page.locator(".setup-weights li").first().textContent()).replace(/\D+/g, ""));
             check(benchTop > benchMid, `a higher level gives heavier starting weights (${benchMid} -> ${benchTop} lb)`);
@@ -507,6 +507,9 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.goto(url("programs.html", "#program-fatloss"), { waitUntil: "load" });
             await page.waitForTimeout(300);
             check(await page.locator('#home-kit input[value="homedb"]').count() === 1, "Lose fat offers the at-home versions");
+            await page.goto(url("programs.html", "#build"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator(".builder-level .level-bar input").count() === 4 && await page.locator(".level-wrap .level-bar input").count() === 4, "the level picker is on the ready-made plans and in Build your own workout");
             await page.evaluate(() => { ["gu-profile", "gu-level", "gu-last-plan"].forEach((k) => localStorage.removeItem(k)); });
             // My progress is personal: your name and your next workout
             await page.evaluate(() => { const p = JSON.parse(localStorage.getItem("gu-profile") || "{}"); p.name = "Chris"; localStorage.setItem("gu-profile", JSON.stringify(p)); });

@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Your level lives with your plans)
+
+- **The level picker (Beginner, Intermediate, Advanced, Expert) moved off the home page.** It's now where it actually changes your sets, reps, and weights: at the top of the ready-made plans and inside **Build your own workout**. The home page is simpler.
+- **Your starting point** (home page and My progress) now just asks for your bodyweight, and shows your level with a link to change it on a plan.
+- How-to guides only show the detail-level switch on the Plans page.
+
 ## 2026-10-13 (Light week)
 
 - **Make this a light week:** on the Plans page, the dark week bar now has a **Make this a light week** button. Tap it when you feel run down, sore all over, or short on sleep, and that week's workouts drop to about half the sets, with suggested weights about 10% lighter. Each exercise is marked "Light week: half the sets" so it's clear why. It only changes the week you picked; next week goes back to normal on its own, and tapping the button again undoes it. A lighter week like this (lifters call it a "deload") helps you recover without losing the habit.
