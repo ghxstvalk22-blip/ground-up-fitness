@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (More exercises per muscle in the builder)
+
+- **Build your own workout allows 3 or 4 exercises per muscle now, the way most people train.** Before, it could say "1 of 1" once your workout covered several muscles. New limits for Build muscle: big muscles (chest, back, quads, hamstrings, glutes) up to 4 exercises, smaller ones (shoulders, arms, calves, core) up to 3. Get stronger, Lose fat, and Endurance: 3 and 2. A full-body day (5 or more muscles) gets one fewer per muscle so it stays doable, but never fewer than 2.
+- Going past the limit still works: you get a heads-up and an **Add anyway** button, never a block. The workout-size and sets-per-muscle heads-ups were raised to match (about 9 to 12 hard sets per muscle).
+
 ## 2026-10-13 (A real app intro, and Clear all in the builder)
 
 - **Intro, part 2:** a barbell now drops in above the logo and gets pressed up while the orange line sweeps across, and the three logo bars pump one after another, left to right, in time with the line.

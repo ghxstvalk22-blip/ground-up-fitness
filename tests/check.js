@@ -566,12 +566,12 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator(".builder-item").nth(2).locator("[data-move='-1']").click();
             check(/Plank/.test(await page.locator(".builder-item").nth(1).textContent()), "exercises can be reordered");
             // Too many for one muscle: allowed, but with a warning
-            for (const ex of ["Incline dumbbell press", "Cable fly"]) { await page.fill("#builder-search", ex); await page.locator(`[data-add="${ex}"]`).click(); }
+            for (const ex of ["Incline dumbbell press", "Cable fly", "Machine chest press"]) { await page.fill("#builder-search", ex); await page.locator(`[data-add="${ex}"]`).click(); }
             await page.fill("#builder-search", "Pec deck");
             const anyway = (await page.locator('[data-add="Pec deck"]').textContent()).trim();
             await page.locator('[data-add="Pec deck"]').click();
-            check(/Add anyway/i.test(anyway) && await page.locator(".bi-warn").count() >= 1 && /too many/.test(await page.locator(".builder-tally").textContent()), `a 4th chest exercise is allowed but flagged (${anyway})`);
-            for (const ex of ["Pec deck", "Cable fly", "Incline dumbbell press"]) await page.locator(".builder-item", { hasText: ex }).locator("[data-remove]").click();
+            check(/Add anyway/i.test(anyway) && await page.locator(".bi-warn").count() >= 1 && /too many/.test(await page.locator(".builder-tally").textContent()), `3 or 4 exercises per muscle are fine; a 5th chest exercise is allowed but flagged (${anyway})`);
+            for (const ex of ["Pec deck", "Machine chest press", "Cable fly", "Incline dumbbell press"]) await page.locator(".builder-item", { hasText: ex }).locator("[data-remove]").click();
             await page.locator('input[name="builder-goal"][value="strength"]').check({ force: true });
             check(/4–6|5/.test(await page.locator(".builder-item").first().locator('[data-f="amount"]').inputValue()), "switching the goal to Get stronger changes the reps");
             await page.locator(".builder-save").click();

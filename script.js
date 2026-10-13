@@ -5051,10 +5051,10 @@ function builderKind(name) {
    heavy sets of a lift, and general fitness needs about 1 exercise per major muscle
    (ACSM 2009 position stand). So: a few exercises per muscle, fewer when you train many. */
 const BUILD_GOALS = {
-    muscle: { label: "Build muscle", for: "building muscle", dose: "muscle", per: [3, 2], total: 8, sets: 10, why: "about 6 to 10 hard sets per muscle in one workout; more than that mostly adds fatigue" },
-    strength: { label: "Get stronger", for: "getting stronger", dose: "strength", per: [2, 1], total: 6, sets: 8, why: "one main lift plus one helper per muscle; strength gains level off after a few heavy sets" },
-    fit: { label: "Lose fat / get fit", for: "fat loss and fitness", dose: null, per: [2, 1], total: 8, sets: 8, why: "1 or 2 exercises per muscle, so you can train every muscle without spending all day" },
-    endurance: { label: "Endurance (high reps)", for: "endurance", dose: "endurance", per: [2, 1], total: 8, sets: 8, why: "1 or 2 exercises per muscle with light weights and short rests" }
+    muscle: { label: "Build muscle", for: "building muscle", dose: "muscle", per: [4, 3], total: 10, sets: 12, why: "3 or 4 exercises per muscle (about 9 to 12 hard sets) in one workout; past that, extra work mostly adds fatigue" },
+    strength: { label: "Get stronger", for: "getting stronger", dose: "strength", per: [3, 2], total: 8, sets: 10, why: "a main lift plus 1 or 2 helpers per muscle; strength gains level off after a few heavy sets" },
+    fit: { label: "Lose fat / get fit", for: "fat loss and fitness", dose: null, per: [3, 2], total: 10, sets: 10, why: "2 or 3 exercises per muscle, so you can train every muscle without spending all day" },
+    endurance: { label: "Endurance (high reps)", for: "endurance", dose: "endurance", per: [3, 2], total: 10, sets: 10, why: "2 or 3 exercises per muscle with light weights and short rests" }
 };
 const BUILD_LARGE = ["chest", "back", "quads", "hamstrings", "glutes"];
 const BUILD_MUSCLE_NAME = { chest: "Chest", back: "Back", shoulders: "Shoulders", biceps: "Biceps", triceps: "Triceps", quads: "Quads", hamstrings: "Hamstrings", glutes: "Glutes", calves: "Calves", core: "Core", cardio: "Cardio" };
@@ -5078,10 +5078,9 @@ function builderLimit(goalKey, muscle, musclesTrained) {
     const g = BUILD_GOALS[goalKey] || BUILD_GOALS.muscle;
     if (muscle === "cardio") return 2;
     let max = BUILD_LARGE.includes(muscle) ? g.per[0] : g.per[1];
-    // Training several muscles in one session? Fewer exercises each, so the workout stays doable
-    if (musclesTrained >= 3) max = Math.min(max, 2);
-    if (musclesTrained >= 5) max = 1;
-    return Math.max(1, max);
+    // A full-body day (5 or more muscles) gets one fewer per muscle so it stays doable, but never fewer than 2
+    if (musclesTrained >= 5) max -= 1;
+    return Math.max(2, max);
 }
 // One exercise as the builder keeps it: { n, sets, amount, rest }
 function builderDefault(name, goalKey = "muscle") {
