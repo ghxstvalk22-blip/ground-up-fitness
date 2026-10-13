@@ -4,6 +4,7 @@ Newest changes first. Each daily update adds an entry here.
 
 ## 2026-10-13 (A real app intro, and Clear all in the builder)
 
+- **Intro, part 2:** a barbell now drops in above the logo and gets pressed up while the orange line sweeps across, and the three logo bars pump one after another, left to right, in time with the line.
 - **New app intro.** When you open the app from your home screen, it now plays a short intro like a title sequence: a black-and-white gym photo slowly zooms, the Ground Up bars rise one by one, the name slides in letter by letter, the orange line sweeps across, and "Nobody walks in ready." appears. It lasts about 2.5 seconds, plays once each time you open the app, and a tap skips it.
 - **Clear all and start blank.** When Build your own workout opens with exercises already filled in (a suggested Day 2, or a day you're editing), a **Clear all and start blank** button at the top of your list empties it and jumps you to the exercise search so you can pick your own right away. It stays the same day you were making, and **Undo** brings them back. The smaller Clear button does the same now (before, it also forgot you were building Day 2).
 - Opening the builder with a prefilled Day 2 now goes straight to your list instead of the top of the search.
