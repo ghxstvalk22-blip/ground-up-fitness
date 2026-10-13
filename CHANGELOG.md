@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (Log: every set you've logged)
+
+- **New Log tab on My progress** (website and app: Progress, then Log). It lists every set and rep you've logged, newest first, grouped by day: "Set 1: 160 lb × 8". The top shows your total reps, sets, and days.
+- **Pick an exercise** (or tap its name) to see only that one, with your heaviest set.
+- **Logged something by mistake?** Tap Remove on that entry, and Undo if you change your mind.
+- The Last workout card on Overview links to it, and searching "log" finds it.
+
 ## 2026-10-13 (Your level lives with your plans)
 
 - **The level picker (Beginner, Intermediate, Advanced, Expert) moved off the home page.** It's now where it actually changes your sets, reps, and weights: at the top of the ready-made plans and inside **Build your own workout**. The home page is simpler.

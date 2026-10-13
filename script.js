@@ -63,6 +63,7 @@ const FEATURES = [
     setupRestTimer,
     setupLibrary,
     setupMeTabs,
+    setupLogHistory,
     setupAddToWorkout,
     setupMuscleMap,
     setupLevelBar,
@@ -126,6 +127,8 @@ const SITE_NAV = [
         ["One-rep max", "Estimate your max and working weights", "tools.html#tool-1rm"],
         ["Plate loader", "Which plates go on the bar", "tools.html#tool-plates"],
         ["Weight trend", "Your 7-day average, not daily noise", "tools.html#tool-weight"]
+    ], more: [
+        ["Workout log", "Every set and rep you've logged", "me.html#log"]
     ] },
     { label: "Gym basics", href: "basics.html", page: "basics", also: ["supplements"], menu: false, items: [
         ["What weight should I use?", "", "basics.html#faq-weight"],
@@ -156,7 +159,7 @@ const NEXT_STEPS = {
             ["Browse every exercise", "With how-tos and demos", "exercises.html"]],
     programs: [["Stuck on an exercise?", "Search the exercise library", "exercises.html"],
                ["How much should I eat?", "Calories and protein for your goal", "tools.html#tool-calories"],
-               ["Get weights that fit you", "Set your level and bodyweight", "index.html#setup"]],
+               ["Get weights that fit you", "Add your bodyweight", "index.html#setup"]],
     exercises: [["Put them together", "Pick a ready-made plan", "programs.html"],
                 ["First time at the gym?", "What to expect, start to finish", "start.html#first-day"],
                 ["Gym words, decoded", "Sets, reps, failure, deload", "start.html#glossary"]],
@@ -4669,6 +4672,7 @@ function setupMyDashboard() {
                         <p class="dash-sub">${escapeHtml(shortDate(parseIso(last.date)))} · ${Number(last.sets) || 0} sets · ${fmt(Number(last.volume) || 0)} ${last.unit === "kg" ? "kg" : "lb"} lifted</p>`
                     : `<p class="dash-sub">Tap <strong>Finish workout</strong> after a session and it shows up here.</p>`}
                     <p class="dash-sub">${sessions.length} workout${sessions.length === 1 ? "" : "s"} finished · ${fmt(sets)} sets logged in all</p>
+                    ${sets ? `<a class="text-link" href="me.html#log">See every set you've logged</a>` : ""}
                 </article>
                 <article class="dash-card">
                     <h3>Your best lifts</h3>
@@ -5888,7 +5892,7 @@ const repsAt = (max, w) => (w > 0 ? Math.max(1, Math.floor(30 * (max / w - 1))) 
    tab names it (data-me-label). Links like me.html#cardio or
    #reset-progress open the right tab. Without JavaScript, everything shows.
    ========================================================= */
-const ME_TABS = ["overview", "lifts", "cardio", "you"];
+const ME_TABS = ["overview", "lifts", "log", "cardio", "you"];
 function setupMeTabs() {
     const sections = [...document.querySelectorAll("[data-me-tab]")];
     if (!sections.length) return;
@@ -5938,6 +5942,126 @@ function setupMeTabs() {
         const a = e.target.closest("[data-me-open]");
         if (a) { e.preventDefault(); select(a.dataset.meOpen, { scroll: true }); }
     });
+}
+
+/* =========================================================
+   FEATURE: Workout log (the Log tab on My progress)
+   Every logged set, newest first, grouped by day. Filter to one
+   exercise, remove a mistaken entry (with Undo). Reads gu-log only.
+   ========================================================= */
+function setupLogHistory() {
+    const daysEl = document.getElementById("log-days");
+    if (!daysEl) return;
+    const filter = document.getElementById("log-filter");
+    const totals = document.getElementById("log-totals");
+    const more = document.getElementById("log-more");
+    const status = document.getElementById("log-history-status");
+    const PAGE = 14;
+    let shown = PAGE, undo = null;
+
+    // One row per exercise per day: { date, name, unit, sets }
+    function rows() {
+        const log = getLog();
+        return Object.entries(log).flatMap(([name, list]) => (Array.isArray(list) ? list : [])
+            .filter((e) => e && typeof e.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && Array.isArray(e.sets))
+            .map((e) => ({ name, date: e.date, unit: e.unit === "kg" ? "kg" : "lb", sets: e.sets.filter((st) => st && Number.isFinite(Number(st.r))) })))
+            .filter((r) => r.sets.length);
+    }
+    function setText(st, from, to) {
+        const w = Number(st.w) || 0, r = Number(st.r) || 0;
+        return w ? `${trimNum(roundWeight(toUnit(w, from, to), to))} ${to} × ${r}` : `${r} reps`;
+    }
+    function render() {
+        const unit = getProfile().unit;
+        const all = rows();
+        // The exercise list: every name you've logged, A to Z
+        const names = [...new Set(all.map((r) => r.name))].sort((a, b) => a.localeCompare(b));
+        const keep = filter.value;
+        filter.innerHTML = `<option value="">All exercises (${names.length})</option>` + names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+        filter.value = names.includes(keep) ? keep : "";
+        const pick = filter.value;
+        const list = all.filter((r) => !pick || r.name === pick);
+        const reps = list.reduce((t, r) => t + r.sets.reduce((u, st) => u + (Number(st.r) || 0), 0), 0);
+        const setCount = list.reduce((t, r) => t + r.sets.length, 0);
+        const dayCount = new Set(list.map((r) => r.date)).size;
+        const heaviest = list.flatMap((r) => r.sets.map((st) => ({ w: toUnit(Number(st.w) || 0, r.unit, unit), r: Number(st.r) || 0 }))).sort((a, b) => b.w - a.w || b.r - a.r)[0];
+        totals.innerHTML = list.length ? `
+            <li><strong>${fmt(reps)}</strong> reps</li>
+            <li><strong>${fmt(setCount)}</strong> sets</li>
+            <li><strong>${fmt(dayCount)}</strong> day${dayCount === 1 ? "" : "s"}</li>
+            ${pick && heaviest && heaviest.w ? `<li><strong>${trimNum(roundWeight(heaviest.w, unit))}</strong> ${unit} heaviest set (× ${heaviest.r})</li>` : ""}` : "";
+        if (!all.length) {
+            daysEl.innerHTML = `<p class="me-unlock">Nothing logged yet. Open your <a href="programs.html">plan</a>, tap <strong>Log sets</strong> on an exercise, and every set shows up here.</p>`;
+            more.hidden = true;
+            return;
+        }
+        // Group by day, newest first
+        const byDay = new Map();
+        list.slice().sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name)).forEach((r) => {
+            if (!byDay.has(r.date)) byDay.set(r.date, []);
+            byDay.get(r.date).push(r);
+        });
+        const days = [...byDay.entries()];
+        daysEl.innerHTML = days.slice(0, shown).map(([date, items]) => {
+            const d = parseIso(date);
+            const dayReps = items.reduce((t, r) => t + r.sets.reduce((u, st) => u + (Number(st.r) || 0), 0), 0);
+            const daySets = items.reduce((t, r) => t + r.sets.length, 0);
+            return `<article class="log-day">
+                <h3><span>${escapeHtml(d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" }))}</span>
+                    <small>${items.length} exercise${items.length === 1 ? "" : "s"} · ${daySets} set${daySets === 1 ? "" : "s"} · ${dayReps} rep${dayReps === 1 ? "" : "s"}</small></h3>
+                <ul class="log-day-list">${items.map((r) => `
+                    <li>
+                        <div class="log-day-top">
+                            <button type="button" class="log-day-name" data-log-only="${escapeHtml(r.name)}" aria-label="Show only ${escapeHtml(r.name)}">${typeof equipIcon === "function" ? equipIcon(r.name) : ""}${escapeHtml(r.name)}</button>
+                            <button type="button" class="text-button log-day-remove" data-log-remove="${escapeHtml(r.name)}|${date}" aria-label="Remove ${escapeHtml(r.name)} on ${escapeHtml(shortDate(d))}">Remove</button>
+                        </div>
+                        <ol class="log-sets">${r.sets.map((st, i) => `<li><span class="log-set-n">Set ${i + 1}</span>${escapeHtml(setText(st, r.unit, unit))}</li>`).join("")}</ol>
+                    </li>`).join("")}</ul>
+            </article>`;
+        }).join("");
+        more.hidden = days.length <= shown;
+    }
+
+    filter.addEventListener("change", () => { shown = PAGE; render(); });
+    more.addEventListener("click", () => { shown += PAGE; render(); });
+    daysEl.addEventListener("click", (e) => {
+        const only = e.target.closest("[data-log-only]");
+        if (only) {
+            filter.value = only.dataset.logOnly;
+            shown = PAGE;
+            render();
+            filter.focus();
+            return;
+        }
+        const rm = e.target.closest("[data-log-remove]");
+        if (!rm) return;
+        const cut = rm.dataset.logRemove.lastIndexOf("|");
+        const name = rm.dataset.logRemove.slice(0, cut), date = rm.dataset.logRemove.slice(cut + 1);
+        const log = getLog();
+        const list = Array.isArray(log[name]) ? log[name] : [];
+        const i = list.findIndex((en) => en && en.date === date);
+        if (i < 0) return;
+        undo = { name, entry: list[i] };
+        list.splice(i, 1);
+        if (list.length) log[name] = list; else delete log[name];
+        store.set(LOG_KEY, log);
+        status.innerHTML = `Removed ${escapeHtml(name)} on ${escapeHtml(shortDate(parseIso(date)))}. <button type="button" class="text-button" id="log-undo">Undo</button>`;
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { name, removed: true } }));
+        const u = document.getElementById("log-undo");
+        if (u) u.focus();
+    });
+    status.addEventListener("click", (e) => {
+        if (!e.target.closest("#log-undo") || !undo) return;
+        const log = getLog();
+        log[undo.name] = (Array.isArray(log[undo.name]) ? log[undo.name] : []).concat(undo.entry);
+        store.set(LOG_KEY, log);
+        status.textContent = `${undo.name} is back.`;
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { name: undo.name } }));
+        undo = null;
+    });
+    window.addEventListener("logchange", render);
+    window.addEventListener("profilechange", render);
+    render();
 }
 
 /* =========================================================

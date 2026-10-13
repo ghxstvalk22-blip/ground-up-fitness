@@ -905,7 +905,16 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.reload();
             await page.waitForTimeout(300);
             // Four short tabs instead of one long page
-            check(await page.locator(".me-tab").count() === 4 && await page.locator("#me-dash").isVisible() && await page.locator("#lifts").isHidden() && await page.locator("#reset-progress").isHidden(), "My progress opens on Overview, with Lifts, Cardio, and You as tabs");
+            check(await page.locator(".me-tab").count() === 5 && await page.locator("#me-dash").isVisible() && await page.locator("#lifts").isHidden() && await page.locator("#reset-progress").isHidden(), "My progress opens on Overview, with Lifts, Log, Cardio, and You as tabs");
+            // Log tab: every set, newest first, filter by exercise, remove with undo
+            await page.click('[data-me-go="log"]');
+            check(await page.locator("#log").isVisible() && await page.locator("#log-days .log-day").count() === 3 && /140 lb × 6/.test(await page.locator("#log-days .log-day").first().textContent()), "the Log tab lists every logged set by day, newest first");
+            check(/53/.test(await page.locator("#log-totals").textContent()) && /reps/.test(await page.locator("#log-totals").textContent()), "the Log tab totals your reps");
+            await page.locator('#log-days [data-log-remove]').first().click();
+            check(await page.locator("#log-days .log-day").count() === 2 && await page.evaluate(() => logFor("Bench press").length === 2), "a mistaken entry can be removed from the log");
+            await page.click("#log-undo");
+            check(await page.locator("#log-days .log-day").count() === 3 && await page.evaluate(() => logFor("Bench press").length === 3), "Undo puts it back");
+            await page.click('[data-me-go="lifts"]');
             check(!(await page.evaluate(() => document.documentElement.classList.contains("app-splash"))), "the loading screen only shows in the installed app, not the website");
             await page.click('[data-me-go="lifts"]');
             check(await page.locator("#lifts").isVisible() && await page.locator("#me-dash").isHidden() && (await page.locator('.me-tab[aria-selected="true"]').textContent()) === "Lifts", "tapping a tab shows just that part");
