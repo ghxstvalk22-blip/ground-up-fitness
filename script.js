@@ -64,6 +64,7 @@ const FEATURES = [
     setupLibrary,
     setupMeTabs,
     setupLogHistory,
+    setupActiveWorkout,
     setupAddToWorkout,
     setupMuscleMap,
     setupLevelBar,
@@ -5051,6 +5052,66 @@ function setupPlanBar() {
 }
 document.addEventListener("click", (e) => { if (e.target.closest("[data-cancel-workout]")) cancelWorkout(); });
 
+/* ---------- Which heads and parts each exercise works ----------
+   Every exercise in the library maps to the Muscle map's heads (upper/middle/lower chest,
+   front/side/rear delt, the 3 triceps heads, ...). "main" is what it works most; "also" helps.
+   The Muscle map's own lists count as main too. Used by the builder's muscle check. */
+// [pattern, main heads, also works] — first match wins, so specific moves come before general ones
+const HEAD_RULES = [
+    [/stretch|mobility/i, [], []],
+    [/seated calf/i, ["soleus"], ["calf-inner", "calf-outer"]],
+    [/calf/i, ["calf-inner", "calf-outer"], ["soleus"]],
+    [/glute kickback|cable kickback|abduct|side-lying|clamshell|lateral band|monster walk/i, ["glute-med", "glute-max"], []],
+    [/adduct|copenhagen/i, ["adductors"], []],
+    [/rear delt|reverse fly|reverse pec|face pull/i, ["delt-rear"], ["rhomboids", "traps-middle"]],
+    [/hammer curl|reverse curl/i, ["brachialis"], ["biceps-long", "forearm-extensors"]],
+    [/incline (dumbbell )?curl|drag curl/i, ["biceps-long"], ["biceps-short"]],
+    [/preacher|concentration|spider/i, ["biceps-short"], ["biceps-long", "brachialis"]],
+    [/wrist curl|grip trainer|hand grip/i, ["forearm-flexors"], []],
+    [/(hamstring|leg) curl|nordic/i, ["hams-outer", "hams-inner"], ["calf-inner"]],
+    [/curl/i, ["biceps-long", "biceps-short"], ["brachialis"]],
+    [/overhead (triceps|tricep)|skull|french press|lying triceps/i, ["triceps-long"], ["triceps-medial"]],
+    [/pushdown|kickback|triceps extension|tricep/i, ["triceps-lateral", "triceps-medial"], ["triceps-long"]],
+    [/close-grip (bench|press)|diamond/i, ["triceps-lateral", "triceps-medial"], ["chest-middle"]],
+    [/dip/i, ["chest-lower", "triceps-lateral"], ["triceps-medial", "delt-front"]],
+    [/pike push-up|overhead press|shoulder press|military|arnold|push press/i, ["delt-front"], ["delt-side", "triceps-medial", "traps-upper"]],
+    [/lateral raise|lean-away/i, ["delt-side"], ["traps-upper"]],
+    [/front raise/i, ["delt-front"], ["chest-upper"]],
+    [/upright row/i, ["delt-side", "traps-upper"], ["biceps-long"]],
+    [/shrug/i, ["traps-upper"], ["forearm-flexors"]],
+    [/incline|low-to-high/i, ["chest-upper"], ["delt-front", "triceps-lateral"]],
+    [/decline|high-to-low/i, ["chest-lower"], ["triceps-lateral"]],
+    [/pec deck|fly|crossover/i, ["chest-middle"], ["chest-upper", "chest-lower"]],
+    [/bench press|chest press|push-up|floor press/i, ["chest-middle"], ["delt-front", "triceps-lateral", "chest-upper"]],
+    [/pullover/i, ["lats"], ["chest-lower", "triceps-long"]],
+    [/pulldown|pull-up|chin-up/i, ["lats"], ["biceps-long", "biceps-short", "rhomboids", "traps-lower"]],
+    [/high row/i, ["lats", "traps-lower"], ["rhomboids", "delt-rear"]],
+    [/row/i, ["rhomboids", "traps-middle", "lats"], ["delt-rear", "biceps-long", "biceps-short"]],
+    [/back extension|reverse hyper|superman|good morning/i, ["erectors"], ["glute-max", "hams-inner"]],
+    [/romanian|stiff|single-leg deadlift|pull-through/i, ["hams-outer", "hams-inner", "glute-max"], ["erectors", "adductors"]],
+    [/suitcase deadlift/i, ["glute-max", "quad-middle"], ["obliques", "erectors", "forearm-flexors"]],
+    [/deadlift/i, ["glute-max", "hams-inner", "erectors"], ["quad-middle", "traps-upper", "forearm-flexors", "lats"]],
+    [/hip thrust|bridge/i, ["glute-max"], ["hams-outer", "hams-inner"]],
+    [/leg extension/i, ["quad-middle", "quad-outer", "quad-inner"], []],
+    [/lunge|split squat|step-up|bulgarian/i, ["quad-middle", "glute-max"], ["quad-inner", "glute-med", "adductors", "hams-inner"]],
+    [/front squat|hack squat|pendulum|v-squat|sissy/i, ["quad-outer", "quad-middle", "quad-inner"], ["glute-max", "adductors"]],
+    [/squat|leg press|wall sit|sled/i, ["quad-outer", "quad-middle", "quad-inner", "glute-max"], ["adductors", "hams-inner", "erectors"]],
+    [/suitcase carry/i, ["obliques", "forearm-flexors"], ["abs-upper", "traps-upper"]],
+    [/farmer|carry/i, ["forearm-flexors", "traps-upper"], ["obliques", "abs-upper"]],
+    [/side plank|pallof|woodchop|wood chop|russian|oblique/i, ["obliques"], ["abs-upper", "abs-lower"]],
+    [/leg raise|knee raise|reverse crunch|dead bug|flutter|hollow|mountain/i, ["abs-lower"], ["abs-upper", "obliques"]],
+    [/plank|bird dog/i, ["abs-upper", "abs-lower"], ["obliques", "erectors"]],
+    [/crunch|sit-up|rollout|ab wheel/i, ["abs-upper"], ["abs-lower"]]
+];
+function exerciseHeads(name) {
+    if (typeof EXERCISES !== "object" || !EXERCISES[name] || isCardio(name)) return { main: [], also: [] };
+    const rule = HEAD_RULES.find(([re]) => re.test(name));
+    const main = new Set(rule ? rule[1] : []), also = new Set(rule ? rule[2] : []);
+    if (typeof MUSCLE_MAP !== "undefined") MUSCLE_MAP.forEach((g) => g.parts.forEach((pt) => { if (pt.ex.includes(name)) main.add(pt.id); }));
+    main.forEach((h) => also.delete(h));
+    return { main: [...main], also: [...also] };
+}
+
 /* =========================================================
    FEATURE: Build your own workout (Plans page)
    Pick any exercises from the library; each gets sets, reps, and rest
@@ -5212,6 +5273,13 @@ function setupBuilder() {
                         <input id="builder-name" type="text" maxlength="40" placeholder="e.g. Chest and back day">
                     </div>
                     <ul class="builder-tally" aria-label="Exercises per muscle"></ul>
+                    <section class="builder-cover" aria-labelledby="bc-title" hidden>
+                        <h4 id="bc-title">What this workout hits</h4>
+                        <div class="bc-bodies" aria-hidden="true"></div>
+                        <p class="bc-key" aria-hidden="true"><span class="bc-k bc-k1"></span>Worked <span class="bc-k bc-k2"></span>Worked twice or more <span class="bc-k bc-ka"></span>Helps</p>
+                        <ul class="bc-list"></ul>
+                        <div class="bc-warn" role="status"></div>
+                    </section>
                     <p class="builder-empty">Nothing here yet. Tap <strong>Add</strong> next to an exercise.</p>
                     <ol class="builder-list"></ol>
                     <p class="builder-note" hidden></p>
@@ -5281,6 +5349,86 @@ function setupBuilder() {
         }).join("");
     }
     const opts = (list, val) => list.map((v) => `<option${v === val ? " selected" : ""}>${v}</option>`).join("");
+    // What this workout hits: a body map plus each muscle's heads, with a heads-up when one head is worked twice
+    let artLoading = false;
+    function renderCoverage() {
+        const box = $(".builder-cover");
+        const items = draft.items.filter((x) => EXERCISES[x.n] && !isCardio(x.n));
+        box.hidden = !items.length;
+        if (!items.length) return;
+        const mainCount = {}, byHead = {}, alsoSet = new Set();
+        items.forEach((x) => {
+            const h = exerciseHeads(x.n);
+            h.main.forEach((id) => { if (!mmPart(id)) return; mainCount[id] = (mainCount[id] || 0) + 1; (byHead[id] = byHead[id] || []).push(x.n); });
+            h.also.forEach((id) => alsoSet.add(id));
+        });
+        const bodies = $(".bc-bodies");
+        if (typeof MUSCLE_ART === "undefined") {
+            // The body drawing only loads when you build (it isn't needed anywhere else on this page)
+            if (!artLoading) {
+                artLoading = true;
+                const ref = document.querySelector('script[src*="script.js"]');
+                const v = ref && ref.getAttribute("src").includes("?") ? ref.getAttribute("src").slice(ref.getAttribute("src").indexOf("?")) : "";
+                const sc = document.createElement("script");
+                sc.src = `muscle-art.js${v}`;
+                sc.onload = () => renderCoverage();
+                document.head.appendChild(sc);
+            }
+            bodies.innerHTML = "";
+        } else {
+            const sex = getProfile().sex === "female" ? "female" : "male";
+            bodies.innerHTML = ["front", "back"].map((v) => `<div class="bc-body"><span>${v === "front" ? "Front" : "Back"}</span>${muscleMapSvg(sex, v)}</div>`).join("");
+            bodies.querySelectorAll("path[data-parts]").forEach((pth) => {
+                const ids = pth.getAttribute("data-parts").split(" ");
+                const n = Math.max(0, ...ids.map((i) => mainCount[i] || 0));
+                if (n >= 2) pth.classList.add("hit-2"); else if (n === 1) pth.classList.add("hit-1"); else if (ids.some((i) => alsoSet.has(i))) pth.classList.add("hit-a");
+            });
+            bodies.querySelectorAll(".mm-muscle").forEach((g) => { g.removeAttribute("tabindex"); g.removeAttribute("role"); });
+        }
+        // Each muscle you're working, with all of its heads or parts
+        const groups = MUSCLE_MAP.filter((g) => g.parts.some((pt) => mainCount[pt.id]));
+        $(".bc-list").innerHTML = groups.map((g) => `<li><strong>${escapeHtml(g.name)}</strong><span class="bc-heads">${g.parts.map((pt) => {
+            const n = mainCount[pt.id] || 0;
+            const cls = n >= 2 ? "is-2" : n ? "is-1" : alsoSet.has(pt.id) ? "is-a" : "";
+            return `<span class="bc-head ${cls}">${escapeHtml(pt.name)}${n ? ` <b>×${n}</b>` : alsoSet.has(pt.id) ? " <i>helps</i>" : " <i>not worked</i>"}</span>`;
+        }).join("")}</span></li>`).join("");
+        // Heads-ups: the same head twice, and the same muscles as the day before
+        const warns = [];
+        // One heads-up per group of exercises that overlap (pushdown + rope pushdown both hit the lateral and medial heads)
+        const seen = new Map();
+        Object.entries(mainCount).filter(([, n]) => n >= 2).forEach(([id]) => {
+            const key = `${mmPart(id).g.id}|${byHead[id].join("|")}`;
+            if (!seen.has(key)) seen.set(key, { g: mmPart(id).g, ids: [], names: byHead[id] });
+            seen.get(key).ids.push(id);
+        });
+        seen.forEach(({ g, ids, names }) => {
+            const open = g.parts.filter((pt) => !mainCount[pt.id]);
+            let sugg = null, forPart = null;
+            for (const pt of open) { const e = pt.ex.find((n) => EXERCISES[n] && !draft.items.some((x) => x.n === n)); if (e) { sugg = e; forPart = pt; break; } }
+            const heads = ids.map((id) => mmPart(id).p.name.toLowerCase());
+            const label = g.parts.length > 1 ? `Your ${g.name.toLowerCase()} (${heads.join(" and ")})` : `Your ${g.name.toLowerCase()}`;
+            const last = names[names.length - 1];
+            warns.push(`<li><strong>${escapeHtml(label)}</strong> ${names.length > 2 ? "is" : "gets"} worked by ${escapeHtml(names.join(" and "))}.${sugg ? ` For more balanced ${escapeHtml(g.name.toLowerCase())}, swap ${escapeHtml(last)} for <button type="button" class="text-button" data-swap-in="${escapeHtml(last)}|${escapeHtml(sugg)}">${escapeHtml(sugg)}</button>, which works the ${escapeHtml(forPart.name.toLowerCase())}.` : " That's fine if it's your focus today."}</li>`);
+        });
+        const days = customDaysRaw();
+        const prevIdx = draft.editing ? draft.editDay - 1 : draft.addDay ? days.length - 1 : -1;
+        if (prevIdx >= 0 && days[prevIdx]) {
+            const prevG = new Set(days[prevIdx].items.flatMap((it) => (EXERCISES[it.n] ? exerciseHeads(it.n).main : [])).map((id) => (mmPart(id) || {}).g).filter(Boolean).map((g) => g.name));
+            const both = [...new Set(Object.keys(mainCount).map((id) => mmPart(id).g.name))].filter((n) => prevG.has(n));
+            if (both.length) warns.push(`<li>Day ${prevIdx + 1} (${escapeHtml(days[prevIdx].title || "")}) also works your <strong>${escapeHtml(both.join(", ").toLowerCase())}</strong>. Done on back-to-back days, those muscles won't have had a rest day.</li>`);
+        }
+        $(".bc-warn").innerHTML = warns.length ? `<ul>${warns.join("")}</ul>` : `<p>No head or part is worked twice. Nicely balanced.</p>`;
+    }
+    spot.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-swap-in]");
+        if (!b) return;
+        const [from, to] = b.dataset.swapIn.split("|");
+        const i = draft.items.findIndex((x) => x.n === from);
+        if (i < 0 || !EXERCISES[to]) return;
+        draft.items[i] = builderDefault(to, goal());
+        save(); renderList(); renderResults();
+        status.textContent = `Swapped ${from} for ${to}.`;
+    });
     function renderList() {
         $(".builder-n").textContent = draft.items.length ? `(${draft.items.length})` : "";
         const { by } = tally();
@@ -5291,6 +5439,7 @@ function setupBuilder() {
         }).join("") + (draft.items.length > g.total ? `<li class="is-over"><strong>Total</strong> ${draft.items.length} exercises <span class="tally-warn">(${g.total} is plenty for ${g.for})</span></li>` : "");
         $(".builder-empty").hidden = draft.items.length > 0;
         $(".builder-quick").hidden = draft.items.length === 0;
+        renderCoverage();
         $(".builder-save").disabled = !draft.items.length;
         let needBody = false;
         list.innerHTML = draft.items.map((x, i) => {
@@ -6295,7 +6444,7 @@ const repsAt = (max, w) => (w > 0 ? Math.max(1, Math.floor(30 * (max / w - 1))) 
    tab names it (data-me-label). Links like me.html#cardio or
    #reset-progress open the right tab. Without JavaScript, everything shows.
    ========================================================= */
-const ME_TABS = ["overview", "lifts", "log", "cardio", "you"];
+const ME_TABS = ["overview", "active", "lifts", "log", "cardio", "you"];
 function setupMeTabs() {
     const sections = [...document.querySelectorAll("[data-me-tab]")];
     if (!sections.length) return;
@@ -6348,6 +6497,53 @@ function setupMeTabs() {
 }
 
 /* =========================================================
+   FEATURE: Active workout (the Active tab on My progress)
+   Just the workout you're doing now: today's day of your active plan,
+   what's done, and the sets you've logged today. Continue or cancel.
+   ========================================================= */
+function setupActiveWorkout() {
+    const box = document.getElementById("active-workout");
+    if (!box) return;
+    function render() {
+        const info = currentPlanInfo();
+        const unit = getProfile().unit;
+        const today = isoDate(new Date());
+        if (!info) {
+            box.innerHTML = `<p class="kicker">Active workout</p><h2>No active workout</h2>
+                <p class="section-lede">Start a ready-made plan or build your own, and the workout you're on shows up here.</p>
+                <p class="dash-actions"><a class="btn btn-primary btn-compact" href="programs.html">Pick a plan</a> <a class="btn btn-compact" href="programs.html#build">Build your own</a></p>`;
+            return;
+        }
+        const paused = planPaused();
+        const doneN = info.items.filter((x) => x.done).length;
+        const rows = info.items.map((x) => {
+            const entry = (logFor(x.name) || []).find((e) => e.date === today);
+            const sets = entry ? entry.sets.map((st) => (st.w ? `${trimNum(roundWeight(toUnit(st.w, entry.unit, unit), unit))} × ${st.r}` : `${st.r} reps`)) : [];
+            return `<li class="aw-item${x.done ? " is-done" : ""}">
+                <span class="aw-check" aria-hidden="true">${x.done ? "&#10003;" : ""}</span>
+                <span class="aw-main"><strong>${typeof equipIcon === "function" ? equipIcon(x.name) : ""}${escapeHtml(x.name)}</strong>
+                    <small>${escapeHtml(x.d)}${x.done ? " · done" : ""}</small>
+                    ${sets.length ? `<span class="aw-sets">${sets.map((t, i) => `<span>Set ${i + 1}: ${escapeHtml(t)}</span>`).join("")}</span>` : ""}</span>
+            </li>`;
+        }).join("");
+        box.innerHTML = `
+            <p class="kicker">${paused ? "Paused" : info.weekDone ? "Week done" : "Active workout"}</p>
+            <h2>${escapeHtml(info.weekDone ? "All done this week" : info.goal === "custom" ? `Day ${info.di + 1}: ${info.title}` : `Day ${info.di + 1}: ${info.title}`)}</h2>
+            <p class="section-lede">${escapeHtml(info.name)}${info.goal === "custom" ? "" : ` · Week ${info.week}`} · ${doneN} of ${info.items.length} done</p>
+            <div class="aw-bar" aria-hidden="true"><div style="width:${info.items.length ? Math.round((doneN / info.items.length) * 100) : 0}%"></div></div>
+            ${info.weekDone ? `<p class="section-lede">Nice work. Up next on the Overview tab has a workout ready for your next training day.</p>` : `<ul class="aw-list">${rows}</ul>`}
+            <p class="dash-actions">
+                <a class="btn btn-primary btn-compact" href="${info.href}">${paused ? "Continue workout" : doneN ? "Continue workout" : "Start workout"}</a>
+                ${!paused && !info.weekDone ? `<button type="button" class="btn btn-compact" data-cancel-workout>Cancel workout</button>` : ""}
+            </p>`;
+    }
+    window.addEventListener("logchange", render);
+    window.addEventListener("planpause", render);
+    window.addEventListener("metab", (e) => { if (e.detail === "active") render(); });
+    render();
+}
+
+/* =========================================================
    FEATURE: Workout log (the Log tab on My progress)
    Every logged set, newest first, grouped by day. Filter to one
    exercise, remove a mistaken entry (with Undo). Reads gu-log only.
@@ -6371,7 +6567,13 @@ function setupLogHistory() {
         return Object.entries(log).flatMap(([name, list]) => (Array.isArray(list) ? list : [])
             .filter((e) => e && typeof e.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && Array.isArray(e.sets))
             .map((e) => ({ name, date: e.date, unit: e.unit === "kg" ? "kg" : "lb", sets: e.sets.filter((st) => st && Number.isFinite(Number(st.r))) })))
-            .filter((r) => r.sets.length);
+            .filter((r) => r.sets.length)
+            // Only workouts you finished (tapped Finish workout): sets from that day that belong to the finished workout
+            .filter((r) => submitted(r));
+    }
+    function submitted(r) {
+        const ss = (store.get("gu-sessions", []) || []).filter((x) => x && x.date === r.date);
+        return ss.some((x) => !Array.isArray(x.names) || x.names.includes(r.name));
     }
     function setText(st, from, to) {
         const w = Number(st.w) || 0, r = Number(st.r) || 0;
@@ -6396,8 +6598,10 @@ function setupLogHistory() {
             <li><strong>${fmt(setCount)}</strong> sets</li>
             <li><strong>${fmt(dayCount)}</strong> day${dayCount === 1 ? "" : "s"}</li>
             ${pick && heaviest && heaviest.w ? `<li><strong>${trimNum(roundWeight(heaviest.w, unit))}</strong> ${unit} heaviest set (× ${heaviest.r})</li>` : ""}` : "";
+        const pending = Object.values(getLog()).reduce((t, list) => t + (Array.isArray(list) ? list.length : 0), 0) - all.length;
+        if (!undo && pending > 0) status.textContent = `${pending} exercise${pending === 1 ? "" : "s"} logged in a workout you haven't finished yet. Tap Finish workout on Plans to add ${pending === 1 ? "it" : "them"} here.`;
         if (!all.length) {
-            daysEl.innerHTML = `<p class="me-unlock">Nothing logged yet. Open your <a href="programs.html">plan</a>, tap <strong>Log sets</strong> on an exercise, and every set shows up here.</p>`;
+            daysEl.innerHTML = `<p class="me-unlock">Nothing here yet. Finish a workout (log your sets, then tap <strong>Finish workout</strong>) and it shows up here.</p>`;
             more.hidden = true;
             return;
         }

@@ -906,11 +906,15 @@ async function openPage(browser, file, viewport, hash = "") {
                     { date: d(14), unit: "lb", sets: [{ w: 135, r: 7 }, { w: 135, r: 6 }, { w: 135, r: 6 }] },
                     { date: d(0), unit: "lb", sets: [{ w: 140, r: 6 }, { w: 140, r: 6 }, { w: 140, r: 5 }] }] }));
                 localStorage.setItem("gu-cardio", JSON.stringify([{ date: d(0), activity: "Easy jog", minutes: 25, distance: 2.5, dunit: "mi", effort: 5 }, { date: d(7), activity: "Easy jog", minutes: 25, distance: 2.4, dunit: "mi", effort: 5 }]));
+                // Finished workouts on those days (the Log tab shows finished workouts only)
+                localStorage.setItem("gu-sessions", JSON.stringify([21, 14, 0].map((k) => ({ date: d(k), plan: "beginner", days: 3, day: 0, title: "Full body A", names: ["Bench press"], exercises: 1, sets: 3, reps: 18, volume: 0, unit: "lb" }))));
             });
             await page.reload();
             await page.waitForTimeout(300);
             // Four short tabs instead of one long page
-            check(await page.locator(".me-tab").count() === 5 && await page.locator("#me-dash").isVisible() && await page.locator("#lifts").isHidden() && await page.locator("#reset-progress").isHidden(), "My progress opens on Overview, with Lifts, Log, Cardio, and You as tabs");
+            check(await page.locator(".me-tab").count() === 6 && await page.locator("#me-dash").isVisible() && await page.locator("#lifts").isHidden() && await page.locator("#reset-progress").isHidden(), "My progress opens on Overview, with Active, Lifts, Log, Cardio, and You as tabs");
+            await page.click('[data-me-go="active"]');
+            check(await page.locator("#active").isVisible() && /No active workout|Day 1/.test(await page.locator("#active-workout").textContent()), "the Active tab shows only the workout you're on");
             // Log tab: every set, newest first, filter by exercise, remove with undo
             await page.click('[data-me-go="log"]');
             check(await page.locator("#log").isVisible() && await page.locator("#log-days .log-day").count() === 3 && /140 lb × 6/.test(await page.locator("#log-days .log-day").first().textContent()), "the Log tab lists every logged set by day, newest first");
@@ -1163,6 +1167,14 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.goto(url("programs.html", "#build"), { waitUntil: "load" });
             await page.waitForTimeout(300);
             check(/Build Day 2/.test(await page.locator("#builder-title").textContent()) && await page.locator(".builder-list li").count() === 0, "with a plan of your own, the builder starts empty as Day 2");
+            for (const ex of ["Triceps pushdown", "Rope pushdown"]) { await page.fill("#builder-search", ex); await page.locator(`[data-add="${ex}"]`).click(); }
+            await page.waitForTimeout(500);
+            check(await page.locator(".builder-cover").isVisible() && /Long head/.test(await page.locator(".bc-list").textContent()) && /Lateral head ×2/.test(await page.locator(".bc-list").textContent()), "the builder shows each muscle's heads and how often each is worked");
+            check(await page.locator(".bc-bodies path.hit-2").count() > 0, "the body map lights up the muscles the workout hits");
+            await page.locator(".bc-warn [data-swap-in]").first().click();
+            check(await page.locator(".builder-item", { hasText: "Overhead triceps extension" }).count() === 1, "a head worked twice gets a one-tap swap for a head that isn't");
+            check(await page.evaluate(() => Object.keys(EXERCISES).filter((n) => !isCardio(n) && !/stretch|mobility/i.test(n) && !exerciseHeads(n).main.length).length === 0), "every exercise in the library maps to the muscle heads it works");
+            for (const ex of ["Triceps pushdown", "Overhead triceps extension"]) await page.locator(".builder-item", { hasText: ex }).locator("[data-remove]").click();
             for (const ex of ["Overhead press", "Dumbbell curl", "Hammer curl"]) { await page.fill("#builder-search", ex); await page.locator(`[data-add="${ex}"]`).click(); }
             await Promise.all([page.waitForURL(/program-custom-2/), page.locator(".builder-save").click()]);
             await page.waitForTimeout(400);

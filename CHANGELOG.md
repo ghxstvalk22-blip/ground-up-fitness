@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-13 (See what your workout hits, an Active tab, and only finished workouts in your log)
+
+- **What this workout hits (Build your own workout).** As you add exercises, a body map (front and back) lights up the muscles they work: orange for worked, red for worked twice or more, light pink for muscles that help. Under it, every muscle you're training is broken into its heads and parts (upper, middle, lower chest; front, side, rear delt; the 3 triceps heads; inner and outer biceps and brachialis; the 3 quad heads; and so on), with how many of your exercises work each one and which ones aren't worked yet. All 138 exercises in the library are mapped this way.
+- **No doubling up.** If two exercises work the same head (like triceps pushdown and rope pushdown, both lateral and medial heads), you get a heads-up and a one-tap swap for an exercise that works a head you're missing (like an overhead extension for the long head). If the day before in your plan works the same muscles, it says so, so they get a rest day.
+- **New Active tab on My progress.** It shows only the workout you're on: today's day, what's done, the sets you've logged today, and Continue or Cancel.
+- **The Log tab shows finished workouts only.** Sets count once you tap **Finish workout**. If you've logged sets in a workout you haven't finished, a note tells you how many are waiting.
+
 ## 2026-10-13 (Your next workout becomes Day 2)
 
 - **Building after Day 1 makes Day 2.** If you're on your own plan, Build your own workout now starts empty as **Build Day 2** (then Day 3, and so on), and saving adds it to your plan. Before, it could open with Day 1's exercises and **Save and start** replaced your whole plan, which is how a Back & Chest day could disappear. Want a brand-new plan instead? Tap **Start a new plan instead** in the builder.

@@ -3431,3 +3431,59 @@ body.view-plans #build { display: none; }
 .active-plan-tag span { width: 8px; height: 8px; background-color: #000000; border-radius: 50%; }
 .goal-picker label.is-active-plan span::after { content: "\2022  yours"; margin-left: 6px; color: var(--volt); font-size: 0.72em; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .goal-picker label.is-active-plan input:checked + span::after { color: var(--volt); }
+
+/* Builder: what this workout hits (body map + heads) */
+.builder-cover {
+    --mm-skin: #ece8df; --mm-line: #b9b1a2; --mm-muscle: #d8d1c3; --mm-hot: #d7263d; --mm-warm: #efb1b8; --mm-hair: #2a2724;
+    margin: 4px 0 16px; padding: 14px 14px 10px; border: 1px solid var(--line); background-color: var(--surface);
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .builder-cover { --mm-skin: #262626; --mm-line: #5c5c5c; --mm-muscle: #474747; --mm-hot: #e5394f; --mm-warm: #6e3940; --mm-hair: #0d0d0d; }
+}
+:root[data-theme="dark"] .builder-cover { --mm-skin: #262626; --mm-line: #5c5c5c; --mm-muscle: #474747; --mm-hot: #e5394f; --mm-warm: #6e3940; --mm-hair: #0d0d0d; }
+.builder-cover h4 { margin: 0 0 10px; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.bc-bodies { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; justify-items: center; }
+.bc-bodies:empty { display: none; }
+.bc-body { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
+.bc-body > span { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.bc-body .mm-svg { height: 230px; width: auto; }
+.bc-body .mm-muscle path { cursor: default; }
+.bc-body .mm-muscle path.hit-1 { fill: var(--volt); stroke: #9a3a12; }
+.bc-body .mm-muscle path.hit-2 { fill: var(--mm-hot); stroke: #7a1020; }
+.bc-body .mm-muscle path.hit-a { fill: var(--mm-warm); }
+.bc-key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 8px 0 12px; font-size: 0.75rem; color: var(--muted); }
+.bc-k { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; }
+.bc-k1 { background-color: var(--volt); }
+.bc-k2 { background-color: var(--mm-hot); }
+.bc-ka { background-color: var(--mm-warm); }
+.bc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.bc-list li { display: grid; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.bc-list li > strong { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.bc-heads { display: flex; flex-wrap: wrap; gap: 6px; }
+.bc-head { padding: 4px 8px; border: 1px solid var(--line); font-size: 0.8rem; color: var(--muted); }
+.bc-head i { font-style: normal; font-size: 0.72rem; }
+.bc-head.is-1 { border-color: var(--volt); color: var(--ink); box-shadow: inset 3px 0 0 var(--volt); }
+.bc-head.is-2 { border-color: var(--mm-hot); color: var(--ink); box-shadow: inset 3px 0 0 var(--mm-hot); }
+.bc-head.is-a { color: var(--ink); border-style: dashed; }
+.bc-warn { margin-top: 10px; font-size: 0.86rem; }
+.bc-warn ul { margin: 0; padding-left: 18px; }
+.bc-warn li { margin-bottom: 6px; }
+.bc-warn p { margin: 0; color: var(--muted); }
+.bc-warn .text-button { min-height: 0; font-weight: 800; }
+@media (max-width: 760px) { .bc-warn .text-button { min-height: 44px; } }
+
+/* Active tab: just the workout you're on */
+#active { padding-top: 32px; }
+.aw-bar { height: 8px; margin: 0 0 16px; background-color: var(--line); }
+.aw-bar div { height: 100%; background-color: var(--volt); }
+.aw-list { list-style: none; margin: 0 0 16px; padding: 0; border: 1px solid var(--line); background-color: var(--surface); }
+.aw-item { display: grid; grid-template-columns: 32px 1fr; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.aw-item:last-child { border-bottom: 0; }
+.aw-check { display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid var(--line); font-weight: 900; }
+.aw-item.is-done .aw-check { background-color: var(--volt); border-color: var(--volt); color: #000000; }
+.aw-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.aw-main strong { display: inline-flex; align-items: center; gap: 8px; }
+.aw-main small { color: var(--muted); }
+.aw-sets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.aw-sets span { padding: 3px 8px; border: 1px solid var(--line); background-color: var(--paper); font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .me-tab { font-size: 0.56rem; letter-spacing: 0.04em; } }
