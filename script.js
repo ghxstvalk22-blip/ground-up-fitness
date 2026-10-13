@@ -62,6 +62,7 @@ const FEATURES = [
     setupChecklists,
     setupRestTimer,
     setupLibrary,
+    setupMeTabs,
     setupAddToWorkout,
     setupMuscleMap,
     setupLevelBar,
@@ -5659,6 +5660,65 @@ function drawTrendChart(svg, points, projection, { unit = "", W = 720, H = 300, 
 const repsAt = (max, w) => (w > 0 ? Math.max(1, Math.floor(30 * (max / w - 1))) : 0);
 
 /* =========================================================
+   FEATURE: My progress tabs (me.html)
+   Sections marked data-me-tab="overview|lifts|cardio|you" become
+   four short tabs instead of one long page. The first section of each
+   tab names it (data-me-label). Links like me.html#cardio or
+   #reset-progress open the right tab. Without JavaScript, everything shows.
+   ========================================================= */
+const ME_TABS = ["overview", "lifts", "cardio", "you"];
+function setupMeTabs() {
+    const sections = [...document.querySelectorAll("[data-me-tab]")];
+    if (!sections.length) return;
+    const tabs = ME_TABS.filter((t) => sections.some((x) => x.dataset.meTab === t));
+    const label = (t) => (sections.find((x) => x.dataset.meTab === t && x.dataset.meLabel) || {}).dataset?.meLabel || t;
+    sections.forEach((x, i) => { if (!x.id) x.id = `me-panel-${i}`; x.setAttribute("role", "tabpanel"); x.setAttribute("aria-labelledby", `me-tab-${x.dataset.meTab}`); });
+    sections[0].insertAdjacentHTML("beforebegin", `
+<nav class="me-tabs-wrap" aria-label="Your progress">
+    <div class="me-tabs container wide" role="tablist">${tabs.map((t) => `<button type="button" role="tab" class="me-tab" id="me-tab-${t}" data-me-go="${t}" aria-controls="${sections.filter((x) => x.dataset.meTab === t).map((x) => x.id).join(" ")}">${escapeHtml(label(t))}</button>`).join("")}</div>
+</nav>`);
+    const bar = document.querySelector(".me-tabs-wrap");
+    const buttons = [...bar.querySelectorAll(".me-tab")];
+    let current = null;
+    function select(t, { focus = false, scroll = false } = {}) {
+        if (!tabs.includes(t)) t = tabs[0];
+        current = t;
+        sections.forEach((x) => { x.hidden = x.dataset.meTab !== t; });
+        buttons.forEach((b) => { const on = b.dataset.meGo === t; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+        try { sessionStorage.setItem("gu-me-tab", t); } catch (e) { /* ignore */ }
+        if (scroll && bar.getBoundingClientRect().top < 0) bar.scrollIntoView({ block: "start" });
+        window.dispatchEvent(new CustomEvent("metab", { detail: t }));
+    }
+    bar.addEventListener("click", (e) => { const b = e.target.closest("[data-me-go]"); if (b) select(b.dataset.meGo, { scroll: true }); });
+    bar.addEventListener("keydown", (e) => {
+        const i = tabs.indexOf(current);
+        const next = e.key === "ArrowRight" ? tabs[(i + 1) % tabs.length] : e.key === "ArrowLeft" ? tabs[(i - 1 + tabs.length) % tabs.length] : e.key === "Home" ? tabs[0] : e.key === "End" ? tabs[tabs.length - 1] : null;
+        if (next) { e.preventDefault(); select(next, { focus: true }); }
+    });
+    // Links into a tab (me.html#cardio, #reset-progress): open that tab first
+    const tabOf = (el) => { const sec = el && el.closest("[data-me-tab]"); return sec ? sec.dataset.meTab : null; };
+    addRoute(/^#([A-Za-z][\w-]*)$/, (m) => {
+        if (tabs.includes(m[1])) { select(m[1]); return { target: bar }; }
+        const el = document.getElementById(m[1]);
+        const t = tabOf(el);
+        if (!t) return null;
+        select(t);
+        return { target: el };
+    });
+    // Open on: the tab a link points to, else the one you were on this visit, else Overview
+    const hash = location.hash.slice(1);
+    let start = null;
+    try { start = tabs.includes(hash) ? hash : tabOf(hash && document.getElementById(hash)); } catch (e) { start = null; }
+    if (!start) { try { start = sessionStorage.getItem("gu-me-tab"); } catch (e) { start = null; } }
+    select(tabs.includes(start) ? start : "overview");
+    // "Add one" style links to other tabs on this page
+    document.addEventListener("click", (e) => {
+        const a = e.target.closest("[data-me-open]");
+        if (a) { e.preventDefault(); select(a.dataset.meOpen, { scroll: true }); }
+    });
+}
+
+/* =========================================================
    FEATURE: My progress page
    Pulls together everything logged on this device (or in the
    account, once signed in): lifts, cardio, and bodyweight.
@@ -5693,6 +5753,7 @@ function setupDashboard() {
         let sets = 0;
         Object.values(log).forEach((entries) => entries.forEach((e) => { if (inWeek(e.date)) { days.add(e.date); sets += e.sets.length; } }));
         getCardio().forEach((c) => { if (inWeek(c.date)) days.add(c.date); });
+        (store.get("gu-sessions", []) || []).forEach((x) => { if (x && typeof x.date === "string" && inWeek(x.date)) days.add(x.date); });
         const minutes = cardioMinutesInWeek();
         const weights = (store.get("gu-weights", []) || []).filter((w) => parseIso(w.date) >= addDays(new Date(), -7));
         const bw = weights.length ? weights.reduce((sum, w) => sum + toUnit(w.w, w.unit, profile.unit), 0) / weights.length : null;
@@ -5762,10 +5823,10 @@ function setupDashboard() {
                 : [`${strength[0]}<small>${endurance[0]}</small>`, `${strength[1]}<small>${endurance[1]}</small>`];
             return `<tr${n === selected ? ' class="is-selected"' : ""}>
                 <th scope="row">${escapeHtml(n)}</th>
-                <td>${shortDate(parseIso(x.last.date))}<small>${escapeHtml(lastText)}</small></td>
-                <td>${cells[0]}</td>
-                <td class="is-next">${cells[1]}</td>
-                <td><button type="button" class="chip" data-chart="${escapeHtml(n)}">Chart</button></td>
+                <td data-label="Last time">${shortDate(parseIso(x.last.date))}<small>${escapeHtml(lastText)}</small></td>
+                <td data-label="${mode === "endurance" ? "Reps now" : "Now"}">${cells[0]}</td>
+                <td class="is-next" data-label="In 8 weeks">${cells[1]}</td>
+                <td class="lift-chart-cell"><button type="button" class="chip" data-chart="${escapeHtml(n)}" aria-label="Show the ${escapeHtml(n)} chart">Chart</button></td>
             </tr>`;
         }).join("");
         drawLift(selected && names.includes(selected) ? selected : names[0], profile, mode);
@@ -5792,7 +5853,11 @@ function setupDashboard() {
 
     document.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-chart]");
-        if (btn) drawLift(btn.dataset.chart, getProfile(), currentMode());
+        if (!btn) return;
+        drawLift(btn.dataset.chart, getProfile(), currentMode());
+        // On phones the chart sits above the list: bring it into view
+        const panel = $("lift-chart-panel");
+        if (panel && panel.getBoundingClientRect().top < 0) { panel.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" }); panel.focus({ preventScroll: true }); }
     });
 
     function renderCardio(profile) {

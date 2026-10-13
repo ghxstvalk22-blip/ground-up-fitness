@@ -10,7 +10,7 @@ const RUNTIME = "gu-media-v1";
 const CORE = [
     "./", "index.html", "start.html", "programs.html", "me.html", "exercises.html", "pros.html",
     "tools.html", "basics.html", "supplements.html", "contact.html",
-    "styles.css", "script.js", "exercises.js", "muscle-art.js", "manifest.webmanifest",
+    "styles.css", "splash.js", "script.js", "exercises.js", "muscle-art.js", "manifest.webmanifest",
     "icons/icon-192.png", "icons/apple-touch-icon.png"
 ];
 

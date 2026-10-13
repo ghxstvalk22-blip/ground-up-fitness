@@ -24,6 +24,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
+    <script src="splash.js?v=20261013-4"></script>
     <link rel="stylesheet" href="styles.css?v=20261013-4">
     <script src="exercises.js?v=20261013-4" defer></script>
     <script src="script.js?v=20261013-4" defer></script>
@@ -42,22 +43,10 @@
 </header>
 
 <main id="main">
-    <section class="block me-dash-block"><div class="container wide me-dash" id="me-dash" aria-live="polite"></div></section>
+    <section class="block me-dash-block" data-me-tab="overview" data-me-label="Overview"><div class="container wide me-dash" id="me-dash" aria-live="polite"></div></section>
 
-    <section class="block setup-block" id="setup"><div class="container wide" data-setup></div></section>
-
-    <section class="block me-top">
+    <section class="block me-top" data-me-tab="overview">
         <div class="container wide">
-            <div class="account-card" id="account-card"></div>
-
-            <fieldset class="segmented train-for" id="train-for">
-                <legend>What are you training for?</legend>
-                <label><input type="radio" name="trainfor" value="strength"><span>Strength</span></label>
-                <label><input type="radio" name="trainfor" value="endurance"><span>Endurance</span></label>
-                <label><input type="radio" name="trainfor" value="both" checked><span>Both</span></label>
-            </fieldset>
-            <p class="train-for-advice" id="train-for-advice"></p>
-
             <h2 class="me-h2">This week</h2>
             <div class="me-stats" id="me-stats"></div>
 
@@ -68,26 +57,33 @@
         </div>
     </section>
 
-    <section class="block" id="lifts">
+    <section class="block" id="lifts" data-me-tab="lifts" data-me-label="Lifts">
         <div class="container wide">
             <p class="kicker">Lifting</p>
             <h2>Your lifts</h2>
             <p class="section-lede" id="lifts-lede">Every exercise you've logged, with where it's headed in 8 weeks if you keep training.</p>
+            <fieldset class="segmented train-for" id="train-for">
+                <legend>What are you training for?</legend>
+                <label><input type="radio" name="trainfor" value="strength"><span>Strength</span></label>
+                <label><input type="radio" name="trainfor" value="endurance"><span>Endurance</span></label>
+                <label><input type="radio" name="trainfor" value="both" checked><span>Both</span></label>
+            </fieldset>
+            <p class="train-for-advice" id="train-for-advice"></p>
+            <div class="panel me-chart-panel" id="lift-chart-panel" tabindex="-1">
+                <h3 id="lift-chart-title">Pick an exercise to see its chart</h3>
+                <svg id="lift-chart" viewBox="0 0 720 300" role="img" aria-label="Chart of the selected lift over time"></svg>
+                <p class="result-note" id="lift-chart-note"></p>
+            </div>
             <div class="table-scroll">
                 <table class="lift-table" id="lift-table">
                     <thead><tr><th scope="col">Exercise</th><th scope="col">Last session</th><th scope="col" id="th-now">Now</th><th scope="col" id="th-next">In 8 weeks</th><th scope="col"><span class="visually-hidden">Chart</span></th></tr></thead>
                     <tbody></tbody>
                 </table>
             </div>
-            <div class="panel me-chart-panel">
-                <h3 id="lift-chart-title">Pick an exercise to see its chart</h3>
-                <svg id="lift-chart" viewBox="0 0 720 300" role="img" aria-label="Chart of the selected lift over time"></svg>
-                <p class="result-note" id="lift-chart-note"></p>
-            </div>
         </div>
     </section>
 
-    <section class="block" id="cardio">
+    <section class="block" id="cardio" data-me-tab="cardio" data-me-label="Cardio">
         <div class="container wide">
             <p class="kicker">Cardio</p>
             <h2>Heart and lungs</h2>
@@ -127,8 +123,11 @@
         </div>
     </section>
 
-    <section class="block" id="my-data">
+    <section class="block setup-block" id="setup" data-me-tab="you" data-me-label="You"><div class="container wide" data-setup></div></section>
+
+    <section class="block" id="my-data" data-me-tab="you">
         <div class="container wide">
+            <div class="account-card" id="account-card"></div>
             <p class="kicker">Your data</p>
             <h2>Keep it, move it, or delete it</h2>
             <p class="section-lede" id="data-where">Right now everything is saved on this device only. Sign in above to keep it in your account and use it on any phone or computer.</p>

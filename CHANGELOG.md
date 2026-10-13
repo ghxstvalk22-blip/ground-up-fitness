@@ -7,6 +7,12 @@ Newest changes first. Each daily update adds an entry here.
 - **Make this a light week:** on the Plans page, the dark week bar now has a **Make this a light week** button. Tap it when you feel run down, sore all over, or short on sleep, and that week's workouts drop to about half the sets, with suggested weights about 10% lighter. Each exercise is marked "Light week: half the sets" so it's clear why. It only changes the week you picked; next week goes back to normal on its own, and tapping the button again undoes it. A lighter week like this (lifters call it a "deload") helps you recover without losing the habit.
 - Couch to 5K doesn't show the button, since repeating a week is how that plan eases off.
 
+## 2026-10-13 (Loading screen and a simpler My progress)
+
+- **Loading screen:** when you open the app from your home screen, you now see the Ground Up logo with an orange line that fills, then it fades into the app. It only shows once each time you open the app, not on every page, and never on the regular website.
+- **My progress, simpler:** the page is now four short tabs instead of one very long page. **Overview** has your next workout, this week, milestones, and finished workouts. **Lifts** has your chart and each lift as an easy-to-read card (no more sideways scrolling on phones). **Cardio** has your minutes and the log. **You** has your starting point, account, and your data.
+- **Fixes:** "This week" now counts finished workouts, so it matches the card above it. Milestones are small badges instead of a long list.
+
 ## 2026-10-13 (Continue to the next day, and add exercises from the library)
 
 - **Continue to Day 2:** once you finish a day, its card says "Finished today" and gives you one big **Continue to Day 2** button (it takes you straight to that day, or helps you build it if it doesn't exist yet). On your own plan there's also **Edit Day 2 first**, so you can change the next day and keep going. After the last day of the week, it moves you to next week.

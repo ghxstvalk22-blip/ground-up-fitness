@@ -897,11 +897,17 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             await page.reload();
             await page.waitForTimeout(300);
+            // Four short tabs instead of one long page
+            check(await page.locator(".me-tab").count() === 4 && await page.locator("#me-dash").isVisible() && await page.locator("#lifts").isHidden() && await page.locator("#reset-progress").isHidden(), "My progress opens on Overview, with Lifts, Cardio, and You as tabs");
+            check(!(await page.evaluate(() => document.documentElement.classList.contains("app-splash"))), "the loading screen only shows in the installed app, not the website");
+            await page.click('[data-me-go="lifts"]');
+            check(await page.locator("#lifts").isVisible() && await page.locator("#me-dash").isHidden() && (await page.locator('.me-tab[aria-selected="true"]').textContent()) === "Lifts", "tapping a tab shows just that part");
             check(/max/.test(await page.locator("#lift-table tbody").textContent()), "progress page lists logged lifts with projections");
             check(await page.locator("#lift-chart .chart-proj").count() === 1, "lift chart shows a projection");
             await page.locator('input[name="trainfor"][value="endurance"]').check({ force: true });
             check(/reps @ 140/.test(await page.locator("#lift-table tbody").textContent()), "endurance view shows reps at your working weight");
             check(/25/.test(await page.locator("#me-stats").textContent()), "this week's cardio minutes are counted");
+            await page.click('[data-me-go="cardio"]');
             check(await page.locator("#cardio-chart rect").count() >= 8, "cardio chart shows weekly bars and projection");
             check(/Pace/.test(await page.locator("#pace-panel").textContent()), "pace trend appears for runs with distance");
             await page.fill('#quick-cardio input[name="minutes"]', "20");
@@ -913,6 +919,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/personal record/i.test(await page.locator("#toast").textContent()) && await page.locator("#toast").isVisible(), "beating a best shows a personal-record celebration");
             check(/Bench press/.test(await page.locator("#recent-prs").textContent()), "personal records are listed");
             // Clear my progress: pick, confirm, cleared, and Undo brings it back
+            await page.click('[data-me-go="you"]');
             await page.evaluate(() => { store.set("gu-level", "Advanced"); window.dispatchEvent(new CustomEvent("logchange")); });
             check(await page.locator('#reset-list input[value="lifts"]').isChecked() && !(await page.locator('#reset-list input[value="settings"]').isChecked()), "Clear my progress picks logs by default, not settings");
             await page.click("#reset-go");
@@ -922,6 +929,10 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/Bench press/.test(await page.locator("#recent-prs").textContent()) === false, "the page updates right away after clearing");
             await page.click("#reset-undo");
             check(await page.evaluate(() => Object.keys(getLog()).length > 0 && getPRs().length > 0), "Undo brings the cleared progress back");
+            await page.goto(url("programs.html"), { waitUntil: "load" });
+            await page.goto(url("me.html", "#cardio"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            check(await page.locator("#cardio").isVisible() && (await page.locator('.me-tab[aria-selected="true"]').textContent()) === "Cardio", "a link to me.html#cardio opens the Cardio tab");
             await page.evaluate(() => store.remove("gu-level"));
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
