@@ -5471,7 +5471,14 @@ function setupShareWorkout() {
     document.addEventListener("click", (e) => {
         const b = e.target.closest("[data-share-day]");
         if (b) { openSend(Number(b.dataset.shareDay)); return; }
-        if (e.target.closest("[data-share-paste]")) openPaste();
+        if (e.target.closest("[data-share-paste]")) pasteFromClipboard(document.querySelector(".share-inbox .share-status"));
+        if (e.target.closest("[data-share-paste-go]")) {
+            const box = document.getElementById("share-inbox-input");
+            const st = document.querySelector(".share-inbox .share-status");
+            const m = String(box ? box.value : "").match(/#share=([A-Za-z0-9_-]+)/);
+            if (!m) { if (st) st.textContent = "That doesn't look like a Ground Up workout link."; return; }
+            if (!activateShared(m[1]) && st) st.textContent = "That link didn't work. It may have been cut off. Ask your friend to send it again.";
+        }
     });
     const dialog = (id, label) => {
         let dlg = document.getElementById(id);
@@ -5535,6 +5542,7 @@ function setupShareWorkout() {
             return;
         }
         const k = shared.days.length;
+        const inSafari = IS_IOS && !((window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true);
         const info = typeof currentPlanInfo === "function" ? currentPlanInfo() : null;
         const mine = customDaysRaw();
         const onCustom = info && info.goal === "custom";
@@ -5551,39 +5559,59 @@ function setupShareWorkout() {
             <h2 id="share-get-title">${escapeHtml(k > 1 ? `${k}-day plan` : shared.days[0].title)}</h2>
             ${shared.days.map((d, i) => `${k > 1 ? `<h3 class="share-day">Day ${i + 1}: ${escapeHtml(d.title)}</h3>` : ""}${listHtml(d)}`).join("")}
             <p class="finish-tip">Weights aren't shared. You'll get your own, from your logs or your starting point.</p>
-            <div class="share-options">${options.map(([v, label, note], i) => `<button type="button" class="btn${i === 0 ? " btn-primary" : ""}" data-share-add="${v}">${escapeHtml(label)}</button>${note ? `<p class="share-note">${escapeHtml(note)}</p>` : ""}`).join("")}
+            ${inSafari ? `<div class="share-app">
+                <p><strong>Use the Ground Up app on your Home Screen?</strong> iPhone opens links in Safari, not in Home Screen apps, so bring it over in 3 taps:</p>
+                <ol class="share-steps"><li>Tap <strong>Copy for the app</strong></li><li>Open Ground Up from your Home Screen</li><li>Go to <strong>Plans</strong> and tap <strong>Paste workout</strong></li></ol>
+                <button type="button" class="btn btn-primary" data-share-copy>Copy for the app</button>
+                <p class="share-status" role="status"></p>
+                <p class="share-note">Not using the app? Add it here in Safari instead:</p></div>` : ""}
+            <div class="share-options">${options.map(([v, label, note], i) => `<button type="button" class="btn${i === 0 && !inSafari ? " btn-primary" : ""}" data-share-add="${v}">${escapeHtml(label)}</button>${note ? `<p class="share-note">${escapeHtml(note)}</p>` : ""}`).join("")}
                 <button type="button" class="btn" data-share-close>Not now</button></div>
-            ${IS_IOS && !((window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true) ? `<p class="finish-tip">Use the Ground Up app on your Home Screen? It keeps its own saved workouts. Copy this link, open the app, then go to Plans and tap <strong>Add a workout a friend sent</strong>. <button type="button" class="text-button" data-share-copy>Copy link</button></p>` : ""}`;
+`;
         inner.querySelectorAll("[data-share-add]").forEach((b) => b.addEventListener("click", () => {
             const how = b.dataset.shareAdd;
             const n = addSharedDays(shared.days, how === "insert" ? pos : mine.length, how === "replace");
+            store.set("gu-share-added", { text: `${shared.from ? `${shared.from}'s ` : ""}${k > 1 ? `${k}-day plan` : shared.days[0].title} is in Your plan.`.slice(0, 160) });
             shut(dlg);
             location.assign(`programs.html?today=1&added=${Date.now()}#program-custom-${n}`);
         }));
         const copy = inner.querySelector("[data-share-copy]");
         if (copy) copy.addEventListener("click", () => {
             const url = `${location.origin}${location.pathname.replace(/[^/]*$/, "")}programs.html${SHARE_HASH}${code}`;
-            if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => { copy.textContent = "Copied"; }).catch(() => {});
+            const st = inner.querySelector(".share-app .share-status");
+            const done = () => { copy.textContent = "Copied \u2713"; if (st) st.textContent = "Now open Ground Up from your Home Screen."; };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(() => { if (st) st.innerHTML = `Copy this link: <input class="share-url" readonly value="${escapeHtml(url)}" aria-label="Share link">`; });
         });
         show(dlg);
     }
-    function openPaste() {
-        const dlg = dialog("share-paste");
-        dlg.querySelector(".finish-inner").innerHTML = `
-            <p class="finish-kicker">From a friend</p>
-            <h2 id="share-paste-title">Add a workout a friend sent</h2>
-            <div class="field"><label for="share-paste-input">Paste the link they sent you</label>
-            <input id="share-paste-input" type="url" inputmode="url" autocomplete="off" placeholder="https://.../programs.html#share=..."></div>
-            <p class="share-status" role="status"></p>
-            <div class="finish-actions"><button type="button" class="btn btn-primary" data-share-open>Show me</button><button type="button" class="btn" data-share-close>Cancel</button></div>`;
-        dlg.querySelector("[data-share-open]").addEventListener("click", () => {
-            const m = String(dlg.querySelector("#share-paste-input").value).match(/#share=([A-Za-z0-9_-]+)/);
-            if (!m) { dlg.querySelector(".share-status").textContent = "That doesn't look like a Ground Up workout link."; return; }
-            shut(dlg);
-            openReceive(m[1]);
-        });
-        show(dlg);
-        dlg.querySelector("#share-paste-input").focus();
+    // Pasted workouts become your active workout right away: they go in as the day you're on in
+    // Your plan (on Day 3? it's your Day 3 and the rest move down one), and Plans opens on it.
+    function activateShared(code) {
+        const shared = shareClean(shareDecode(code));
+        if (!shared) return false;
+        const mine = customDaysRaw();
+        const k = shared.days.length;
+        // The first day of Your plan you haven't finished this week
+        const week = Math.max(1, weekOf(programStart("custom")));
+        const done = new Set(store.get(`gu-progress-custom-${mine.length}-w${week}`, []) || []);
+        let pos = mine.findIndex((d, di) => !d.items.every((_, xi) => done.has(`${di}-${xi}`)));
+        if (pos < 0) pos = mine.length;
+        const replace = mine.length + k > 7;
+        const n = addSharedDays(shared.days, replace ? 0 : pos, replace);
+        const title = k > 1 ? `${k}-day plan` : shared.days[0].title;
+        store.set("gu-share-added", { text: `${shared.from ? `${shared.from}'s ` : ""}${title} is ${k > 1 ? "in Your plan" : `your workout now (Day ${(replace ? 0 : pos) + 1})`}.`.slice(0, 160) });
+        location.assign(`programs.html?today=1&added=${Date.now()}#program-custom-${n}`);
+        return true;
+    }
+    // One tap: read the copied link (the phone asks to allow the paste); if that's not possible, use the box
+    function pasteFromClipboard(status) {
+        const say = (t) => { if (status) status.textContent = t; };
+        if (!(navigator.clipboard && navigator.clipboard.readText)) { say("Paste the link in the box below."); return; }
+        navigator.clipboard.readText().then((t) => {
+            const m = String(t || "").match(/#share=([A-Za-z0-9_-]+)/);
+            if (!m) { say("No workout link copied yet. Copy the link your friend sent, then tap Paste workout again (or paste it in the box)."); return; }
+            if (!activateShared(m[1])) say("That link didn't work. It may have been cut off. Ask your friend to send it again.");
+        }).catch(() => say("Paste the link in the box below."));
     }
     // A shared link opens the workout (and the code is taken out of the address bar)
     addRoute(/^#share=([A-Za-z0-9_-]{8,8000})$/, (m) => {
@@ -5591,9 +5619,24 @@ function setupShareWorkout() {
         try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
         return { target: document.getElementById("main") };
     });
-    // Plans page: a way in for people who use the Home Screen app
+    // Plans page: Workouts from friends. Copy the link a friend sent, tap Paste workout, and it's your workout.
     const cta = document.getElementById("build-cta");
-    if (cta && !cta.querySelector("[data-share-paste]")) cta.insertAdjacentHTML("beforeend", ` <button type="button" class="btn btn-compact" data-share-paste>Add a workout a friend sent</button>`);
+    if (cta && !document.querySelector(".share-inbox")) cta.insertAdjacentHTML("afterend", `
+        <section class="share-inbox" aria-labelledby="share-inbox-title">
+            <h3 id="share-inbox-title">Workouts from friends</h3>
+            <p>Copy the link a friend sent you, then tap <strong>Paste workout</strong>. It becomes your workout for today, as the day you're on.</p>
+            <button type="button" class="btn btn-primary btn-compact" data-share-paste>Paste workout</button>
+            <details class="share-inbox-more"><summary>Or paste it here</summary>
+                <div class="field"><label for="share-inbox-input">Workout link</label>
+                <input id="share-inbox-input" type="url" inputmode="url" autocomplete="off" placeholder="https://.../programs.html#share=..."></div>
+                <button type="button" class="btn btn-compact" data-share-paste-go>Make it my workout</button></details>
+            <p class="share-status" role="status"></p>
+        </section>`);
+    const added = store.get("gu-share-added");
+    if (added && typeof added.text === "string") {
+        store.remove("gu-share-added");
+        setTimeout(() => showToast("Workout added", added.text), 400);
+    }
 }
 
 function setupPlanBar() {

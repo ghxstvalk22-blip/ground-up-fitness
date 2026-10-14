@@ -825,6 +825,24 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/didn't work/.test(await p2.locator("#share-get").textContent()), "a broken share link says so instead of adding anything");
             check(errs.length === 0, `no script errors while sharing ${errs.join(" ")}`);
             await c2.close();
+            // In the app: paste the link under Workouts from friends and it becomes the active workout
+            const c3 = await browser.newContext({ viewport: { width: 390, height: 844 } });
+            const p3 = await c3.newPage();
+            p3.on("pageerror", (e) => errs.push(e.message));
+            await p3.route(/fonts\.|unsplash/, (r) => r.abort());
+            await p3.goto(url("programs.html"), { waitUntil: "load" });
+            await p3.evaluate(() => localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "beginner", days: 3 })));
+            await p3.reload({ waitUntil: "load" });
+            check(await p3.locator(".share-inbox [data-share-paste]").isVisible(), "Plans has a Workouts from friends section with Paste workout");
+            await p3.evaluate(() => { document.querySelector(".share-inbox-more").open = true; });
+            await p3.fill("#share-inbox-input", link);
+            await Promise.all([p3.waitForNavigation(), p3.click("[data-share-paste-go]")]);
+            await p3.waitForTimeout(600);
+            const act = await p3.evaluate(() => ({ plan: JSON.parse(localStorage.getItem("gu-last-plan")).goal, next: currentPlanInfo().title, toast: (document.getElementById("toast") || {}).textContent || "" }));
+            check(act.plan === "custom" && act.next === "Push day" && /Sam's Push day/.test(act.toast), `a pasted workout becomes your active workout (${act.plan}, ${act.next})`);
+            check(errs.length === 0, `no script errors after pasting ${errs.join(" ")}`);
+            await c3.close();
+
         }
 
         // How-tos and the muscle map get more in-depth as the level goes up

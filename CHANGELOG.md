@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Paste workout: a friend's workout becomes yours in one tap
+
+- **New "Workouts from friends" section on Plans.** Copy the link a friend sent, open the app, and tap **Paste workout** (allow the paste when your phone asks). It becomes your active workout right away, as the day you're on: on Day 3, it's your Day 3, and your old Day 3 and the days after it move down one. Plans opens on it with a note saying who it's from.
+- **Why paste?** iPhone always opens links in Safari, never in Home Screen web apps, and the Home Screen app keeps its own saved data. When a shared link opens in Safari on an iPhone, it now starts with **Copy for the app** and the 3 steps.
+- If the phone won't allow the paste, there's a box to paste the link into instead.
+- **Android:** links to the site open in the installed app when the phone supports it.
+
 ## 2026-10-14 · Share a workout with a friend
 
 - **Share button on every day of Your plan.** Tap Share, pick that day or all your days, and send it any way you like (Messages, AirDrop, WhatsApp). On a computer, the link is copied for you.
