@@ -1254,6 +1254,13 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             check(res3.heavy === 275 && res3.light === 195, `heavy and light days of the same lift keep their own targets (heavy ${res3.heavy}, light ${res3.light})`);
             check(res3.kg === 92.5, `kg barbell weights round to 2.5 kg (${res3.kg})`);
+            const en = await page.evaluate(() => {
+                const p = { ...getProfile(), unit: "lb", bodyweight: "195", sex: "male", years: "30", heightCm: "178", activity: "1.375", bodyfat: "" };
+                return { m: energyEstimate(p), k: energyEstimate({ ...p, bodyfat: "15" }), kid: energyEstimate({ ...p, years: "16" }) };
+            });
+            check(en.m && Math.abs(en.m.maintenance - 2546) < 5 && en.m.method === "mifflin", `daily calories use weight, height, age, and sex (${en.m && Math.round(en.m.maintenance)})`);
+            check(en.k && en.k.method === "katch" && Math.abs(en.k.bmr - 1994) < 3, `with body fat %, resting burn comes from lean mass (${en.k && Math.round(en.k.bmr)})`);
+            check(en.kid === null, "no calorie estimate for anyone under 18");
             check(await page.evaluate(() => !familyFor("Reverse lunge", "homedb") || familyFor("Reverse lunge", "homedb").every((n) => !NEEDS_BENCH.test(n))), "the no-bench home plan never swaps in a bench move");
             check(!res.row.up && /1 of 3 sets/.test(res.row.text), "doing fewer sets than planned keeps the weight and asks for all the sets first");
             check(res.raise.up && res.raise.weight === 17.5, `light lifts go up in the smallest step (15 -> ${res.raise.weight})`);

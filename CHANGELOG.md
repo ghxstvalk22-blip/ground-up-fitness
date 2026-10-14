@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Height, exact age, and body fat for precise numbers
+
+- **Your starting point has a new "Your body" section** under Tailor it to you: exact age, height (feet and inches, or cm), body fat % if you know it, and how active you are outside the gym. All optional, saved only on your device.
+- **Right there, it shows your daily calories and protein.** Calories use weight, height, age and sex (the Mifflin-St Jeor formula). If you add body fat %, it switches to the lean-mass formula (Katch-McArdle), which is more precise for very lean or muscular people. With higher body fat, protein is based on a healthy target weight so it isn't overstated.
+- **The calorie tool fills itself in** from your profile, has a body fat field too, and saves what you change back to your profile. It now says which formula it used and where to get a personal plan (a registered dietitian or your doctor). The 1,500/1,200 calorie floors are unchanged.
+- **Starting weights use your exact age** (a little lighter from 40, more from 50 and 60). Height isn't used for weights: strength standards go by bodyweight, sex, age and training level, and the lifts you enter beat any formula.
+
 ## 2026-10-14 · Strength targets, starting weights, kg, and plan picks
 
 - **Heavy and light days of the same lift keep their own targets.** In Next-level strength, squat is heavy (5 × 3) one day and lighter (3 × 10) another. Each now gets its next weight from the same kind of day, so the heavy target no longer comes from the light day. The first time you do a lift in a new rep range, the weight is worked out from your other sets.

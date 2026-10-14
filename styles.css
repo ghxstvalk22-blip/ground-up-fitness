@@ -3565,3 +3565,11 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 @media (max-width: 640px) { #main { padding-bottom: 72px; } }
 .setup-lift-level { margin: 0 0 12px; padding: 10px 12px; border-left: 3px solid var(--volt); }
 .setup-lift-level .btn { margin-top: 8px; }
+.setup-body { margin: 16px 0 0; padding: 0; border: 0; }
+.setup-body legend { padding: 0; margin-bottom: 8px; font-weight: 800; }
+.setup-body .pair { display: flex; align-items: center; gap: 6px; }
+.setup-body .pair input { min-width: 0; flex: 1; }
+.setup-energy { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--volt); font-size: 0.95rem; }
+.setup-body .field-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 12px; }
+.setup-body .pair input { flex: 1 1 56px; min-width: 56px; }
+@media (max-width: 640px) { .setup-body .field-row { grid-template-columns: 1fr 1.5fr; } }

@@ -1809,6 +1809,8 @@ function getProfile() {
     const p = raw && typeof raw === "object" ? raw : {};
     const pick = (v, allowed, fallback) => (allowed.includes(v) ? v : fallback);
     const bw = Number(p.bodyweight);
+    const yr = Number(p.years), years = Number.isInteger(yr) && yr >= 18 && yr <= 100 ? yr : 0;
+    const hcm = Number(p.heightCm), bf = Number(p.bodyfat);
     return {
         experience: pick(p.experience, ["new", "some", "lots"], "new"),
         bodyweight: bw > 0 && bw < 1000 ? String(p.bodyweight) : "",
@@ -1822,10 +1824,42 @@ function getProfile() {
         place: pick(p.place, ["", "gym", "homedb", "home"], ""),
         days: pick(String(p.days || ""), ["", "2", "3", "4", "5", "6"], ""),
         minutes: pick(String(p.minutes || ""), ["", "30", "45", "60", "90"], ""),
-        age: pick(p.age, ["", "18-29", "30-39", "40-49", "50-59", "60+"], ""),
+        age: years ? ageBracket(years) : pick(p.age, ["", "18-29", "30-39", "40-49", "50-59", "60+"], ""),
+        // Body details for precise calories and protein (all optional; height is always saved in cm)
+        years: years ? String(years) : "",
+        heightCm: hcm >= 120 && hcm <= 230 ? String(Math.round(hcm)) : "",
+        bodyfat: bf >= 3 && bf <= 60 ? String(bf) : "",
+        activity: pick(String(p.activity || ""), ["", "1.2", "1.375", "1.55", "1.725"], ""),
         avoid: Array.isArray(p.avoid) ? p.avoid.filter((k) => Object.keys(AVOID_MOVES).includes(k)) : []
     };
 }
+const ageBracket = (y) => (y >= 60 ? "60+" : y >= 50 ? "50-59" : y >= 40 ? "40-49" : y >= 30 ? "30-39" : "18-29");
+
+/* ---------- Daily energy and protein ----------
+   Resting burn from Mifflin-St Jeor (weight, height, age, sex), or Katch-McArdle when body fat
+   is known (it uses lean mass, which is more precise for very lean or very muscular people),
+   times everyday activity. Protein: 1.6 to 2.2 g per kg (ISSN position stand, 2017); with higher
+   body fat it's based on a goal-ish weight (lean mass at 15%/25% fat) so it isn't inflated.
+   Returns null until the needed numbers are there. */
+function energyEstimate(p = getProfile(), extra = {}) {
+    const unit = extra.unit || p.unit;
+    const w = extra.weight != null ? extra.weight : Number(p.bodyweight);
+    const kg = unit === "kg" ? w : w / 2.20462;
+    const cm = extra.cm != null ? extra.cm : Number(p.heightCm);
+    const age = extra.age != null ? extra.age : Number(p.years);
+    const sex = extra.sex || p.sex;
+    const bf = extra.bodyfat != null ? extra.bodyfat : Number(p.bodyfat);
+    const activity = Number(extra.activity || p.activity) || 1.375;
+    if (!(kg >= 35 && kg <= 300) || !(age >= 18 && age <= 100)) return null;
+    const lean = bf >= 3 && bf <= 60 ? kg * (1 - bf / 100) : 0;
+    let bmr, method;
+    if (lean) { bmr = 370 + 21.6 * lean; method = "katch"; }
+    else if (cm >= 120 && cm <= 230 && (sex === "male" || sex === "female")) { bmr = 10 * kg + 6.25 * cm - 5 * age + (sex === "male" ? 5 : -161); method = "mifflin"; }
+    else return null;
+    const protKg = lean && bf > (sex === "female" ? 32 : 25) ? lean / (1 - (sex === "female" ? 0.25 : 0.15)) : kg;
+    return { bmr, maintenance: bmr * activity, method, kg, lean, proteinLow: 1.6 * protKg, proteinHigh: 2.2 * protKg, activityGiven: Boolean(extra.activity || p.activity) };
+}
+
 // Moves someone can ask to skip (for any reason); plans swap them for a stand-in from the same family
 const AVOID_MOVES = {
     squat: ["Barbell squats", /^(Back squat|Front squat|Smith machine squat)$/],
@@ -2266,7 +2300,7 @@ function startMax(name, unit) {
     const body = bw ? toUnit(bw, p.unit, unit) : 0;
     const i = levelRank(getLevel());
     // A little gentler to start from age 50 (you can always go up next set)
-    const ageEase = p.age === "60+" ? 0.85 : p.age === "50-59" ? 0.9 : 1;
+    const ageEase = p.age === "60+" ? 0.85 : p.age === "50-59" ? 0.9 : p.age === "40-49" ? 0.95 : 1;
     // Lifts you told us (Your starting point or the Fitness Coach) beat any guess
     const told = typeof coachMaxes === "function" ? coachMaxes() : {};
     let fromTold = false;
@@ -5985,11 +6019,36 @@ function setupStartingPoint() {
                                     <label for="setup-min-${n}">Time per workout</label>
                                     <select id="setup-min-${n}" name="minutes"><option value="">Not sure</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option><option value="90">60–90 min</option></select>
                                 </div>
-                                <div class="field">
-                                    <label for="setup-age-${n}">Age <span class="field-hint">(optional)</span></label>
-                                    <select id="setup-age-${n}" name="age"><option value="">Prefer not to say</option>${["18-29", "30-39", "40-49", "50-59", "60+"].map((a) => `<option value="${a}">${a.replace("-", " to ")}</option>`).join("")}</select>
-                                </div>
                             </div>
+                            <fieldset class="setup-body">
+                                <legend>Your body <span class="field-hint">(optional: for exact calories and protein, and age-aware starting weights)</span></legend>
+                                <div class="field-row">
+                                    <div class="field">
+                                        <label for="setup-age-${n}">Age</label>
+                                        <input id="setup-age-${n}" name="years" type="number" inputmode="numeric" min="18" max="100" step="1" placeholder="30">
+                                    </div>
+                                    <div class="field setup-h-imp">
+                                        <label for="setup-hft-${n}">Height</label>
+                                        <div class="pair">
+                                            <input id="setup-hft-${n}" name="hft" type="number" inputmode="numeric" min="4" max="7" placeholder="5" aria-label="Height, feet"><span>ft</span>
+                                            <input name="hin" type="number" inputmode="numeric" min="0" max="11" placeholder="10" aria-label="Height, inches"><span>in</span>
+                                        </div>
+                                    </div>
+                                    <div class="field setup-h-met" hidden>
+                                        <label for="setup-hcm-${n}">Height (cm)</label>
+                                        <input id="setup-hcm-${n}" name="hcm" type="number" inputmode="numeric" min="120" max="230" placeholder="178">
+                                    </div>
+                                    <div class="field">
+                                        <label for="setup-bf-${n}">Body fat % <span class="field-hint">(if you know it)</span></label>
+                                        <input id="setup-bf-${n}" name="bodyfat" type="number" inputmode="decimal" min="3" max="60" step="0.5" placeholder="—">
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label for="setup-act-${n}">How active are you outside the gym?</label>
+                                    <select id="setup-act-${n}" name="activity"><option value="">Not sure</option><option value="1.2">Mostly sitting (desk job)</option><option value="1.375">On my feet some of the day</option><option value="1.55">On my feet most of the day</option><option value="1.725">Physical job (lifting, carrying)</option></select>
+                                </div>
+                                <p class="setup-energy" aria-live="polite"></p>
+                            </fieldset>
                             <fieldset class="setup-lifts">
                                 <legend>Weights you already lift <span class="field-hint">(optional: a recent set you did with good form)</span></legend>
                                 ${SETUP_LIFTS.map((name, k) => `<div class="setup-lift">
@@ -6020,11 +6079,15 @@ function setupStartingPoint() {
                     const conv = (el) => { const v = Number(el.value); if (v > 0) el.value = trimNum(Math.round(toUnit(v, from, to) * 2) / 2); };
                     conv(form.elements.bodyweight);
                     SETUP_LIFTS.forEach((_, k) => conv(form.elements[`lift-w-${k}`]));
+                    // Height moves between ft/in and cm
+                    const el = form.elements;
+                    if (to === "kg" && el.hft.value !== "") el.hcm.value = String(Math.round(((Number(el.hft.value) || 0) * 12 + (Number(el.hin.value) || 0)) * 2.54));
+                    if (to === "lb" && el.hcm.value !== "") { const tin = Math.round(Number(el.hcm.value) / 2.54); el.hft.value = String(Math.floor(tin / 12)); el.hin.value = String(tin % 12); }
                 }
             }
             save();
         });
-        form.addEventListener("input", (e) => { if (e.target.name === "bodyweight" || e.target.name === "pname" || /^lift-/.test(e.target.name)) save(); });
+        form.addEventListener("input", (e) => { if (["bodyweight", "pname", "years", "hft", "hin", "hcm", "bodyfat"].includes(e.target.name) || /^lift-/.test(e.target.name)) save(); });
         form.addEventListener("submit", (e) => e.preventDefault());
         // Your first bodyweight also starts your weigh-in log (My progress and the weight tracker use it)
         form.elements.bodyweight.addEventListener("change", () => {
@@ -6046,7 +6109,15 @@ function setupStartingPoint() {
             raw.place = radio("place");
             raw.days = form.elements.days.value;
             raw.minutes = form.elements.minutes.value;
-            raw.age = form.elements.age.value;
+            const yrs = Number(form.elements.years.value);
+            raw.years = Number.isInteger(yrs) && yrs >= 18 && yrs <= 100 ? String(yrs) : "";
+            raw.age = raw.years ? ageBracket(yrs) : "";
+            const hcm = raw.unit === "kg" ? Number(form.elements.hcm.value)
+                : form.elements.hft.value !== "" ? ((Number(form.elements.hft.value) || 0) * 12 + (Number(form.elements.hin.value) || 0)) * 2.54 : 0;
+            raw.heightCm = hcm >= 120 && hcm <= 230 ? String(Math.round(hcm)) : "";
+            const bfv = Number(form.elements.bodyfat.value);
+            raw.bodyfat = form.elements.bodyfat.value !== "" && bfv >= 3 && bfv <= 60 ? String(bfv) : "";
+            raw.activity = ["1.2", "1.375", "1.55", "1.725"].includes(form.elements.activity.value) ? form.elements.activity.value : "";
             raw.avoid = [...form.querySelectorAll('input[name="avoid"]:checked')].map((c) => c.value).filter((k) => AVOID_MOVES[k]);
             store.set(PROFILE_KEY, raw);
             // Weights you already lift become your estimated maxes (the Fitness Coach uses the same list)
@@ -6087,7 +6158,14 @@ function setupStartingPoint() {
                 form.querySelectorAll('input[name="place"]').forEach((r) => { r.checked = r.value === p.place; });
                 form.elements.days.value = p.days;
                 form.elements.minutes.value = p.minutes;
-                form.elements.age.value = p.age;
+                const keep = (el, v) => { if (document.activeElement !== el) el.value = v; };
+                keep(form.elements.years, p.years);
+                keep(form.elements.bodyfat, p.bodyfat);
+                form.elements.activity.value = p.activity;
+                const hc = Number(p.heightCm);
+                keep(form.elements.hcm, hc ? String(hc) : "");
+                if (hc) { const tin = Math.round(hc / 2.54); keep(form.elements.hft, String(Math.floor(tin / 12))); keep(form.elements.hin, String(tin % 12)); }
+                else { keep(form.elements.hft, ""); keep(form.elements.hin, ""); }
                 form.querySelectorAll('input[name="avoid"]').forEach((c) => { c.checked = p.avoid.includes(c.value); });
                 const maxes = coachMaxes();
                 SETUP_LIFTS.forEach((lift, k) => {
@@ -6102,6 +6180,12 @@ function setupStartingPoint() {
                 form.elements.unit.value = p.unit;
                 form.elements.sex.value = p.sex;
             }
+            spot.querySelector(".setup-h-imp").hidden = p.unit === "kg";
+            spot.querySelector(".setup-h-met").hidden = p.unit !== "kg";
+            const en = energyEstimate(p);
+            spot.querySelector(".setup-energy").innerHTML = en
+                ? `About <strong>${fmt(Math.round(en.maintenance / 10) * 10)} calories a day</strong> keeps your weight steady${en.activityGiven ? "" : " (add how active you are for a closer number)"}, and <strong>${fmt(en.proteinLow)}–${fmt(en.proteinHigh)} g of protein</strong> a day supports your training. <a href="tools.html#tool-calories">Set a goal in the calorie tool</a>.`
+                : "Add your age, height, sex, and bodyweight (or your body fat %) for your daily calories and protein.";
             spot.querySelector(".setup-level-info").innerHTML = `Your level: <strong>${escapeHtml(lvl)}</strong>. Change it on <a href="programs.html#all-plans">any plan</a> or when you build your own workout.`;
             const link = document.querySelector(".hero-setup-link");
             if (link) link.textContent = Number(p.bodyweight) ? "See your starting weights" : "Add your bodyweight for starting weights";
@@ -7660,6 +7744,21 @@ function setupTools() {
         const r = els.calForm.querySelector(`input[name="sex"][value="${known.sex}"]`);
         if (r) r.checked = true;
     }
+    // Everything Your starting point knows: age, height, weight, body fat, everyday activity
+    {
+        const pr = getProfile(), cf = els.calForm.elements;
+        if (pr.years) cf.age.value = pr.years;
+        if (pr.bodyfat) cf.bodyfat.value = pr.bodyfat;
+        if (pr.activity) cf.activity.value = pr.activity;
+        if (pr.heightCm) {
+            const hc = Number(pr.heightCm), tin = Math.round(hc / 2.54);
+            cf.cm.value = String(hc); cf.ft.value = String(Math.floor(tin / 12)); cf.in.value = String(tin % 12);
+        }
+        if (Number(pr.bodyweight)) {
+            const toolUnit = store.get("gu-unit") === "kg" ? "kg" : "lb";
+            cf.weight.value = trimNum(Math.round(toUnit(Number(pr.bodyweight), pr.unit, toolUnit) * 10) / 10);
+        }
+    }
     const num = (el) => (el.value === "" ? NaN : Number(el.value));
     const roundTo = (n, step) => Math.round(n / step) * step;
     const trim = (n) => String(Math.round(n * 100) / 100);
@@ -7728,16 +7827,26 @@ function setupTools() {
         }
 
         const sex = f.sex.value;
-        const bmr = 10 * kg + 6.25 * cm - 5 * age + (sex === "male" ? 5 : -161);
-        const maintenance = bmr * Number(f.activity.value);
+        const bfv = f.bodyfat && f.bodyfat.value !== "" ? Number(f.bodyfat.value) : NaN;
+        // Same math as Your starting point (Katch-McArdle when body fat is known, otherwise Mifflin-St Jeor)
+        const en = energyEstimate(getProfile(), { unit: "kg", weight: kg, cm: Math.round(cm), age, sex, bodyfat: bfv >= 3 && bfv <= 60 ? bfv : 0, activity: f.activity.value });
+        if (!en) { els.calOut.innerHTML = `<p class="result-empty">Fill in your age, height, and weight to see your estimate.</p>`; return; }
+        const bmr = en.bmr;
+        const maintenance = en.maintenance;
+        // Remember these for next time and for Your starting point (only on this device)
+        const raw = store.get(PROFILE_KEY, {}) || {};
+        Object.assign(raw, { years: Number.isInteger(age) ? String(age) : raw.years, heightCm: String(Math.round(cm)), activity: f.activity.value,
+            bodyfat: bfv >= 3 && bfv <= 60 ? String(bfv) : "" });
+        if (Number.isInteger(age)) raw.age = ageBracket(age);
+        store.set(PROFILE_KEY, raw);
         const delta = Number(f.goal.value);
         const floor = sex === "male" ? 1500 : 1200;
         let target = maintenance + delta;
         const floored = target < floor;
         if (floored) target = floor;
 
-        const proteinLow = 1.6 * kg;
-        const proteinHigh = 2.2 * kg;
+        const proteinLow = en.proteinLow;
+        const proteinHigh = en.proteinHigh;
         const r10 = (n) => Math.round(n / 10) * 10;
 
         const goalWord = delta < 0 ? "To lose weight" : delta > 0 ? "To gain slowly" : "To maintain";
@@ -7758,7 +7867,8 @@ function setupTools() {
                 </div>
             </div>
             ${floored ? `<p class="result-note warn">Your goal would put you below ${fmt(floor)} calories a day, so the target is held at ${fmt(floor)}. Try the slower option instead.</p>` : ""}
-            <p class="result-note">This is a starting estimate. Follow it for 2 to 3 weeks, watch your average weight, and adjust by about 100 to 200 calories if it isn't moving the way you want.</p>`;
+            <p class="result-note">${en.method === "katch" ? "Worked out from your lean mass (your body fat %), which is the more precise formula when you know it." : "Worked out from your weight, height, age, and sex (Mifflin-St Jeor). Add your body fat % if you know it for a closer number."} Resting burn: about ${fmt(Math.round(bmr / 10) * 10)} calories.</p>
+            <p class="result-note">This is a starting estimate. Follow it for 2 to 3 weeks, watch your average weight, and adjust by about 100 to 200 calories if it isn't moving the way you want. For a personal eating plan, or if you have a health condition, talk to a registered dietitian or your doctor.</p>`;
     }
 
     /* ----- One-rep max (Epley formula) ----- */
