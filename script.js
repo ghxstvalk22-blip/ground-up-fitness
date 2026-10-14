@@ -2352,6 +2352,17 @@ function startWeight(name, high, unit, sets = 2) {
     return { w, each: s.each, told: Boolean(s.told), bar: BARBELL.test(name) && w <= (unit === "kg" ? 20 : 45) };
 }
 
+// A lighter weight you can actually load: rounded down to the next plate or dumbbell, and at least one step lighter
+// (10% off a 10 lb dumbbell rounds back to 10, which would leave someone stuck)
+function loadableDrop(name, unit, top, pct = 0.9, oneStepLess = true) {
+    const kind = typeof equipOf === "function" ? equipOf(name) : "";
+    // (dumbbells: if you're already on an in-between size like 27.5, your gym has the 2.5 lb steps)
+    const step = kind === "db" ? (unit === "kg" ? (top <= 10 || top % 2 ? 1 : 2) : (top <= 25 || top % 5 ? 2.5 : 5))
+        : kind === "barbell" || kind === "machine" || kind === "cable" ? (unit === "kg" ? 2.5 : 5) : (unit === "kg" ? 1.25 : 2.5);
+    const down = Math.floor((top * pct) / step + 1e-9) * step;
+    const w = oneStepLess ? Math.min(down, top - step) : down;
+    return Math.max(step, w);
+}
 // What to lift next time, based on last time (double progression).
 // Dumbbell moves logged per hand keep saying "each" after the first log too.
 function nextTarget(name, dose, unit) {
@@ -2377,7 +2388,8 @@ function nextTargetCore(name, dose, unit) {
             const best = sessionBest(lastE, unit);
             const each = lastE.sets.some((st) => st.w > 0);
             if (best > 0 && each) {
-                const w = Math.max(roundWeight(best / (1 + (d.high + 1) / 30) * (1 - 0.02 * Math.max(0, d.sets - 2)), unit, name), 0);
+                const est = best / (1 + (d.high + 2) / 30) * (1 - 0.02 * Math.max(0, d.sets - 2));
+                const w = loadableDrop(name, unit, est, 1, false);
                 return { weight: w, reps: d.high, lastText: lastE.sets.map((st) => `${trimNum(roundWeight(toUnit(st.w, lastE.unit, unit), unit, name))}×${st.r}`).join(", "),
                     text: `First time at ${d.low === d.high ? d.high : `${d.low}–${d.high}`} reps: about ${trimNum(w)} ${unit}, worked out from your ${lastE.plan ? `${lastE.plan.low === lastE.plan.high ? lastE.plan.high : `${lastE.plan.low}–${lastE.plan.high}`}-rep sets` : "last session"}. Log it and this range gets its own target.` };
             }
@@ -2436,7 +2448,7 @@ function nextTargetCore(name, dose, unit) {
         const prev = prevEntries[prevEntries.length - 1];
         const prevLow = prev && prev.sets.some((s) => roundWeight(toUnit(s.w, prev.unit, unit), unit) === top && s.r < (prev.plan || d).low);
         if (prevLow) {
-            const w = roundWeight(top * 0.9, unit, name);
+            const w = loadableDrop(name, unit, top);
             return { weight: w, reps: d.high, lastText, text: `Two tough sessions in a row. Drop to ${trimNum(w)} ${unit} and build back up. That's normal.` };
         }
         return { weight: top, reps: d.low, lastText, text: `Stay at ${trimNum(top)} ${unit} and try to get ${was.low} reps on every set.` };
@@ -2799,12 +2811,12 @@ function setupPrograms() {
         }
         // Recover week: same exercise, about 10% lighter on purpose
         if (target && target.weight > 0 && PROGRAMS[state.goal].waves !== false && levelAtLeast("Advanced") && wavePhase(state.week).key === "recover") {
-            const w = roundWeight(target.weight * 0.9, profile.unit, x.name);
+            const w = loadableDrop(x.name, profile.unit, target.weight);
             target = { ...target, up: false, weight: w, text: `Recover week: about ${trimNum(w)} ${profile.unit}${target.each ? " in each hand" : ""}, roughly 10% lighter than usual. Easy on purpose.` };
         }
         // Light week: the same, when the person asked for it
         else if (target && target.weight > 0 && lightOn()) {
-            const w = roundWeight(target.weight * 0.9, profile.unit, x.name);
+            const w = loadableDrop(x.name, profile.unit, target.weight);
             target = { ...target, up: false, weight: w, text: `Light week: about ${trimNum(w)} ${profile.unit}${target.each ? " in each hand" : ""}, roughly 10% lighter than usual. Stop each set with a few reps to spare.` };
         }
         const badges = [
@@ -5660,7 +5672,7 @@ function setupPlanBar() {
 <section class="planbar${open ? " is-open" : ""}" id="planbar" aria-label="Your plan">
     <div class="planbar-head">
         <button type="button" class="planbar-toggle" aria-expanded="${open}" aria-controls="planbar-list">
-            <span class="planbar-kicker">${info.finishedToday && !info.weekDone ? "Done today \u2713 · Next time" : `Your plan${custom ? "" : ` · Week ${info.week}`}`}</span>
+            <span class="planbar-kicker">${info.finishedToday && !info.weekDone ? "Done today \u2713 · Next time" : `<span class="live-dot" aria-hidden="true"></span>Your plan${custom ? "" : ` · Week ${info.week}`}`}</span>
             <strong>${info.weekDone ? "Week done. Nice work" : `${escapeHtml(custom ? info.title : `Day ${info.di + 1}: ${info.title}`)}`}</strong>
             <span class="planbar-sub">${escapeHtml(info.name)} · ${doneCount} of ${info.items.length} done</span>
         </button>

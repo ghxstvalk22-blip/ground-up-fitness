@@ -1355,6 +1355,19 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             check(res3.heavy === 275 && res3.light === 195, `heavy and light days of the same lift keep their own targets (heavy ${res3.heavy}, light ${res3.light})`);
             check(res3.kg === 92.5, `kg barbell weights round to 2.5 kg (${res3.kg})`);
+            const res4 = await page.evaluate(() => {
+                const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+                const sets = (w, r, n) => Array.from({ length: n }, () => ({ w, r }));
+                localStorage.setItem("gu-log", JSON.stringify({
+                    "Dumbbell bench press": [{ date: d(3), unit: "lb", sets: sets(100, 15, 4), plan: { sets: 4, low: 8, high: 10 } }],
+                    "Lateral raise": [{ date: d(6), unit: "lb", sets: sets(10, 5, 3), plan: { sets: 3, low: 12, high: 15 } }, { date: d(3), unit: "lb", sets: sets(10, 6, 3), plan: { sets: 3, low: 12, high: 15 } }],
+                    Deadlift: [{ date: d(6), unit: "lb", sets: sets(325, 4, 3), plan: { sets: 3, low: 5, high: 5 } }, { date: d(3), unit: "lb", sets: sets(325, 4, 3), plan: { sets: 3, low: 5, high: 5 } }]
+                }));
+                return { db: nextTarget("Dumbbell bench press", "4 × 8–10", "lb").weight, raise: nextTarget("Lateral raise", "3 × 12–15", "lb").weight, dl: nextTarget("Deadlift", "3 × 5", "lb").weight };
+            });
+            check(res4.db > 100 && res4.db <= 110, `even far past the top of the range, 100 lb dumbbells go up at most two sizes (-> ${res4.db})`);
+            check(res4.raise === 7.5, `stuck on a light dumbbell after two tough sessions drops one size, not back to the same weight (10 -> ${res4.raise})`);
+            check(res4.dl === 290, `a reset lands on a weight you can load (325 -> ${res4.dl})`);
             const en = await page.evaluate(() => {
                 const p = { ...getProfile(), unit: "lb", bodyweight: "195", sex: "male", years: "30", heightCm: "178", activity: "1.375", bodyfat: "" };
                 return { m: energyEstimate(p), k: energyEstimate({ ...p, bodyfat: "15" }), kid: energyEstimate({ ...p, years: "16" }) };

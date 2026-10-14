@@ -3620,6 +3620,13 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .active-plan-tag span::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid #000000; opacity: 0; animation: live-ring 1.4s ease-out infinite; }
 @keyframes live-dot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
 @keyframes live-ring { 0% { opacity: 0.7; transform: scale(0.6); } 100% { opacity: 0; transform: scale(1.6); } }
-@media (prefers-reduced-motion: reduce) { .active-plan-tag span, .active-plan-tag span::after { animation: none; } }
+/* With Reduce Motion on, the dot still blinks (fading on and off isn't movement); only the growing ring stops */
+@keyframes live-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+@media (prefers-reduced-motion: reduce) { .active-plan-tag span { animation: live-blink 1.4s ease-in-out infinite; } .active-plan-tag span::after { animation: none; } }
+.active-plan-tag span { width: 10px; height: 10px; }
+/* The same live dot on the Your plan bar */
+.live-dot { position: relative; display: inline-block; width: 8px; height: 8px; margin-right: 8px; border-radius: 50%; background-color: var(--volt); vertical-align: middle; animation: live-dot 1.4s ease-in-out infinite; }
+.live-dot::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--volt); opacity: 0; animation: live-ring 1.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: live-blink 1.4s ease-in-out infinite; } .live-dot::after { animation: none; } }
 /* Black on orange wherever the tag sits (plan headers set paragraphs to grey) */
 .active-plan-tag.active-plan-tag, .active-plan-tag.active-plan-tag * { color: #000000; }

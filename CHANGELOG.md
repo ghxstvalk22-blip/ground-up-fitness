@@ -2,6 +2,19 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · The live dot blinks for everyone
+
+- The dot next to "Your active plan" now blinks even with the iPhone's Reduce Motion setting on (a gentle fade on and off, not movement). It's a little bigger too.
+- The Your plan bar on other pages has the same live dot, so it's clear your plan is running.
+
+## 2026-10-14 · Checked against real lifters: realistic weight jumps
+
+We ran six simulated lifters (new man and woman, 2-year intermediate, advanced and elite bodybuilders, and a strength lifter with heavy and light days) through 18 weeks of training. Each had a real strength level that grew at a realistic pace, and the app picked every weight. The app never made a jump a real person couldn't: the biggest single step was one dumbbell size (+5 lb), +5 lb on upper-body barbell lifts, and +10–20 lb on squats, deadlifts and leg press (under 10%). Fixed what it found:
+
+- **Easing off after two tough sessions lands on a real weight.** 325 goes to 290, not 292.5, and dumbbells drop one real size.
+- **No more getting stuck on light dumbbells.** 10% off a 10 lb dumbbell used to round back to 10. Now it always drops at least one size.
+- **The first time you do a lift in a new rep range** (like a light day after a heavy one), the suggested weight leaves 2 reps in the tank and rounds down to a loadable weight.
+
 ## 2026-10-14 · The day you're on comes first
 
 - **Finished days move down.** This week's finished days now sit below the day you're on, under "Done this week", so opening Plans shows today's workout first. They stay short (Saved to Progress, Show the workout, See summary, Share), and "Done for today" lands you on what's next.
