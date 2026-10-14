@@ -787,6 +787,45 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.evaluate(() => window.dispatchEvent(new CustomEvent("reststop")));
             await ctx.close();
         }
+        // Share a workout: friend 1's day slots in as the day friend 2 is on (Day 3 here), weights not shared
+        {
+            const c1 = await browser.newContext({ viewport: { width: 390, height: 844 } });
+            const p1 = await c1.newPage();
+            await p1.route(/fonts\.|unsplash/, (r) => r.abort());
+            await p1.goto(url("programs.html"), { waitUntil: "load" });
+            const link = await p1.evaluate(() => {
+                localStorage.setItem("gu-profile", JSON.stringify({ name: "Sam" }));
+                saveCustomDays([{ title: "Push day", items: [{ n: "Bench press", d: "4 × 6–8 at 185 lb", rest: "2 min" }, { n: "Lateral raise", d: "3 × 12–15", rest: "60 s" }] }]);
+                return shareLink([0]);
+            });
+            await c1.close();
+            const c2 = await browser.newContext({ viewport: { width: 390, height: 844 } });
+            const p2 = await c2.newPage();
+            const errs = [];
+            p2.on("pageerror", (e) => errs.push(e.message));
+            await p2.route(/fonts\.|unsplash/, (r) => r.abort());
+            await p2.goto(url("programs.html"), { waitUntil: "load" });
+            await p2.evaluate(() => {
+                const d = (t, n) => ({ title: t, items: [{ n, d: "3 × 8–12", rest: "90 s" }] });
+                saveCustomDays([d("Legs", "Leg press"), d("Back", "Lat pulldown"), d("Arms", "Dumbbell curl"), d("Core", "Plank")]);
+                localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "custom", days: 4 }));
+                localStorage.setItem(`gu-progress-custom-4-w${Math.max(1, weekOf(programStart("custom")))}`, JSON.stringify(["0-0", "1-0"]));
+            });
+            await p2.goto(url("programs.html") + link.slice(link.indexOf("#share=")), { waitUntil: "load" });
+            await p2.waitForTimeout(500);
+            check(/Sam sent you a workout/.test(await p2.locator("#share-get").textContent()) && /Make it my Day 3/.test(await p2.locator('#share-get [data-share-add="insert"]').textContent()), "a shared workout opens with who sent it and offers to be the day you're on");
+            check(!/#share=/.test(await p2.evaluate(() => location.href)), "the shared code is taken out of the address bar");
+            await Promise.all([p2.waitForNavigation(), p2.locator('#share-get [data-share-add="insert"]').click()]);
+            await p2.waitForTimeout(400);
+            const after = await p2.evaluate(() => ({ titles: customDaysRaw().map((d) => d.title), next: currentPlanInfo().title, dose: customDaysRaw()[2].items[0].d }));
+            check(after.titles.join(",") === "Legs,Back,Push day,Arms,Core" && after.next === "Push day", `it becomes your Day 3 and the rest move down (${after.titles.join(", ")})`);
+            check(after.dose === "4 × 6–8", `the sender's weights aren't shared (${after.dose})`);
+            await p2.goto(url("programs.html") + "#share=notarealcode1234", { waitUntil: "load" });
+            await p2.waitForTimeout(400);
+            check(/didn't work/.test(await p2.locator("#share-get").textContent()), "a broken share link says so instead of adding anything");
+            check(errs.length === 0, `no script errors while sharing ${errs.join(" ")}`);
+            await c2.close();
+        }
 
         // How-tos and the muscle map get more in-depth as the level goes up
         {

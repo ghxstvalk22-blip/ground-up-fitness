@@ -82,6 +82,7 @@ const FEATURES = [
     setupAccount,
     setupTools,
     setupContactForm,
+    setupShareWorkout,
     setupLinks,      // keep after features that add routes
     setupPageTransitions,
     setupJump
@@ -2717,7 +2718,7 @@ function setupPrograms() {
                 <header>
                     <span class="day-num">Day ${di + 1} <span class="day-status"></span></span>
                     <h4>${escapeHtml(day.title)}</h4>
-                    ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
+                    ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button><button type="button" class="chip" data-share-day="${di}">Share</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
                 </header>
                 ${filed[di] ? `<div class="day-filed"><p class="day-filed-note"><span class="day-filed-check" aria-hidden="true">&#10003;</span><span><strong>Saved to Progress.</strong> ${escapeHtml(filed[di])}</span></p><p class="day-filed-links"><a class="text-link" href="me.html#log">See it in Progress</a> <button type="button" class="text-button" data-show-filed="${di}" aria-expanded="false">Show the workout</button></p></div>` : ""}
                 <ul class="ex-list"${filed[di] ? " hidden" : ""}>
@@ -5397,6 +5398,202 @@ function customizeSuggested(sug) {
     const onCustom = (store.get("gu-last-plan") || {}).goal === "custom";
     store.set(BUILDER_KEY, { title: sug.title, goal: (builderClean(store.get(BUILDER_KEY)) || {}).goal || "muscle", addDay: onCustom && customDaysRaw().length > 0, items: toBuilderItems(sug.items) });
     location.assign(`programs.html?add=${Date.now()}#build`);
+}
+
+/* =========================================================
+   FEATURE: Share a workout with a friend
+   A day (or all of Your plan) goes into a link: programs.html#share=<code>. The code is the
+   workout itself (exercise names, sets and reps, rest; never weights, logs, or settings), so
+   nothing goes through a server. When a friend opens it, the workout slots in as the day
+   they're on: if they're on Day 3, it becomes their Day 3 and the rest move down one.
+   ========================================================= */
+const SHARE_HASH = "#share=";
+function shareEncode(obj) {
+    const bytes = new TextEncoder().encode(JSON.stringify(obj));
+    let bin = "";
+    bytes.forEach((b) => { bin += String.fromCharCode(b); });
+    return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function shareDecode(code) {
+    try {
+        const s = String(code).replace(/-/g, "+").replace(/_/g, "/");
+        const bin = atob(s + "===".slice((s.length + 3) % 4));
+        return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
+    } catch (e) { return null; }
+}
+// Only exercises from the library, sane sets and reps, short plain text
+function shareClean(p) {
+    if (!p || p.v !== 1 || !Array.isArray(p.days) || typeof EXERCISES !== "object") return null;
+    const txt = (v, max) => String(v == null ? "" : v).replace(/[<>]/g, "").slice(0, max).trim();
+    const days = p.days.slice(0, 7).map((d) => ({
+        title: txt(d && d.t, 60) || "Shared workout",
+        items: (Array.isArray(d && d.i) ? d.i : []).filter((x) => Array.isArray(x) && typeof x[0] === "string" && EXERCISES[x[0]]).slice(0, 12)
+            .map((x) => ({ n: x[0], d: /^\d{1,2} × [0-9A-Za-z–+. -]{1,30}$/.test(String(x[1])) ? String(x[1]) : "3 × 8–12", rest: txt(x[2], 20) }))
+    })).filter((d) => d.items.length);
+    if (!days.length) return null;
+    const from = typeof p.from === "string" && /^[\p{L}' .-]{1,30}$/u.test(p.from.trim()) ? p.from.trim() : "";
+    return { days, from };
+}
+// The link for some days of Your plan (weights are left out: the friend gets their own)
+function shareLink(dayIndexes, withName = true) {
+    const days = customDaysRaw();
+    const pick = dayIndexes.map((i) => days[i]).filter(Boolean).map((d) => ({
+        t: String(d.title || "Workout").slice(0, 60),
+        i: d.items.filter((x) => x && EXERCISES[x.n]).slice(0, 12).map((x) => [x.n, String(x.d || "").replace(/\s+at\s+.*$/, "").slice(0, 40), String(x.rest || "").slice(0, 20)])
+    }));
+    const name = getProfile().name;
+    const payload = { v: 1, days: pick, ...(withName && name ? { from: name } : {}) };
+    return `${location.origin}${location.pathname.replace(/[^/]*$/, "")}programs.html${SHARE_HASH}${shareEncode(payload)}`;
+}
+// Put shared days into Your plan at position "pos" (the days after it move down), or replace it
+function addSharedDays(newDays, pos, replace = false) {
+    const days = customDaysRaw();
+    const onCustom = (store.get("gu-last-plan") || {}).goal === "custom";
+    const week = Math.max(1, weekOf(programStart("custom")));
+    const oldKey = `gu-progress-custom-${days.length}-w${week}`;
+    const done = onCustom && !replace ? store.get(oldKey, []) || [] : [];
+    const k = newDays.length;
+    const list = replace ? newDays.slice(0, 7) : days.slice(0, pos).concat(newDays, days.slice(pos)).slice(0, 7);
+    // Check-offs stay with their day: days after the new ones move down by k
+    const moved = done.map((key) => { const [di, xi] = String(key).split("-").map(Number); return di >= pos ? `${di + k}-${xi}` : `${di}-${xi}`; })
+        .filter((key) => Number(key.split("-")[0]) < list.length);
+    store.remove(oldKey);
+    store.set(`gu-progress-custom-${list.length}-w${week}`, moved);
+    clearCustomSwaps();
+    saveCustomDays(list);
+    store.set("gu-last-plan", { goal: "custom", days: list.length });
+    resumePlan();
+    return list.length;
+}
+
+function setupShareWorkout() {
+    // Sending: a Share button on each day of Your plan
+    document.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-share-day]");
+        if (b) { openSend(Number(b.dataset.shareDay)); return; }
+        if (e.target.closest("[data-share-paste]")) openPaste();
+    });
+    const dialog = (id, label) => {
+        let dlg = document.getElementById(id);
+        if (!dlg) {
+            document.body.insertAdjacentHTML("beforeend", `<dialog id="${id}" class="finish-dialog share-dialog" aria-labelledby="${id}-title"><div class="finish-inner"></div></dialog>`);
+            dlg = document.getElementById(id);
+            dlg.addEventListener("click", (ev) => { if (ev.target === dlg || ev.target.closest("[data-share-close]")) shut(dlg); });
+        }
+        return dlg;
+    };
+    const show = (dlg) => { if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e) { dlg.setAttribute("open", ""); } } else dlg.setAttribute("open", ""); };
+    const shut = (dlg) => { if (dlg.open && typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); };
+    const listHtml = (d) => `<ul class="share-list">${d.items.map((x) => `<li>${equipIcon(x.n)}<span>${escapeHtml(x.n)}</span><strong>${escapeHtml(String(x.d).replace(/\s+at\s+.*$/, ""))}</strong></li>`).join("")}</ul>`;
+
+    function openSend(di) {
+        const days = customDaysRaw();
+        if (!days[di]) return;
+        const name = getProfile().name;
+        const dlg = dialog("share-send");
+        dlg.querySelector(".finish-inner").innerHTML = `
+            <p class="finish-kicker">Share a workout</p>
+            <h2 id="share-send-title">${escapeHtml(days[di].title || `Day ${di + 1}`)}</h2>
+            <p>Your friend gets the exercises, sets, reps, and rest. Not your weights or logs: their app works out weights for them.</p>
+            ${days.length > 1 ? `<fieldset class="segmented compact share-what"><legend>What to send</legend>
+                <label><input type="radio" name="share-what" value="day" checked><span>Day ${di + 1} only</span></label>
+                <label><input type="radio" name="share-what" value="all"><span>All ${days.length} days</span></label></fieldset>` : ""}
+            ${name ? `<label class="share-name"><input type="checkbox" name="share-name" checked> Say it's from ${escapeHtml(name)}</label>` : ""}
+            <div class="finish-actions">
+                <button type="button" class="btn btn-primary" data-share-go>Send it</button>
+                <button type="button" class="btn" data-share-close>Cancel</button>
+            </div>
+            <p class="share-status" role="status"></p>`;
+        dlg.querySelector("[data-share-go]").addEventListener("click", () => {
+            const all = (dlg.querySelector('input[name="share-what"]:checked') || {}).value === "all";
+            const withName = Boolean((dlg.querySelector('input[name="share-name"]') || {}).checked);
+            const url = shareLink(all ? days.map((_, i) => i) : [di], withName);
+            const title = all ? `${days.length}-day plan` : days[di].title || "Workout";
+            const status = dlg.querySelector(".share-status");
+            const text = `${withName && name ? `${name} sent you` : "Here's"} a workout on Ground Up Fitness: ${title}`;
+            if (navigator.share) {
+                navigator.share({ title: `Workout: ${title}`, text, url }).then(() => shut(dlg)).catch(() => {});
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => { status.textContent = "Link copied. Paste it in a message to your friend."; })
+                    .catch(() => { status.innerHTML = `Copy this link: <input class="share-url" readonly value="${escapeHtml(url)}" aria-label="Share link">`; });
+            } else {
+                status.innerHTML = `Copy this link: <input class="share-url" readonly value="${escapeHtml(url)}" aria-label="Share link">`;
+            }
+        });
+        show(dlg);
+    }
+
+    // Receiving: where it goes depends on where the friend is in their week
+    function openReceive(code) {
+        const shared = shareClean(shareDecode(code));
+        const dlg = dialog("share-get");
+        const inner = dlg.querySelector(".finish-inner");
+        if (!shared) {
+            inner.innerHTML = `<h2 id="share-get-title">That link didn't work</h2><p>It may have been cut off when it was copied. Ask your friend to send it again.</p>
+                <div class="finish-actions"><button type="button" class="btn" data-share-close>OK</button></div>`;
+            show(dlg);
+            return;
+        }
+        const k = shared.days.length;
+        const info = typeof currentPlanInfo === "function" ? currentPlanInfo() : null;
+        const mine = customDaysRaw();
+        const onCustom = info && info.goal === "custom";
+        const pos = onCustom ? (info.weekDone ? mine.length : info.di) : mine.length;
+        const fits = mine.length + k <= 7;
+        const range = (a) => (k > 1 ? `Days ${a + 1}–${a + k}` : `Day ${a + 1}`);
+        const options = [];
+        if (onCustom && fits) options.push(["insert", `Make it my ${range(pos)}`, pos < mine.length ? `You're on Day ${pos + 1}, so this is your next workout. Your Day ${pos + 1}${mine.length - pos > 1 ? " and the days after it" : ""} move${mine.length - pos > 1 ? "" : "s"} down one${k > 1 ? ` by ${k}` : ""}.` : "It goes right after the days you've done."]);
+        if (onCustom && fits && pos !== mine.length) options.push(["end", `Add it after my last day (${range(mine.length)})`, ""]);
+        if (!onCustom && mine.length && fits) options.push(["end", `Add it to Your plan as ${range(mine.length)}`, ""]);
+        options.push(["replace", onCustom || mine.length ? `Replace my plan with ${k > 1 ? "these days" : "it"}` : "Start it as my plan", info && !onCustom ? `You're on ${info.name}. It stays saved: switch back on Plans any time.` : ""]);
+        inner.innerHTML = `
+            <p class="finish-kicker">${shared.from ? `${escapeHtml(shared.from)} sent you a workout` : "A workout for you"}</p>
+            <h2 id="share-get-title">${escapeHtml(k > 1 ? `${k}-day plan` : shared.days[0].title)}</h2>
+            ${shared.days.map((d, i) => `${k > 1 ? `<h3 class="share-day">Day ${i + 1}: ${escapeHtml(d.title)}</h3>` : ""}${listHtml(d)}`).join("")}
+            <p class="finish-tip">Weights aren't shared. You'll get your own, from your logs or your starting point.</p>
+            <div class="share-options">${options.map(([v, label, note], i) => `<button type="button" class="btn${i === 0 ? " btn-primary" : ""}" data-share-add="${v}">${escapeHtml(label)}</button>${note ? `<p class="share-note">${escapeHtml(note)}</p>` : ""}`).join("")}
+                <button type="button" class="btn" data-share-close>Not now</button></div>
+            ${IS_IOS && !((window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true) ? `<p class="finish-tip">Use the Ground Up app on your Home Screen? It keeps its own saved workouts. Copy this link, open the app, then go to Plans and tap <strong>Add a workout a friend sent</strong>. <button type="button" class="text-button" data-share-copy>Copy link</button></p>` : ""}`;
+        inner.querySelectorAll("[data-share-add]").forEach((b) => b.addEventListener("click", () => {
+            const how = b.dataset.shareAdd;
+            const n = addSharedDays(shared.days, how === "insert" ? pos : mine.length, how === "replace");
+            shut(dlg);
+            location.assign(`programs.html?today=1&added=${Date.now()}#program-custom-${n}`);
+        }));
+        const copy = inner.querySelector("[data-share-copy]");
+        if (copy) copy.addEventListener("click", () => {
+            const url = `${location.origin}${location.pathname.replace(/[^/]*$/, "")}programs.html${SHARE_HASH}${code}`;
+            if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => { copy.textContent = "Copied"; }).catch(() => {});
+        });
+        show(dlg);
+    }
+    function openPaste() {
+        const dlg = dialog("share-paste");
+        dlg.querySelector(".finish-inner").innerHTML = `
+            <p class="finish-kicker">From a friend</p>
+            <h2 id="share-paste-title">Add a workout a friend sent</h2>
+            <div class="field"><label for="share-paste-input">Paste the link they sent you</label>
+            <input id="share-paste-input" type="url" inputmode="url" autocomplete="off" placeholder="https://.../programs.html#share=..."></div>
+            <p class="share-status" role="status"></p>
+            <div class="finish-actions"><button type="button" class="btn btn-primary" data-share-open>Show me</button><button type="button" class="btn" data-share-close>Cancel</button></div>`;
+        dlg.querySelector("[data-share-open]").addEventListener("click", () => {
+            const m = String(dlg.querySelector("#share-paste-input").value).match(/#share=([A-Za-z0-9_-]+)/);
+            if (!m) { dlg.querySelector(".share-status").textContent = "That doesn't look like a Ground Up workout link."; return; }
+            shut(dlg);
+            openReceive(m[1]);
+        });
+        show(dlg);
+        dlg.querySelector("#share-paste-input").focus();
+    }
+    // A shared link opens the workout (and the code is taken out of the address bar)
+    addRoute(/^#share=([A-Za-z0-9_-]{8,8000})$/, (m) => {
+        setTimeout(() => openReceive(m[1]), 0);
+        try { history.replaceState(null, "", location.pathname + location.search); } catch (e) { /* ignore */ }
+        return { target: document.getElementById("main") };
+    });
+    // Plans page: a way in for people who use the Home Screen app
+    const cta = document.getElementById("build-cta");
+    if (cta && !cta.querySelector("[data-share-paste]")) cta.insertAdjacentHTML("beforeend", ` <button type="button" class="btn btn-compact" data-share-paste>Add a workout a friend sent</button>`);
 }
 
 function setupPlanBar() {

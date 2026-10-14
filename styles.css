@@ -3574,3 +3574,19 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 
 .rest-push-wrap { grid-column: 1 / -1; flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 6px; }
 .rest-timer-push { min-height: 44px; background-color: var(--volt); color: #000000; border-color: var(--volt); font-weight: 800; }
+
+/* ---------- Share a workout ---------- */
+.share-list { list-style: none; margin: 8px 0 12px; padding: 0; border-top: 1px solid var(--line); }
+.share-list li { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.share-list li span:not(.equip) { flex: 1; font-weight: 700; }
+.share-list li strong { color: var(--volt-ink, var(--ink)); font-weight: 800; white-space: nowrap; }
+.share-day { margin: 14px 0 0; font-size: 0.95rem; }
+.share-options { display: grid; gap: 8px; margin-top: 14px; }
+.share-options .btn { width: 100%; min-height: 48px; }
+.share-note { margin: -2px 0 6px; font-size: 0.85rem; color: var(--muted); }
+.share-name { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; }
+.share-name input { width: 20px; height: 20px; accent-color: var(--volt); }
+.share-what { margin: 12px 0; }
+.share-status { margin: 10px 0 0; }
+.share-url { width: 100%; margin-top: 6px; font-size: 16px; }
+.build-cta { display: flex; flex-wrap: wrap; gap: 8px; }

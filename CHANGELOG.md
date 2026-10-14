@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Share a workout with a friend
+
+- **Share button on every day of Your plan.** Tap Share, pick that day or all your days, and send it any way you like (Messages, AirDrop, WhatsApp). On a computer, the link is copied for you.
+- **It slots in where your friend is.** When they open it, they see who sent it and the exercises. One tap makes it the day they're on: if they're on Day 3, it becomes their Day 3 and their old Day 3 (and the days after it) move down one. They can also add it after their last day or start fresh with it.
+- **Private by design.** The workout travels inside the link itself, not through a server. Only exercises, sets, reps and rest are shared, never your weights, logs or settings. Your friend's app works out weights for them. Your name is included only if you leave "Say it's from…" ticked.
+- **Using the Home Screen app?** It keeps its own saved data, separate from Safari. So Plans now has an "Add a workout a friend sent" button to paste the link into.
+
 ## 2026-10-14 · Rest alarms: a buzz when rest is over, no app switching
 
 - **No more jump to Shortcuts.** Starting a rest no longer opens the Shortcuts app on its own. The "Lock Screen timer" button is still there as a backup, but only where alarms can't be used.
