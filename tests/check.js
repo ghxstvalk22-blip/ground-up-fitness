@@ -1245,6 +1245,15 @@ async function openPage(browser, file, viewport, hash = "") {
             check(res2.heavy.up && res2.heavy.weight > 265, `a finished Heavy week (5 × 3) counts as done, not as missed sets (265 -> ${res2.heavy.weight})`);
             check(res2.afterDeload.weight >= 205, `after a recover week the target comes from the last normal week, not the lighter one (${res2.afterDeload.weight})`);
             check(res2.goblet.weight === 25, `dumbbell lifts go up to the next dumbbell (20 -> ${res2.goblet.weight})`);
+            const res3 = await page.evaluate(() => {
+                const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+                localStorage.setItem("gu-log", JSON.stringify({ "Back squat": [
+                    { date: d(7), unit: "lb", sets: [{ w: 265, r: 3 }, { w: 265, r: 3 }, { w: 265, r: 3 }, { w: 265, r: 3 }, { w: 265, r: 5 }], plan: { sets: 5, low: 3, high: 3 } },
+                    { date: d(4), unit: "lb", sets: [{ w: 185, r: 10 }, { w: 185, r: 10 }, { w: 185, r: 10 }], plan: { sets: 3, low: 10, high: 10 } }] }));
+                return { heavy: nextTarget("Back squat", "5 × 3+", "lb").weight, light: nextTarget("Back squat", "3 × 10", "lb").weight, kg: roundWeight(91.3, "kg", "Back squat") };
+            });
+            check(res3.heavy === 275 && res3.light === 195, `heavy and light days of the same lift keep their own targets (heavy ${res3.heavy}, light ${res3.light})`);
+            check(res3.kg === 92.5, `kg barbell weights round to 2.5 kg (${res3.kg})`);
             check(await page.evaluate(() => !familyFor("Reverse lunge", "homedb") || familyFor("Reverse lunge", "homedb").every((n) => !NEEDS_BENCH.test(n))), "the no-bench home plan never swaps in a bench move");
             check(!res.row.up && /1 of 3 sets/.test(res.row.text), "doing fewer sets than planned keeps the weight and asks for all the sets first");
             check(res.raise.up && res.raise.weight === 17.5, `light lifts go up in the smallest step (15 -> ${res.raise.weight})`);

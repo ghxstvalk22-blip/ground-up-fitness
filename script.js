@@ -1848,8 +1848,21 @@ const AVOID_SUBS = {
     jump: ["Incline walk or easy bike", "Brisk walk"]
 };
 // The ready-made plan that fits someone's answers best
+// The level your entered lifts point to (from the same strength standards as starting weights), or -1
+function liftedLevel(p = getProfile()) {
+    const bw = Number(p.bodyweight);
+    if (!bw || typeof coachMaxes !== "function") return -1;
+    const told = coachMaxes();
+    let best = -1;
+    Object.keys(START_MAX).forEach((n) => {
+        if (!told[n]) return;
+        const ratio = toUnit(told[n].m, told[n].u, p.unit) / bw / (p.sex === "male" ? 1 : START_WOMEN[n]);
+        START_MAX[n].forEach((r, i) => { if (ratio >= r * 0.95) best = Math.max(best, i); });
+    });
+    return best;
+}
 function recommendPlan(p = getProfile()) {
-    const lvl = levelRank(getLevel());
+    const lvl = Math.max(levelRank(getLevel()), liftedLevel(p));
     if (p.place === "home") return "home";
     if (p.place === "homedb") return "homedb";
     if (p.minutes === "30") return "busy";
@@ -2036,7 +2049,12 @@ function personalDose(program, item, slot, profile, week = 1, light = false) {
    Saved on this device as { "Exercise name": [ { date, unit, sets: [{ w, r }] } ] } */
 const getLog = () => store.get(LOG_KEY, {}) || {};
 const toUnit = (w, from, to) => (from === to ? w : to === "kg" ? w / 2.20462 : w * 2.20462);
-const roundWeight = (w, unit) => { const step = unit === "kg" ? 1.25 : 2.5; return Math.round(w / step) * step; };
+// Most gyms can't load 1.25 kg on a barbell or a machine stack, so those round to 2.5 kg
+const roundWeight = (w, unit, name) => {
+    const big = unit === "kg" && name && typeof equipOf === "function" && ["barbell", "machine", "cable"].includes(equipOf(name));
+    const step = unit === "kg" ? (big ? 2.5 : 1.25) : 2.5;
+    return Math.round(w / step) * step;
+};
 const trimNum = (n) => String(Math.round(n * 100) / 100);
 
 function logFor(name) {
@@ -2266,12 +2284,14 @@ function startMax(name, unit) {
     return null;
 }
 // A weight to start with for sets of up to "high" reps, leaving 1 or 2 in the tank
-function startWeight(name, high, unit) {
+function startWeight(name, high, unit, sets = 2) {
     const s = startMax(name, unit);
     if (!s) return null;
+    // More sets means more fatigue: about 2% lighter for each set past 2 (5 × 5 starts lighter than 2 × 5)
+    const fatigue = 1 - 0.02 * Math.min(4, Math.max(0, sets - 2));
     // Dumbbells come in 5 lb (2 kg) steps in most gyms; tiny ones in 2.5 lb (1 kg)
     const step = s.each ? (unit === "kg" ? (s.m < 15 ? 1 : 2) : (s.m < 25 ? 2.5 : 5)) : unit === "kg" ? 2.5 : 5;
-    let w = Math.round(s.m / (1 + (high + 1) / 30) / step) * step;
+    let w = Math.round(s.m * fatigue / (1 + (high + 1) / 30) / step) * step;
     if (BARBELL.test(name)) w = Math.max(w, unit === "kg" ? 20 : 45);   // the empty bar is the lightest a barbell gets
     else w = Math.max(w, step);
     return { w, each: s.each, told: Boolean(s.told), bar: BARBELL.test(name) && w <= (unit === "kg" ? 20 : 45) };
@@ -2287,16 +2307,34 @@ function nextTarget(name, dose, unit) {
     }
     return t;
 }
+// Rep bands: heavy (up to 6), medium (7 to 12), light (13+). A lift done heavy one day and light
+// another (like Next-level strength's tiers) gets its target from sessions in the same band.
+const repBand = (high) => (high <= 6 ? 0 : high <= 12 ? 1 : 2);
 function nextTargetCore(name, dose, unit) {
-    const entries = logFor(name);
+    let entries = logFor(name);
     const d = parseDose(dose);
     if (d.timed) return null;
+    if (entries.length && d.high) {
+        const same = entries.filter((e) => !e.plan || repBand(e.plan.high) === repBand(d.high));
+        if (!same.length) {
+            // Only done in another rep range so far: work the weight out from that session's estimated max
+            const lastE = entries[entries.length - 1];
+            const best = sessionBest(lastE, unit);
+            const each = lastE.sets.some((st) => st.w > 0);
+            if (best > 0 && each) {
+                const w = Math.max(roundWeight(best / (1 + (d.high + 1) / 30) * (1 - 0.02 * Math.max(0, d.sets - 2)), unit, name), 0);
+                return { weight: w, reps: d.high, lastText: lastE.sets.map((st) => `${trimNum(roundWeight(toUnit(st.w, lastE.unit, unit), unit, name))}×${st.r}`).join(", "),
+                    text: `First time at ${d.low === d.high ? d.high : `${d.low}–${d.high}`} reps: about ${trimNum(w)} ${unit}, worked out from your ${lastE.plan ? `${lastE.plan.low === lastE.plan.high ? lastE.plan.high : `${lastE.plan.low}–${lastE.plan.high}`}-rep sets` : "last session"}. Log it and this range gets its own target.` };
+            }
+        }
+        entries = same.length ? same : entries;
+    }
     if (!entries.length) {
         // Fitness Coach workouts can carry a starting weight ("3 × 5 at 230 lb")
         const start = String(dose).match(/at (?:about )?(\d+(?:\.\d+)?) (lb|kg)/);
         if (start) return { first: true, text: `First time? Start at about ${trimNum(roundWeight(toUnit(Number(start[1]), start[2], unit), unit))} ${unit}. Log it and you'll get a target next time.` };
         // From their level and bodyweight
-        const sw = startWeight(name, d.high, unit);
+        const sw = startWeight(name, d.high, unit, d.sets);
         if (sw) {
             const how = sw.bar ? `just the empty bar (${unit === "kg" ? "20 kg" : "45 lb"})` : `about ${trimNum(sw.w)} ${unit}${sw.each ? " in each hand" : ""}`;
             return { first: true, weight: sw.w, each: Boolean(sw.each), reps: d.high, start: true,
@@ -2315,7 +2353,7 @@ function nextTargetCore(name, dose, unit) {
     const prevEntries = entries.slice(0, entries.indexOf(last)).filter((e) => !(e.plan && e.plan.easy));
     // Judge the session against what the plan asked for THAT day (a Heavy week's 5 × 3 isn't "missed sets" of 4 × 5)
     const was = last.plan || d;
-    const sets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, unit), unit), r: s.r }));
+    const sets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, unit), unit, last.unit === unit ? null : name), r: s.r }));
     const top = Math.max(...sets.map((s) => s.w));
     const working = sets.filter((s) => s.w === top);
     const allTop = working.length >= Math.min(was.sets, sets.length) && working.every((s) => s.r >= was.high);
@@ -2343,7 +2381,7 @@ function nextTargetCore(name, dose, unit) {
         const prev = prevEntries[prevEntries.length - 1];
         const prevLow = prev && prev.sets.some((s) => roundWeight(toUnit(s.w, prev.unit, unit), unit) === top && s.r < (prev.plan || d).low);
         if (prevLow) {
-            const w = roundWeight(top * 0.9, unit);
+            const w = roundWeight(top * 0.9, unit, name);
             return { weight: w, reps: d.high, lastText, text: `Two tough sessions in a row. Drop to ${trimNum(w)} ${unit} and build back up. That's normal.` };
         }
         return { weight: top, reps: d.low, lastText, text: `Stay at ${trimNum(top)} ${unit} and try to get ${was.low} reps on every set.` };
@@ -2706,12 +2744,12 @@ function setupPrograms() {
         }
         // Recover week: same exercise, about 10% lighter on purpose
         if (target && target.weight > 0 && PROGRAMS[state.goal].waves !== false && levelAtLeast("Advanced") && wavePhase(state.week).key === "recover") {
-            const w = roundWeight(target.weight * 0.9, profile.unit);
+            const w = roundWeight(target.weight * 0.9, profile.unit, x.name);
             target = { ...target, up: false, weight: w, text: `Recover week: about ${trimNum(w)} ${profile.unit}${target.each ? " in each hand" : ""}, roughly 10% lighter than usual. Easy on purpose.` };
         }
         // Light week: the same, when the person asked for it
         else if (target && target.weight > 0 && lightOn()) {
-            const w = roundWeight(target.weight * 0.9, profile.unit);
+            const w = roundWeight(target.weight * 0.9, profile.unit, x.name);
             target = { ...target, up: false, weight: w, text: `Light week: about ${trimNum(w)} ${profile.unit}${target.each ? " in each hand" : ""}, roughly 10% lighter than usual. Stop each set with a few reps to spare.` };
         }
         const badges = [
@@ -6024,6 +6062,7 @@ function setupStartingPoint() {
         }
     });
     const LIFTS = [["Bench press", "Bench press"], ["Back squat", "Squat"], ["Deadlift", "Deadlift"], ["Overhead press", "Overhead press"]];
+    const HOME_LIFTS = [["Goblet squat", "Goblet squat"], ["Dumbbell floor press", "Floor press"], ["Bent-over dumbbell row", "Dumbbell row"], ["Dumbbell Romanian deadlift", "Romanian deadlift"]];
     // What your answers change, in plain words
     function tailoredText(p) {
         const bits = [];
@@ -6067,18 +6106,22 @@ function setupStartingPoint() {
             const link = document.querySelector(".hero-setup-link");
             if (link) link.textContent = Number(p.bodyweight) ? "See your starting weights" : "Add your bodyweight for starting weights";
             const t = tailoredText(p), recP = PROGRAMS[t.rec];
-            spot.querySelector(".setup-tailored").innerHTML = (p.goal || p.place || p.minutes || p.age || p.avoid.length || p.days) && recP ? `
+            const lifted = liftedLevel(p);
+            const liftNote = lifted > levelRank(lvl) ? `<p class="setup-lift-level">Your lifts look like <strong>${LEVELS[lifted]}</strong>, but your level is set to ${escapeHtml(lvl)}. <button type="button" class="btn btn-compact" data-lift-level="${LEVELS[lifted]}">Set my level to ${LEVELS[lifted]}</button></p>` : "";
+            spot.querySelector(".setup-tailored").innerHTML = liftNote + ((p.goal || p.place || p.minutes || p.age || p.avoid.length || p.days) && recP ? `
                 <div class="setup-rec"><p class="setup-preview-title">Best fit for you: <strong>${escapeHtml(recP.name)}</strong></p>
                 ${t.bits.length ? `<ul class="setup-rec-list">${t.bits.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>` : ""}
-                <a class="btn btn-compact" href="programs.html#program-${t.rec}${p.days && recP.plans[p.days] ? `-${p.days}` : ""}">See ${escapeHtml(recP.name)}</a></div>` : "";
+                <a class="btn btn-compact" href="programs.html#program-${t.rec}${p.days && recP.plans[p.days] ? `-${p.days}` : ""}">See ${escapeHtml(recP.name)}</a></div>` : "");
             const preview = spot.querySelector(".setup-preview");
             if (!Number(p.bodyweight) && !SETUP_LIFTS.some((l) => coachMaxes()[l])) {
                 preview.innerHTML = `<p>Add your bodyweight to see your starting weights.</p>`;
                 return;
             }
-            const rows = LIFTS.map(([name, label]) => {
+            const home = ["home", "homedb"].includes(p.place);
+            const liftList = (home ? HOME_LIFTS : LIFTS).filter(([name]) => !avoidedBy(name, p.avoid));
+            const rows = liftList.map(([name, label]) => {
                 const sw = startWeight(name, 8, p.unit);
-                return sw ? `<li><span>${escapeHtml(label)}</span><strong>${sw.bar ? `Empty bar (${p.unit === "kg" ? "20 kg" : "45 lb"})` : `${trimNum(sw.w)} ${p.unit}`}</strong></li>` : "";
+                return sw ? `<li><span>${escapeHtml(label)}</span><strong>${sw.bar ? `Empty bar (${p.unit === "kg" ? "20 kg" : "45 lb"})` : `${trimNum(sw.w)} ${p.unit}${sw.each ? " each" : ""}`}</strong></li>` : "";
             }).join("");
             preview.innerHTML = `<p class="setup-preview-title">Your starting weights at <strong>${escapeHtml(lvl)}</strong> <span>(sets of 8)</span></p>
                 <ul class="setup-weights">${rows}</ul>
@@ -6086,6 +6129,7 @@ function setupStartingPoint() {
         });
     }
     window.addEventListener("levelchange", () => render(true));
+    document.addEventListener("click", (e) => { const b = e.target.closest("[data-lift-level]"); if (b && LEVELS.includes(b.dataset.liftLevel)) setLevel(b.dataset.liftLevel); });
     render(true);
 }
 

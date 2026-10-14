@@ -2,6 +2,14 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Strength targets, starting weights, kg, and plan picks
+
+- **Heavy and light days of the same lift keep their own targets.** In Next-level strength, squat is heavy (5 × 3) one day and lighter (3 × 10) another. Each now gets its next weight from the same kind of day, so the heavy target no longer comes from the light day. The first time you do a lift in a new rep range, the weight is worked out from your other sets.
+- **Starting weights fit the number of sets.** About 2% lighter for each set past two, so 5 sets of 5 starts lighter than 2 sets of 5, and 4 sets of 10 deadlifts no longer start too heavy.
+- **Kilograms:** barbell, machine and cable weights now round to 2.5 kg steps (most gyms can't load 1.25 kg). Dumbbells keep their small steps.
+- **Strong lifters get the right plan.** If the lifts you enter (with your bodyweight) are at Intermediate or Advanced strength, Best fit takes that into account. A note offers "Set my level to Advanced" (or whichever fits) in one tap.
+- **Training at home?** Your starting weights now show dumbbell moves (goblet squat, floor press, row, Romanian deadlift), each hand, and skip moves you said to avoid.
+
 ## 2026-10-14 · Second round of real-world testing
 
 Four testers worked through the whole app on a phone as different gym-goers (a nervous beginner, a lifter building his own split, a 58-year-old training at home with dumbbells, and an advanced strength lifter). What changed from what they found:

@@ -3563,3 +3563,5 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .day-card { scroll-margin-top: calc(var(--header-h, 64px) + 12px); }
 /* Room at the end of every page so the Fitness Coach button never sits on the last buttons */
 @media (max-width: 640px) { #main { padding-bottom: 72px; } }
+.setup-lift-level { margin: 0 0 12px; padding: 10px 12px; border-left: 3px solid var(--volt); }
+.setup-lift-level .btn { margin-top: 8px; }
