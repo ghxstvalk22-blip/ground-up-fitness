@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Workouts from friends folds away
+
+- "Workouts from friends" on the Plans page is now one slim line instead of a big block. Tap it to open **Paste workout** and the paste box, and tap again to close it.
+
 ## 2026-10-14 · What this workout hits
 
 - **New button on every day: "What this workout hits."** Tap it any time to see the body map for that day. Orange shows the muscles it works, and stripes show muscles worked by 2 or more exercises. Below that, each muscle is listed with the exercises that hit it, plus what it works a little. It's the same view as Build your own workout, there whenever you want a reminder. It works on ready-made plans too.

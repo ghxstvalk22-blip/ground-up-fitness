@@ -5719,16 +5719,18 @@ function setupShareWorkout() {
     // Plans page: Workouts from friends. Copy the link a friend sent, tap Paste workout, and it's your workout.
     const cta = document.getElementById("build-cta");
     if (cta && !document.querySelector(".share-inbox")) cta.insertAdjacentHTML("afterend", `
-        <section class="share-inbox" aria-labelledby="share-inbox-title">
-            <h3 id="share-inbox-title">Workouts from friends</h3>
-            <p>Copy the link a friend sent you, then tap <strong>Paste workout</strong>. It becomes your workout for today, as the day you're on.</p>
-            <button type="button" class="btn btn-primary btn-compact" data-share-paste>Paste workout</button>
-            <details class="share-inbox-more"><summary>Or paste it here</summary>
-                <div class="field"><label for="share-inbox-input">Workout link</label>
-                <input id="share-inbox-input" type="url" inputmode="url" autocomplete="off" placeholder="https://.../programs.html#share=..."></div>
-                <button type="button" class="btn btn-compact" data-share-paste-go>Make it my workout</button></details>
-            <p class="share-status" role="status"></p>
-        </section>`);
+        <details class="share-inbox">
+            <summary><span class="share-inbox-title">Workouts from friends</span><span class="share-inbox-hint">Paste a link a friend sent</span></summary>
+            <div class="share-inbox-body">
+                <p>Copy the link a friend sent you, then tap <strong>Paste workout</strong>. It becomes your workout for today, as the day you're on.</p>
+                <button type="button" class="btn btn-primary btn-compact" data-share-paste>Paste workout</button>
+                <details class="share-inbox-more"><summary>Or paste it here</summary>
+                    <div class="field"><label for="share-inbox-input">Workout link</label>
+                    <input id="share-inbox-input" type="url" inputmode="url" autocomplete="off" placeholder="https://.../programs.html#share=..."></div>
+                    <button type="button" class="btn btn-compact" data-share-paste-go>Make it my workout</button></details>
+                <p class="share-status" role="status"></p>
+            </div>
+        </details>`);
     const added = store.get("gu-share-added");
     if (added && typeof added.text === "string") {
         store.remove("gu-share-added");

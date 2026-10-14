@@ -839,7 +839,9 @@ async function openPage(browser, file, viewport, hash = "") {
             await p3.goto(url("programs.html"), { waitUntil: "load" });
             await p3.evaluate(() => localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "beginner", days: 3 })));
             await p3.reload({ waitUntil: "load" });
-            check(await p3.locator(".share-inbox [data-share-paste]").isVisible(), "Plans has a Workouts from friends section with Paste workout");
+            check(await p3.locator(".share-inbox:not([open])").count() === 1, "Workouts from friends starts closed, as one line");
+            await p3.locator(".share-inbox > summary").click();
+            check(await p3.locator(".share-inbox [data-share-paste]").isVisible(), "tapping it shows Paste workout");
             await p3.evaluate(() => { document.querySelector(".share-inbox-more").open = true; });
             await p3.fill("#share-inbox-input", link);
             await Promise.all([p3.waitForNavigation(), p3.click("[data-share-paste-go]")]);

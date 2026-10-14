@@ -3662,3 +3662,13 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .hits-list li { padding: 10px 0; border-bottom: 1px solid var(--line); }
 .hits-list li > span { display: block; margin-top: 2px; font-size: 0.9rem; color: var(--muted); }
 .hits-also { font-size: 0.9rem; color: var(--muted); }
+/* Workouts from friends: one line until you open it */
+.share-inbox { padding: 0; }
+.share-inbox > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; min-height: 48px; padding: 10px 14px; cursor: pointer; list-style: none; }
+.share-inbox > summary::-webkit-details-marker { display: none; }
+.share-inbox > summary::after { content: "+"; margin-left: auto; font-size: 1.3rem; font-weight: 700; line-height: 1; }
+.share-inbox[open] > summary::after { content: "\2212"; }
+.share-inbox-title { font-weight: 800; }
+.share-inbox-hint { font-size: 0.85rem; color: var(--muted); }
+.share-inbox-body { padding: 0 14px 14px; }
+.share-inbox > summary:focus-visible { outline: 3px solid var(--volt); outline-offset: -3px; }
