@@ -3548,3 +3548,18 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .day-filed-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 8px 0 0 40px; }
 .day-filed-links .text-link, .day-filed-links .text-button { min-height: 44px; display: inline-flex; align-items: center; }
 .day-card.is-filed .day-finish { border-top: 0; }
+
+/* ---------- Tester fixes (October 2026) ---------- */
+/* Progress tabs: two rows of three on phones, so the labels are readable (not 9px) */
+@media (max-width: 640px) {
+    .me-tabs { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); grid-auto-columns: auto; }
+    .me-tab { min-height: 44px; font-size: 0.74rem; letter-spacing: 0.06em; padding: 0 4px; }
+    html:has(.me-tabs-wrap) { scroll-padding-top: calc(var(--header-h) + 104px); }
+}
+.active-plan-tag, .active-plan-tag * { color: #000000; opacity: 1; }
+.active-plan-tag { font-size: 0.75rem; }
+.day-finish-next { margin: 0 0 4px; color: var(--muted); }
+.dash-rest { margin: 0 0 8px; padding: 8px 10px; border-left: 3px solid var(--volt); color: var(--ink); }
+.day-card { scroll-margin-top: calc(var(--header-h, 64px) + 12px); }
+/* Room at the end of every page so the Fitness Coach button never sits on the last buttons */
+@media (max-width: 640px) { #main { padding-bottom: 72px; } }

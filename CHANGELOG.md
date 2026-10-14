@@ -2,6 +2,31 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Second round of real-world testing
+
+Four testers worked through the whole app on a phone as different gym-goers (a nervous beginner, a lifter building his own split, a 58-year-old training at home with dumbbells, and an advanced strength lifter). What changed from what they found:
+
+- **Smarter weight increases.** Each logged workout now remembers the sets and reps the plan asked for that day. A Heavy week (fewer reps) no longer looks like "missed sets", and a Recover or light week no longer becomes your new starting weight. Jumps are smaller on heavy lifts (squat 300 → 320 at most, not 330), and dumbbell lifts go up to the next dumbbell (20 → 25, not 30).
+- **Switching pounds and kilograms converts your numbers** (195 lb becomes 88.5 kg) instead of just changing the label.
+- **Fitness Coach:** "How much should I eat to lose weight?" now gets the food answer (calorie tool and a registered dietitian), not lifting advice. Home workouts skip moves that need a bench, and every Coach workout skips the moves you said to avoid.
+- **Home with dumbbells** never swaps in a bench or barbell move.
+- **Rest days are respected.** On ready-made plans, Progress no longer suggests a different workout the day after training; it says to rest a day. After finishing, "do the next day now" is a small link instead of a big button, and "Done for today" takes you back to the workout you finished.
+- **The Active tab, plan bar and Up next show this week's real sets and reps** (the same as the Plans page).
+- **The finish summary gives the same "next time" advice as the plan.** A walk you checked off now counts toward your weekly cardio minutes.
+- **Safer:**
+  - Cancel workout asks before clearing sets you typed but didn't save.
+  - Finishing a day with nothing checked or logged asks first (it was easy to finish the wrong day).
+- **Easier to read:**
+  - The Progress tabs are bigger (two rows of three on phones).
+  - "Your goal" shows once per day instead of on every exercise.
+  - "Empty bar (45 lb)" now says the weight.
+  - Your own plan no longer says "Beginner".
+  - The calorie tool's menus aren't cut off.
+  - There's space at the bottom of each page so the Coach button doesn't cover buttons.
+- **iPhone rest timer:** the "why" note shows only the first few times, and the setup has an Open Shortcuts button.
+
+The bigger items they found (separate targets for heavy and light versions of the same lift, lighter starting weights for more sets, and a few Progress tweaks) are on the roadmap.
+
 ## 2026-10-14 · Finished workouts fold away
 
 - When you finish a workout, the app first checks that everything made it into Progress: the workout is saved and no typed sets are left unsaved. Then that day's exercise list folds away and leaves a short "Saved to Progress" note with a link to see it there, plus your Continue button. "Show the workout" brings it back if you want to look. If anything didn't save, the workout stays open so nothing gets lost.

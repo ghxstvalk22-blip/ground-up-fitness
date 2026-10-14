@@ -63,6 +63,7 @@ async function pickGoal(page, value) {
 
 async function openPage(browser, file, viewport, hash = "") {
     const page = await browser.newPage({ viewport });
+    page.on("dialog", (d) => d.accept().catch(() => {})); // confirm() pop-ups say yes
     if (fs.existsSync(FONT_FILE)) {
         await page.route(/fonts\.googleapis\.com/, (r) => r.fulfill({ contentType: "text/css", body: FONT_CSS }));
         await page.route(/fonts\.gstatic\.com\/test/, (r) => r.fulfill({ contentType: "font/woff2", body: fs.readFileSync(FONT_FILE) }));
@@ -660,6 +661,9 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/Back squat/.test(await ask("how do I do a squat?")) && /Push-up/.test(await ask("how do I do pushups")), "Coach understands everyday exercise names (squat, pushups)");
             const homeDb = await ask("legs at home with dumbbells");
             check(/dumbbells only/.test(homeDb), "\"at home with dumbbells\" uses dumbbells, not bodyweight only");
+            const homeDbNames = await page.locator(".coach-msg.is-coach").last().locator(".coach-ex").allTextContents();
+            check(await page.evaluate((n) => n.every((x) => !NEEDS_BENCH.test(x)), homeDbNames), `a home workout doesn't need a bench (${homeDbNames.join(", ")})`);
+            check(/dietitian/.test(await ask("How much should I eat to lose weight?")), "a food question (even with the word weight) gets the food answer, not lifting advice");
             await ask(`<img src=x onerror="window.__pwned=1">`);
             check(await page.evaluate(() => !window.__pwned && document.querySelectorAll(".coach-log img").length === 0), "typing code into Coach can't run it");
             // How hard: "super challenging" builds a real Expert session without changing the site level
@@ -716,6 +720,7 @@ async function openPage(browser, file, viewport, hash = "") {
         {
             const ctx = await browser.newContext({ viewport, bypassCSP: true });
             const page = await ctx.newPage();
+            page.on("dialog", (d) => d.accept().catch(() => {})); // confirm() pop-ups say yes
             const errors = [];
             page.on("pageerror", (e) => errors.push(e.message));
             await page.route(/fonts\.|unsplash/, (r) => r.abort());
@@ -1105,7 +1110,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await Promise.all([page.waitForURL(/program-custom-2/), page.click("#me-dash [data-sug-start]")]);
             await page.waitForTimeout(400);
             check(await page.evaluate(() => customDaysRaw().length === 2 && /Legs/.test(customDaysRaw()[1].title)), "Start it adds it to your split as Day 2");
-            // A ready-made plan whose next day hits the same muscles gets a heads-up and an alternative
+            // A ready-made plan keeps its own order (it has rest days built in): a rest-day note, not a different workout
             await page.evaluate(() => {
                 const y = new Date(); y.setDate(y.getDate() - 1);
                 const yd = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, "0")}-${String(y.getDate()).padStart(2, "0")}`;
@@ -1114,7 +1119,7 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             await page.goto(url("me.html"), { waitUntil: "load" });
             await page.waitForTimeout(300);
-            check(/again, and you trained them yesterday/.test(await page.locator("#me-dash .dash-next").textContent()) && /anyway/.test(await page.locator("#me-dash .dash-next").textContent()), "a plan day that repeats yesterday's muscles gets a heads-up and an alternative");
+            check(/rest day in between/.test(await page.locator("#me-dash .dash-next").textContent()) && await page.locator("#me-dash [data-sug-start]").count() === 0, "a ready-made plan the day after training says to rest a day instead of swapping in another workout");
             await page.evaluate(() => localStorage.clear());
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
@@ -1225,7 +1230,22 @@ async function openPage(browser, file, viewport, hash = "") {
                 };
             });
             check(res.bench.up && res.bench.weight === 230, `hitting the top of the range on every set adds about 2.5% on upper body (225 -> ${res.bench.weight})`);
-            check(res.squat.up && res.squat.weight >= 330 && res.squat.weight <= 330 && /bigger jump/.test(res.squat.text), `beating the top by 2+ reps on every set gives a bigger jump on legs, within 10% (300 -> ${res.squat.weight})`);
+            check(res.squat.up && res.squat.weight === 320 && /bigger jump/.test(res.squat.text), `beating the top by 2+ reps on every set gives a bigger jump on legs, capped at two steps (300 -> ${res.squat.weight})`);
+            // Tester fixes: judge sessions by the plan they were logged under, skip lighter weeks, next dumbbell up
+            const res2 = await page.evaluate(() => {
+                const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+                localStorage.setItem("gu-log", JSON.stringify({
+                    "Back squat": [{ date: d(9), unit: "lb", sets: [{ w: 265, r: 3 }, { w: 265, r: 3 }, { w: 265, r: 3 }, { w: 265, r: 3 }, { w: 265, r: 3 }], plan: { sets: 5, low: 3, high: 3 } }],
+                    "Bench press": [{ date: d(9), unit: "lb", sets: [{ w: 205, r: 5 }, { w: 205, r: 5 }, { w: 205, r: 5 }, { w: 205, r: 5 }], plan: { sets: 4, low: 5, high: 5 } },
+                        { date: d(2), unit: "lb", sets: [{ w: 185, r: 5 }, { w: 185, r: 5 }], plan: { sets: 2, low: 5, high: 5, easy: true } }],
+                    "Goblet squat": [{ date: d(2), unit: "lb", sets: [{ w: 20, r: 10 }, { w: 20, r: 10 }, { w: 20, r: 10 }] }]
+                }));
+                return { heavy: nextTarget("Back squat", "4 × 5", "lb"), afterDeload: nextTarget("Bench press", "4 × 5", "lb"), goblet: nextTarget("Goblet squat", "3 × 8–10", "lb") };
+            });
+            check(res2.heavy.up && res2.heavy.weight > 265, `a finished Heavy week (5 × 3) counts as done, not as missed sets (265 -> ${res2.heavy.weight})`);
+            check(res2.afterDeload.weight >= 205, `after a recover week the target comes from the last normal week, not the lighter one (${res2.afterDeload.weight})`);
+            check(res2.goblet.weight === 25, `dumbbell lifts go up to the next dumbbell (20 -> ${res2.goblet.weight})`);
+            check(await page.evaluate(() => !familyFor("Reverse lunge", "homedb") || familyFor("Reverse lunge", "homedb").every((n) => !NEEDS_BENCH.test(n))), "the no-bench home plan never swaps in a bench move");
             check(!res.row.up && /1 of 3 sets/.test(res.row.text), "doing fewer sets than planned keeps the weight and asks for all the sets first");
             check(res.raise.up && res.raise.weight === 17.5, `light lifts go up in the smallest step (15 -> ${res.raise.weight})`);
             check(/^4 × 3–5/.test(res.strength) && /^3 × 5/.test(res.strengthNew), `strength sets and reps follow the research ranges (${res.strength}, beginner ${res.strengthNew})`);
@@ -1238,6 +1258,7 @@ async function openPage(browser, file, viewport, hash = "") {
         {
             const ctx = await browser.newContext({ viewport, userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1" });
             const page = await ctx.newPage();
+            page.on("dialog", (d) => d.accept().catch(() => {})); // confirm() pop-ups say yes
             const errors = [];
             page.on("pageerror", (e) => errors.push(e.message));
             await page.route(/script\.js/, (r) => r.fulfill({ contentType: "application/javascript", body: fs.readFileSync(path.join(ROOT, "script.js"), "utf8").replace(/const COACH_AI_URL = "[^"]*";/, 'const COACH_AI_URL = "";') }));

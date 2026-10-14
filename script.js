@@ -1361,6 +1361,7 @@ const PROGRAMS = {
         name: "Home with dumbbells",
         tagline: "a pair of dumbbells, no bench",
         kit: "db",
+        bench: false,
         rotation: "none",
         summary: "Three full-body workouts for your living room with just a pair of dumbbells (adjustable ones are perfect) and the floor. No bench needed. Each session ends with a walk, which makes this a good plan for losing fat at home: lifting keeps your muscle while you eat a little less, and the walking adds up.",
         session: "30 to 40 minutes, plus a 20-minute walk",
@@ -1704,13 +1705,16 @@ function kitAllows(planKit, exerciseKit) {
     return true;
 }
 
+// Home moves that still need a bench (or a barbell): left out of "no bench" plans and home Coach workouts
+const NEEDS_BENCH = /^(Bulgarian split squat|Hip thrust|Dumbbell bench press|Incline dumbbell press|Dumbbell fly|Chest-supported dumbbell row|Seated dumbbell shoulder press|Incline dumbbell curl)$/;
 // Exercises that can stand in for this one, limited to the program's equipment
 function familyFor(name, program) {
     if (typeof EXERCISE_FAMILIES === "undefined") return null;
     const base = EXERCISE_FAMILIES.find((f) => f[0] === name) || EXERCISE_FAMILIES.find((f) => f.includes(name)) || null;
-    const kit = program && PROGRAMS[program] ? PROGRAMS[program].kit : null;
+    const plan = program && PROGRAMS[program] ? PROGRAMS[program] : {};
+    const kit = plan.kit || null;
     if (!base || !kit) return base;
-    return base.filter((n) => n === name || kitAllows(kit, typeof EXERCISES === "object" && EXERCISES[n] ? EXERCISES[n].kit : null));
+    return base.filter((n) => n === name || (kitAllows(kit, typeof EXERCISES === "object" && EXERCISES[n] ? EXERCISES[n].kit : null) && !(plan.bench === false && NEEDS_BENCH.test(n))));
 }
 
 // Which version of a slot to show in a given week. It never repeats last week's choice.
@@ -1740,7 +1744,7 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
         let skipped = null, skipDose = null;
         if (avoid.length && avoidedBy(name, avoid)) {
             const kit = PROGRAMS[program] ? PROGRAMS[program].kit : null;
-            const fits = (n) => typeof EXERCISES === "object" && EXERCISES[n] && !avoidedBy(n, avoid) && !used.has(n) && kitAllows(kit, EXERCISES[n].kit);
+            const fits = (n) => typeof EXERCISES === "object" && EXERCISES[n] && !avoidedBy(n, avoid) && !used.has(n) && kitAllows(kit, EXERCISES[n].kit) && !(PROGRAMS[program].bench === false && NEEDS_BENCH.test(n));
             const alt = (fam || []).find(fits) || (AVOID_SUBS[avoidedBy(name, avoid)] || []).find(fits);
             if (alt) { skipped = AVOID_MOVES[avoidedBy(name, avoid)][0]; name = alt; }
             if (alt) skipDose = coachDose(alt, COACH_COMPOUND.test(alt), getLevel());
@@ -1752,7 +1756,7 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
             const kind = (t) => (/steps/.test(t) ? "steps" : /\d\s*s\b/.test(t) ? "hold" : /min\b/.test(t) && !/×/.test(t) ? "time" : "reps");
             const [def, defRest] = coachDose(name, COACH_COMPOUND.test(name), getLevel());
             if (kind(String(x.d)) !== kind(def)) { d = def; if (rest) rest = defRest; }
-            else if (/per side/.test(x.d) !== /per side/.test(def)) d = /per side/.test(def) ? `${x.d} per side` : String(x.d).replace(/ per side/, "");
+            else if (/per (side|leg|arm)/.test(x.d) !== /per (side|leg|arm)/.test(def)) d = /per (side|leg|arm)/.test(def) ? `${x.d} per side` : String(x.d).replace(/ per (side|leg|arm)/, "");
         }
         return { ...x, d, rest, name, mode, swapped: Boolean(swapped), skipped, canRotate: Boolean(fam && fam.length > 1) };
     });
@@ -2038,11 +2042,15 @@ const trimNum = (n) => String(Math.round(n * 100) / 100);
 function logFor(name) {
     return (getLog()[name] || []).slice().sort((a, b) => a.date.localeCompare(b.date));
 }
-function saveSession(name, date, unit, sets) {
+function saveSession(name, date, unit, sets, plan) {
     const before = logFor(name);
     const log = getLog();
     const list = (log[name] || []).filter((e) => e.date !== date);
-    list.push({ date, unit, sets });
+    const entry = { date, unit, sets };
+    // What the plan asked for that day (sets, rep range, and whether it was a recover/light week),
+    // so next time's target is judged against that day's plan, not this week's
+    if (plan && [plan.sets, plan.low, plan.high].every((n) => Number.isInteger(n) && n > 0 && n <= 100)) entry.plan = { sets: plan.sets, low: plan.low, high: plan.high, ...(plan.easy ? { easy: true } : {}) };
+    list.push(entry);
     log[name] = list;
     store.set(LOG_KEY, log);
     checkLiftRecord(name, before, { date, unit, sets });
@@ -2164,11 +2172,14 @@ function weightStep(name, unit, current = Infinity, big = false) {
     // Lighter upper-body lifts use the smallest jump: 5 lb on a 15 lb lift is a 33% jump (common for newer lifters, often women)
     const light = !legCompound && current < (unit === "kg" ? 20 : 45);
     if (light) return unit === "kg" ? 1.25 : 2.5;
+    // Dumbbells: the next dumbbell up (5 lb / 2 kg), even for legs; 20 to 30 lb would be a 50% jump
+    if (typeof equipOf === "function" && equipOf(name) === "db") return unit === "kg" ? 2 : 5;
     const base = unit === "kg" ? (legCompound ? 5 : 2.5) : (legCompound ? 10 : 5);
-    // Research (ACSM: 2 to 10%) : about 2.5% for upper body and 5% for legs, a bit more when you beat your reps by 2 or more
+    // Research (ACSM: 2 to 10%) : about 2.5% for upper body and 5% for legs, a bit more when you beat your reps by 2 or more.
+    // Rounded down and capped (1 step, or 2 for the bigger jump) so heavy lifts don't leap 20 to 40 lb at once.
     const pct = (legCompound ? 0.05 : 0.025) * (big ? 2 : 1);
     if (!Number.isFinite(current)) return base;
-    return Math.max(base, Math.round((current * pct) / base) * base);
+    return Math.min(base * (big ? 2 : 1), Math.max(base, Math.floor((current * pct) / base + 1e-9) * base));
 }
 
 /* ---------- Starting weights ----------
@@ -2266,8 +2277,17 @@ function startWeight(name, high, unit) {
     return { w, each: s.each, told: Boolean(s.told), bar: BARBELL.test(name) && w <= (unit === "kg" ? 20 : 45) };
 }
 
-// What to lift next time, based on last time (double progression)
+// What to lift next time, based on last time (double progression).
+// Dumbbell moves logged per hand keep saying "each" after the first log too.
 function nextTarget(name, dose, unit) {
+    const t = nextTargetCore(name, dose, unit);
+    if (t && t.each === undefined && t.weight > 0) {
+        const s = startMax(name, unit);
+        t.each = s ? s.each : /^two (light |heavy )?dumbbells/i.test(((typeof EXERCISES === "object" && EXERCISES[name]) || {}).eq || "");
+    }
+    return t;
+}
+function nextTargetCore(name, dose, unit) {
     const entries = logFor(name);
     const d = parseDose(dose);
     if (d.timed) return null;
@@ -2278,7 +2298,7 @@ function nextTarget(name, dose, unit) {
         // From their level and bodyweight
         const sw = startWeight(name, d.high, unit);
         if (sw) {
-            const how = sw.bar ? "just the empty bar" : `about ${trimNum(sw.w)} ${unit}${sw.each ? " in each hand" : ""}`;
+            const how = sw.bar ? `just the empty bar (${unit === "kg" ? "20 kg" : "45 lb"})` : `about ${trimNum(sw.w)} ${unit}${sw.each ? " in each hand" : ""}`;
             return { first: true, weight: sw.w, each: Boolean(sw.each), reps: d.high, start: true,
                 text: `First time? Start with ${how}, ${sw.told ? "from the numbers you entered" : "from your level and bodyweight"}. Easy at ${d.high} reps? Go up next set. Form slipping? Go lighter.` };
         }
@@ -2286,37 +2306,47 @@ function nextTarget(name, dose, unit) {
         const noBody = !Number(getProfile().bodyweight) && (START_MAX[name] || START_EXTRA[name]);
         return { first: true, text: `First time? Pick a weight you could do for about 2 more reps than ${d.high}. Log it and you'll get a target next time.${noBody ? " Add your bodyweight under Your starting point (home page) for a suggested weight." : ""}` };
     }
-    const last = entries[entries.length - 1];
+    const newest = entries[entries.length - 1];
+    const newestSets = newest.sets.map((s) => ({ w: roundWeight(toUnit(s.w, newest.unit, unit), unit), r: s.r }));
+    const lastText = newestSets.map((s) => (s.w ? `${trimNum(s.w)}×${s.r}` : `${s.r}`)).join(", ");
+    // A recover or light week was lighter on purpose: base the target on the last normal session before it
+    const real = entries.filter((e) => !(e.plan && e.plan.easy));
+    const last = newest.plan && newest.plan.easy && real.length ? real[real.length - 1] : newest;
+    const prevEntries = entries.slice(0, entries.indexOf(last)).filter((e) => !(e.plan && e.plan.easy));
+    // Judge the session against what the plan asked for THAT day (a Heavy week's 5 × 3 isn't "missed sets" of 4 × 5)
+    const was = last.plan || d;
     const sets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, unit), unit), r: s.r }));
-    const lastText = sets.map((s) => (s.w ? `${trimNum(s.w)}×${s.r}` : `${s.r}`)).join(", ");
     const top = Math.max(...sets.map((s) => s.w));
     const working = sets.filter((s) => s.w === top);
-    const allTop = working.length >= Math.min(d.sets, sets.length) && working.every((s) => s.r >= d.high);
-    const anyLow = working.some((s) => s.r < d.low);
+    const allTop = working.length >= Math.min(was.sets, sets.length) && working.every((s) => s.r >= was.high);
+    const anyLow = working.some((s) => s.r < was.low);
+    if (last !== newest && top > 0 && !allTop) {
+        return { weight: top, reps: d.high, lastText, text: `Back to ${trimNum(top)} ${unit} after the lighter week. Aim for ${d.low}–${d.high} reps on every set.` };
+    }
 
     if (top === 0) {
         return { weight: 0, lastText, text: allTop ? "You hit every rep. Add a rep or two, or try the harder version." : "Aim for one more rep than last time." };
     }
     // Fewer sets than planned last time: get all the sets in before adding weight
-    if (working.length < d.sets && sets.length < d.sets) {
-        return { weight: top, reps: d.high, lastText, text: `Stay at ${trimNum(top)} ${unit}. Last time you did ${sets.length} of ${d.sets} sets; get all ${d.sets} in, then the weight goes up.` };
+    if (working.length < was.sets && sets.length < was.sets) {
+        return { weight: top, reps: d.high, lastText, text: `Stay at ${trimNum(top)} ${unit}. Last time you did ${sets.length} of ${was.sets} sets; get all ${d.sets} in, then the weight goes up.` };
     }
     if (allTop) {
         // Beat the top of the range by 2 or more on every set (the "2-for-2" idea): a bigger jump
-        const big = working.every((s) => s.r >= d.high + 2);
+        const big = working.every((s) => s.r >= was.high + 2);
         const w = top + weightStep(name, unit, top, big);
         return { weight: w, reps: d.low, lastText, up: true, text: big
-            ? `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You beat ${d.high} reps by 2 or more on every set, so this is a bigger jump.`
+            ? `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You beat ${was.high} reps by 2 or more on every set, so this is a bigger jump.`
             : `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You hit the top of the range on every set.` };
     }
     if (anyLow) {
-        const prev = entries[entries.length - 2];
-        const prevLow = prev && prev.sets.some((s) => roundWeight(toUnit(s.w, prev.unit, unit), unit) === top && s.r < d.low);
+        const prev = prevEntries[prevEntries.length - 1];
+        const prevLow = prev && prev.sets.some((s) => roundWeight(toUnit(s.w, prev.unit, unit), unit) === top && s.r < (prev.plan || d).low);
         if (prevLow) {
             const w = roundWeight(top * 0.9, unit);
             return { weight: w, reps: d.high, lastText, text: `Two tough sessions in a row. Drop to ${trimNum(w)} ${unit} and build back up. That's normal.` };
         }
-        return { weight: top, reps: d.low, lastText, text: `Stay at ${trimNum(top)} ${unit} and try to get ${d.low} reps on every set.` };
+        return { weight: top, reps: d.low, lastText, text: `Stay at ${trimNum(top)} ${unit} and try to get ${was.low} reps on every set.` };
     }
     return { weight: top, reps: d.high, lastText, text: `Stay at ${trimNum(top)} ${unit}. Aim for one more rep on your hardest set.` };
 }
@@ -2457,8 +2487,16 @@ function setupPrograms() {
     const currentWeek = () => Math.max(1, weekOf(programStart(state.goal)));
     // Week-by-week plans (Couch to 5K) repeat a week instead, so they don't get the light-week button
     const lightOn = () => !PROGRAMS[state.goal].plans[state.days].weeks && isLightWeek(state.goal, state.days, state.week);
+    // This week is lighter on purpose (Recover week or a light week you chose)
+    const easyWeek = () => lightOn() || (PROGRAMS[state.goal].waves !== false && levelAtLeast("Advanced") && wavePhase(state.week).key === "recover");
+    // The plan behind a log form ("sets|low|high"), saved with the session
+    const formPlan = (form) => {
+        const [sets, low, high] = String(form.dataset.plan || "").split("|").map(Number);
+        return sets ? { sets, low, high, easy: easyWeek() } : null;
+    };
     let lineups = []; // what's on screen, per day
     let firstTipShown = new Set();
+    let notesShown = {};
     // Make the plan on screen "your plan": when you start it, log in it, tick something, or tap Switch
     const adopt = () => { store.set("gu-last-plan", { goal: state.goal, days: state.days }); };
     if (!document.getElementById("adopt-note")) els.head.insertAdjacentHTML("beforebegin", '<p class="adopt-note" id="adopt-note" role="status" hidden></p>');
@@ -2509,7 +2547,7 @@ function setupPrograms() {
         els.head.innerHTML = `
             <div>
                 ${(store.get("gu-last-plan") || {}).goal === state.goal ? `<p class="active-plan-tag"><span aria-hidden="true"></span>Your active plan</p>` : ""}
-                <h3>${escapeHtml(p.name)} &middot; ${state.goal === "custom" ? (state.days > 1 ? `${state.days} days` : "1 session") : `${state.days} days`} <span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span></h3>
+                <h3>${escapeHtml(p.name)} &middot; ${state.goal === "custom" ? (state.days > 1 ? `${state.days} days` : "1 session") : `${state.days} days`} ${state.goal === "custom" ? "" : `<span class="level-tag level-${(p.level || "").toLowerCase()}">${escapeHtml(p.level || "")}</span>`}</h3>
                 <p>${escapeHtml(p.summary)}</p>
                 ${state.goal === "custom" ? `<p class="plan-edit">${state.days < 7 ? `<button type="button" class="btn btn-small" data-add-day>+ Add Day ${state.days + 1}</button>` : ""} <span>Tap Edit on a day to swap, add, or remove exercises. Your logged sets stay.</span></p>` : ""}
                 ${p.source ? `<p class="plan-source">Based on <a href="${p.source[1]}" target="_blank" rel="noopener">${escapeHtml(p.source[0])}</a>. Adapted for this site; not affiliated.</p>` : ""}
@@ -2580,6 +2618,7 @@ function setupPrograms() {
             : null;
 
         firstTipShown = new Set();
+        notesShown = {};
         const filed = state.week === currentWeek() ? thisWeek.map((_, di) => filedInProgress(di)) : [];
         els.grid.innerHTML = thisWeek.map((day, di) => `
             <article class="day-card${filed[di] ? " is-filed" : ""}" data-day="${di}">
@@ -2593,7 +2632,7 @@ function setupPrograms() {
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
                 </ul>
                 ${state.week === currentWeek() ? (() => { const doneToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === isoDate(new Date()) && x.plan === state.goal && x.day === di); return doneToday
-                    ? `<div class="day-finish is-done">${filed[di] ? "" : `<p class="day-finish-note">Finished today \u2713</p>`}<button type="button" class="btn${state.goal === "custom" ? " btn-primary" : ""}" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>${state.goal === "custom" && thisWeek[di + 1] ? `<button type="button" class="text-button" data-edit-day="${di + 1}">Edit Day ${di + 2} first</button>` : ""}<button type="button" class="text-button" data-finish="${di}">See summary</button></div>`
+                    ? `<div class="day-finish is-done">${filed[di] ? "" : `<p class="day-finish-note">Finished today \u2713</p>`}${state.goal === "custom" ? `<button type="button" class="btn btn-primary" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>` : `<p class="day-finish-next">Rest up. ${thisWeek[di + 1] ? `Day ${di + 2} is for your next training day.` : "That's the last day this week."}</p><button type="button" class="text-button" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>`}${state.goal === "custom" && thisWeek[di + 1] ? `<button type="button" class="text-button" data-edit-day="${di + 1}">Edit Day ${di + 2} first</button>` : ""}<button type="button" class="text-button" data-finish="${di}">See summary</button></div>`
                     : `<div class="day-finish"><button type="button" class="btn btn-primary" data-finish="${di}">Finish workout</button>${planPaused() ? `<button type="button" class="text-button" data-resume-plan>Continue this plan</button>` : `<button type="button" class="text-button" data-cancel-workout>Cancel workout</button>`}</div>`; })() : ""}
             </article>`).join("");
 
@@ -2681,7 +2720,8 @@ function setupPrograms() {
             x.swapped ? `<span class="badge">Swapped</span>` : "",
             x.skipped ? `<span class="badge badge-you">Instead of ${escapeHtml(x.skipped.toLowerCase())}</span>` : "",
             profile.minutes && xi >= ({ 30: 4, 45: 5, 60: 6 }[profile.minutes] || 99) && !cardio ? `<span class="badge">Optional if you're short on time</span>` : "",
-            ...dose.notes.map((n) => `<span class="badge badge-you">${escapeHtml(n)}</span>`)
+            // Each note once per day card (not "Your goal: ..." on every exercise)
+            ...dose.notes.filter((n) => { const seen = notesShown[di] || (notesShown[di] = new Set()); if (seen.has(n)) return false; seen.add(n); return true; }).map((n) => `<span class="badge badge-you">${escapeHtml(n)}</span>`)
         ].join("");
         return `
             <li class="ex-row" data-slot="${key}">
@@ -2727,7 +2767,7 @@ function setupPrograms() {
                 <button type="button" class="log-set-done" data-set-done aria-label="Set ${i + 1} done${reps ? `: ${reps} reps` : ""}, start rest"><span aria-hidden="true">&#10003;</span></button>
             </div>`).join("");
         return `
-            <form class="log-form" id="log-${key}" data-exercise="${escapeHtml(x.name)}" hidden novalidate>
+            <form class="log-form" id="log-${key}" data-exercise="${escapeHtml(x.name)}" data-plan="${dose.sets || 0}|${dose.low || 0}|${dose.high || dose.low || 0}" hidden novalidate>
                 <div class="log-date"><label>Date <input type="date" name="date" value="${isoDate(new Date())}" max="${isoDate(new Date())}"></label></div>
                 ${rows}
                 <p class="log-help">Tap <strong>&#10003;</strong> after each set: it fills in the target reps (change them if you did fewer) and starts your rest. ${each ? "Weight is for one dumbbell. " : ""}Change set 1's weight and the rest follow.</p>
@@ -2874,6 +2914,13 @@ function setupPrograms() {
     }
 
     function finishWorkout(di) {
+        const card00 = els.grid.querySelector(`.day-card[data-day="${di}"]`);
+        const today0 = isoDate(new Date());
+        const already = (store.get("gu-sessions", []) || []).some((x) => x && x.date === today0 && x.plan === state.goal && x.day === di);
+        const anyDone = card00 && ([...card00.querySelectorAll('input[type="checkbox"]')].some((b) => b.checked)
+            || [...card00.querySelectorAll('.log-form input[name="r"]')].some((i) => i.value)
+            || (lineups[di] || []).some((x) => (logFor(x.name) || []).some((e) => e.date === today0)));
+        if (!already && !anyDone && !window.confirm(`Nothing is checked off or logged on Day ${di + 1} yet. Finish Day ${di + 1} anyway?`)) return;
         adopt();
         // Sets you ticked or typed but didn't tap Save on still count
         const card0 = els.grid.querySelector(`.day-card[data-day="${di}"]`);
@@ -2883,7 +2930,7 @@ function setupPrograms() {
             if (!sets.length) return;
             const date = (form.elements.date && form.elements.date.value) || isoDate(new Date());
             const already = (logFor(form.dataset.exercise) || []).some((e) => e.date === date && e.sets.length >= sets.length);
-            if (!already) saveSession(form.dataset.exercise, date, getProfile().unit, sets);
+            if (!already) saveSession(form.dataset.exercise, date, getProfile().unit, sets, formPlan(form));
             dropDraft(form);
         });
         const profile = getProfile(), unit = profile.unit;
@@ -2900,14 +2947,22 @@ function setupPrograms() {
             const cardio = isCardio(x.name);
             const t = cardio ? nextCardioTarget(x.name, unit) : nextTarget(x.name, dose.text, unit);
             const d = parseDose(dose.text);
-            let next = "";
-            if (t && t.weight > 0) next = `${t.first ? "Start with about " : ""}${trimNum(t.weight)} ${unit}${t.each ? " each hand" : ""} × ${d.sets} sets of ${t.reps || d.high}`;
-            else if (t && t.text) next = t.text;
-            if (d.timed && !entry) return { name: x.name, logged: false, did: "", next: "", up: false, timed: true };
+            // The same advice the plan card gives, so the two never disagree
+            let next = t && t.text ? t.text : "";
+            if (t && t.first && t.weight > 0) next = `Start with about ${trimNum(t.weight)} ${unit}${t.each ? " each hand" : ""}.`;
+            if (cardio) next = isCardio(x.name) && !entry && /min/.test(x.d || "") ? "Same again, or a few minutes longer." : next;
+            if (d.timed && !entry) return { name: x.name, logged: false, did: "", next: cardio ? "Same again, or a few minutes longer." : "", up: false, timed: !cardio };
             return { name: x.name, logged: Boolean(entry), did: entry ? entry.sets.map((st) => (st.w ? `${trimNum(toUnit(st.w, entry.unit, unit))}×${st.r}` : `${st.r}`)).join(", ") : "", next, up: Boolean(t && t.up) };
         });
         // How many exercises were actually done: logged today or checked off (finishing with nothing marked counts the whole day)
         const before = new Set(store.get(progressKey(), []));
+        // A walk or ride you checked off (without logging it) still counts toward your weekly cardio minutes
+        items.forEach((x, xi) => {
+            if (!isCardio(x.name) || !before.has(`${di}-${xi}`)) return;
+            if (getCardio().some((c) => c.date === today && c.activity === x.name)) return;
+            const m = String(x.d || "").match(/(\d{1,3})\s*min/);
+            if (m && Number(m[1]) > 0 && Number(m[1]) <= 180) saveCardio({ date: today, activity: x.name, minutes: Number(m[1]), distance: 0, dunit: distUnit(unit), effort: 0 });
+        });
         const doneCount = items.filter((_, xi) => lines[xi].logged || before.has(`${di}-${xi}`)).length || items.length;
         // Check the whole day off and keep a record of the session
         const keys = new Set(store.get(progressKey(), []));
@@ -2949,9 +3004,12 @@ function setupPrograms() {
                 if (ev.target === dlg || ev.target.closest("[data-finish-close]")) {
                     if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open");
                     document.body.classList.remove("finish-open");
+                    const doneCard = els.grid.querySelector(".day-card.is-filed") && els.grid.querySelector(`.day-card[data-day="${dlg.dataset.day}"]`);
+                    if (doneCard) doneCard.scrollIntoView({ block: "start" });
                 }
             });
         }
+        dlg.dataset.day = String(di);
         dlg.querySelector(".finish-inner").innerHTML = `
             <div class="finish-burst" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
             <p class="finish-kicker">${escapeHtml(day.title)} · ${escapeHtml(p.name)}</p>
@@ -2964,13 +3022,13 @@ function setupPrograms() {
             </ul>
             ${prs.length ? `<p class="finish-pr"><strong>New personal record${prs.length > 1 ? "s" : ""}:</strong> ${escapeHtml([...new Set(prs.map((r) => r.name))].join(", "))}</p>` : ""}
             <h3>Next time</h3>
-            <ul class="finish-next">${lines.map((l) => `<li>${equipIcon(l.name)}<span><strong>${escapeHtml(l.name)}</strong>${l.did ? `<small>Today: ${escapeHtml(l.did)}</small>` : l.timed ? `<small>Timed: just check it off</small>` : `<small>Not logged today</small>`}</span><em class="${l.up ? "is-up" : ""}">${escapeHtml(l.next || (l.timed ? "Hold a little longer next time" : "Log your sets to get a target"))}</em></li>`).join("")}</ul>
+            <ul class="finish-next">${lines.map((l) => `<li>${equipIcon(l.name)}<span><strong>${escapeHtml(l.name)}</strong>${l.did ? `<small>Today: ${escapeHtml(l.did)}</small>` : l.timed ? `<small>Timed: just check it off</small>` : `<small>Not logged today</small>`}</span><em class="${l.up ? "is-up" : ""}">${escapeHtml(l.next || (l.timed ? "Hold a little longer next time" : l.logged ? "" : "Log your sets next time to get a target"))}</em></li>`).join("")}</ul>
             ${sets ? "" : `<p class="finish-tip">Tip: log your weight and reps on each exercise (Log sets) and next time you'll get an exact weight to aim for.</p>`}
             <h3>What's next?</h3>
             ${state.goal !== "custom" && nextDay ? `<p class="finish-tip">Next time: <strong>Day ${di + 2}, ${escapeHtml(nextDay.title)}</strong>. This plan works best with a rest day in between, so your next training day is a good time for it.</p>` : ""}
             <div class="finish-nextup">
                 ${state.goal === "custom" ? "" : `<button type="button" class="btn btn-primary" data-finish-close>Done for today</button>`}
-                <button type="button" class="btn${state.goal === "custom" ? " btn-primary" : ""}" data-finish-continue="${di}">${escapeHtml(state.goal !== "custom" && nextDay ? `Do Day ${di + 2} now instead` : continueLabel(di))} &rarr;</button>
+                <button type="button" class="${state.goal === "custom" ? "btn btn-primary" : "text-button"}" data-finish-continue="${di}">${escapeHtml(state.goal !== "custom" && nextDay ? `Or do Day ${di + 2} now` : continueLabel(di))} &rarr;</button>
                 ${state.goal === "custom" && nextDay ? `<button type="button" class="btn" data-finish-editday="${di + 1}">Edit Day ${di + 2} first</button>` : ""}
                 ${state.goal === "custom" && nextDay && dayList.length < 7 ? `<button type="button" class="btn" data-finish-addday>+ Add Day ${dayList.length + 1}</button>` : ""}
                 ${state.goal === "custom" ? "" : `<a class="btn" href="programs.html#build">Build my own workout</a>`}
@@ -3186,7 +3244,7 @@ function setupPrograms() {
         }
         const date = form.elements.date.value || isoDate(new Date());
         dropDraft(form);
-        saveSession(form.dataset.exercise, date, unit, sets);
+        saveSession(form.dataset.exercise, date, unit, sets, formPlan(form));
         const slot = form.id.replace("log-", "");
         const box = document.getElementById(`ex-${slot}`);
         if (box && !box.checked && date === isoDate(new Date())) {
@@ -3450,6 +3508,8 @@ function setupRestTimer() {
                 </ol>
                 <label class="ios-auto-pick"><input type="checkbox" data-ios-auto> Start it on its own every time I rest</label>
                 <p class="finish-tip">After that, tap <strong>Lock Screen timer</strong> during any rest (or tick <strong>Every rest</strong>). Your phone switches to Shortcuts for a moment to start the timer; swipe back to Ground Up. Lock your phone and the countdown is there. If you finish resting early, stop the timer from the Lock Screen.</p>
+                <p><a class="btn" href="shortcuts://">Open Shortcuts</a></p>
+                <p class="finish-tip">These steps stay here when you come back.</p>
                 <div class="finish-actions">
                     <button type="button" class="btn btn-primary" data-ios-go>It's set up. Start my timer</button>
                     <button type="button" class="btn" data-ios-close>Not now</button>
@@ -3531,7 +3591,10 @@ function setupRestTimer() {
         alertsBtn.hidden = !canAsk() || IS_IOS;
         iosWrap.hidden = !IS_IOS;
         iosAutoWrap.hidden = store.get("gu-ios-timer") !== true;
-        document.getElementById("rest-ios-note").hidden = store.get("gu-ios-timer") === true;
+        // The "why" note shows the first few rests only, then the timer stays compact
+        const seen = Number(store.get("gu-ios-note-n")) || 0;
+        document.getElementById("rest-ios-note").hidden = store.get("gu-ios-timer") === true || seen >= 3;
+        if (IS_IOS && !resumeAt) store.set("gu-ios-note-n", seen + 1);
         box.hidden = false;
         box.classList.remove("is-done");
         announce.textContent = "";
@@ -4031,7 +4094,8 @@ function coachUnderstand(text) {
     };
     // keep the muscles in the order the person said them
     const order = (g) => { const m = COACH_GROUPS.find(([id]) => id === g); const i = m ? where(m[1]) : -1; return i < 0 ? 999 : i; };
-    return { t, groups: [...groups].sort((a, b) => order(a) - order(b)), parts: [...parts], kit, minutes, pain, howto,
+    const home = /\b(no gym|at home|home|from home|hotel|living room|no bench)\b/.test(t);
+    return { t, groups: [...groups].sort((a, b) => order(a) - order(b)), parts: [...parts], kit, minutes, pain, howto, home,
         exclude: [...exclude], level: coachNamedLevel(t), intensity: coachIntensity(t), goal: coachGoal(t), ...coachLiftFocus(t),
         add: /\b(add|also|plus|throw in|include|as well|and some)\b|\btoo\b(?! (hard|easy|long|short|much|heavy))/.test(t),
         title: labels.filter((l) => !dropLabel(l)).sort((a, b) => a.pos - b.pos).map((l) => l.name) };
@@ -4279,7 +4343,10 @@ function coachBuild(req, level) {
     const strong = levelRank(level) >= levelRank("Advanced");
     const pickStrong = strong || req.goal === "strength";
     const rank = (n, main) => (pickStrong ? (COACH_HEAVY.test(n) && main ? -2 : 0) + (COACH_MACHINE.test(n) ? 2 : 0) : 0);
-    const kitOk = (n) => !req.kit || kitAllows(req.kit, EXERCISES[n] && EXERCISES[n].kit);
+    // Your setup: moves you asked to skip stay out, and home workouts don't need a bench
+    const prof = getProfile();
+    const atHome = req.home || (Boolean(req.kit) && ["home", "homedb"].includes(prof.place));
+    const kitOk = (n) => (!req.kit || kitAllows(req.kit, EXERCISES[n] && EXERCISES[n].kit)) && !avoidedBy(n, prof.avoid) && !(atHome && req.kit && NEEDS_BENCH.test(n));
     const pool = groups.map((gid) => {
         const g = MUSCLE_MAP.find((x) => x.id === gid);
         const named = g.parts.filter((p) => req.parts.includes(p.id));
@@ -4540,6 +4607,11 @@ function setupCoach() {
         }
         if (/\b(i'?m|i am) (1[0-7]|[5-9]) ?(years? old|yo|y\/o)?\b|\bmy parents?\b.*\blet me\b/.test(t)) {
             say(`<p>This site's plans are written for adults. If you're under 18, please train with a coach, PE teacher, or parent, and ask a doctor before starting a program.</p>`);
+            return;
+        }
+        // Food questions ("how much should I eat to lose weight?") come before anything about lifting weight
+        if (/\b(diet|eat|eating|calories?|protein|meal|food|macros?|supplements?|creatine)\b/.test(t) && !req.groups.length && !req.lifts.length) {
+            say(`<p>For food, start with the <a href="tools.html#tool-calories">calorie and protein estimator</a>${/\bsupplement|creatine\b/.test(t) ? ` and the <a href="supplements.html">supplements guide</a>` : ""}. It gives a daily range that's safe for losing weight slowly. For a personal eating plan, especially with a health condition, a registered dietitian or your doctor is the right person to ask.</p>`);
             return;
         }
         // Numbers people tell us ("I bench 225 for 5") are saved for every workout after this
@@ -4931,7 +5003,10 @@ function setupMyDashboard() {
         const recentM = recent ? musclesOf(recent.names) : new Set();
         const same = [...nextM].filter((m) => recentM.has(m));
         // Same muscles as today/yesterday for at least half of this workout? Then suggest something else
-        const clash = same.length && same.length * 2 >= nextM.size ? same : [];
+        // (Ready-made plans already space their days out with rest days, so they keep their own order)
+        const clash = info && info.goal !== "custom" ? [] : same.length && same.length * 2 >= nextM.size ? same : [];
+        const restNote = info && info.goal !== "custom" && !info.weekDone && (info.finishedToday || same.length)
+            ? `<p class="dash-sub dash-rest">${info.finishedToday ? "Done for today. Rest up: this one's for your next training day." : "You trained yesterday. This plan works best with a rest day in between."}</p>` : "";
         const needSug = info ? (info.weekDone && info.goal === "custom") || clash.length > 0 : Boolean(recent);
         sug = needSug ? suggestNextWorkout() : null;
         const when = recent && recent.date === isoDate(new Date()) ? "today" : "yesterday";
@@ -4959,7 +5034,7 @@ function setupMyDashboard() {
             <div class="dash-grid">
                 <article class="dash-card dash-next">
                     <h3>Up next</h3>
-                    ${sugCard || (info ? `<p class="dash-big">${escapeHtml(info.weekDone ? "Week done" : info.title)}</p>
+                    ${sugCard || (info ? `${restNote}<p class="dash-big">${escapeHtml(info.weekDone ? "Week done" : info.title)}</p>
                         <p class="dash-sub">${escapeHtml(info.name)}${info.weekDone ? " · next week's plan is ready" : ` · ${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
                         ${nextTargets.length ? `<ul class="dash-targets">${nextTargets.map((t) => `<li>${equipIcon(t.name)}<span>${escapeHtml(t.name)}</span><strong>${escapeHtml(t.text)}</strong></li>`).join("")}</ul>` : ""}
                         <a class="btn btn-primary btn-compact" href="${info.href}">${info.weekDone ? "See my plan" : planPaused() || info.started ? "Continue my workout" : "Start this workout"}</a>${planPaused() ? `<p class="dash-sub">You canceled your last workout. Tap Continue when you're ready.</p>` : ""}`
@@ -4976,7 +5051,7 @@ function setupMyDashboard() {
                 <article class="dash-card">
                     <h3>Your best lifts</h3>
                     ${best.length ? `<ul class="dash-best">${best.map((b) => `<li><span>${escapeHtml(b.n)}</span><strong>${fmt(roundWeight(b.top, unit))} ${unit}</strong>${b.gain > 0.5 ? `<em>+${fmt(roundWeight(b.gain, unit))}</em>` : ""}</li>`).join("")}</ul>
-                        <p class="dash-fine">Estimated one-rep max from your logged sets, and how much it's gone up since your first log.</p>`
+                        <p class="dash-fine">${levelAtLeast("Intermediate") ? "Estimated one-rep max from your logged sets" : "Roughly the most you could lift once, worked out from your logged sets (not something to test)"}, and how much it's gone up since your first log.</p>`
                     : `<p class="dash-sub">Log your sets (weight and reps) and your strongest lifts show up here, with how much they've improved.</p>`}
                 </article>
             </div>`;
@@ -5050,9 +5125,13 @@ function currentPlanInfo() {
     if (weekDone) di = 0;
     const day = list[di];
     const today = isoDate(new Date());
-    const items = dayLineup(last.goal, days, di, day.items, week, swaps).map((x, xi) => ({ name: x.name, d: x.d, done: done.has(`${di}-${xi}`) || logFor(x.name).some((e) => e.date === today) }));
+    // The same sets and reps the plan page shows this week (your goal, time, waves, light week)
+    const prof = getProfile(), light = !plan.weeks && isLightWeek(last.goal, days, week);
+    const items = dayLineup(last.goal, days, di, day.items, week, swaps).map((x, xi) => ({ name: x.name, d: personalDose(last.goal, x, xi, prof, week, light).text, done: done.has(`${di}-${xi}`) || logFor(x.name).some((e) => e.date === today) }));
     const started = !weekDone && items.some((x) => x.done);
-    return { goal: last.goal, days, week, di, weekDone, started, name: p.name, title: day.title, items, href: `programs.html?today=1#program-${last.goal}-${days}` };
+    // A workout from this plan was already finished today
+    const finishedToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === today && x.plan === last.goal);
+    return { goal: last.goal, days, week, di, weekDone, started, finishedToday, name: p.name, title: day.title, items, href: `programs.html?today=1#program-${last.goal}-${days}` };
 }
 
 // Cancel workout: stop the rest timer, drop half-typed sets, and hide the Your plan bar until you tap Continue.
@@ -5060,6 +5139,9 @@ function currentPlanInfo() {
 const PAUSE_KEY = "gu-plan-paused";
 const planPaused = () => store.get(PAUSE_KEY) === true;
 function cancelWorkout() {
+    const drafts = store.get("gu-log-draft", {}) || {};
+    const typed = Object.values(drafts).some((dr) => dr && Array.isArray(dr.r) && dr.r.some((v) => Number(v) > 0));
+    if (typed && !window.confirm("You have sets typed in that aren't saved. Cancel the workout and clear them?")) return;
     store.set(PAUSE_KEY, true);
     store.remove("gu-log-draft");
     window.dispatchEvent(new CustomEvent("reststop"));
@@ -5108,7 +5190,10 @@ const NEXT_TEMPLATES = [
 function suggestNextWorkout() {
     if (typeof MUSCLE_MAP === "undefined" || typeof coachMake !== "function") return null;
     const recent = recentlyTrained();
-    const busy = recent ? recent.regions : new Set();
+    const busy = new Set(recent ? recent.regions : []);
+    // Building the next day of your own split: it follows your last day, so don't repeat that day's muscles
+    const split = customDaysRaw();
+    if ((store.get("gu-last-plan") || {}).goal === "custom" && split.length) regionsOf(split[split.length - 1].items.map((it) => it && it.n)).forEach((r) => busy.add(r));
     // Also lean toward what your own split doesn't cover yet
     const covered = regionsOf(customDaysRaw().flatMap((d) => d.items.map((it) => it && it.n)));
     const pick = NEXT_TEMPLATES
@@ -5167,7 +5252,7 @@ function setupPlanBar() {
 <section class="planbar${open ? " is-open" : ""}" id="planbar" aria-label="Your plan">
     <div class="planbar-head">
         <button type="button" class="planbar-toggle" aria-expanded="${open}" aria-controls="planbar-list">
-            <span class="planbar-kicker">Your plan${custom ? "" : ` · Week ${info.week}`}</span>
+            <span class="planbar-kicker">${info.finishedToday && !info.weekDone ? "Done today \u2713 · Next time" : `Your plan${custom ? "" : ` · Week ${info.week}`}`}</span>
             <strong>${info.weekDone ? "Week done. Nice work" : `${escapeHtml(custom ? info.title : `Day ${info.di + 1}: ${info.title}`)}`}</strong>
             <span class="planbar-sub">${escapeHtml(info.name)} · ${doneCount} of ${info.items.length} done</span>
         </button>
@@ -5890,6 +5975,15 @@ function setupStartingPoint() {
             </div>`;
         const form = spot.querySelector("form");
         form.addEventListener("change", (e) => {
+            // Switching lb/kg converts the numbers already typed (195 lb becomes 88.5 kg, not 195 kg)
+            if (e.target.name === "unit") {
+                const from = getProfile().unit, to = e.target.value;
+                if (from !== to && ["lb", "kg"].includes(to)) {
+                    const conv = (el) => { const v = Number(el.value); if (v > 0) el.value = trimNum(Math.round(toUnit(v, from, to) * 2) / 2); };
+                    conv(form.elements.bodyweight);
+                    SETUP_LIFTS.forEach((_, k) => conv(form.elements[`lift-w-${k}`]));
+                }
+            }
             save();
         });
         form.addEventListener("input", (e) => { if (e.target.name === "bodyweight" || e.target.name === "pname" || /^lift-/.test(e.target.name)) save(); });
@@ -5936,7 +6030,7 @@ function setupStartingPoint() {
         const rec = recommendPlan(p);
         if (p.goal === "strength") bits.push("Main lifts: heavier, with fewer reps and an extra set.");
         if (p.goal === "fatloss") bits.push("Extra exercises: a few more reps with short rests.");
-        if (p.minutes === "30") bits.push("Longer workouts: 1 fewer set on extras, and anything past 4 exercises is marked optional.");
+        if (p.minutes === "30") bits.push("30-minute workouts: 1 fewer set on extras, and anything past 4 exercises is marked optional.");
         else if (p.minutes === "45") bits.push("Anything past 5 exercises is marked optional.");
         else if (p.minutes === "90") bits.push("Main lifts: 1 more set.");
         if (p.age === "50-59" || p.age === "60+") bits.push("Starting weights a little lighter, and a reminder to warm up.");
@@ -5984,7 +6078,7 @@ function setupStartingPoint() {
             }
             const rows = LIFTS.map(([name, label]) => {
                 const sw = startWeight(name, 8, p.unit);
-                return sw ? `<li><span>${escapeHtml(label)}</span><strong>${sw.bar ? "Empty bar" : `${trimNum(sw.w)} ${p.unit}`}</strong></li>` : "";
+                return sw ? `<li><span>${escapeHtml(label)}</span><strong>${sw.bar ? `Empty bar (${p.unit === "kg" ? "20 kg" : "45 lb"})` : `${trimNum(sw.w)} ${p.unit}`}</strong></li>` : "";
             }).join("");
             preview.innerHTML = `<p class="setup-preview-title">Your starting weights at <strong>${escapeHtml(lvl)}</strong> <span>(sets of 8)</span></p>
                 <ul class="setup-weights">${rows}</ul>
@@ -6612,7 +6706,7 @@ function drawTrendChart(svg, points, projection, { unit = "", W = 720, H = 300, 
 }
 
 // About how many reps someone could do at weight w, given an estimated max (Epley, turned around)
-const repsAt = (max, w) => (w > 0 ? Math.max(1, Math.floor(30 * (max / w - 1))) : 0);
+const repsAt = (max, w) => (w > 0 ? Math.max(1, Math.floor(30 * (max / w - 1) + 1e-9)) : 0);
 
 /* =========================================================
    FEATURE: My progress tabs (me.html)

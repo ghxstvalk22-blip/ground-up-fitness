@@ -17,9 +17,15 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Swap shows a short list to pick from (same muscles and equipment, with your last weight for each), and every exercise gets Swap. Today it replaces blindly in one tap.
 - [ ] After the plan changes exercises (every 4 weeks for beginners), base the first weight on the exercise it replaced, and show "Replaces Leg press (last 95×10)".
 - [ ] Your plan: an Undo message after removing a day (today it's a confirm box). (Moving days up/down is done.)
-- [ ] Fitness Coach: when someone says "dumbbells" or "at home", build without bench moves, and Start this workout should land on the day's exercises.
+- [ ] Fitness Coach: Start this workout should land on the day's exercises. (Home workouts without bench moves are done.)
 - [ ] Beginner Progress shows "heaviest set" instead of estimated one-rep maxes; estimated max only for the big lifts.
 - [ ] Next target uses the number of sets you actually did, not the plan's set count.
+- [ ] Next-level strength (GZCLP): the heavy and the light version of the same lift share one log, so the heavy target comes from the light day. Keep their targets apart (by exercise and tier).
+- [ ] Starting weights should get a little lighter for more sets (5 × 5 shouldn't start at the same % as 1 × 5), and heavy 10-rep lifts like deadlifts should start lighter.
+- [ ] Lifts tab: "Now" should use the best recent session, not just the last one (a light week drops it), and "What are you training for?" should start on your goal.
+- [ ] kg users: barbell targets in 2.5 kg steps (not 1.25 kg, which most gyms can't load).
+- [ ] Home page: people who enter strong lifts (or set Intermediate+) shouldn't get "Best fit: New to lifting"; home trainers should see dumbbell starting weights, not barbell ones.
+- [ ] Log tab: list a day's exercises in the order they were done, not A to Z.
 - [ ] Calorie tool fills in weight and sex from Your starting point; a small weigh-in box and trend on My progress.
 
 ## Ideas
@@ -41,6 +47,8 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 (Nothing yet.)
 
 ## Done
+
+- [x] 2026-10-14: Fixes from the second round of phone walkthroughs (beginner, intermediate split, home trainer at 58, advanced strength): progression judged by the plan each session was logged under (heavy and recover weeks no longer stall it), smaller capped weight jumps, next-dumbbell steps, lb/kg switch converts numbers, food questions go to the dietitian answer, home Coach workouts and the no-bench plan skip bench moves and your skip list, ready-made plans say "rest day" instead of swapping in another workout, the Active tab shows this week's real sets, the finish summary uses the plan card's words, checked-off cardio counts, and safer Cancel/Finish.
 
 - [x] 2026-10-13: Light week (deload): a "Make this a light week" button in the Programs week bar halves the sets and suggests about 10% lighter weights for that week only; tap again to undo. Not shown on Couch to 5K, where repeating a week does the same job.
 - [x] 2026-10-12: Pro principles deep dives: each of the six "Train like a pro" habits on the Pros page has a "How to start" guide that opens into practical beginner steps and a common mistake to avoid.
