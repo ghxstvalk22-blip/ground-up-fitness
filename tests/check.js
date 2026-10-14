@@ -606,6 +606,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.evaluate(() => (store.get("gu-sessions") || []).length === 1) && await page.locator(".ex-row input[type=checkbox]:not(:checked)").count() === 0, "finishing saves the workout and checks the day off");
             await page.click("[data-finish-close]");
             check(/Saved to Progress/i.test(await page.locator(".day-card[data-day='0']").textContent()) && await page.locator(".day-card[data-day='0'] .ex-list").evaluate((l) => l.hidden) && await page.locator("[data-continue='0']").count() === 1, "a finished day folds away once it's saved to Progress and offers Continue");
+            check(await page.evaluate(() => !document.getElementById("day-grid").classList.contains("sort-done")), "with every day done, nothing moves");
             // Phones without built-in pop-up support still see the summary
             await page.evaluate(() => { HTMLDialogElement.prototype.showModal = undefined; });
             await page.locator("[data-finish='0']").click();
@@ -820,6 +821,7 @@ async function openPage(browser, file, viewport, hash = "") {
             const after = await p2.evaluate(() => ({ titles: customDaysRaw().map((d) => d.title), next: currentPlanInfo().title, dose: customDaysRaw()[2].items[0].d }));
             check(after.titles.join(",") === "Legs,Back,Push day,Arms,Core" && after.next === "Push day", `it becomes your Day 3 and the rest move down (${after.titles.join(", ")})`);
             check(after.dose === "4 × 6–8", `the sender's weights aren't shared (${after.dose})`);
+            check(await p2.evaluate(() => { const g = document.getElementById("day-grid"); const next = g.querySelector(".day-card.is-next"); const done = [...g.querySelectorAll(".day-card.complete")]; return g.classList.contains("sort-done") && done.length === 2 && next && done.every((d) => d.getBoundingClientRect().top > next.getBoundingClientRect().top) && /Done this week \(2\)/.test(g.textContent); }), "finished days move below the day you're on, under Done this week");
             await p2.goto(url("programs.html") + "#share=notarealcode1234", { waitUntil: "load" });
             await p2.waitForTimeout(400);
             check(/didn't work/.test(await p2.locator("#share-get").textContent()), "a broken share link says so instead of adding anything");

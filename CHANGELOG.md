@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · The day you're on comes first
+
+- **Finished days move down.** This week's finished days now sit below the day you're on, under "Done this week", so opening Plans shows today's workout first. They stay short (Saved to Progress, Show the workout, See summary, Share), and "Done for today" lands you on what's next.
+- **"Your active plan" now has a live dot** that pulses, so it's clear which plan is running. (It stays still for people who turn on Reduce Motion.)
+- **Fix:** with the "Get stronger" goal, a bodyweight first exercise (like a glute bridge) no longer gets heavy-lifting sets of 3–5 reps. That rule is now only for lifts with weight.
+
 ## 2026-10-14 · Paste workout: a friend's workout becomes yours in one tap
 
 - **New "Workouts from friends" section on Plans.** Copy the link a friend sent, open the app, and tap **Paste workout** (allow the paste when your phone asks). It becomes your active workout right away, as the day you're on: on Day 3, it's your Day 3, and your old Day 3 and the days after it move down one. Plans opens on it with a note saying who it's from.

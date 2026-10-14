@@ -2052,7 +2052,7 @@ function personalDose(program, item, slot, profile, week = 1, light = false) {
     }
     // Your answers in Your starting point
     // Strength (NSCA: 1 to 6 reps, 2 to 6 sets, 2 to 5 min rest): the main lift goes heavy
-    if (profile.goal === "strength" && slot === 0 && d.high >= 6 && !isCardio(item.name || item.n || "")) {
+    if (profile.goal === "strength" && slot === 0 && d.high >= 6 && !isCardio(item.name || item.n || "") && equipOf(item.name || item.n || "") !== "body") {
         const newer = !levelAtLeast("Intermediate");
         d.sets = newer ? 3 : 4; d.low = newer ? 5 : 3; d.high = 5;
         notes.push("Your goal: strength. Heavier, fewer reps"); changed = true;
@@ -2952,6 +2952,14 @@ function setupPrograms() {
             if (tag) tag.textContent = complete ? "Done" : isNext ? "Up next" : "";
             if (isNext) card.id = "up-next"; else if (card.id === "up-next") card.removeAttribute("id");
         });
+        // This week: days you've finished drop below the one you're on, under "Done this week"
+        const cards = els.grid.querySelectorAll(".day-card");
+        const doneN = els.grid.querySelectorAll(".day-card.complete").length;
+        const sortDone = state.week === currentWeek() && doneN > 0 && doneN < cards.length;
+        els.grid.classList.toggle("sort-done", sortDone);
+        let doneLabel = els.grid.querySelector(".done-label");
+        if (!doneLabel) { els.grid.insertAdjacentHTML("beforeend", `<p class="done-label"></p>`); doneLabel = els.grid.querySelector(".done-label"); }
+        doneLabel.textContent = `Done this week (${doneN})`;
         const jump = document.getElementById("jump-today");
         if (jump) {
             const next = els.grid.querySelector(".day-card.is-next");
@@ -3097,8 +3105,9 @@ function setupPrograms() {
                 if (ev.target === dlg || ev.target.closest("[data-finish-close]")) {
                     if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open");
                     document.body.classList.remove("finish-open");
-                    const doneCard = els.grid.querySelector(".day-card.is-filed") && els.grid.querySelector(`.day-card[data-day="${dlg.dataset.day}"]`);
-                    if (doneCard) doneCard.scrollIntoView({ block: "start" });
+                    // Land on the day you're on next (finished days sit below it now)
+                    const landOn = els.grid.querySelector(".day-card.is-next") || els.grid.querySelector(`.day-card[data-day="${dlg.dataset.day}"]`);
+                    if (landOn) landOn.scrollIntoView({ block: "start" });
                 }
             });
         }
