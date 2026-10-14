@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · My progress counts the same way everywhere
+
+- **One rule for counting workouts.** On My progress, the dashboard, this week's numbers, milestones, streaks, and the Lifts tab now count the same thing the Log tab does: a workout counts once you tap **Finish workout** (logged cardio counts too). Testers had seen "1 workout this week" right next to "2 workout days, 20 sets" because half-finished sessions were counted in some places and not others.
+- **The headline says "workout days"** so it matches the "Workout days" number underneath it.
+- **Best-lift numbers match.** Your best lifts on Overview and the "Now" number on Lifts use the same rounding, so they no longer differ by a pound. The gain now shows its unit ("+20 lb" instead of "+20").
+- If you've logged sets but haven't finished the workout yet, the Lifts tab says so instead of looking empty.
+
 ## 2026-10-14 · Height, exact age, and body fat for precise numbers
 
 - **Your starting point has a new "Your body" section** under Tailor it to you: exact age, height (feet and inches, or cm), body fat % if you know it, and how active you are outside the gym. All optional, saved only on your device.

@@ -10,7 +10,6 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), still to do, most important first:
 
-- [ ] My progress counts the same way everywhere: Overview, milestones, and Lifts should count finished workouts like the Log tab does (testers saw "1 workout this week" next to "2 workout days, 20 sets"), and best-lift numbers should match between Overview and Lifts (1 lb rounding differences; show "+20 lb" with the unit).
 - [ ] Home page for returning users: open with Up next / Continue and fold Your starting point once it's filled in.
 - [ ] Editing a day: show Your workout and the muscle check first and fold the 136-exercise list behind "+ Add exercises".
 - [ ] Beginner "Your best lifts": show the heaviest set actually lifted ("25 lb × 15"), with estimated max from Intermediate up.
@@ -37,6 +36,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Link the "Train like a pro" box on the home page to a random habit's "How to start" guide, so returning visitors see a new tip.
 - [ ] Light week reminder: after about 6 to 8 straight weeks of logged training, gently suggest a light week in the week bar.
 - [ ] Show "Light week" on the Your plan bar and the My progress dashboard when the current week is a light week.
+- [ ] When you leave a workout with logged sets but no Finish, offer "Finish it now" on My progress so those sets count.
 
 ## Blocked
 
@@ -44,6 +44,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-10-14: My progress counts the same way everywhere: Overview, milestones, streaks, and Lifts count finished workouts (and logged cardio) like the Log tab; best-lift numbers use one rounding on Overview and Lifts, and gains show the unit ("+20 lb").
 - [x] 2026-10-14: Heavy and light versions of the same lift keep their own targets (by rep range); starting weights a bit lighter for more sets; kg barbell and machine weights in 2.5 kg steps; strong entered lifts count toward the best-fit plan with a one-tap "Set my level"; home trainers see dumbbell starting weights.
 
 - [x] 2026-10-14: Fixes from the second round of phone walkthroughs (beginner, intermediate split, home trainer at 58, advanced strength): progression judged by the plan each session was logged under (heavy and recover weeks no longer stall it), smaller capped weight jumps, next-dumbbell steps, lb/kg switch converts numbers, food questions go to the dietitian answer, home Coach workouts and the no-bench plan skip bench moves and your skip list, ready-made plans say "rest day" instead of swapping in another workout, the Active tab shows this week's real sets, the finish summary uses the plan card's words, checked-off cardio counts, and safer Cancel/Finish.

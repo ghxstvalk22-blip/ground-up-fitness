@@ -2155,10 +2155,30 @@ function checkCardioRecord(entry) {
     }
 }
 
-// Days with any logged lifting or cardio
+/* ---------- One way to count on My progress ----------
+   Like the Log tab: lifting counts once you tap Finish workout (a gu-sessions entry
+   for that day that includes the exercise). Cardio counts when it's logged. */
+const finishedSessions = () => (store.get("gu-sessions", []) || []).filter((x) => x && typeof x.date === "string");
+function isFinishedEntry(name, date, sessions = finishedSessions()) {
+    return sessions.some((x) => x.date === date && (!Array.isArray(x.names) || x.names.includes(name)));
+}
+// The log with only finished workouts: { name: [entries] }
+function finishedLog() {
+    const sessions = finishedSessions(), out = {};
+    Object.entries(getLog()).forEach(([name, list]) => {
+        const keep = (Array.isArray(list) ? list : []).filter((e) => e && typeof e.date === "string" && Array.isArray(e.sets) && e.sets.length && isFinishedEntry(name, e.date, sessions));
+        if (keep.length) out[name] = keep.slice().sort((a, b) => a.date.localeCompare(b.date));
+    });
+    return out;
+}
+const finishedSetCount = (log = finishedLog(), keep = () => true) => Object.values(log).reduce((n, list) => n + list.filter((e) => keep(e.date)).reduce((m, e) => m + e.sets.length, 0), 0);
+// A weight shown on My progress (best lifts, maxes, gains): one rounding everywhere, so the numbers match
+const liftNum = (w, unit) => trimNum(roundWeight(w, unit));
+
+// Workout days: a finished workout or logged cardio
 function activeDates() {
     const dates = new Set();
-    Object.values(getLog()).forEach((entries) => entries.forEach((e) => dates.add(e.date)));
+    finishedSessions().forEach((x) => dates.add(x.date));
     getCardio().forEach((c) => dates.add(c.date));
     return dates;
 }
@@ -2176,7 +2196,7 @@ function weekStreak() {
 
 function milestones() {
     const days = activeDates().size;
-    const sets = Object.values(getLog()).reduce((n, entries) => n + entries.reduce((m, e) => m + e.sets.length, 0), 0);
+    const sets = finishedSetCount();
     const prs = getPRs().length;
     const streak = weekStreak();
     let bestCardioWeek = 0;
@@ -2485,8 +2505,8 @@ const toDist = (d, from, to) => (from === to || !from ? Number(d) : to === "km" 
 const WEEKLY_GAIN = { new: 0.015, some: 0.0075, lots: 0.0035 };
 
 // Project an exercise's estimated max forward, from its history and the person's experience
-function projectLift(name, unit, experience, weeksAhead = 8) {
-    const entries = logFor(name);
+function projectLift(name, unit, experience, weeksAhead = 8, only = null) {
+    const entries = only || logFor(name);
     if (!entries.length) return null;
     const points = entries.map((e) => ({ date: parseIso(e.date), value: sessionBest(e, unit) }));
     const base = WEEKLY_GAIN[experience] || WEEKLY_GAIN.new;
@@ -5056,17 +5076,20 @@ function setupMyDashboard() {
         const info = currentPlanInfo();
         const sessions = (store.get("gu-sessions", []) || []).filter((x) => x && typeof x.date === "string");
         const monday = isoDate(mondayOf(new Date()));
-        const thisWeek = sessions.filter((x) => x.date >= monday);
         const last = sessions[sessions.length - 1];
-        const log = getLog();
+        // Only finished workouts, like the Log and Lifts tabs
+        const log = finishedLog();
         const best = Object.keys(log).filter((n) => EXERCISES[n] && !isCardio(n)).map((n) => {
-            const entries = logFor(n).filter((e) => e.sets && e.sets.some((st) => st.w > 0));
+            const entries = log[n].filter((e) => e.sets.some((st) => st.w > 0));
             if (!entries.length) return null;
             const top = Math.max(...entries.map((e) => sessionBest(e, unit)));
             const first = sessionBest(entries[0], unit);
-            return { n, top, gain: top - first, sessions: entries.length };
+            // Gain from the rounded numbers, so it adds up with what's shown
+            return { n, top, gain: roundWeight(top, unit) - roundWeight(first, unit), sessions: entries.length };
         }).filter(Boolean).sort((a, b) => b.top - a.top).slice(0, 4);
-        const sets = Object.values(log).reduce((sum, list) => sum + (Array.isArray(list) ? list.reduce((t, e) => t + (e.sets ? e.sets.length : 0), 0) : 0), 0);
+        const sets = finishedSetCount(log);
+        // Workouts this week = workout days (finished workouts or cardio), the same count as the stats below
+        const weekDaysDone = [...activeDates()].filter((d) => d >= monday).length;
         const streak = weekStreak();
         // Smart next step: never the same muscles two days running, and a ready-made Day 2 when your split runs out
         const recent = recentlyTrained();
@@ -5100,7 +5123,7 @@ function setupMyDashboard() {
         box.innerHTML = `
             <div class="dash-hello">
                 <p class="kicker">${prof.name ? `Hey ${escapeHtml(prof.name)}` : "Your dashboard"}</p>
-                <h2>${thisWeek.length ? `${thisWeek.length} workout${thisWeek.length === 1 ? "" : "s"} this week. Keep it going.` : sessions.length ? "New week. Let's get the first one in." : "Your progress starts with one workout."}</h2>
+                <h2>${weekDaysDone ? `${weekDaysDone} workout day${weekDaysDone === 1 ? "" : "s"} this week. Keep it going.` : sessions.length ? "New week. Let's get the first one in." : "Your progress starts with one workout."}</h2>
                 <p class="dash-meta"><span class="level-tag level-${lvl.toLowerCase()}">${lvl}</span>${prof.bodyweight ? ` · ${escapeHtml(prof.bodyweight)} ${unit}` : ""}${streak >= 2 ? ` · ${streak}-week streak` : ""}${!prof.name ? ` · <a href="#setup">Add your name</a>` : ""}</p>
             </div>
             <div class="dash-grid">
@@ -5122,7 +5145,7 @@ function setupMyDashboard() {
                 </article>
                 <article class="dash-card">
                     <h3>Your best lifts</h3>
-                    ${best.length ? `<ul class="dash-best">${best.map((b) => `<li><span>${escapeHtml(b.n)}</span><strong>${fmt(roundWeight(b.top, unit))} ${unit}</strong>${b.gain > 0.5 ? `<em>+${fmt(roundWeight(b.gain, unit))}</em>` : ""}</li>`).join("")}</ul>
+                    ${best.length ? `<ul class="dash-best">${best.map((b) => `<li><span>${escapeHtml(b.n)}</span><strong>${liftNum(b.top, unit)} ${unit}</strong>${roundWeight(b.gain, unit) > 0 ? `<em>+${liftNum(b.gain, unit)} ${unit}</em>` : ""}</li>`).join("")}</ul>
                         <p class="dash-fine">${levelAtLeast("Intermediate") ? "Estimated one-rep max from your logged sets" : "Roughly the most you could lift once, worked out from your logged sets (not something to test)"}, and how much it's gone up since your first log.</p>`
                     : `<p class="dash-sub">Log your sets (weight and reps) and your strongest lifts show up here, with how much they've improved.</p>`}
                 </article>
@@ -7132,12 +7155,9 @@ function setupDashboard() {
     function renderStats(profile) {
         const [ws, we] = weekBounds();
         const inWeek = (iso) => { const d = parseIso(iso); return d >= ws && d < we; };
-        const log = getLog();
-        const days = new Set();
-        let sets = 0;
-        Object.values(log).forEach((entries) => entries.forEach((e) => { if (inWeek(e.date)) { days.add(e.date); sets += e.sets.length; } }));
-        getCardio().forEach((c) => { if (inWeek(c.date)) days.add(c.date); });
-        (store.get("gu-sessions", []) || []).forEach((x) => { if (x && typeof x.date === "string" && inWeek(x.date)) days.add(x.date); });
+        // Finished workouts only, the same count as the dashboard, milestones, and the Log tab
+        const days = new Set([...activeDates()].filter(inWeek));
+        const sets = finishedSetCount(finishedLog(), inWeek);
         const minutes = cardioMinutesInWeek();
         const weights = (store.get("gu-weights", []) || []).filter((w) => parseIso(w.date) >= addDays(new Date(), -7));
         const bw = weights.length ? weights.reduce((sum, w) => sum + toUnit(w.w, w.unit, profile.unit), 0) / weights.length : null;
@@ -7173,8 +7193,8 @@ function setupDashboard() {
     }
 
     function liftSummary(name, profile) {
-        const entries = logFor(name);
-        const proj = projectLift(name, profile.unit, profile.experience);
+        const entries = finishedLog()[name] || [];
+        const proj = projectLift(name, profile.unit, profile.experience, 8, entries);
         const last = entries[entries.length - 1];
         const lastSets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, profile.unit), profile.unit), r: s.r }));
         const top = Math.max(...lastSets.map((s) => s.w));
@@ -7185,13 +7205,14 @@ function setupDashboard() {
 
     function renderLifts(profile, mode) {
         const tbody = document.querySelector("#lift-table tbody");
-        const log = getLog();
-        const names = Object.keys(log).filter((n) => log[n] && log[n].length)
-            .sort((a, b) => logFor(b).pop().date.localeCompare(logFor(a).pop().date));
+        // Finished workouts only, like the Log tab
+        const log = finishedLog();
+        const names = Object.keys(log)
+            .sort((a, b) => log[b][log[b].length - 1].date.localeCompare(log[a][log[a].length - 1].date));
         $("th-now").textContent = mode === "endurance" ? "Reps now" : "Now";
         $("th-next").textContent = mode === "endurance" ? "Reps in 8 weeks" : "In 8 weeks";
         if (!names.length) {
-            tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Nothing logged yet. Open your <a href="programs.html">plan</a> and tap <strong>Log sets</strong> on any exercise. You can add past workouts by changing the date.</td></tr>`;
+            tbody.innerHTML = `<tr class="empty-row"><td colspan="5">Nothing here yet. Open your <a href="programs.html">plan</a>, tap <strong>Log sets</strong> on any exercise, then <strong>Finish workout</strong>.${Object.keys(getLog()).length ? " You have sets in a workout you haven't finished yet." : ""}</td></tr>`;
             $("lift-chart").innerHTML = "";
             $("lift-chart-title").textContent = "Your chart appears after you log a lift";
             $("lift-chart-note").textContent = "";
@@ -7201,7 +7222,7 @@ function setupDashboard() {
         tbody.innerHTML = names.map((n) => {
             const x = liftSummary(n, profile);
             const lastText = x.lastSets.map((s) => (s.w ? `${trimNum(s.w)}×${s.r}` : `${s.r}`)).join(", ");
-            const strength = [`${fmt(x.nowMax)} ${u} max`, `${fmt(x.laterMax)} ${u} max`];
+            const strength = [`${liftNum(x.nowMax, u)} ${u} max`, `${liftNum(x.laterMax, u)} ${u} max`];
             const endurance = x.top ? [`${x.nowReps} reps @ ${trimNum(x.top)}`, `${x.laterReps} reps @ ${trimNum(x.top)}`] : ["Bodyweight", "Bodyweight"];
             let cells = mode === "strength" ? strength : mode === "endurance" ? endurance
                 : [`${strength[0]}<small>${endurance[0]}</small>`, `${strength[1]}<small>${endurance[1]}</small>`];
@@ -7216,7 +7237,7 @@ function setupDashboard() {
             </tr>`;
         }).join("");
         // Default chart: the lift with the most sessions (the clearest trend)
-        const most = names.slice().sort((a, b) => logFor(b).length - logFor(a).length)[0];
+        const most = names.slice().sort((a, b) => log[b].length - log[a].length)[0];
         drawLift(selected && names.includes(selected) ? selected : most, profile, mode);
     }
 

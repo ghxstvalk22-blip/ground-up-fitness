@@ -974,6 +974,35 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // My progress counts the same way everywhere: finished workouts only, and matching best-lift numbers
+        {
+            const { page, errors } = await openPage(browser, "me.html", viewport);
+            await page.evaluate(() => {
+                localStorage.clear();
+                const d = (k) => { const x = new Date(); x.setDate(x.getDate() - k); return x.toISOString().slice(0, 10); };
+                localStorage.setItem("gu-log", JSON.stringify({
+                    "Bench press": [{ date: d(7), unit: "lb", sets: [{ w: 135, r: 6 }, { w: 135, r: 6 }] }, { date: d(0), unit: "lb", sets: [{ w: 145, r: 6 }, { w: 145, r: 6 }, { w: 145, r: 5 }] }],
+                    // Logged today but never finished: it shouldn't count anywhere yet
+                    Squat: [{ date: d(0), unit: "lb", sets: [{ w: 200, r: 5 }, { w: 200, r: 5 }] }]
+                }));
+                localStorage.setItem("gu-sessions", JSON.stringify([7, 0].map((k) => ({ date: d(k), plan: "beginner", days: 3, day: 0, title: "Full body A", names: ["Bench press"], exercises: 1, sets: 3, reps: 17, volume: 0, unit: "lb" }))));
+            });
+            await page.reload();
+            await page.waitForTimeout(300);
+            const stats = await page.locator("#me-stats").textContent();
+            const hello = await page.locator("#me-dash .dash-hello h2").textContent();
+            check(/Workout days\s*1/.test(stats) && /Sets logged\s*3/.test(stats) && /^1 workout day this week/.test(hello), `the dashboard and this week's stats count the same finished workouts (${hello.trim().slice(0, 30)} | ${stats.replace(/\s+/g, " ").slice(0, 40)})`);
+            check(await page.evaluate(() => milestones().find((m) => m.name === "100 sets").detail === "5 of 100 sets"), "milestones count sets from finished workouts only");
+            const best = await page.locator("#me-dash .dash-best li").first().textContent();
+            check(/Bench press/.test(best) && /175 lb/.test(best) && /\+12\.5 lb/.test(best) && await page.locator("#me-dash .dash-best li").count() === 1, `best lifts skip unfinished workouts and show the gain with its unit (${best.trim()})`);
+            await page.click('[data-me-go="lifts"]');
+            const lifts = await page.locator("#lift-table tbody").textContent();
+            check(/Bench press/.test(lifts) && !/Squat/.test(lifts) && /175 lb max/.test(lifts), `the Lifts tab lists finished workouts and its number matches the dashboard (${lifts.replace(/\s+/g, " ").slice(0, 80)})`);
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.evaluate(() => localStorage.clear());
+            await page.close();
+        }
+
         // Things testers hit mid-workout (phone walkthroughs): landing spot, logging, timer, finish, numbers
         {
             const { page, errors } = await openPage(browser, "index.html", viewport);
@@ -1031,7 +1060,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.evaluate(() => /s$/.test(dayLineup("beginner", 3, 0, [{ n: "Dead bug", d: "3 × 8 per side", rest: "45 s" }], 1, { "w1:0-0": "Plank" })[0].d)), "a plank swapped in for a dead bug is timed, not 8 per side");
             check(await page.evaluate(() => { store.set("gu-swaps-custom-2", { "w1:0-1": "Push-up", "w1:1-0": "Pull-up" }); clearCustomSwaps(0); const sw = store.get("gu-swaps-custom-2"); return !sw["w1:0-1"] && sw["w1:1-0"] === "Pull-up"; }), "editing a day clears its swaps (and only its swaps)");
             // Bodyweight moves don't show NaN on My progress
-            await page.evaluate(() => { const d = new Date().toISOString().slice(0, 10); localStorage.setItem("gu-log", JSON.stringify({ "Glute bridge": [{ date: d, unit: "lb", sets: [{ w: 0, r: 15 }] }] })); });
+            await page.evaluate(() => { const d = new Date().toISOString().slice(0, 10); localStorage.setItem("gu-log", JSON.stringify({ "Glute bridge": [{ date: d, unit: "lb", sets: [{ w: 0, r: 15 }] }] })); localStorage.setItem("gu-sessions", JSON.stringify([{ date: d, plan: "home", days: 3, day: 0, title: "Day 1", names: ["Glute bridge"], exercises: 1, sets: 1, reps: 15, volume: 0, unit: "lb" }])); });
             await page.goto(url("me.html", "#lifts"), { waitUntil: "load" });
             await page.waitForTimeout(300);
             check(!/NaN/.test(await page.locator("#lifts").textContent()) && /15 reps/.test(await page.locator("#lift-table").textContent()), "bodyweight moves show reps, not NaN, on My progress");
