@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · What this workout hits
+
+- **New button on every day: "What this workout hits."** Tap it any time to see the body map for that day. Orange shows the muscles it works, and stripes show muscles worked by 2 or more exercises. Below that, each muscle is listed with the exercises that hit it, plus what it works a little. It's the same view as Build your own workout, there whenever you want a reminder. It works on ready-made plans too.
+- **Fix: "− set" works on Your plan.** Your goal and time settings were changing the number of sets on workouts you built yourself, so a day could show 5 sets while "− set" was greyed out. On your own plan, the sets you pick now always win: what you see is what you saved, and "− set" goes down to 1. Ready-made plans still adjust to your goal.
+- **Fix:** some buttons (like "Put it in the best order") showed the phone's plain blue default look. They now use the site's black-and-white style.
+
 ## 2026-10-14 · Your plan puts itself in the right order
 
 - **Every workout you build is saved in the order to do it.** Just go top to bottom; the exercises are numbered 1, 2, 3. The order follows standard training practice:

@@ -2050,19 +2050,20 @@ function personalDose(program, item, slot, profile, week = 1, light = false) {
         if (profile.experience === "new" && slot > 0 && d.sets > 2) { d.sets -= 1; notes.push("1 fewer set while you're new"); changed = true; }
         if (profile.focus && muscleGroup(item.name) === profile.focus && d.sets < 5) { d.sets += 1; notes.push("+1 set for your focus"); changed = true; }
     }
-    // Your answers in Your starting point
+    // Your answers in Your starting point (not on Your plan: there, the sets and reps you picked are the ones you get)
+    const own = program === "custom";
     // Strength (NSCA: 1 to 6 reps, 2 to 6 sets, 2 to 5 min rest): the main lift goes heavy
-    if (profile.goal === "strength" && slot === 0 && d.high >= 6 && !isCardio(item.name || item.n || "") && equipOf(item.name || item.n || "") !== "body") {
+    if (!own && profile.goal === "strength" && slot === 0 && d.high >= 6 && !isCardio(item.name || item.n || "") && equipOf(item.name || item.n || "") !== "body") {
         const newer = !levelAtLeast("Intermediate");
         d.sets = newer ? 3 : 4; d.low = newer ? 5 : 3; d.high = 5;
         notes.push("Your goal: strength. Heavier, fewer reps"); changed = true;
     }
-    if (profile.goal === "fatloss" && slot > 0 && d.high <= 12 && d.high >= 6) {
+    if (!own && profile.goal === "fatloss" && slot > 0 && d.high <= 12 && d.high >= 6) {
         d.low += 2; d.high += 3;
         notes.push("Your goal: lose fat. A few more reps, short rests"); changed = true;
     }
-    if (profile.minutes === "30" && slot >= 2 && d.sets > 2) { d.sets -= 1; notes.push("1 fewer set: 30-minute sessions"); changed = true; }
-    if (profile.minutes === "90" && slot <= 1 && d.sets < 5 && profile.goal !== "health") { d.sets += 1; notes.push("+1 set: you have time"); changed = true; }
+    if (!own && profile.minutes === "30" && slot >= 2 && d.sets > 2) { d.sets -= 1; notes.push("1 fewer set: 30-minute sessions"); changed = true; }
+    if (!own && profile.minutes === "90" && slot <= 1 && d.sets < 5 && profile.goal !== "health") { d.sets += 1; notes.push("+1 set: you have time"); changed = true; }
     if ((profile.age === "50-59" || profile.age === "60+") && slot === 0) notes.push("Warm up with 1 or 2 light sets first");
     // ...then the week's wave changes it from there
     if (plan.waves !== false && levelAtLeast("Advanced")) {
@@ -2609,13 +2610,13 @@ function setupPrograms() {
         const b = dayBalance(names, goalKeyFor());
         const bits = [];
         if (!isIdentity(smartOrder(names))) {
-            bits.push(`<p><strong>There's a better order for this day.</strong> Big lifts first while you're fresh, smaller moves after, and no muscle twice in a row.</p>
-                <button type="button" class="btn btn-compact" data-fix-order="${di}">Put it in the best order</button>`);
+            bits.push(`<p><strong>There's a better order for this day.</strong> Big lifts first while you're fresh, smaller moves after, and the same muscle spread out.</p>
+                <button type="button" class="btn btn-primary btn-compact" data-fix-order="${di}">Put it in the best order</button>`);
         }
         if (b.heavy) {
             const m = MUSCLE_WORD[b.heavy.muscle] || b.heavy.muscle;
             bits.push(`<p><strong>${b.heavy.count} ${escapeHtml(m)} exercises.</strong> ${b.heavy.limit} is plenty in one workout; past that it's mostly extra tiredness.${b.heavy.suggest ? ` Swap <strong>${escapeHtml(names[b.heavy.replace])}</strong> for <strong>${escapeHtml(b.heavy.suggest)}</strong> (${escapeHtml(BUILD_MUSCLE_NAME[b.heavy.to].toLowerCase())})?` : ""}</p>
-                ${b.heavy.suggest ? `<button type="button" class="btn btn-compact" data-balance-swap="${di}" data-from="${b.heavy.replace}" data-to="${escapeHtml(b.heavy.suggest)}">Swap it</button>` : ""}`);
+                ${b.heavy.suggest ? `<button type="button" class="btn btn-primary btn-compact" data-balance-swap="${di}" data-from="${b.heavy.replace}" data-to="${escapeHtml(b.heavy.suggest)}">Swap it</button>` : ""}`);
         }
         return bits.length ? `<div class="day-balance" role="note">${bits.join("")}</div>` : "";
     }
@@ -2750,6 +2751,7 @@ function setupPrograms() {
                     <h4>${escapeHtml(day.title)}</h4>
                     ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button><button type="button" class="chip" data-share-day="${di}">Share</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
                 </header>
+                ${!filed[di] ? `<button type="button" class="btn btn-compact day-hits" data-hits="${di}"><span class="day-hits-icon" aria-hidden="true"></span>What this workout hits</button>` : ""}
                 ${state.goal === "custom" && !filed[di] ? balanceNote(di) : ""}
                 ${filed[di] ? `<div class="day-filed"><p class="day-filed-note"><span class="day-filed-check" aria-hidden="true">&#10003;</span><span><strong>Saved to Progress.</strong> ${escapeHtml(filed[di])}</span></p><p class="day-filed-links"><a class="text-link" href="me.html#log">See it in Progress</a> <button type="button" class="text-button" data-show-filed="${di}" aria-expanded="false">Show the workout</button></p></div>` : ""}
                 <ul class="ex-list"${filed[di] ? " hidden" : ""}>
@@ -3208,6 +3210,14 @@ function setupPrograms() {
         }
         const ed = e.target.closest("[data-edit-day]");
         if (ed) { editCustomWorkout(Number(ed.dataset.editDay)); return; }
+        // What this workout hits: the body map for this day
+        const hb = e.target.closest("[data-hits]");
+        if (hb) {
+            const di = Number(hb.dataset.hits);
+            const day = weekDays(PROGRAMS[state.goal].plans[state.days], state.week)[di];
+            showMuscleHits((lineups[di] || []).map((x) => x.name), day ? `Day ${di + 1}: ${day.title}` : "");
+            return;
+        }
         // Your plan: put the day in a better order, or swap an extra exercise for a muscle the day is missing
         const fo = e.target.closest("[data-fix-order]");
         if (fo) {
@@ -5724,6 +5734,73 @@ function setupShareWorkout() {
         store.remove("gu-share-added");
         setTimeout(() => showToast("Workout added", added.text), 400);
     }
+}
+
+/* =========================================================
+   What this workout hits (any day, any plan)
+   The same body map as Build your own workout: orange = worked, striped = worked
+   twice or more, plus each muscle with the exercises in today's workout that hit it.
+   ========================================================= */
+let hitsArtLoading = false;
+function loadMuscleArt(then) {
+    if (typeof MUSCLE_ART !== "undefined") { then(); return; }
+    if (hitsArtLoading) { setTimeout(() => loadMuscleArt(then), 200); return; }
+    hitsArtLoading = true;
+    const ref = document.querySelector('script[src*="script.js"]');
+    const src = ref ? ref.getAttribute("src") : "";
+    const sc = document.createElement("script");
+    sc.src = `muscle-art.js${src.includes("?") ? src.slice(src.indexOf("?")) : ""}`;
+    sc.onload = () => { hitsArtLoading = false; then(); };
+    sc.onerror = () => { hitsArtLoading = false; };
+    document.head.appendChild(sc);
+}
+function showMuscleHits(names, title) {
+    if (typeof MUSCLE_MAP === "undefined" || typeof exerciseHeads !== "function") return;
+    const list = names.filter((n) => EXERCISES[n] && !isCardio(n));
+    let dlg = document.getElementById("hits-dialog");
+    if (!dlg) {
+        document.body.insertAdjacentHTML("beforeend", `<dialog id="hits-dialog" class="finish-dialog hits-dialog" aria-labelledby="hits-title"><div class="finish-inner"></div></dialog>`);
+        dlg = document.getElementById("hits-dialog");
+        dlg.addEventListener("click", (ev) => { if (ev.target === dlg || ev.target.closest("[data-hits-close]")) { if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); } });
+    }
+    const mainCount = {}, alsoSet = new Set(), byGroup = {};
+    list.forEach((n) => {
+        const h = exerciseHeads(n);
+        h.main.forEach((id) => { const mp = mmPart(id); if (!mp) return; mainCount[id] = (mainCount[id] || 0) + 1; (byGroup[mp.g.id] = byGroup[mp.g.id] || new Set()).add(n); });
+        h.also.forEach((id) => alsoSet.add(id));
+    });
+    const groups = MUSCLE_MAP.filter((g) => byGroup[g.id]);
+    const missing = MUSCLE_MAP.filter((g) => !byGroup[g.id] && g.parts.some((pt) => alsoSet.has(pt.id)));
+    const inner = dlg.querySelector(".finish-inner");
+    inner.innerHTML = `
+        <p class="finish-kicker">What this workout hits</p>
+        <h2 id="hits-title">${escapeHtml(title || "Today's workout")}</h2>
+        <div class="bc-bodies hits-bodies" aria-hidden="true"></div>
+        <p class="hits-key"><span class="hits-sw hits-sw-1"></span> Worked <span class="hits-sw hits-sw-2"></span> Worked by 2 or more exercises</p>
+        <ul class="hits-list">${groups.map((g) => {
+            const two = g.parts.some((pt) => (mainCount[pt.id] || 0) >= 2);
+            return `<li><strong>${escapeHtml(g.name)}</strong>${two ? ` <b class="bc-x2">2+ exercises</b>` : ""}<span>${[...byGroup[g.id]].map((n) => escapeHtml(n)).join(", ")}</span></li>`;
+        }).join("")}</ul>
+        ${missing.length ? `<p class="hits-also">Also works a little: ${escapeHtml(missing.map((g) => g.name.toLowerCase()).join(", "))}.</p>` : ""}
+        <div class="finish-actions"><button type="button" class="btn btn-primary" data-hits-close>Got it</button></div>`;
+    if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e) { dlg.setAttribute("open", ""); } } else dlg.setAttribute("open", "");
+    // The drawing loads only when someone asks for it
+    loadMuscleArt(() => {
+        const bodies = inner.querySelector(".hits-bodies");
+        if (!bodies || typeof muscleMapSvg !== "function") return;
+        const sex = getProfile().sex === "female" ? "female" : "male";
+        bodies.innerHTML = ["front", "back"].map((v) => `<div class="bc-body"><span>${v === "front" ? "Front" : "Back"}</span>${muscleMapSvg(sex, v)}</div>`).join("");
+        bodies.querySelectorAll("path[data-parts]").forEach((pth) => {
+            const n = Math.max(0, ...pth.getAttribute("data-parts").split(" ").map((i) => mainCount[i] || 0));
+            if (n >= 2) pth.classList.add("hit-2"); else if (n === 1) pth.classList.add("hit-1");
+        });
+        bodies.querySelectorAll("svg").forEach((svg, k) => {
+            const defs = svg.querySelector("defs");
+            if (defs) defs.insertAdjacentHTML("beforeend", `<pattern id="hits-hatch-${k}" patternUnits="userSpaceOnUse" width="22" height="22" patternTransform="rotate(45)"><rect width="22" height="22" fill="#ff5a1f"/><rect width="9" height="22" fill="#1a1a1a"/></pattern>`);
+            svg.querySelectorAll("path.hit-2").forEach((pth) => pth.setAttribute("style", `fill:url(#hits-hatch-${k})`));
+        });
+        bodies.querySelectorAll(".mm-muscle").forEach((g) => { g.removeAttribute("tabindex"); g.removeAttribute("role"); });
+    });
 }
 
 function setupPlanBar() {

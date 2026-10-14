@@ -3642,3 +3642,23 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .ex-main .ex-muscle { justify-self: start; align-self: start; width: max-content; max-width: 100%; margin: 4px 0 6px; }
 .ex-title { display: flex; align-items: center; gap: 0; }
 .ex-title .ex-step { flex: 0 0 auto; }
+
+/* Buttons with no color class get the site's outline style (not the phone's default blue) */
+:where(button.btn) { background-color: transparent; color: var(--ink); border-color: var(--ink); }
+
+/* What this workout hits */
+.day-hits { margin: 6px 0 4px; min-height: 44px; border-color: var(--ink); color: var(--ink); background-color: transparent; }
+.day-hits-icon { width: 12px; height: 12px; border-radius: 50%; background-color: var(--volt); box-shadow: 0 0 0 3px rgba(255, 90, 31, 0.25); }
+.hits-dialog { --mm-skin: #ece8df; --mm-line: #b9b1a2; --mm-muscle: #d8d1c3; --mm-hot: #d7263d; --mm-warm: #efb1b8; --mm-hair: #2a2724; --bc-once: #ff5a1f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hits-dialog { --mm-skin: #262626; --mm-line: #5c5c5c; --mm-muscle: #474747; --mm-hot: #e5394f; --mm-warm: #6e3940; --mm-hair: #0d0d0d; } }
+:root[data-theme="dark"] .hits-dialog { --mm-skin: #262626; --mm-line: #5c5c5c; --mm-muscle: #474747; --mm-hot: #e5394f; --mm-warm: #6e3940; --mm-hair: #0d0d0d; }
+.hits-dialog .bc-body .mm-muscle path.hit-1 { fill: var(--bc-once); stroke: #b23c0f; }
+.hits-bodies { margin: 10px 0; min-height: 240px; }
+.hits-key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 0.85rem; color: var(--muted); }
+.hits-sw { display: inline-block; width: 14px; height: 14px; border: 1px solid var(--line); }
+.hits-sw-1 { background-color: #ff5a1f; }
+.hits-sw-2 { background: repeating-linear-gradient(45deg, #ff5a1f 0 6px, #1a1a1a 6px 10px); }
+.hits-list { list-style: none; margin: 10px 0; padding: 0; border-top: 1px solid var(--line); }
+.hits-list li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.hits-list li > span { display: block; margin-top: 2px; font-size: 0.9rem; color: var(--muted); }
+.hits-also { font-size: 0.9rem; color: var(--muted); }

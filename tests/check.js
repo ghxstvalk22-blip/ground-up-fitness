@@ -821,6 +821,10 @@ async function openPage(browser, file, viewport, hash = "") {
             const after = await p2.evaluate(() => ({ titles: customDaysRaw().map((d) => d.title), next: currentPlanInfo().title, dose: customDaysRaw()[2].items[0].d }));
             check(after.titles.join(",") === "Legs,Back,Push day,Arms,Core" && after.next === "Push day", `it becomes your Day 3 and the rest move down (${after.titles.join(", ")})`);
             check(after.dose === "4 × 6–8", `the sender's weights aren't shared (${after.dose})`);
+            await p2.locator(".day-card.is-next [data-hits]").click();
+            await p2.waitForTimeout(800);
+            check(await p2.locator("#hits-dialog[open]").isVisible() && /Chest/.test(await p2.locator("#hits-dialog .hits-list").textContent()) && await p2.locator("#hits-dialog path.hit-1, #hits-dialog path.hit-2").count() > 0, "What this workout hits shows the body map and each muscle for today's day");
+            await p2.locator("#hits-dialog [data-hits-close]").click();
             check(await p2.evaluate(() => { const g = document.getElementById("day-grid"); const next = g.querySelector(".day-card.is-next"); const done = [...g.querySelectorAll(".day-card.complete")]; return g.classList.contains("sort-done") && done.length === 2 && next && done.every((d) => d.getBoundingClientRect().top > next.getBoundingClientRect().top) && /Done this week \(2\)/.test(g.textContent); }), "finished days move below the day you're on, under Done this week");
             await p2.goto(url("programs.html") + "#share=notarealcode1234", { waitUntil: "load" });
             await p2.waitForTimeout(400);
