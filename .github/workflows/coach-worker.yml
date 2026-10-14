@@ -1,0 +1,32 @@
+# Deploys the Fitness Coach / rest-alarm Worker (coach-ai/) to Cloudflare whenever it changes.
+# Needs two repository secrets (Settings > Secrets and variables > Actions):
+#   CLOUDFLARE_API_TOKEN   a token made from the "Edit Cloudflare Workers" template
+#   CLOUDFLARE_ACCOUNT_ID  from the Cloudflare dashboard (Workers & Pages, right side)
+# Without them this does nothing. The Anthropic key stays a Cloudflare secret; it never goes here.
+name: Deploy coach Worker
+on:
+  push:
+    branches: [main]
+    paths: ["coach-ai/**", ".github/workflows/coach-worker.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the Cloudflare secrets are set
+        id: ready
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$ACCOUNT" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "Cloudflare secrets not set yet; skipping."; fi
+      - uses: actions/checkout@v4
+        if: steps.ready.outputs.ok == 'true'
+      - uses: cloudflare/wrangler-action@v3
+        if: steps.ready.outputs.ok == 'true'
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: coach-ai

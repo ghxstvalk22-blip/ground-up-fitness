@@ -1,16 +1,27 @@
-# Only needed if you deploy with the Wrangler command line instead of the dashboard.
+# Deployed automatically by .github/workflows/coach-worker.yml (or by hand with `npx wrangler deploy`).
 name = "ground-up-coach"
 main = "worker.js"
 compatibility_date = "2026-09-01"
+# Keep settings added in the Cloudflare dashboard (like MODEL) when deploying from here
+keep_vars = true
 
 [vars]
 ALLOWED_ORIGINS = "https://ghxstvalk22-blip.github.io"
 
-# A stronger rate limit (20 messages per minute per visitor). Command-line deploys only.
-[[ratelimits]]
-name = "LIMITER"
-namespace_id = "1001"
+# Optional stronger rate limit (20 messages a minute per visitor). The Worker has a simple
+# built-in limit without it. To use it, remove the # from these lines:
+# [[ratelimits]]
+# name = "LIMITER"
+# namespace_id = "1001"
+#   [ratelimits.simple]
+#   limit = 20
+#   period = 60
 
-  [ratelimits.simple]
-  limit = 20
-  period = 60
+# Rest alarms: one tiny Durable Object per phone holds the time its rest ends (free plan: SQLite-backed)
+[[durable_objects.bindings]]
+name = "REST_ALARM"
+class_name = "RestAlarm"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RestAlarm"]

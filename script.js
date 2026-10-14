@@ -3531,7 +3531,7 @@ function restNotify(kind, info) {
         const at = new Date(info.endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" });
         const opts = kind === "done"
             ? { body: info.name ? `Time for your next set of ${info.name}.` : "Time for your next set.", tag: "gu-rest", renotify: true, vibrate: [200, 100, 200], icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html" } }
-            : { body: `Next set at ${at}${info.name ? ` · ${info.name}` : ""}${IS_IOS ? ". This won't ring: use Lock Screen timer for an alarm." : ""}`, tag: "gu-rest", silent: true, icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html" } };
+            : { body: `Next set at ${at}${info.name ? ` · ${info.name}` : ""}${IS_IOS && store.get("gu-push") !== true ? ". This won't ring: use Lock Screen timer for an alarm." : ""}`, tag: "gu-rest", silent: true, icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html" } };
         reg.showNotification(kind === "done" ? "Rest over. Go!" : `Resting${info.name ? `: ${info.name}` : ""}`, opts).catch(() => {});
     }).catch(() => {});
 }
@@ -3551,9 +3551,12 @@ function setupRestTimer() {
         </div>
         <p class="rest-timer-at" id="rest-timer-at"></p>
         <button type="button" class="rest-timer-alerts" id="rest-alerts" hidden>Show the timer on my lock screen</button>
+        <div class="rest-push-wrap" id="rest-push-wrap" hidden>
+            <button type="button" class="chip rest-timer-push" id="rest-push">Buzz me when rest is over</button>
+            <p class="rest-ios-note" id="rest-push-note">One tap, once. After that every rest buzzes your phone when it's up, even locked or in another app. No switching apps.</p>
+        </div>
         <div class="rest-ios-wrap" id="rest-ios-wrap" hidden>
             <button type="button" class="chip rest-timer-ios" id="rest-ios">Lock Screen timer</button>
-            <label class="rest-ios-auto" id="rest-ios-auto-wrap" hidden><input type="checkbox" id="rest-ios-auto"> Every rest</label>
             <p class="rest-ios-note" id="rest-ios-note">iPhone pauses web apps when you leave them, so this screen can't ring. The Lock Screen timer uses your iPhone's own Clock timer, which does.</p>
         </div>
     </div>
@@ -3568,10 +3571,11 @@ function setupRestTimer() {
     const alertsBtn = document.getElementById("rest-alerts");
     const iosBtn = document.getElementById("rest-ios");
     const iosWrap = document.getElementById("rest-ios-wrap");
-    const iosAutoWrap = document.getElementById("rest-ios-auto-wrap");
-    const iosAuto = document.getElementById("rest-ios-auto");
-    iosAuto.checked = store.get("gu-ios-timer-auto") === true;
-    iosAuto.addEventListener("change", () => store.set("gu-ios-timer-auto", iosAuto.checked));
+    const pushWrap = document.getElementById("rest-push-wrap");
+    const pushBtn = document.getElementById("rest-push");
+    const pushNote = document.getElementById("rest-push-note");
+    // No more automatic jump to Shortcuts on every rest (the owner didn't want the app switch)
+    store.remove("gu-ios-timer-auto");
     let endAt = 0, total = 0, tick = null, audio = null, restName = "";
     /* iPhone: web apps can't put a live countdown on the Lock Screen, but the iPhone's own Clock timer can
        (it shows on the Lock Screen and in the Dynamic Island). A one-time Shortcut ("Ground Up Rest") starts
@@ -3580,7 +3584,6 @@ function setupRestTimer() {
     const runShortcut = () => {
         const left = Math.max(5, Math.round((endAt - Date.now()) / 1000));
         store.set("gu-ios-timer", true);
-        iosAutoWrap.hidden = false;
         location.href = restShortcutUrl(left);
     };
     iosBtn.addEventListener("click", () => {
@@ -3598,8 +3601,7 @@ function setupRestTimer() {
                     <li>Tap <strong>minutes</strong> and change it to <strong>seconds</strong>.</li>
                     <li>Tap the name at the top, rename it exactly <strong>${SHORTCUT}</strong>, and tap <strong>Done</strong>.</li>
                 </ol>
-                <label class="ios-auto-pick"><input type="checkbox" data-ios-auto> Start it on its own every time I rest</label>
-                <p class="finish-tip">After that, tap <strong>Lock Screen timer</strong> during any rest (or tick <strong>Every rest</strong>). Your phone switches to Shortcuts for a moment to start the timer; swipe back to Ground Up. Lock your phone and the countdown is there. If you finish resting early, stop the timer from the Lock Screen.</p>
+                <p class="finish-tip">After that, tap <strong>Lock Screen timer</strong> during any rest. Your phone switches to Shortcuts for a moment to start the timer; swipe back to Ground Up. Lock your phone and the countdown is there. If you finish resting early, stop the timer from the Lock Screen.</p>
                 <p><a class="btn" href="shortcuts://">Open Shortcuts</a></p>
                 <p class="finish-tip">These steps stay here when you come back.</p>
                 <div class="finish-actions">
@@ -3611,14 +3613,71 @@ function setupRestTimer() {
             dlg.addEventListener("click", (e) => {
                 const shut = () => { if (dlg.open && typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); };
                 if (e.target.closest("[data-ios-go]")) {
-                    const pick = dlg.querySelector("[data-ios-auto]");
-                    if (pick && pick.checked) { store.set("gu-ios-timer-auto", true); iosAuto.checked = true; }
                     shut(); runShortcut();
                 }
                 else if (e.target.closest("[data-ios-close]") || e.target === dlg) shut();
             });
         }
         if (typeof dlg.showModal === "function") dlg.showModal(); else dlg.setAttribute("open", "");
+    });
+    /* Rest alarms by push: the site's own Worker (COACH_AI_URL) buzzes the phone when rest ends, so it
+       works locked or in another app with no app switching. Only an anonymous push address and the end
+       time are sent, and only after the person turns it on. iPhone needs the app on the Home Screen. */
+    const standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+    const pushSupported = () => typeof coachAiOn === "function" && coachAiOn() && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    // Ask the Worker once per visit whether rest alarms are set up there (until then, nothing changes)
+    let pushReady = null;
+    const pushProbe = () => {
+        if (pushReady !== null || !pushSupported()) return;
+        pushReady = false;
+        fetch(`${COACH_AI_URL.replace(/\/$/, "")}/push-key`).then((r) => (r.ok ? r.json() : null)).then((d) => {
+            pushReady = Boolean(d && typeof d.key === "string" && d.key.length > 40);
+            if (pushReady && tick) { showPushChoices(); alertsBtn.hidden = true; }
+        }).catch(() => null);
+    };
+    const pushAble = () => pushSupported() && pushReady === true;
+    const pushOn = () => pushAble() && store.get("gu-push") === true && Notification.permission === "granted";
+    const pushBase = () => COACH_AI_URL.replace(/\/$/, "");
+    const pushSub = () => navigator.serviceWorker.ready.then((reg) => reg.pushManager.getSubscription());
+    function pushSchedule() {
+        if (!pushOn() || !tick) return;
+        const at = endAt;
+        pushSub().then((sub) => {
+            if (!sub) { store.set("gu-push", false); showPushChoices(); return; }
+            return fetch(`${pushBase()}/rest`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sub: sub.toJSON(), at }) })
+                .then((r) => { if (!r.ok) throw new Error("push"); if (endAt === at && tick) atEl.textContent = `${nextAtText()} · alarm set \u2713`; });
+        }).catch(() => { if (tick) atEl.textContent = `${nextAtText()} · couldn't set the alarm, keep the app open`; });
+    }
+    function pushCancel() {
+        if (!pushOn()) return;
+        pushSub().then((sub) => sub && fetch(`${pushBase()}/rest/cancel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) })).catch(() => null);
+    }
+    const nextAtText = () => `Next set at ${new Date(endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
+    function showPushChoices() {
+        const on = pushOn();
+        // Can turn it on here: push works (on iPhone, only from the Home Screen app) and it isn't on yet
+        pushWrap.hidden = on || !pushAble() || (IS_IOS && !standalone) || Notification.permission === "denied";
+        // The Lock Screen timer (Shortcuts) stays as a backup only when push can't be used
+        iosWrap.hidden = !IS_IOS || on || !pushWrap.hidden;
+        if (IS_IOS && !standalone && pushAble() && !on) { iosWrap.hidden = false; document.getElementById("rest-ios-note").textContent = "For a buzz when rest is over with no app switching, add Ground Up to your Home Screen (Share, then Add to Home Screen) and open it from there."; }
+    }
+    pushBtn.addEventListener("click", () => {
+        pushNote.textContent = "Setting it up...";
+        Notification.requestPermission().then((perm) => {
+            if (perm !== "granted") throw new Error("denied");
+            return Promise.all([navigator.serviceWorker.ready, fetch(`${pushBase()}/push-key`).then((r) => (r.ok ? r.json() : Promise.reject(new Error("key"))))]);
+        }).then(([reg, data]) => reg.pushManager.getSubscription().then((old) => old || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: data.key })))
+            .then(() => {
+                store.set("gu-push", true);
+                announce.textContent = "Rest alarms are on. Your phone will buzz when each rest is over.";
+                showPushChoices();
+                pushSchedule();
+            })
+            .catch((err) => {
+                pushNote.textContent = err && err.message === "denied"
+                    ? "Notifications are off for Ground Up. Turn them on in your phone's Settings, then try again."
+                    : "Couldn't turn on rest alarms right now. Try again in a minute.";
+            });
     });
     // While the timer is up, keep room for it so it never covers the set boxes you're typing in
     const room = () => {
@@ -3667,8 +3726,10 @@ function setupRestTimer() {
         time.textContent = "Go!";
         announce.textContent = "Rest over. Time for your next set.";
         atEl.textContent = "";
-        // Out of the app (where the phone lets it run): a lock-screen alert; in the app: clear it
-        if (document.visibilityState === "hidden") restNotify("done", { endAt, total, name: restName }); else restNotify("clear");
+        // Out of the app (where the phone lets it run): a lock-screen alert; in the app: clear it.
+        // With rest alarms on, the push does the alert, so don't double up.
+        if (document.visibilityState === "hidden" && !pushOn()) restNotify("done", { endAt, total, name: restName }); else restNotify("clear");
+        if (document.visibilityState === "visible") pushCancel();
         store.set(REST_KEY, null);
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
         beep();
@@ -3680,9 +3741,9 @@ function setupRestTimer() {
         restName = name || "";
         label.textContent = name ? `Rest · ${name}` : "Rest";
         atEl.textContent = `Next set at ${new Date(endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
-        alertsBtn.hidden = !canAsk() || IS_IOS;
-        iosWrap.hidden = !IS_IOS;
-        iosAutoWrap.hidden = store.get("gu-ios-timer") !== true;
+        alertsBtn.hidden = !canAsk() || IS_IOS || pushAble();
+        pushProbe();
+        showPushChoices();
         // The "why" note shows the first few rests only, then the timer stays compact
         const seen = Number(store.get("gu-ios-note-n")) || 0;
         document.getElementById("rest-ios-note").hidden = store.get("gu-ios-timer") === true || seen >= 3;
@@ -3696,8 +3757,8 @@ function setupRestTimer() {
         update();
         // Unlock audio on phones while we still have the tap
         try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === "suspended") audio.resume(); } catch (e) { /* ignore */ }
-        // iPhone, set up, and "Every rest" on: start the Clock timer right away (we still have the tap)
-        if (IS_IOS && !resumeAt && store.get("gu-ios-timer") === true && store.get("gu-ios-timer-auto") === true) runShortcut();
+        if (!resumeAt) pushSchedule();
+        else if (pushOn()) atEl.textContent = `${nextAtText()} · alarm set \u2713`;
     }
 
     document.addEventListener("click", (e) => {
@@ -3708,16 +3769,19 @@ function setupRestTimer() {
         if (!tick) return;
         endAt += 15000;
         total += 15;
-        atEl.textContent = `Next set at ${new Date(endAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })}`;
+        atEl.textContent = nextAtText();
         save();
         update();
+        pushSchedule();
     });
     const stopRest = () => {
+        const was = Boolean(tick);
         clearInterval(tick);
         tick = null;
         box.hidden = true;
         save();
         restNotify("clear");
+        if (was) pushCancel();
     };
     document.getElementById("rest-stop").addEventListener("click", stopRest);
     // Finishing the workout ends any rest that's still counting

@@ -772,6 +772,19 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 8000 });
             check(sent.length === before && /doctor|physical therapist/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "pain questions still get the built-in safety answer");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            // Rest alarms: once the Worker says it supports them, the timer offers "Buzz me when rest is over"
+            // (the Worker is faked in the page; nothing leaves the test)
+            await page.evaluate(() => { localStorage.setItem("gu-ios-timer-auto", "true"); localStorage.removeItem("gu-coach-open"); });
+            await page.goto(url("programs.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            await page.evaluate(() => {
+                const real = window.fetch;
+                window.fetch = (u, o) => (String(u).endsWith("/push-key") ? Promise.resolve(new Response(JSON.stringify({ key: "B".repeat(87) }), { status: 200 })) : real(u, o));
+            });
+            await page.evaluate(() => document.querySelector("[data-rest]").click());
+            await page.waitForTimeout(500);
+            check(await page.locator("#rest-push").isVisible() && await page.evaluate(() => localStorage.getItem("gu-ios-timer-auto") === null), "rest alarms are offered once the Worker supports them, and nothing jumps to Shortcuts on its own");
+            await page.evaluate(() => window.dispatchEvent(new CustomEvent("reststop")));
             await ctx.close();
         }
 

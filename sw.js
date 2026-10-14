@@ -68,3 +68,15 @@ self.addEventListener("notificationclick", (event) => {
         return open ? open.focus() : self.clients.openWindow(url);
     }));
 });
+
+// Rest alarms: the site's Worker sends a push when rest is over (works locked or in another app)
+self.addEventListener("push", (event) => {
+    let data = {};
+    try { data = event.data ? event.data.json() : {}; } catch (e) { data = {}; }
+    const title = typeof data.title === "string" ? data.title.slice(0, 60) : "Rest over. Go!";
+    const body = typeof data.body === "string" ? data.body.slice(0, 120) : "Time for your next set.";
+    event.waitUntil(self.registration.showNotification(title, {
+        body, tag: "gu-rest", renotify: true, vibrate: [300, 100, 300, 100, 300], requireInteraction: false,
+        icon: "icons/icon-192.png", badge: "icons/icon-192.png", data: { url: "programs.html?today=1" }
+    }));
+});

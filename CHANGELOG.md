@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Rest alarms: a buzz when rest is over, no app switching
+
+- **No more jump to Shortcuts.** Starting a rest no longer opens the Shortcuts app on its own. The "Lock Screen timer" button is still there as a backup, but only where alarms can't be used.
+- **New: Buzz me when rest is over.** Tap it once (and allow notifications). After that, every rest buzzes your phone at the exact second it's over, even with the phone locked or in another app. The timer shows "alarm set ✓". On iPhone this works in the Home Screen app.
+- **How it works:** iPhone pauses web apps in the background, so the site's own small server (the same Cloudflare Worker as the Fitness Coach) sends the buzz. It only gets an anonymous notification address for your phone and the time your rest ends, deletes them when the alarm goes off, and never sees your workouts. It's off until you turn it on, and the privacy answer on Gym basics now says so.
+- **Owner setup:** the Worker now deploys itself from GitHub. Add two secrets once (steps in `coach-ai/README.md`). Until then the app works exactly as before.
+
 ## 2026-10-14 · My progress counts the same way everywhere
 
 - **One rule for counting workouts.** On My progress, the dashboard, this week's numbers, milestones, streaks, and the Lifts tab now count the same thing the Log tab does: a workout counts once you tap **Finish workout** (logged cardio counts too). Testers had seen "1 workout this week" right next to "2 workout days, 20 sets" because half-finished sessions were counted in some places and not others.

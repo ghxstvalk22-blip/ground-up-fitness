@@ -49,7 +49,7 @@ ships **one** focused improvement.
 - Each feature must check for its own elements and return quietly on pages without them.
 - The "training engine" helpers (rotation, weeks, log, targets, projections) are plain functions
   above `setupPrograms`. Reuse them instead of writing new versions.
-- Saved data lives in the visitor's browser only (`store`). Keys start with `gu-`. Never send it anywhere.
+- Saved data lives in the visitor's browser only (`store`). Keys start with `gu-`. Never send it anywhere. The one owner-approved exception is rest alarms (opt-in, `gu-push`): `setupRestTimer` sends only a push subscription and the rest end time to the Worker (`/rest`, `/rest/cancel`, `/push-key` in `coach-ai/worker.js`, a `RestAlarm` Durable Object deployed by `.github/workflows/coach-worker.yml`), which buzzes the phone through `sw.js`'s `push` handler. The automatic jump to Shortcuts on every rest was removed at the owner's request; the Lock Screen timer button stays only as a backup where push can't be used.
 - Links between pages use the page name: `tools.html#tool-1rm`, `programs.html#program-classic-5`.
   A new page needs: the same `<head>`, `<div id="site-header">`, a banner, `<main id="main">`,
   `<div id="site-footer">`, an entry in `SITE_NAV`, and a line in `PAGES` in `tests/check.js`.

@@ -12,7 +12,16 @@
 
    Nothing is stored here. Each request: the last few chat messages in,
    one answer out.
+
+   Rest alarms (optional, needs the Durable Object in wrangler.toml, deployed by the
+   GitHub Action in .github/workflows/coach-worker.yml):
+     GET  /push-key     the public key phones use to sign up for alarms
+     POST /rest         { sub, at }  buzz this phone at time "at" (ms)
+     POST /rest/cancel  { endpoint } never mind (finished early)
+   Only the phone's anonymous push address and the end time are kept, and only
+   until the alarm goes off. The alarm itself carries no workout details.
    ========================================================= */
+import { DurableObject } from "cloudflare:workers";
 
 const SYSTEM = `You are Fitness Coach, the chat helper on Ground Up Fitness, a free, beginner-friendly website for adults who are losing weight, lifting, or starting at the gym.
 
@@ -53,18 +62,122 @@ function tooMany(ip) {
     return list.length > 12;
 }
 
+/* ---------- Web Push (RFC 8291 encryption + RFC 8292 VAPID), with WebCrypto ---------- */
+const enc = new TextEncoder();
+const b64u = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const unb64u = (s) => Uint8Array.from(atob(String(s).replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(String(s).length / 4) * 4, "=")), (c) => c.charCodeAt(0));
+const concat = (...parts) => { const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0)); let o = 0; parts.forEach((p) => { out.set(p, o); o += p.length; }); return out; };
+async function hmac(key, data) {
+    const k = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    return new Uint8Array(await crypto.subtle.sign("HMAC", k, data));
+}
+// Only real browser push services (never any other address)
+const PUSH_HOSTS = /^(web\.push\.apple\.com|[a-z0-9-]+\.push\.apple\.com|fcm\.googleapis\.com|updates\.push\.services\.mozilla\.com|[a-z0-9-]+\.notify\.windows\.com)$/i;
+function cleanSub(sub) {
+    try {
+        const u = new URL(sub.endpoint);
+        if (u.protocol !== "https:" || !PUSH_HOSTS.test(u.hostname) || sub.endpoint.length > 1000) return null;
+        const p256dh = unb64u(sub.keys.p256dh), auth = unb64u(sub.keys.auth);
+        if (p256dh.length !== 65 || auth.length !== 16) return null;
+        return { endpoint: sub.endpoint, keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth } };
+    } catch (e) { return null; }
+}
+async function sendPush(sub, payload, vapid, contact) {
+    const uaPublic = unb64u(sub.keys.p256dh), authSecret = unb64u(sub.keys.auth);
+    const local = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+    const asPublic = new Uint8Array(await crypto.subtle.exportKey("raw", local.publicKey));
+    const uaKey = await crypto.subtle.importKey("raw", uaPublic, { name: "ECDH", namedCurve: "P-256" }, false, []);
+    const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: uaKey }, local.privateKey, 256));
+    const prkKey = await hmac(authSecret, shared);
+    const ikm = await hmac(prkKey, concat(enc.encode("WebPush: info\0"), uaPublic, asPublic, new Uint8Array([1])));
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const prk = await hmac(salt, ikm);
+    const cek = (await hmac(prk, concat(enc.encode("Content-Encoding: aes128gcm\0"), new Uint8Array([1])))).slice(0, 16);
+    const nonce = (await hmac(prk, concat(enc.encode("Content-Encoding: nonce\0"), new Uint8Array([1])))).slice(0, 12);
+    const aes = await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["encrypt"]);
+    const cipher = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aes, concat(enc.encode(payload), new Uint8Array([2]))));
+    const header = concat(salt, new Uint8Array([0, 0, 16, 0]), new Uint8Array([asPublic.length]), asPublic);
+    // VAPID: a short signed note saying which server sent it
+    const jwtHead = b64u(enc.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+    const jwtBody = b64u(enc.encode(JSON.stringify({ aud: new URL(sub.endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: contact })));
+    const signKey = await crypto.subtle.importKey("jwk", vapid.privateJwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
+    const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, signKey, enc.encode(`${jwtHead}.${jwtBody}`));
+    return fetch(sub.endpoint, {
+        method: "POST",
+        headers: { Authorization: `vapid t=${jwtHead}.${jwtBody}.${b64u(sig)}, k=${vapid.publicKey}`, "Content-Encoding": "aes128gcm",
+            "Content-Type": "application/octet-stream", TTL: "120", Urgency: "high" },
+        body: concat(header, cipher)
+    });
+}
+
+/* One small Durable Object per phone (named by a hash of its push address) holds the next alarm.
+   A separate one named "vapid" holds this server's signing key, made once on first use. */
+export class RestAlarm extends DurableObject {
+    async vapid() {
+        let v = await this.ctx.storage.get("vapid");
+        if (!v) {
+            const pair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]);
+            v = { privateJwk: await crypto.subtle.exportKey("jwk", pair.privateKey), publicKey: b64u(await crypto.subtle.exportKey("raw", pair.publicKey)) };
+            await this.ctx.storage.put("vapid", v);
+        }
+        return v;
+    }
+    async schedule(sub, at) {
+        await this.ctx.storage.put("job", { sub, at });
+        await this.ctx.storage.setAlarm(at);
+    }
+    async cancel() {
+        await this.ctx.storage.deleteAlarm();
+        await this.ctx.storage.deleteAll();
+    }
+    async alarm() {
+        const job = await this.ctx.storage.get("job");
+        await this.ctx.storage.deleteAll();
+        if (!job) return;
+        const vapid = await this.env.REST_ALARM.get(this.env.REST_ALARM.idFromName("vapid")).vapid();
+        const contact = String(this.env.ALLOWED_ORIGINS || "").split(",")[0].trim() || "https://example.com";
+        await sendPush(job.sub, JSON.stringify({ title: "Rest over. Go!", body: "Time for your next set." }), vapid, contact).catch(() => null);
+    }
+}
+const alarmFor = async (env, endpoint) => env.REST_ALARM.get(env.REST_ALARM.idFromName(b64u(await crypto.subtle.digest("SHA-256", enc.encode(endpoint)))));
+
 export default {
     async fetch(request, env) {
         const allowed = String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim().replace(/\/$/, "")).filter(Boolean);
         const origin = request.headers.get("Origin") || "";
         const cors = {
             "Access-Control-Allow-Origin": allowed.includes(origin) ? origin : allowed[0] || "null",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type",
             "Access-Control-Max-Age": "86400",
             Vary: "Origin"
         };
         if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors });
+        const path = new URL(request.url).pathname.replace(/\/+$/, "");
+        // Rest alarms
+        if (path === "/push-key" || path === "/rest" || path === "/rest/cancel") {
+            if (!allowed.includes(origin)) return json({ error: "Not allowed." }, 403, cors);
+            if (!env.REST_ALARM) return json({ error: "Rest alarms aren't set up yet." }, 503, cors);
+            if (path === "/push-key") {
+                const v = await env.REST_ALARM.get(env.REST_ALARM.idFromName("vapid")).vapid();
+                return json({ key: v.publicKey }, 200, cors);
+            }
+            if (request.method !== "POST") return json({ error: "Use POST." }, 405, cors);
+            const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+            if (tooMany(`rest:${ip}`)) return json({ error: "Too many." }, 429, cors);
+            let b;
+            try { b = await request.json(); } catch (e) { return json({ error: "Bad request." }, 400, cors); }
+            if (path === "/rest/cancel") {
+                if (typeof b.endpoint !== "string" || b.endpoint.length > 1000) return json({ error: "Bad request." }, 400, cors);
+                await (await alarmFor(env, b.endpoint)).cancel();
+                return json({ ok: true }, 200, cors);
+            }
+            const sub = cleanSub(b && b.sub || {});
+            const at = Number(b && b.at);
+            if (!sub || !(at > Date.now() + 2000 && at < Date.now() + 15 * 60000)) return json({ error: "Bad request." }, 400, cors);
+            await (await alarmFor(env, sub.endpoint)).schedule(sub, Math.round(at));
+            return json({ ok: true }, 200, cors);
+        }
         if (request.method !== "POST") return json({ error: "Use POST." }, 405, cors);
         if (!allowed.includes(origin)) return json({ error: "This site isn't allowed to use the coach." }, 403, cors);
         if (!env.ANTHROPIC_API_KEY) return json({ error: "The coach isn't set up yet." }, 503, cors);

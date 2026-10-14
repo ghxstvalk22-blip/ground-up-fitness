@@ -3531,11 +3531,9 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 
 /* iPhone: start the Clock timer (Lock Screen + Dynamic Island) */
 .rest-ios-wrap { grid-column: 1 / -1; flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 6px; }
-.rest-ios-wrap[hidden], .rest-ios-auto[hidden] { display: none; }
+.rest-ios-wrap[hidden], .rest-push-wrap[hidden] { display: none; }
 .rest-timer-ios { min-height: 44px; background-color: var(--volt); color: #000000; border-color: var(--volt); font-weight: 800; }
 .rest-timer-ios::before { content: ""; display: inline-block; width: 10px; height: 10px; margin-right: 8px; border-radius: 50%; background-color: #000000; }
-.rest-ios-auto { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: #ffffff; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
-.rest-ios-auto input, .ios-auto-pick input { width: 20px; height: 20px; accent-color: var(--volt); }
 .rest-ios-note { flex-basis: 100%; margin: 2px 0 0; font-size: 0.75rem; line-height: 1.35; color: #bdbdbd; }
 .ios-auto-pick { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; }
 .ios-steps { margin: 12px 0; padding-left: 22px; }
@@ -3573,3 +3571,6 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .setup-body .field-row { display: grid; grid-template-columns: 1fr 1.5fr 1fr; gap: 12px; }
 .setup-body .pair input { flex: 1 1 56px; min-width: 56px; }
 @media (max-width: 640px) { .setup-body .field-row { grid-template-columns: 1fr 1.5fr; } }
+
+.rest-push-wrap { grid-column: 1 / -1; flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 6px; }
+.rest-timer-push { min-height: 44px; background-color: var(--volt); color: #000000; border-color: var(--volt); font-weight: 800; }

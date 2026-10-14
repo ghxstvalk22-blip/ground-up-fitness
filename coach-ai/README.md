@@ -53,3 +53,35 @@ covers the server.
   doctor or physical therapist for pain, registered dietitian for eating plans, no
   supplements beyond the basics, nothing for under-18s. Pain and under-18 questions are
   still answered by the built-in safety replies without going to the AI at all.
+
+
+# Rest alarms (buzz when rest is over, no app switching)
+
+iPhone pauses web apps when you leave them, so the app can't ring by itself. With this on, your
+Worker sends a push notification at the exact second each rest ends. It works with the phone locked
+or in another app. On iPhone it works in the Home Screen app (Share > Add to Home Screen).
+
+What's sent: only an anonymous push address for the phone and the time the rest ends. It's
+deleted when the alarm goes off. No workout details, names, or logs. Turning it on is opt-in.
+
+## One-time setup (about 5 minutes)
+
+The rest alarms need a small piece of storage on Cloudflare (a "Durable Object", free plan), which
+the dashboard's copy-and-paste can't create. So GitHub deploys the Worker for you instead:
+
+1. **Cloudflare token.** In Cloudflare: **My Profile > API Tokens > Create Token**, pick the
+   **Edit Cloudflare Workers** template, then **Continue to summary > Create Token**. Copy it.
+2. **Account ID.** In Cloudflare: **Workers & Pages**. Copy the **Account ID** on the right.
+3. **Add both to GitHub.** In your repo: **Settings > Secrets and variables > Actions >
+   New repository secret**:
+   - `CLOUDFLARE_API_TOKEN`: the token from step 1
+   - `CLOUDFLARE_ACCOUNT_ID`: the ID from step 2
+4. **Deploy.** In your repo: **Actions > Deploy coach Worker > Run workflow**. It turns green in
+   about a minute. (After this it redeploys by itself whenever `coach-ai/` changes.)
+
+Your Anthropic key and the other settings you added in the dashboard stay as they are.
+
+## Use it
+
+Start a rest in the app and tap **Buzz me when rest is over** once (allow notifications when
+asked). From then on every rest shows "alarm set ✓" and your phone buzzes when it's time.
