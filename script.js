@@ -2601,6 +2601,24 @@ function setupPrograms() {
     };
     let lineups = []; // what's on screen, per day
     let firstTipShown = new Set();
+    // Your plan: back-to-back muscles and too much of one muscle, with a one-tap fix
+    const goalKeyFor = () => ({ strength: "strength", fatloss: "fit", health: "fit" }[getProfile().goal] || "muscle");
+    function balanceNote(di) {
+        const names = (lineups[di] || []).map((x) => x.name);
+        if (names.length < 3) return "";
+        const b = dayBalance(names, goalKeyFor());
+        const bits = [];
+        if (!isIdentity(smartOrder(names))) {
+            bits.push(`<p><strong>There's a better order for this day.</strong> Big lifts first while you're fresh, smaller moves after, and no muscle twice in a row.</p>
+                <button type="button" class="btn btn-compact" data-fix-order="${di}">Put it in the best order</button>`);
+        }
+        if (b.heavy) {
+            const m = MUSCLE_WORD[b.heavy.muscle] || b.heavy.muscle;
+            bits.push(`<p><strong>${b.heavy.count} ${escapeHtml(m)} exercises.</strong> ${b.heavy.limit} is plenty in one workout; past that it's mostly extra tiredness.${b.heavy.suggest ? ` Swap <strong>${escapeHtml(names[b.heavy.replace])}</strong> for <strong>${escapeHtml(b.heavy.suggest)}</strong> (${escapeHtml(BUILD_MUSCLE_NAME[b.heavy.to].toLowerCase())})?` : ""}</p>
+                ${b.heavy.suggest ? `<button type="button" class="btn btn-compact" data-balance-swap="${di}" data-from="${b.heavy.replace}" data-to="${escapeHtml(b.heavy.suggest)}">Swap it</button>` : ""}`);
+        }
+        return bits.length ? `<div class="day-balance" role="note">${bits.join("")}</div>` : "";
+    }
     let notesShown = {};
     // Make the plan on screen "your plan": when you start it, log in it, tick something, or tap Switch
     const adopt = () => { store.set("gu-last-plan", { goal: state.goal, days: state.days }); };
@@ -2732,6 +2750,7 @@ function setupPrograms() {
                     <h4>${escapeHtml(day.title)}</h4>
                     ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button><button type="button" class="chip" data-share-day="${di}">Share</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
                 </header>
+                ${state.goal === "custom" && !filed[di] ? balanceNote(di) : ""}
                 ${filed[di] ? `<div class="day-filed"><p class="day-filed-note"><span class="day-filed-check" aria-hidden="true">&#10003;</span><span><strong>Saved to Progress.</strong> ${escapeHtml(filed[di])}</span></p><p class="day-filed-links"><a class="text-link" href="me.html#log">See it in Progress</a> <button type="button" class="text-button" data-show-filed="${di}" aria-expanded="false">Show the workout</button></p></div>` : ""}
                 <ul class="ex-list"${filed[di] ? " hidden" : ""}>
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
@@ -2832,7 +2851,8 @@ function setupPrograms() {
             <li class="ex-row" data-slot="${key}">
                 <input type="checkbox" id="${id}" data-key="${key}" ${done.has(key) ? "checked" : ""} aria-label="Done: ${escapeHtml(x.name)}">
                 <div class="ex-main">
-                    <label for="${id}" class="ex-name">${equipIcon(x.name)}${escapeHtml(x.name)}</label>
+                    <div class="ex-title"><span class="ex-step" aria-hidden="true">${xi + 1}</span><label for="${id}" class="ex-name">${equipIcon(x.name)}${escapeHtml(x.name)}</label></div>
+                    <span class="ex-muscle muscle-${builderMuscle(x.name)}">${escapeHtml(BUILD_MUSCLE_NAME[builderMuscle(x.name)] || "")}</span>
                     <span class="ex-dose">${escapeHtml(dose.text)}${target && target.weight > 0 && !cardio ? ` <span class="ex-dose-weight">· ${trimNum(target.weight)} ${profile.unit}${target.each ? " each" : ""}</span>` : ""}</span>
                     ${state.goal === "custom" && !parsed.timed && !cardio ? `<span class="ex-sets-adjust" role="group" aria-label="Sets for ${escapeHtml(x.name)}">
                         <button type="button" class="chip" data-sets-adjust="${key}" data-dir="-1" aria-label="One less set of ${escapeHtml(x.name)}"${parsed.sets <= 1 ? " disabled" : ""}>&minus; set</button>
@@ -3188,6 +3208,44 @@ function setupPrograms() {
         }
         const ed = e.target.closest("[data-edit-day]");
         if (ed) { editCustomWorkout(Number(ed.dataset.editDay)); return; }
+        // Your plan: put the day in a better order, or swap an extra exercise for a muscle the day is missing
+        const fo = e.target.closest("[data-fix-order]");
+        if (fo) {
+            const di = Number(fo.dataset.fixOrder);
+            const days = customDaysRaw();
+            if (!days[di]) return;
+            const order = smartOrder(days[di].items.map((x) => x.n));
+            days[di].items = order.map((i) => days[di].items[i]);
+            // Check-offs follow their exercise to its new spot
+            const keys = store.get(progressKey(), []) || [];
+            const moved = keys.map((k) => { const [d, x] = String(k).split("-").map(Number); return d === di ? `${d}-${order.indexOf(x)}` : k; });
+            store.set(progressKey(), moved);
+            clearCustomSwaps(di);
+            saveCustomDays(days);
+            PROGRAMS.custom = loadCustomWorkout();
+            render();
+            showToast("Best order", "Same exercises, in the order to do them: just go top to bottom.");
+            return;
+        }
+        const bs = e.target.closest("[data-balance-swap]");
+        if (bs) {
+            const di = Number(bs.dataset.balanceSwap), xi = Number(bs.dataset.from), to = bs.dataset.to;
+            const days = customDaysRaw();
+            const it = days[di] && days[di].items[xi];
+            if (!it || !EXERCISES[to]) return;
+            const from = it.n;
+            const [dose, rest] = coachDose(to, COACH_COMPOUND.test(to), getLevel());
+            days[di].items[xi] = { n: to, d: dose, rest };
+            const [ordered, order] = orderDayItems(days[di].items);
+            days[di].items = ordered;
+            store.set(progressKey(), (store.get(progressKey(), []) || []).filter((k) => k !== `${di}-${xi}`).map((k) => { const [d, x] = String(k).split("-").map(Number); return d === di ? `${d}-${order.indexOf(x)}` : k; }));
+            clearCustomSwaps(di);
+            saveCustomDays(days);
+            PROGRAMS.custom = loadCustomWorkout();
+            render();
+            showToast("Swapped", `${from} is now ${to}.`);
+            return;
+        }
         // Your plan: add or take away a set right here (no need to rebuild the workout)
         const adj = e.target.closest("[data-sets-adjust]");
         if (adj) {
@@ -4008,7 +4066,15 @@ function addExerciseToCustom(name, dayIndex) {
         di = Math.min(Math.max(0, Number(dayIndex) || 0), oldN - 1);
         if (days[di].items.some((x) => x && x.n === name)) return di;
         if (days[di].items.length >= 12) return -1;
-        days[di].items.push(item); // added at the end, so this week's check-offs stay put
+        days[di].items.push(item);
+        // It goes where it belongs in the order; this week's check-offs follow their exercises
+        const [ordered, order] = orderDayItems(days[di].items);
+        days[di].items = ordered;
+        for (let k = 0; k < done.length; k++) {
+            const [d, x] = String(done[k]).split("-").map(Number);
+            if (d === di) done[k] = `${d}-${order.indexOf(x)}`;
+        }
+        if (days.length === oldN) store.set(`gu-progress-custom-${oldN}-w${week}`, done);
     }
     if (days.length !== oldN) {
         store.remove(`gu-progress-custom-${oldN}-w${week}`);
@@ -5817,6 +5883,110 @@ function builderMuscle(name) {
     if (/calf|calves/.test(m)) return "calves";
     return "core";
 }
+/* ---------- Plan balance: which muscle each exercise trains, in what order, and how much ----------
+   The same muscle three times in a row tires it before the last exercise, and five exercises for
+   one muscle in one session is mostly extra fatigue. These look at a day's exercises and suggest
+   a better order (big lifts stay first) or a swap toward a muscle the day is missing. */
+const MUSCLE_PARTNERS = { quads: ["hamstrings", "glutes", "calves"], hamstrings: ["glutes", "quads", "calves"], glutes: ["hamstrings", "quads", "calves"], calves: ["hamstrings", "glutes"],
+    chest: ["triceps", "shoulders", "back"], shoulders: ["triceps", "chest", "back"], triceps: ["biceps", "chest", "shoulders"], back: ["biceps", "shoulders", "chest"], biceps: ["triceps", "back"], core: ["glutes", "back"] };
+// Longest run of the same muscle back to back
+// "5 quad exercises", "3 hamstring exercises"
+const MUSCLE_WORD = { quads: "quad", hamstrings: "hamstring", glutes: "glute", calves: "calf", chest: "chest", back: "back", shoulders: "shoulder", biceps: "biceps", triceps: "triceps", core: "core", cardio: "cardio" };
+const longestRun = (muscles) => muscles.reduce((acc, m, i) => { const run = i && muscles[i - 1] === m ? acc.cur + 1 : 1; return { cur: run, max: Math.max(acc.max, run) }; }, { cur: 0, max: 0 }).max;
+// A better order: keep the original order as much as possible, but never the same muscle twice in a row when another can go between
+function spreadOrder(names) {
+    const left = names.map((n, i) => ({ n, i, m: builderMuscle(n) }));
+    const out = [];
+    while (left.length) {
+        const prev = out.length ? out[out.length - 1].m : null;
+        // The next muscle to go is the one with the most left (so the last ones don't bunch up), earliest first
+        const counts = {};
+        left.forEach((x) => { counts[x.m] = (counts[x.m] || 0) + 1; });
+        const options = left.filter((x) => x.m !== prev);
+        const pick = options.length ? options.reduce((a, b) => ((counts[b.m] > counts[a.m] + 1) ? b : a)) : left[0];
+        out.push(pick);
+        left.splice(left.indexOf(pick), 1);
+    }
+    return out.map((x) => x.i);
+}
+/* The order to do a day in (standard training practice, NSCA/ACSM):
+   1. big multi-joint lifts first, while you're fresh (heaviest, most skill)
+   2. other multi-joint moves
+   3. single-muscle and bodyweight moves
+   4. core, then cardio last
+   and, inside each step, bigger muscles first and never the same muscle twice in a row when another can go between. */
+const BIG_LIFT = /^(Back squat|Front squat|Deadlift|Trap bar deadlift|Romanian deadlift|Bench press|Incline barbell press|Overhead press|Barbell row|Hip thrust|Pull-up|Chin-up|Leg press|Hack squat|Pendulum squat|Belt squat|Smith machine squat|Smith machine bench press|Dumbbell bench press|Incline dumbbell press|Seated dumbbell shoulder press|Dumbbell shoulder press|Goblet squat|Bulgarian split squat|T-bar row|Weighted pull-up|Dip)$/;
+function exerciseTier(n) {
+    if (isCardio(n)) return 4;
+    if (builderMuscle(n) === "core") return 3;
+    if (BIG_LIFT.test(n)) return 0;
+    if (equipOf(n) === "body" && !/pull-up|chin-up|dip|push-up/i.test(n)) return 2;
+    if (COACH_COMPOUND.test(n)) return 1;
+    return 2;
+}
+function smartOrder(names) {
+    const KIT_FIRST = { barbell: 0, body: 1, db: 2, machine: 3, cable: 3 };
+    const left = names.map((n, i) => ({ n, i, t: exerciseTier(n), m: builderMuscle(n), big: BUILD_LARGE.includes(builderMuscle(n)) ? 1 : 0, k: KIT_FIRST[equipOf(n)] ?? 3 }));
+    const out = [];
+    while (left.length) {
+        const prev = out.length ? out[out.length - 1].m : null;
+        const minT = Math.min(...left.map((x) => x.t));
+        // Heaviest, most technical first: barbell, then dumbbells, then machines
+        const step = left.filter((x) => x.t === minT).sort((a, b) => (b.big - a.big) || (a.k - b.k) || (a.i - b.i));
+        // Of what's left in this step, the muscle with the most to go leads (so the end doesn't bunch up), but not the last muscle again
+        const count = (m) => step.filter((x) => x.m === m).length;
+        const fresh = step.filter((x) => x.m !== prev);
+        let pick = fresh.length ? fresh.reduce((a, b) => (count(b.m) > count(a.m) + 1 ? b : a)) : step[0];
+        // Never a third in a row: after two for one muscle, the next move for another muscle comes forward
+        if (!fresh.length && out.length >= 2 && out[out.length - 2].m === prev) {
+            const other = left.filter((x) => x.m !== prev).sort((a, b) => (a.t - b.t) || (b.big - a.big) || (a.k - b.k) || (a.i - b.i))[0];
+            if (other) pick = other;
+        }
+        out.push(pick);
+        left.splice(left.indexOf(pick), 1);
+    }
+    return out.map((x) => x.i);
+}
+const isIdentity = (order) => order.every((v, i) => v === i);
+// Put a day's items in the smart order; returns [items, order]
+function orderDayItems(items) {
+    const order = smartOrder(items.map((x) => x.n));
+    return [order.map((i) => items[i]), order];
+}
+// Advice for one day: { run, order, heavy: { muscle, count, limit, replace, suggest } }
+function dayBalance(names, goalKey) {
+    const muscles = names.map((n) => builderMuscle(n));
+    const run = longestRun(muscles);
+    const order = spreadOrder(names);
+    const better = longestRun(order.map((i) => muscles[i])) < run ? order : null;
+    const counts = {};
+    muscles.forEach((m) => { if (m !== "cardio") counts[m] = (counts[m] || 0) + 1; });
+    const trained = Object.keys(counts).length;
+    let heavy = null;
+    Object.keys(counts).forEach((m) => {
+        const limit = builderLimit(goalKey, m, trained);
+        if (counts[m] > limit && (!heavy || counts[m] - limit > heavy.count - heavy.limit)) heavy = { muscle: m, count: counts[m], limit };
+    });
+    if (heavy) {
+        // Swap the last one for that muscle (small moves first) for a partner muscle the day has least of
+        const idx = muscles.map((m, i) => (m === heavy.muscle ? i : -1)).filter((i) => i >= 0);
+        const iso = idx.filter((i) => !COACH_COMPOUND.test(names[i]));
+        heavy.replace = (iso.length ? iso : idx)[(iso.length ? iso : idx).length - 1];
+        const kit = equipOf(names[heavy.replace]);
+        const avoid = getProfile().avoid;
+        const targets = (MUSCLE_PARTNERS[heavy.muscle] || []).slice().sort((a, b) => (counts[a] || 0) - (counts[b] || 0));
+        for (const t of targets) {
+            const pool = Object.keys(EXERCISES).filter((n) => builderMuscle(n) === t && !names.includes(n) && !isCardio(n) && !/stretch|mobility|warm/i.test(n) && !avoidedBy(n, avoid));
+            // The Muscle map's go-to exercises first (hip thrust before the abduction machine)
+            const staples = typeof MUSCLE_MAP === "object" ? MUSCLE_MAP.flatMap((g) => g.parts.flatMap((pt) => pt.ex)) : [];
+            const rank = (n) => (staples.includes(n) ? staples.indexOf(n) : 9999);
+            pool.sort((a, b) => rank(a) - rank(b));
+            const pick = pool.find((n) => equipOf(n) === kit && rank(n) < 9999) || pool.find((n) => rank(n) < 9999) || pool.find((n) => equipOf(n) === kit) || pool[0];
+            if (pick) { heavy.suggest = pick; heavy.to = t; break; }
+        }
+    }
+    return { run, better, heavy, muscles };
+}
 // How many exercises fit for one muscle, given the goal and how many muscles are in the workout
 function builderLimit(goalKey, muscle, musclesTrained) {
     const g = BUILD_GOALS[goalKey] || BUILD_GOALS.muscle;
@@ -6249,7 +6419,8 @@ function setupBuilder() {
         const ups = Object.keys(counts).filter((m) => UPPER.includes(m)).length, lows = Object.keys(counts).filter((m) => LOWER.includes(m)).length;
         const autoTitle = ups >= 2 && lows >= 2 ? "Full body" : ups >= 3 && !lows ? "Upper body" : lows >= 3 && !ups ? "Lower body" : top.length > 1 ? `${top.slice(0, -1).join(", ")} & ${top[top.length - 1]}` : top[0] || "Workout";
         const title = draft.title.trim() || autoTitle;
-        const newDay = { title, items: draft.items.map((x) => ({ n: x.n, d: builderDose(x), rest: builderKind(x.n) === "time" ? "" : x.rest })) };
+        // Saved in the order to do them (big lifts first, no muscle twice in a row): you just go top to bottom
+        const newDay = { title, items: orderDayItems(draft.items.map((x) => ({ n: x.n, d: builderDose(x), rest: builderKind(x.n) === "time" ? "" : x.rest })))[0] };
         let days = customDaysRaw();
         const oldN = days.length;
         const week = Math.max(1, weekOf(programStart("custom")));

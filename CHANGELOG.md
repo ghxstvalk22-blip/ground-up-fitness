@@ -2,6 +2,19 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Your plan puts itself in the right order
+
+- **Every workout you build is saved in the order to do it.** Just go top to bottom; the exercises are numbered 1, 2, 3. The order follows standard training practice:
+  - big lifts first, while you're fresh (squats, presses, rows)
+  - then other multi-muscle moves
+  - then single-muscle moves (leg extension, curls, raises)
+  - core and cardio last
+  - no muscle three times in a row
+- **Adding an exercise** (from the library, the Muscle map, or a swap) puts it in its right place, not just at the end.
+- **Plans you already made** show "There's a better order for this day" with a one-tap **Put it in the best order**. Your check-marks stay with their exercises.
+- **Each exercise shows the muscle it works** (Quads, Glutes, Chest…).
+- **Too much of one muscle in a day** (like 5 quad exercises) gets a note and a one-tap swap to a muscle the day is missing, like hamstrings or glutes.
+
 ## 2026-10-14 · The live dot blinks for everyone
 
 - The dot next to "Your active plan" now blinks even with the iPhone's Reduce Motion setting on (a gentle fade on and off, not movement). It's a little bigger too.

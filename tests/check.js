@@ -1355,6 +1355,13 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             check(res3.heavy === 275 && res3.light === 195, `heavy and light days of the same lift keep their own targets (heavy ${res3.heavy}, light ${res3.light})`);
             check(res3.kg === 92.5, `kg barbell weights round to 2.5 kg (${res3.kg})`);
+            const ord = await page.evaluate(() => {
+                const names = ["Leg extension", "Seated hamstring curl", "Leg press", "Back squat", "Hack squat", "Goblet squat", "Romanian deadlift", "Plank"];
+                const o = smartOrder(names).map((k) => names[k]);
+                const m = o.map((n) => builderMuscle(n));
+                return { o, run: longestRun(m), first: o[0], last: o[o.length - 1], tiers: o.map((n) => exerciseTier(n)) };
+            });
+            check(ord.first === "Back squat" && ord.last === "Plank" && ord.run <= 2 && ord.tiers.slice(0, 2).every((t) => t === 0), `a day is put in order: big lifts first, core last, never 3 for one muscle in a row (${ord.o.join(" > ")})`);
             const res4 = await page.evaluate(() => {
                 const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
                 const sets = (w, r, n) => Array.from({ length: n }, () => ({ w, r }));

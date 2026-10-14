@@ -3630,3 +3630,15 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 @media (prefers-reduced-motion: reduce) { .live-dot { animation: live-blink 1.4s ease-in-out infinite; } .live-dot::after { animation: none; } }
 /* Black on orange wherever the tag sits (plan headers set paragraphs to grey) */
 .active-plan-tag.active-plan-tag, .active-plan-tag.active-plan-tag * { color: #000000; }
+
+/* Which muscle each exercise trains */
+.ex-muscle { display: inline-block; margin: 2px 0 2px 8px; padding: 2px 7px; border: 1px solid var(--line); font-size: 0.68rem; font-weight: 800; font-stretch: 112%; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); vertical-align: middle; white-space: nowrap; }
+/* Plan balance advice on a day of Your plan */
+.day-balance { margin: 10px 0 4px; padding: 12px; border-left: 3px solid var(--volt); background-color: rgba(255, 90, 31, 0.08); }
+.day-balance p { margin: 0 0 8px; }
+.day-balance .btn { min-height: 44px; margin-bottom: 8px; }
+/* Exercise order: 1, 2, 3... go top to bottom */
+.ex-step { display: inline-grid; place-items: center; min-width: 22px; height: 22px; margin-right: 8px; padding: 0 4px; background-color: var(--ink); color: var(--paper); font-size: 0.75rem; font-weight: 900; vertical-align: 1px; }
+.ex-main .ex-muscle { justify-self: start; align-self: start; width: max-content; max-width: 100%; margin: 4px 0 6px; }
+.ex-title { display: flex; align-items: center; gap: 0; }
+.ex-title .ex-step { flex: 0 0 auto; }
