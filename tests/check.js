@@ -604,7 +604,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/Good job/i.test(fin) && /Next time/i.test(fin) && /Start with about \d+ lb/.test(fin), "Finish workout shows a good-job screen with next time's weights");
             check(await page.evaluate(() => (store.get("gu-sessions") || []).length === 1) && await page.locator(".ex-row input[type=checkbox]:not(:checked)").count() === 0, "finishing saves the workout and checks the day off");
             await page.click("[data-finish-close]");
-            check(/Finished/i.test(await page.locator(".day-card[data-day='0'] .day-finish").textContent()) && await page.locator("[data-continue='0']").count() === 1, "a finished day says so and offers Continue");
+            check(/Saved to Progress/i.test(await page.locator(".day-card[data-day='0']").textContent()) && await page.locator(".day-card[data-day='0'] .ex-list").evaluate((l) => l.hidden) && await page.locator("[data-continue='0']").count() === 1, "a finished day folds away once it's saved to Progress and offers Continue");
             // Phones without built-in pop-up support still see the summary
             await page.evaluate(() => { HTMLDialogElement.prototype.showModal = undefined; });
             await page.locator("[data-finish='0']").click();

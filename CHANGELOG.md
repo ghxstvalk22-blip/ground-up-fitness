@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-14 · Finished workouts fold away
+
+- When you finish a workout, the app first checks that everything made it into Progress: the workout is saved and no typed sets are left unsaved. Then that day's exercise list folds away and leaves a short "Saved to Progress" note with a link to see it there, plus your Continue button. "Show the workout" brings it back if you want to look. If anything didn't save, the workout stays open so nothing gets lost.
+
 ## 2026-10-13 · iPhone rest timer that actually rings
 
 - On iPhone the rest timer now says plainly that it can't ring once you leave the app (iPhone pauses web apps in the background), and the **Lock Screen timer** button is bright orange so it's easy to find. That button starts the iPhone's own Clock timer, which does ring.

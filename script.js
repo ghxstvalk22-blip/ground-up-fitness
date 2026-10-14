@@ -2580,18 +2580,20 @@ function setupPrograms() {
             : null;
 
         firstTipShown = new Set();
+        const filed = state.week === currentWeek() ? thisWeek.map((_, di) => filedInProgress(di)) : [];
         els.grid.innerHTML = thisWeek.map((day, di) => `
-            <article class="day-card" data-day="${di}">
+            <article class="day-card${filed[di] ? " is-filed" : ""}" data-day="${di}">
                 <header>
                     <span class="day-num">Day ${di + 1} <span class="day-status"></span></span>
                     <h4>${escapeHtml(day.title)}</h4>
                     ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
                 </header>
-                <ul class="ex-list">
+                ${filed[di] ? `<div class="day-filed"><p class="day-filed-note"><span class="day-filed-check" aria-hidden="true">&#10003;</span><span><strong>Saved to Progress.</strong> ${escapeHtml(filed[di])}</span></p><p class="day-filed-links"><a class="text-link" href="me.html#log">See it in Progress</a> <button type="button" class="text-button" data-show-filed="${di}" aria-expanded="false">Show the workout</button></p></div>` : ""}
+                <ul class="ex-list"${filed[di] ? " hidden" : ""}>
                     ${lineups[di].map((x, xi) => exerciseRow(x, di, xi, done, profile, lastWeek && lastWeek[di][xi].name !== x.name)).join("")}
                 </ul>
                 ${state.week === currentWeek() ? (() => { const doneToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === isoDate(new Date()) && x.plan === state.goal && x.day === di); return doneToday
-                    ? `<div class="day-finish is-done"><p class="day-finish-note">Finished today \u2713</p><button type="button" class="btn${state.goal === "custom" ? " btn-primary" : ""}" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>${state.goal === "custom" && thisWeek[di + 1] ? `<button type="button" class="text-button" data-edit-day="${di + 1}">Edit Day ${di + 2} first</button>` : ""}<button type="button" class="text-button" data-finish="${di}">See summary</button></div>`
+                    ? `<div class="day-finish is-done">${filed[di] ? "" : `<p class="day-finish-note">Finished today \u2713</p>`}<button type="button" class="btn${state.goal === "custom" ? " btn-primary" : ""}" data-continue="${di}">${escapeHtml(continueLabel(di))} &rarr;</button>${state.goal === "custom" && thisWeek[di + 1] ? `<button type="button" class="text-button" data-edit-day="${di + 1}">Edit Day ${di + 2} first</button>` : ""}<button type="button" class="text-button" data-finish="${di}">See summary</button></div>`
                     : `<div class="day-finish"><button type="button" class="btn btn-primary" data-finish="${di}">Finish workout</button>${planPaused() ? `<button type="button" class="text-button" data-resume-plan>Continue this plan</button>` : `<button type="button" class="text-button" data-cancel-workout>Cancel workout</button>`}</div>`; })() : ""}
             </article>`).join("");
 
@@ -2852,6 +2854,25 @@ function setupPrograms() {
     };
 
     /* ----- Finish workout: save the session, celebrate, and show next time's targets ----- */
+    /* A finished day folds away once its data is safely in Progress: a session is saved for today and
+       every set logged today for this day's exercises is in the log the Progress tab reads. Returns a short
+       summary ("4 exercises · 12 sets") when it's all there, or "" to keep the workout showing. */
+    function filedInProgress(di) {
+        const today = isoDate(new Date());
+        const sess = (store.get("gu-sessions", []) || []).find((x) => x && x.date === today && x.plan === state.goal && x.day === di);
+        if (!sess) return "";
+        const names = Array.isArray(sess.names) ? sess.names : [];
+        const items = lineups[di] || [];
+        if (items.some((x) => !names.includes(x.name))) return "";
+        // Anything still typed in a form but not saved means it isn't all in Progress yet
+        const drafts = store.get("gu-log-draft", {}) || {};
+        const pending = Object.values(drafts).some((dr) => dr && dr.date === today && items.some((x) => x.name === dr.ex) && Array.isArray(dr.r) && dr.r.some((v) => Number(v) > 0));
+        if (pending) return "";
+        const sets = items.reduce((n, x) => { const e = (logFor(x.name) || []).find((en) => en.date === today); return n + (e ? e.sets.length : 0); }, 0);
+        const ex = Number(sess.exercises) || items.length;
+        return `${ex} exercise${ex === 1 ? "" : "s"}${sets ? ` · ${sets} set${sets === 1 ? "" : "s"} logged` : ""}`;
+    }
+
     function finishWorkout(di) {
         adopt();
         // Sets you ticked or typed but didn't tap Save on still count
@@ -2985,6 +3006,14 @@ function setupPrograms() {
         if (fin) { finishWorkout(Number(fin.dataset.finish)); return; }
         const cont = e.target.closest("[data-continue]");
         if (cont) { continueFrom(Number(cont.dataset.continue)); return; }
+        const sf = e.target.closest("[data-show-filed]");
+        if (sf) {
+            const list = sf.closest(".day-card").querySelector(".ex-list");
+            list.hidden = !list.hidden;
+            sf.setAttribute("aria-expanded", String(!list.hidden));
+            sf.textContent = list.hidden ? "Show the workout" : "Hide the workout";
+            return;
+        }
         const ed = e.target.closest("[data-edit-day]");
         if (ed) { editCustomWorkout(Number(ed.dataset.editDay)); return; }
         // Your plan: add or take away a set right here (no need to rebuild the workout)

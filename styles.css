@@ -3540,3 +3540,11 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .ios-auto-pick { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 700; }
 .ios-steps { margin: 12px 0; padding-left: 22px; }
 .ios-steps li { margin-bottom: 8px; }
+
+/* ---------- Finished day folds away once it's saved to Progress ---------- */
+.day-filed { padding: 14px 16px 4px; }
+.day-filed-note { display: flex; gap: 12px; align-items: flex-start; margin: 0; }
+.day-filed-check { flex: 0 0 auto; display: inline-grid; place-items: center; width: 28px; height: 28px; background-color: var(--volt); color: #000000; font-weight: 900; }
+.day-filed-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin: 8px 0 0 40px; }
+.day-filed-links .text-link, .day-filed-links .text-button { min-height: 44px; display: inline-flex; align-items: center; }
+.day-card.is-filed .day-finish { border-top: 0; }
