@@ -218,7 +218,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator('input[name="days"][value="5"]').isDisabled(), "unavailable day options are disabled");
             check(/New to lifting · 4 days/.test(await page.locator("#program-head h3").textContent()), "switching to a plan without 5 days picks the nearest");
             // How-to guide opens with steps and a demo link
-            await page.locator("[data-howto]").first().click();
+            await page.evaluate(() => document.querySelectorAll(".ex-more, .day-menu").forEach((d) => { d.open = true; })); await page.locator("[data-howto]").first().click();
             check(await page.locator("#howto[open] .howto-steps li").count() >= 3, "How to opens a step-by-step guide");
             check((await page.locator(".howto-demo").getAttribute("href")).startsWith("https://www.youtube.com/results?search_query="), "guide has a YouTube demo search");
             await page.locator("#howto-close").click();
@@ -275,7 +275,7 @@ async function openPage(browser, file, viewport, hash = "") {
 
             // Swap changes just that exercise
             const before = await page.locator(".ex-row").nth(1).locator(".ex-name").textContent();
-            await page.locator(".ex-row").nth(1).locator("[data-swap]").click();
+            await page.evaluate(() => document.querySelectorAll(".ex-more, .day-menu").forEach((d) => { d.open = true; })); await page.locator(".ex-row").nth(1).locator("[data-swap]").click();
             const after = await page.locator(".ex-row").nth(1).locator(".ex-name").textContent();
             check(before !== after, `Swap changes the exercise (${before} -> ${after})`);
 
@@ -1302,13 +1302,13 @@ async function openPage(browser, file, viewport, hash = "") {
             check(!/again, and you trained/.test(next) && /Biceps/.test(next), "an arm day after back and chest isn't flagged as the same muscles");
             await page.goto(url("programs.html", "#program-custom-2"), { waitUntil: "load" });
             await page.waitForTimeout(300);
-            await page.locator('[data-move-day="1"][data-dir="-1"]').click();
+            await page.evaluate(() => document.querySelectorAll(".ex-more, .day-menu").forEach((d) => { d.open = true; })); await page.locator('[data-move-day="1"][data-dir="-1"]').click();
             check(await page.evaluate(() => /Biceps/.test(customDaysRaw()[0].title) && customDaysRaw()[1].title === "Back & Chest"), "days can be moved up and down");
             const before = await page.evaluate(() => customDaysRaw()[0].items[0].d);
-            await page.locator('.day-card[data-day="0"] [data-sets-adjust="0-0"][data-dir="1"]').click();
+            await page.evaluate(() => document.querySelectorAll(".ex-more, .day-menu").forEach((d) => { d.open = true; })); await page.locator('.day-card[data-day="0"] [data-sets-adjust="0-0"][data-dir="1"]').click();
             const after = await page.evaluate(() => customDaysRaw()[0].items[0].d);
             check(Number(after[0]) === Number(before[0]) + 1 && new RegExp(after).test(await page.locator('.day-card[data-day="0"] .ex-dose').first().textContent()), `+ set adds a set right on your plan (${before} -> ${after})`);
-            await page.locator('.day-card[data-day="0"] [data-sets-adjust="0-0"][data-dir="-1"]').click();
+            await page.evaluate(() => document.querySelectorAll(".ex-more, .day-menu").forEach((d) => { d.open = true; })); await page.locator('.day-card[data-day="0"] [data-sets-adjust="0-0"][data-dir="-1"]').click();
             check(await page.evaluate((b) => customDaysRaw()[0].items[0].d === b, before), "− set takes it away again");
             await page.evaluate(() => localStorage.clear());
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);

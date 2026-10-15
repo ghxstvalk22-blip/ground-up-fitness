@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-15 · A calmer workout screen
+
+- **Each exercise shows only what you need mid-workout:** its number, name, sets × reps · weight, the muscle it works, **Log sets**, and **Rest**. A small "↑ Heavier than last time" shows when the weight goes up. Everything else (− set / + set, the easier option, last time's numbers and tips, How to, Swap) is one tap away under **More**. Each exercise now takes about half the space.
+- **Day options in one place:** Edit, Share, move up/down and Remove day are behind a single **···** button at the top of each day, and "What this workout hits" is a quiet link.
+
 ## 2026-10-14 · Workouts from friends folds away
 
 - "Workouts from friends" on the Plans page is now one slim line instead of a big block. Tap it to open **Paste workout** and the paste box, and tap again to close it.

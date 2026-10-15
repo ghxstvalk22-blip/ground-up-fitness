@@ -2749,7 +2749,7 @@ function setupPrograms() {
                 <header>
                     <span class="day-num">Day ${di + 1} <span class="day-status"></span></span>
                     <h4>${escapeHtml(day.title)}</h4>
-                    ${state.goal === "custom" ? `<span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button><button type="button" class="chip" data-share-day="${di}">Share</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span>` : ""}
+                    ${state.goal === "custom" ? `<details class="day-menu"><summary aria-label="Day ${di + 1} options"><span aria-hidden="true">&middot;&middot;&middot;</span></summary><span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button><button type="button" class="chip" data-share-day="${di}">Share</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span></details>` : ""}
                 </header>
                 ${!filed[di] ? `<button type="button" class="btn btn-compact day-hits" data-hits="${di}"><span class="day-hits-icon" aria-hidden="true"></span>What this workout hits</button>` : ""}
                 ${state.goal === "custom" && !filed[di] ? balanceNote(di) : ""}
@@ -2854,24 +2854,26 @@ function setupPrograms() {
                 <input type="checkbox" id="${id}" data-key="${key}" ${done.has(key) ? "checked" : ""} aria-label="Done: ${escapeHtml(x.name)}">
                 <div class="ex-main">
                     <div class="ex-title"><span class="ex-step" aria-hidden="true">${xi + 1}</span><label for="${id}" class="ex-name">${equipIcon(x.name)}${escapeHtml(x.name)}</label></div>
-                    <span class="ex-muscle muscle-${builderMuscle(x.name)}">${escapeHtml(BUILD_MUSCLE_NAME[builderMuscle(x.name)] || "")}</span>
-                    <span class="ex-dose">${escapeHtml(dose.text)}${target && target.weight > 0 && !cardio ? ` <span class="ex-dose-weight">· ${trimNum(target.weight)} ${profile.unit}${target.each ? " each" : ""}</span>` : ""}</span>
+                    <span class="ex-line"><span class="ex-dose">${escapeHtml(dose.text)}${target && target.weight > 0 && !cardio ? ` <span class="ex-dose-weight">· ${trimNum(target.weight)} ${profile.unit}${target.each ? " each" : ""}</span>` : ""}</span><span class="ex-muscle muscle-${builderMuscle(x.name)}">${escapeHtml(BUILD_MUSCLE_NAME[builderMuscle(x.name)] || "")}</span></span>
+                    ${target && target.up ? `<span class="ex-up">&uarr; Heavier than last time</span>` : ""}
+                    <span class="ex-actions ex-actions-main">
+                        ${!parsed.timed ? `<button type="button" class="chip chip-go" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log sets</button>` : ""}
+                        ${cardio ? `<button type="button" class="chip chip-go" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log cardio</button>` : ""}
+                        ${x.rest && restSeconds(x.rest) ? `<button type="button" class="rest-btn" data-rest="${restSeconds(x.rest)}" data-rest-name="${escapeHtml(x.name)}"><span aria-hidden="true">&#9654;</span> Rest ${escapeHtml(x.rest)}<span class="visually-hidden">: start rest timer</span></button>` : x.rest ? `<span class="ex-rest">Rest ${escapeHtml(x.rest)}</span>` : ""}
+                    </span>
+                    <details class="ex-more"><summary>More<span class="visually-hidden"> about ${escapeHtml(x.name)}</span></summary>
                     ${state.goal === "custom" && !parsed.timed && !cardio ? `<span class="ex-sets-adjust" role="group" aria-label="Sets for ${escapeHtml(x.name)}">
                         <button type="button" class="chip" data-sets-adjust="${key}" data-dir="-1" aria-label="One less set of ${escapeHtml(x.name)}"${parsed.sets <= 1 ? " disabled" : ""}>&minus; set</button>
                         <button type="button" class="chip" data-sets-adjust="${key}" data-dir="1" aria-label="One more set of ${escapeHtml(x.name)}"${parsed.sets >= 8 ? " disabled" : ""}>+ set</button>
                     </span>` : ""}
                     ${badges ? `<span class="ex-badges">${badges}</span>` : ""}
-                    ${x.rest ? (restSeconds(x.rest)
-                        ? `<button type="button" class="rest-btn" data-rest="${restSeconds(x.rest)}" data-rest-name="${escapeHtml(x.name)}"><span aria-hidden="true">&#9654;</span> Rest ${escapeHtml(x.rest)}<span class="visually-hidden">: start rest timer</span></button>`
-                        : `<span class="ex-rest">Rest ${escapeHtml(x.rest)}</span>`) : ""}
                     ${easier ? `<span class="ex-swap">Easier option: ${escapeHtml(easier)}</span>` : ""}
                     ${target ? `<span class="ex-target${target.up ? " is-up" : ""}">${target.lastText ? `<span class="ex-last">${(logFor(x.name).slice(-1)[0] || {}).date === isoDate(new Date()) ? "Today so far" : "Last time"}: ${escapeHtml(target.lastText)}</span>` : ""}${escapeHtml(target.text)}</span>` : ""}
                     <span class="ex-actions">
                         ${info ? `<button type="button" class="chip" data-howto="${escapeHtml(x.name)}">How to</button>` : ""}
                         ${x.canRotate ? `<button type="button" class="chip" data-swap="${key}">Swap</button>` : ""}
-                        ${!parsed.timed ? `<button type="button" class="chip" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log sets</button>` : ""}
-                        ${cardio ? `<button type="button" class="chip" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log cardio</button>` : ""}
                     </span>
+                    </details>
                     ${!parsed.timed ? logForm(x, key, parseDose(dose.text), target, profile.unit) : ""}
                     ${cardio ? cardioForm(x, key, profile.unit) : ""}
                 </div>

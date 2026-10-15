@@ -3672,3 +3672,37 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .share-inbox-hint { font-size: 0.85rem; color: var(--muted); }
 .share-inbox-body { padding: 0 14px 14px; }
 .share-inbox > summary:focus-visible { outline: 3px solid var(--volt); outline-offset: -3px; }
+
+/* ---------- Calmer workout screen (October 2026) ---------- */
+/* Each exercise: name, sets x reps . weight, then Log sets. Everything else is under "More". */
+.ex-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 2px; }
+.ex-main .ex-line .ex-muscle { margin: 0; }
+.ex-up { display: inline-block; margin-top: 4px; font-size: 0.82rem; font-weight: 800; color: var(--good, #1f7a3f); }
+.ex-actions-main { align-items: center; margin-top: 10px; }
+.ex-actions-main .rest-btn { min-height: 44px; }
+.chip.chip-go { background-color: var(--ink); color: var(--paper); border-color: var(--ink); }
+.chip.chip-go[aria-expanded="true"] { background-color: var(--volt); border-color: var(--volt); color: #000000; }
+.ex-more { margin-top: 4px; }
+.ex-more > summary { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; cursor: pointer; list-style: none; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.ex-more > summary::-webkit-details-marker { display: none; }
+.ex-more > summary::after { content: "+"; font-size: 1rem; }
+.ex-more[open] > summary::after { content: "\2212"; }
+.ex-more > summary:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+.ex-more[open] { padding-bottom: 6px; }
+/* Day options: one "..." button instead of a row of four */
+.day-card > header { position: relative; }
+.day-menu { margin-top: 0; }
+.day-menu > summary { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 44px; height: 44px; cursor: pointer; list-style: none; font-size: 1.4rem; font-weight: 900; line-height: 1; border: 1px solid transparent; }
+.day-menu > summary::-webkit-details-marker { display: none; }
+.day-menu[open] > summary { border-color: var(--line); }
+.day-menu > summary:focus-visible { outline: 3px solid var(--volt); }
+.day-menu .day-edit { flex-wrap: wrap; margin-top: 8px; }
+/* "What this workout hits" as a quiet link-style button */
+.day-hits.btn { padding: 8px 0; border-color: transparent; text-decoration: underline; text-decoration-color: var(--volt); text-underline-offset: 5px; text-decoration-thickness: 2px; }
+/* "More" sits on the same line as Log sets and Rest (only the button itself takes taps) */
+.ex-more { margin-top: -44px; pointer-events: none; }
+.ex-more > * { pointer-events: auto; }
+.ex-more > summary { display: flex; width: max-content; margin-left: auto; }
+.ex-more[open] > summary { margin-bottom: 4px; }
+.ex-more > *:not(summary) { display: block; margin-top: 8px; }
+.ex-more > .ex-sets-adjust, .ex-more > .ex-actions, .ex-more > .ex-badges { display: flex; flex-wrap: wrap; gap: 6px; }
