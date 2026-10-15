@@ -2,6 +2,17 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-15 · Warm-ups and stretches, made for each workout
+
+- **Every day has a "Warm up" button.** It builds a warm-up for that workout (about 8 minutes):
+  1. A few minutes of easy cardio.
+  2. 3–4 moving warm-ups matched to the lifts you're about to do: squat days get ankle and hip work, deadlift days get hip hinges, bench days get push-up and shoulder-blade drills, overhead pressing gets wall slides, and pull-downs and rows get hangs.
+  3. Lighter warm-up sets of your first lift, worked out from your weight and starting at the empty bar on barbell lifts.
+
+  Then **3–4 stretches for after**, for the muscles you trained, each with a 30-second timer. Every move has a "How" with simple steps, and a box to tick off.
+- **New "Warm-ups & stretches" section** at the top of the Exercises tab, in the Exercises menu too: 56 moves and stretches by area (upper body, lower body, core). It covers chest, shoulders, back, neck and traps, arms and forearms, hips, inner thighs, glutes, quads, hamstrings, calves, shins and core. When you're on a plan, there's a one-tap "Warm up for today."
+- **Based on mainstream guidance:** moving warm-ups that match the session before lifting (the NSCA "RAMP" approach), and still stretches held gently for 10–30 seconds after lifting or on rest days (ACSM).
+
 ## 2026-10-15 · Things stay open while you work out
 
 - **Open things stay open.** Tapping + set, checking off an exercise, swapping or logging used to redraw the day and snap every open section shut. Now the day remembers: an open **More**, an open set log and the **···** menu all stay open. Saving your sets closes just that log, as you'd expect.

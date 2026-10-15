@@ -441,7 +441,7 @@ async function openPage(browser, file, viewport, hash = "") {
             const { page, errors } = await openPage(browser, "exercises.html", viewport, "#back");
             const backCount = await page.locator(".library-card").count();
             check(backCount >= 8 && await page.locator('input[name="muscle"][value="back"]').isChecked(), `exercises.html#back opens with Back picked (${backCount} exercises)`);
-            await page.locator('input[name="muscle"][value=""]').check({ force: true });
+            await page.locator('input[name="muscle"][value=""]').evaluate((el) => el.click());
             check(await page.locator(".library-card").count() >= 90, "the library lists every exercise");
             await page.fill("#library-search", "split squat");
             check(await page.locator(".library-card").count() >= 2, "searching finds exercises");
@@ -537,7 +537,7 @@ async function openPage(browser, file, viewport, hash = "") {
             const all = await page.locator(".library-card").count();
             const noPic = await page.evaluate(() => [...document.querySelectorAll(".library-card")].filter((c) => !c.querySelector(".library-pic .lib-main")).map((c) => c.querySelector("h3").textContent));
             check(noPic.length <= 2, `every exercise card shows the muscles it works ${JSON.stringify(noPic)}`);
-            await page.locator('input[name="equip"][value="db"]').check({ force: true });
+            await page.locator('input[name="equip"][value="db"]').evaluate((el) => el.click());
             const dbCards = await page.locator(".library-card").count();
             const kinds = await page.locator(".library-card .equip").evaluateAll((els) => [...new Set(els.map((e) => e.className.match(/equip-(\w+)/)[1]))]);
             check(dbCards > 10 && dbCards < all && kinds.every((k) => k === "db" || k === "body"), `the Dumbbells filter shows dumbbell and bodyweight moves (${dbCards} of ${all})`);
@@ -1361,6 +1361,16 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             check(res3.heavy === 275 && res3.light === 195, `heavy and light days of the same lift keep their own targets (heavy ${res3.heavy}, light ${res3.light})`);
             check(res3.kg === 92.5, `kg barbell weights round to 2.5 kg (${res3.kg})`);
+            const wu = await page.evaluate(() => {
+                const a = warmupFor(["Bench press", "Incline dumbbell press", "Triceps pushdown", "Overhead triceps extension"]);
+                const b = warmupFor(["Back squat", "Romanian deadlift", "Leg press", "Leg extension"]);
+                const areas = (list) => new Set(list.flatMap((w) => w.areas));
+                return { chest: [...areas(a.moves)], chestStretch: [...areas(a.stretches)], legs: [...areas(b.moves)], legStretch: [...areas(b.stretches)],
+                    upperInLegs: b.moves.some((w) => w.areas.every((x) => ["chest", "triceps", "biceps"].includes(x))), ramp: a.ramp && a.ramp.sets.every(([w]) => w >= 45 && w < a.ramp.w), count: WARMUPS.length, kinds: new Set(WARMUPS.map((w) => w.kind)).size };
+            });
+            check(wu.chest.includes("chest") && wu.chestStretch.includes("triceps") && wu.chestStretch.includes("chest"), `a chest & triceps day warms up and stretches chest and triceps (${wu.chest.join(", ")} / ${wu.chestStretch.join(", ")})`);
+            check(wu.legs.some((x) => ["quads", "hamstrings", "glutes"].includes(x)) && !wu.upperInLegs && wu.legStretch.includes("quads") && wu.legStretch.includes("hamstrings"), `a leg day gets leg warm-ups and leg stretches (${wu.legs.join(", ")} / ${wu.legStretch.join(", ")})`);
+            check(wu.ramp !== false && wu.count >= 50 && wu.kinds === 2, `warm-up sets start at the empty bar and stay under your first set; ${wu.count} warm-ups and stretches`);
             const ord = await page.evaluate(() => {
                 const names = ["Leg extension", "Seated hamstring curl", "Leg press", "Back squat", "Hack squat", "Goblet squat", "Romanian deadlift", "Plank"];
                 const o = smartOrder(names).map((k) => names[k]);

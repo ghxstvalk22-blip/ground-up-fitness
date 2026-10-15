@@ -83,6 +83,7 @@ const FEATURES = [
     setupTools,
     setupContactForm,
     setupShareWorkout,
+    setupWarmups,
     setupLinks,      // keep after features that add routes
     setupPageTransitions,
     setupJump
@@ -108,6 +109,7 @@ const SITE_NAV = [
     ] },
     { label: "Exercises", href: "exercises.html", page: "exercises", items: [
         ["Find by muscle", "Tap a muscle, see how to train it", "exercises.html#muscle-map"],
+        ["Warm-ups & stretches", "Before and after you lift", "exercises.html#warmups"],
         ["Exercise library", "Every exercise, with form guides and demos", "exercises.html#library"]
     ], more: [
         ["Leg exercises", "Squats, lunges, hinges, calves", "exercises.html#legs"],
@@ -2759,7 +2761,7 @@ function setupPrograms() {
                     <h4>${escapeHtml(day.title)}</h4>
                     ${state.goal === "custom" ? `<details class="day-menu"><summary aria-label="Day ${di + 1} options"><span aria-hidden="true">&middot;&middot;&middot;</span></summary><span class="day-edit"><button type="button" class="chip" data-edit-day="${di}">Edit</button><button type="button" class="chip" data-share-day="${di}">Share</button>${thisWeek.length > 1 ? `${di > 0 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="-1" aria-label="Move Day ${di + 1} up">&uarr;</button>` : ""}${di < thisWeek.length - 1 ? `<button type="button" class="chip" data-move-day="${di}" data-dir="1" aria-label="Move Day ${di + 1} down">&darr;</button>` : ""}<button type="button" class="chip" data-remove-day="${di}">Remove day</button>` : ""}</span></details>` : ""}
                 </header>
-                ${!filed[di] ? `<button type="button" class="btn btn-compact day-hits" data-hits="${di}"><span class="day-hits-icon" aria-hidden="true"></span>What this workout hits</button>` : ""}
+                ${!filed[di] ? `<div class="day-tools"><button type="button" class="btn btn-compact day-hits day-warm" data-warmup="${escapeHtml(lineups[di].map((x) => x.name).join("|"))}" data-warmup-title="${escapeHtml(day.title)}"><span class="day-warm-icon" aria-hidden="true"></span>Warm up</button><button type="button" class="btn btn-compact day-hits" data-hits="${di}"><span class="day-hits-icon" aria-hidden="true"></span>What this workout hits</button></div>` : ""}
                 ${state.goal === "custom" && !filed[di] ? balanceNote(di) : ""}
                 ${filed[di] ? `<div class="day-filed"><p class="day-filed-note"><span class="day-filed-check" aria-hidden="true">&#10003;</span><span><strong>Saved to Progress.</strong> ${escapeHtml(filed[di])}</span></p><p class="day-filed-links"><a class="text-link" href="me.html#log">See it in Progress</a> <button type="button" class="text-button" data-show-filed="${di}" aria-expanded="false">Show the workout</button></p></div>` : ""}
                 <ul class="ex-list"${filed[di] ? " hidden" : ""}>
@@ -5833,6 +5835,168 @@ function showMuscleHits(names, title) {
         });
         bodies.querySelectorAll(".mm-muscle").forEach((g) => { g.removeAttribute("tabindex"); g.removeAttribute("role"); });
     });
+}
+
+/* =========================================================
+   FEATURE: Warm-ups and stretches, paired to your workout
+   Before lifting: a few minutes of easy cardio, moving (dynamic) warm-ups for the muscles
+   you're about to train, then lighter warm-up sets of your first lift. After: short,
+   still stretches for the same muscles. (Mainstream guidance: dynamic warm-ups before
+   lifting; longer static stretches after or on their own.) No equipment needed.
+   area keys match builderMuscle(): chest, back, shoulders, biceps, triceps, quads,
+   hamstrings, glutes, calves, core.
+   ========================================================= */
+const WARMUPS = [
+    // ---- Moving warm-ups (before). "for" = the lifts it prepares you for (matched against the day's exercises) ----
+    { n: "Arm circles", kind: "move", areas: ["shoulders", "chest", "back"], for: /press|raise|fly|push-up|dip/i, dose: "10 forward, 10 back", how: ["Stand tall, arms straight out to the sides.", "Make small circles, then bigger ones.", "Switch direction halfway."] },
+    { n: "Arm swings across the chest", kind: "move", areas: ["chest", "back", "shoulders"], for: /bench|chest|fly|pec|push-up|dip/i, dose: "10 swings", how: ["Open your arms wide, then swing them across your chest, alternating which arm is on top.", "Keep it easy and loose; open a little wider each time."] },
+    { n: "Scapular push-ups", kind: "move", areas: ["chest", "shoulders", "triceps"], for: /bench|press|push-up|dip/i, dose: "10 reps", how: ["Get in a push-up position (or on your knees).", "Keep your arms straight and let your chest sink between your shoulder blades.", "Push the floor away to spread them apart again."] },
+    { n: "Easy push-ups", kind: "move", areas: ["chest", "triceps", "shoulders"], for: /bench|chest press|incline|decline|dip/i, dose: "8 easy reps", how: ["Hands a little wider than your shoulders (knees down is fine).", "Lower slowly, push up smoothly. Stop well before it gets hard."] },
+    { n: "Wall slides", kind: "move", areas: ["shoulders", "back"], for: /overhead|shoulder press|arnold|lateral|pulldown|pull-up|chin-up/i, dose: "10 reps", how: ["Stand with your back against a wall, arms up in a goalpost shape.", "Slide your arms up the wall as high as is comfortable, then back down.", "Keep your lower back and wrists near the wall."] },
+    { n: "Band pull-aparts (or reverse arm swings)", kind: "move", areas: ["back", "shoulders"], for: /row|rear delt|face pull|bench|overhead/i, dose: "15 reps", how: ["Hold a light band in front of you at shoulder height (no band: do the same movement with empty hands).", "Pull your hands apart until the band touches your chest, squeezing your shoulder blades together.", "Return slowly."] },
+    { n: "Shoulder rotations at 90 degrees", kind: "move", areas: ["shoulders"], for: /overhead|press|lateral|upright|snatch/i, dose: "10 reps", how: ["Raise your arms out to the sides, elbows bent at 90 degrees like goalposts.", "Rotate your forearms down until they point forward, then back up.", "Move slowly and stay relaxed."] },
+    { n: "Push-up to downward dog", kind: "move", areas: ["chest", "triceps", "shoulders", "hamstrings"], for: /press|push-up|dip/i, dose: "6 reps", how: ["Do one easy push-up (knees down is fine).", "Push your hips up and back into a downward dog and hold for a breath.", "Come back to the push-up position."] },
+    { n: "Open books", kind: "move", areas: ["back", "chest"], for: /row|bench|press|fly|pulldown/i, dose: "8 per side", how: ["Lie on your side, knees bent, arms straight out in front together.", "Open the top arm across your body to the other side, following it with your eyes.", "Bring it back. Let your upper back do the turning."] },
+    { n: "Thoracic extensions on a bench", kind: "move", areas: ["back", "shoulders"], for: /overhead|shoulder press|pull-up|pulldown|front squat/i, dose: "8 slow reps", how: ["Kneel facing a bench with your elbows on it, hands together.", "Sit your hips back and let your chest sink toward the floor.", "Come back up. You should feel your upper back open, not your lower back."] },
+    { n: "Dead hang or scap pulls", kind: "move", areas: ["back", "biceps", "shoulders"], for: /pull-up|chin-up|pulldown|row/i, dose: "2 × 15 s hang, or 8 scap pulls", how: ["Hang from a pull-up bar with straight arms (feet on a box for help if needed).", "For scap pulls: without bending your arms, pull your shoulders down away from your ears, then relax."] },
+    { n: "Cat-cow", kind: "move", areas: ["back", "core"], for: /deadlift|row|squat|good morning|back extension/i, dose: "8 slow reps", how: ["On hands and knees.", "Round your back up toward the ceiling, then let your belly drop and lift your chest.", "Move slowly with your breathing."] },
+    { n: "Wrist and elbow circles", kind: "move", areas: ["biceps", "triceps"], for: /curl|extension|pushdown|skull|front squat|bench/i, dose: "10 each way", how: ["Arms out in front, make fists and circle your wrists.", "Then bend and straighten your elbows a few times, palms up then palms down."] },
+    { n: "Light band curls and pushdowns", kind: "move", areas: ["biceps", "triceps"], for: /curl|pushdown|extension|skull|dip/i, dose: "15 of each, very light", how: ["Use a light band or the lightest cable weight.", "Do easy curls, then easy pushdowns, just to get blood into your arms."] },
+    { n: "Bodyweight squats", kind: "move", areas: ["quads", "glutes"], for: /squat|leg press|lunge|step-up|hack|pendulum|belt/i, dose: "10 reps", how: ["Feet about shoulder-width, toes slightly out.", "Sit down and back as low as is comfortable, chest up.", "Stand up through your whole foot."] },
+    { n: "Squat with a pause and reach", kind: "move", areas: ["quads", "glutes", "back"], for: /squat|front squat|goblet|hack/i, dose: "5 reps, 3 s at the bottom", how: ["Squat down and hold the bottom, elbows pushing your knees out.", "Reach one arm to the ceiling, then the other, keeping your chest up.", "Stand up and repeat."] },
+    { n: "Ankle rocks", kind: "move", areas: ["calves", "quads"], for: /squat|lunge|leg press|calf|step-up/i, dose: "10 per side", how: ["Stand facing a wall in a short split stance.", "Rock your front knee toward the wall, heel staying down, then back.", "Go only as far as your heel stays flat."] },
+    { n: "Calf raises", kind: "move", areas: ["calves"], for: /calf|jump|run|squat/i, dose: "15 slow reps", how: ["Stand on a step or flat floor.", "Rise up onto your toes, pause, and lower slowly."] },
+    { n: "Leg swings", kind: "move", areas: ["hamstrings", "glutes", "quads"], for: /deadlift|squat|lunge|leg|hip|split/i, dose: "10 each way, each leg", how: ["Hold a wall or rack for balance.", "Swing one leg forward and back, easy and relaxed.", "Then swing it side to side across your body. Switch legs."] },
+    { n: "Walking lunges with a reach", kind: "move", areas: ["quads", "glutes"], for: /lunge|split squat|step-up|squat/i, dose: "6 per side", how: ["Step forward into a lunge.", "Reach both arms overhead and lean slightly away from the back leg.", "Step through into the next lunge."] },
+    { n: "Hip hinges (bodyweight good mornings)", kind: "move", areas: ["hamstrings", "glutes", "back"], for: /deadlift|romanian|rdl|good morning|hip thrust|swing|row/i, dose: "10 reps", how: ["Hands on your hips, soft knees.", "Push your hips back and let your chest come forward with a flat back until you feel your hamstrings.", "Squeeze your glutes to stand up."] },
+    { n: "Hamstring sweeps", kind: "move", areas: ["hamstrings"], for: /deadlift|romanian|rdl|hamstring|leg curl/i, dose: "6 per side", how: ["Put one heel in front of you, toes up, leg straight.", "Hinge forward and sweep both hands down toward that foot and back up.", "Step forward and switch legs."] },
+    { n: "Glute bridges", kind: "move", areas: ["glutes", "hamstrings"], for: /hip thrust|deadlift|squat|lunge|kickback|abduction/i, dose: "10 reps", how: ["Lie on your back, knees bent, feet flat.", "Squeeze your glutes and lift your hips until your body is straight from knees to shoulders.", "Lower with control."] },
+    { n: "Side-lying clamshells", kind: "move", areas: ["glutes"], for: /abduction|squat|lunge|hip|split/i, dose: "12 per side", how: ["Lie on your side, knees bent, feet together.", "Keep your feet touching and open your top knee like a clamshell.", "Lower slowly. Keep your hips from rolling back."] },
+    { n: "Lateral lunges", kind: "move", areas: ["quads", "glutes"], for: /adduction|squat|lunge|sumo/i, dose: "6 per side", how: ["Take a wide step to one side and sit back into that hip, other leg straight.", "Push back to the middle and switch sides. Keep both feet flat."] },
+    { n: "Inchworms", kind: "move", areas: ["hamstrings", "core", "shoulders"], for: /deadlift|plank|push-up|press/i, dose: "5 reps", how: ["Stand, bend down and put your hands on the floor (bend your knees if you need to).", "Walk your hands out to a push-up position.", "Walk them back and stand up."] },
+    { n: "World's greatest stretch", kind: "move", areas: ["glutes", "hamstrings", "quads", "back"], for: /squat|deadlift|lunge|clean/i, dose: "3 per side", how: ["Step into a long lunge and put both hands on the floor inside your front foot.", "Turn your chest and reach the inside arm to the ceiling.", "Bring it down, then straighten your front leg for a moment. Switch sides."] },
+    { n: "Dead bugs", kind: "move", areas: ["core"], for: /squat|deadlift|crunch|plank|ab /i, dose: "6 per side", how: ["Lie on your back, arms up, knees bent over your hips.", "Lower one arm and the opposite leg toward the floor, keeping your lower back down.", "Come back and switch."] },
+    { n: "Bird dogs", kind: "move", areas: ["core", "back", "glutes"], for: /deadlift|row|back extension|squat/i, dose: "6 per side", how: ["On hands and knees, back flat.", "Reach one arm forward and the opposite leg back, hold for a breath.", "Return without letting your hips tip. Switch sides."] },
+    // ---- Stretches (after, or on a rest day). Hold gently, no bouncing ----
+    { n: "Doorway chest stretch", kind: "stretch", areas: ["chest", "shoulders"], for: /bench|press|fly|pec|dip|push-up/i, dose: "30 s per side", how: ["Put your forearm on a door frame or rack, elbow at shoulder height.", "Step through gently until you feel a stretch across your chest.", "Breathe slowly."] },
+    { n: "Floor chest opener", kind: "stretch", areas: ["chest"], for: /bench|fly|pec|press/i, dose: "30 s per side", how: ["Lie face down with one arm straight out to the side, palm down.", "Gently roll your body away from that arm until you feel the chest stretch."] },
+    { n: "Cross-body shoulder stretch", kind: "stretch", areas: ["shoulders", "back"], for: /press|raise|row|rear delt|face pull/i, dose: "30 s per side", how: ["Bring one arm across your chest.", "Use the other hand to gently pull it closer above the elbow."] },
+    { n: "Sleeper stretch", kind: "stretch", areas: ["shoulders"], for: /overhead|press|raise|throw/i, dose: "30 s per side", how: ["Lie on your side with the bottom arm in front, elbow bent to 90 degrees, fingers up.", "Use the top hand to gently ease the bottom forearm toward the floor. Stop at a mild stretch."] },
+    { n: "Behind-the-back shoulder stretch", kind: "stretch", areas: ["shoulders", "chest"], for: /press|bench|raise/i, dose: "30 s", how: ["Clasp your hands behind your back (or hold a towel).", "Straighten your arms and gently lift them away from your back, chest up."] },
+    { n: "Overhead triceps stretch", kind: "stretch", areas: ["triceps", "shoulders"], for: /triceps|pushdown|extension|skull|dip|press/i, dose: "30 s per side", how: ["Reach one arm overhead and bend the elbow so your hand drops behind your head.", "Use the other hand to gently push the elbow back."] },
+    { n: "Biceps wall stretch", kind: "stretch", areas: ["biceps", "chest"], for: /curl|row|chin-up|pulldown/i, dose: "30 s per side", how: ["Put your palm flat on a wall behind you at shoulder height, thumb up.", "Turn your body slowly away from the wall until you feel the front of your arm stretch."] },
+    { n: "Wrist flexor and extensor stretch", kind: "stretch", areas: ["biceps", "triceps"], for: /curl|deadlift|row|grip|carry|pull-up/i, dose: "20 s each way, each arm", how: ["Arm straight in front, palm up. Gently pull your fingers down and back with the other hand.", "Then turn the palm down and gently pull the back of the hand toward you."] },
+    { n: "Lat stretch on a rack", kind: "stretch", areas: ["back"], for: /pulldown|pull-up|chin-up|row|pullover/i, dose: "30 s per side", how: ["Hold a rack or doorframe at about hip height with one hand.", "Sit your hips back and away until you feel the side of your back stretch."] },
+    { n: "Child's pose with a side reach", kind: "stretch", areas: ["back", "shoulders"], for: /row|pulldown|pull-up|deadlift|press/i, dose: "30 s, then 15 s per side", how: ["Kneel, sit back toward your heels and walk your hands forward.", "Let your chest sink toward the floor.", "Walk both hands to one side to stretch the side of your back, then the other."] },
+    { n: "Upper trap and neck stretch", kind: "stretch", areas: ["back", "shoulders"], for: /shrug|row|deadlift|carry|upright|press/i, dose: "20 s per side", how: ["Sit or stand tall. Tip one ear toward your shoulder.", "Rest that hand lightly on your head for a gentle extra stretch. Keep the other shoulder down."] },
+    { n: "Knees-to-chest lower back stretch", kind: "stretch", areas: ["back", "core"], for: /deadlift|squat|row|back extension|good morning/i, dose: "30 s", how: ["Lie on your back and hug both knees toward your chest.", "Gently rock side to side if it feels good."] },
+    { n: "Lying spinal twist", kind: "stretch", areas: ["back", "glutes", "core"], for: /deadlift|squat|row|rotation|woodchop/i, dose: "30 s per side", how: ["Lie on your back, arms out wide.", "Bring one knee across your body toward the floor, shoulders staying down.", "Look the other way if your neck is comfortable."] },
+    { n: "Standing quad stretch", kind: "stretch", areas: ["quads"], for: /squat|leg press|extension|lunge|hack/i, dose: "30 s per side", how: ["Hold a wall for balance.", "Pull one heel toward your glutes, knees together.", "Gently squeeze the glute of that leg to feel it more."] },
+    { n: "Couch stretch", kind: "stretch", areas: ["quads", "glutes"], for: /squat|lunge|split|leg press|sprint/i, dose: "30 s per side", how: ["Kneel with one shin up against a wall or couch behind you (use a pad).", "Bring the other foot forward and slowly lift your chest. Go easy; it's a strong stretch."] },
+    { n: "Kneeling hip flexor stretch", kind: "stretch", areas: ["quads", "glutes", "core"], for: /squat|lunge|deadlift|hip thrust|leg raise/i, dose: "30 s per side", how: ["Kneel on one knee (use a pad), other foot in front.", "Tuck your hips under and shift forward until you feel the front of the back hip stretch."] },
+    { n: "Hamstring stretch", kind: "stretch", areas: ["hamstrings"], for: /deadlift|romanian|rdl|leg curl|good morning/i, dose: "30 s per side", how: ["Put one heel on a low bench or step, leg straight.", "Keep your back flat and hinge forward from your hips until you feel the back of the leg."] },
+    { n: "Lying hamstring stretch with a towel", kind: "stretch", areas: ["hamstrings", "calves"], for: /deadlift|leg curl|romanian|lunge/i, dose: "30 s per side", how: ["Lie on your back and loop a towel around one foot.", "Keep that leg straight and gently pull it up until you feel the back of the leg. Other knee can stay bent."] },
+    { n: "Figure-4 glute stretch", kind: "stretch", areas: ["glutes"], for: /squat|hip thrust|deadlift|lunge|glute/i, dose: "30 s per side", how: ["Lie on your back, cross one ankle over the other knee.", "Pull the bottom leg toward your chest until you feel it in the glute of the crossed leg."] },
+    { n: "Pigeon stretch", kind: "stretch", areas: ["glutes"], for: /squat|lunge|hip thrust|abduction/i, dose: "30 s per side", how: ["From hands and knees, bring one knee forward behind your wrist with the shin angled across.", "Slide the other leg back and lower your hips. Use a pillow under the front hip if needed."] },
+    { n: "Butterfly stretch", kind: "stretch", areas: ["quads", "glutes"], for: /adduction|sumo|squat|lateral lunge/i, dose: "30 s", how: ["Sit with the soles of your feet together, knees out.", "Hold your feet and gently lean forward with a long back. Let gravity lower your knees."] },
+    { n: "Wide-leg side lunge stretch", kind: "stretch", areas: ["quads", "hamstrings"], for: /adduction|sumo|squat|lunge/i, dose: "30 s per side", how: ["Stand with feet wide. Bend one knee and shift toward it, other leg straight, toes up.", "Feel the inner thigh of the straight leg. Hands on the bent knee for support."] },
+    { n: "Wall calf stretch", kind: "stretch", areas: ["calves"], for: /calf|squat|lunge|run|jump/i, dose: "30 s per side", how: ["Hands on a wall, one foot back with the heel down and leg straight.", "Lean in until you feel the calf. Then bend that knee a little to reach lower down."] },
+    { n: "Step calf drop", kind: "stretch", areas: ["calves"], for: /calf/i, dose: "30 s per side", how: ["Stand on a step with the ball of one foot on the edge, holding a rail.", "Let that heel sink below the step slowly. Keep it gentle."] },
+    { n: "Shin stretch", kind: "stretch", areas: ["calves", "quads"], for: /run|jump|calf/i, dose: "20 s", how: ["Kneel and sit back on your heels with the tops of your feet flat.", "Lean back slightly with your hands behind you until you feel the front of your shins."] },
+    { n: "Lying stomach stretch", kind: "stretch", areas: ["core"], for: /crunch|ab |leg raise|plank|rollout/i, dose: "20 s", how: ["Lie face down, hands under your shoulders.", "Gently press your chest up, hips staying down, only as far as is comfortable."] },
+    { n: "Standing side bend", kind: "stretch", areas: ["core", "back"], for: /side|oblique|carry|woodchop|press/i, dose: "20 s per side", how: ["Stand tall and reach one arm overhead.", "Lean gently to the other side until you feel the side of your waist."] }
+];
+const WARMUP_GROUPS = [["Upper body", ["chest", "back", "shoulders", "biceps", "triceps"]], ["Lower body", ["quads", "hamstrings", "glutes", "calves"]], ["Core", ["core"]]];
+// The warm-up and cool-down for a list of exercises
+function warmupFor(names) {
+    const list = names.filter((n) => typeof EXERCISES === "object" && EXERCISES[n] && !isCardio(n));
+    const count = {};
+    list.forEach((n, i) => { const m = builderMuscle(n); if (m !== "cardio") count[m] = (count[m] || 0) + (i === 0 ? 1.5 : 1); });
+    const muscles = Object.keys(count).sort((a, b) => count[b] - count[a]);
+    // Score: the lifts it prepares you for (movement first, per NSCA "RAMP" warm-ups), then the muscles it covers
+    const score = (w) => list.filter((n) => w.for && w.for.test(n)).length * 3 + w.areas.reduce((sc, a) => sc + (count[a] || 0), 0);
+    const pick = (kind, max) => {
+        const pool = WARMUPS.filter((x) => x.kind === kind && score(x) > 0).sort((a, b) => score(b) - score(a));
+        const out = [];
+        // Best matches first, but every worked muscle gets something
+        pool.forEach((w) => { if (out.length < Math.ceil(max / 2) && !out.includes(w)) out.push(w); });
+        muscles.forEach((m) => {
+            if (out.length >= max || out.some((w) => w.areas.includes(m))) return;
+            const w = pool.find((x) => !out.includes(x) && x.areas[0] === m) || pool.find((x) => !out.includes(x) && x.areas.includes(m));
+            if (w) out.push(w);
+        });
+        pool.forEach((w) => { if (out.length < Math.min(max, 3) && !out.includes(w)) out.push(w); });
+        return out.slice(0, max);
+    };
+    // Lighter warm-up sets of the first lift, from its target weight
+    let ramp = null;
+    const first = list.find((n) => equipOf(n) !== "body") || null;
+    if (first) {
+        const unit = getProfile().unit;
+        const t = nextTarget(first, "3 × 8–10", unit);
+        const w = t && t.weight > 0 ? t.weight : 0;
+        const r = (pct) => loadableDrop(first, unit, w, pct, false);
+        // Barbell lifts start with the empty bar; each set a bit heavier, all lighter than your first real set
+        const bar = BARBELL.test(first) ? (unit === "kg" ? 20 : 45) : 0;
+        const steps = [[Math.max(bar, r(0.4)), 8], [Math.max(bar, r(0.6)), 5], [Math.max(bar, r(0.8)), 3]]
+            .filter(([x], i, a) => x > 0 && x < w && (i === 0 || x > a[i - 1][0]));
+        ramp = { name: first, sets: w > 0 ? (steps.length ? steps : w > Math.max(bar, r(0.5)) ? [[Math.max(bar, r(0.5)), 8]] : []) : [], unit, w };
+    }
+    return { muscles, moves: pick("move", 4), stretches: pick("stretch", 4), ramp };
+}
+const warmupCard = (w, i) => `<li class="wu-item"><label class="wu-check"><input type="checkbox" aria-label="Done: ${escapeHtml(w.n)}"><span class="wu-name">${escapeHtml(w.n)}</span><span class="wu-dose">${escapeHtml(w.dose)}</span></label>
+    <details class="wu-how"><summary>How</summary><ol>${w.how.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol></details>
+    ${w.kind === "stretch" ? `<button type="button" class="rest-btn wu-timer" data-rest="30" data-rest-name="${escapeHtml(w.n)}"><span aria-hidden="true">&#9654;</span> 30 s timer</button>` : ""}</li>`;
+function showWarmup(names, title) {
+    const plan = warmupFor(names);
+    let dlg = document.getElementById("warmup-dialog");
+    if (!dlg) {
+        document.body.insertAdjacentHTML("beforeend", `<dialog id="warmup-dialog" class="finish-dialog warmup-dialog" aria-labelledby="warmup-title"><div class="finish-inner"></div></dialog>`);
+        dlg = document.getElementById("warmup-dialog");
+        dlg.addEventListener("click", (ev) => { if (ev.target === dlg || ev.target.closest("[data-wu-close]")) { if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); } });
+    }
+    const names2 = plan.muscles.slice(0, 4).map((m) => (BUILD_MUSCLE_NAME[m] || m).toLowerCase());
+    dlg.querySelector(".finish-inner").innerHTML = `
+        <p class="finish-kicker">Warm up for ${escapeHtml(title || "today")}</p>
+        <h2 id="warmup-title">About 8 minutes</h2>
+        <p class="wu-intro">Made for this workout${names2.length ? `: ${escapeHtml(names2.join(", "))}` : ""}. Easy and smooth, never to the point of strain.</p>
+        <h3 class="wu-h">1. Get warm <span>3–5 min</span></h3>
+        <p class="wu-text">Easy cardio until you're breathing a little harder: bike, rower, brisk walk, or marching in place.</p>
+        <h3 class="wu-h">2. Loosen up <span>${plan.moves.length} moves</span></h3>
+        <ul class="wu-list">${plan.moves.map(warmupCard).join("")}</ul>
+        ${plan.ramp ? `<h3 class="wu-h">3. Warm-up sets <span>${escapeHtml(plan.ramp.name)}</span></h3>
+            ${plan.ramp.sets.length ? `<ul class="wu-ramp">${plan.ramp.sets.map(([w, r]) => `<li><strong>${trimNum(w)} ${escapeHtml(plan.ramp.unit)}</strong> × ${r}</li>`).join("")}</ul><p class="wu-text">Then your first real set at ${trimNum(plan.ramp.w)} ${escapeHtml(plan.ramp.unit)}. Rest about a minute between these; they shouldn't tire you.</p>`
+            : plan.ramp.w > 0 ? `<p class="wu-text">Your first weight is already light, so do one easy set of 8 with it, then start your real sets.</p>` : `<p class="wu-text">Do 2 light sets of ${escapeHtml(plan.ramp.name.toLowerCase())} (8 easy reps, then 5 a bit heavier) before your first real set.</p>`}` : ""}
+        <h3 class="wu-h">After your workout: stretch <span>about 3 min</span></h3>
+        <ul class="wu-list">${plan.stretches.map(warmupCard).join("")}</ul>
+        <p class="wu-fine">Stretch gently, no bouncing. If anything hurts (not just feels tight), stop, and check with a doctor or physical therapist if it keeps happening.</p>
+        <div class="finish-actions"><button type="button" class="btn btn-primary" data-wu-close>Done</button><a class="btn" href="exercises.html#warmups">All warm-ups and stretches</a></div>`;
+    if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e) { dlg.setAttribute("open", ""); } } else dlg.setAttribute("open", "");
+}
+
+function setupWarmups() {
+    // Any "Warm up" button: [data-warmup="Name|Name|..."] with an optional data-warmup-title
+    document.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-warmup]");
+        if (!b) return;
+        showWarmup(b.dataset.warmup.split("|").filter(Boolean), b.dataset.warmupTitle || "");
+    });
+    // Exercises page: every warm-up and stretch, and one for today's workout
+    const box = document.getElementById("wu-library");
+    if (!box) return;
+    // The menu link opens the section
+    addRoute(/^#warmups$/, () => { const d = document.querySelector(".wu-section"); if (d) d.open = true; return { target: document.getElementById("warmups") }; });
+    const today = typeof currentPlanInfo === "function" ? currentPlanInfo() : null;
+    const todayBox = document.getElementById("wu-today");
+    if (todayBox && today && !today.weekDone) {
+        todayBox.innerHTML = `<button type="button" class="btn btn-primary btn-compact" data-warmup="${escapeHtml(today.items.map((x) => x.name).join("|"))}" data-warmup-title="${escapeHtml(today.title)}">Warm up for today: ${escapeHtml(today.title)}</button>`;
+    }
+    const section = (kind, label, note) => `<h3 class="wu-h">${label}</h3><p class="wu-text">${note}</p>${WARMUP_GROUPS.map(([g, areas]) => {
+        const items = WARMUPS.filter((w) => w.kind === kind && areas.includes(w.areas[0]));
+        return items.length ? `<h4 class="wu-group">${g}</h4><ul class="wu-list">${items.map(warmupCard).join("")}</ul>` : "";
+    }).join("")}`;
+    box.innerHTML = section("move", "Before you lift: moving warm-ups", "Easy, controlled movement that gets your joints and muscles ready. Pick the ones for what you're training.")
+        + section("stretch", "After you lift: stretches", "Hold each one gently, no bouncing. Great after a workout or on a rest day.");
 }
 
 function setupPlanBar() {
