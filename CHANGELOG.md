@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-15 · Things stay open while you work out
+
+- **Open things stay open.** Tapping + set, checking off an exercise, swapping or logging used to redraw the day and snap every open section shut. Now the day remembers: an open **More**, an open set log and the **···** menu all stay open. Saving your sets closes just that log, as you'd expect.
+- **"More" is a regular button** at the end of the Log sets row. It no longer sits over the Log sets button, which could make taps on iPhone hit the wrong thing.
+- The "Use Ground Up like an app" tip no longer covers the rest timer.
+
 ## 2026-10-15 · A calmer workout screen
 
 - **Each exercise shows only what you need mid-workout:** its number, name, sets × reps · weight, the muscle it works, **Log sets**, and **Rest**. A small "↑ Heavier than last time" shows when the weight goes up. Everything else (− set / + set, the easier option, last time's numbers and tips, How to, Swap) is one tap away under **More**. Each exercise now takes about half the space.

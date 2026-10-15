@@ -3699,10 +3699,15 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .day-menu .day-edit { flex-wrap: wrap; margin-top: 8px; }
 /* "What this workout hits" as a quiet link-style button */
 .day-hits.btn { padding: 8px 0; border-color: transparent; text-decoration: underline; text-decoration-color: var(--volt); text-underline-offset: 5px; text-decoration-thickness: 2px; }
-/* "More" sits on the same line as Log sets and Rest (only the button itself takes taps) */
-.ex-more { margin-top: -44px; pointer-events: none; }
-.ex-more > * { pointer-events: auto; }
-.ex-more > summary { display: flex; width: max-content; margin-left: auto; }
-.ex-more[open] > summary { margin-bottom: 4px; }
 .ex-more > *:not(summary) { display: block; margin-top: 8px; }
 .ex-more > .ex-sets-adjust, .ex-more > .ex-actions, .ex-more > .ex-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* "More": a plain button at the end of the Log sets row; its panel opens below */
+.ex-more-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-left: auto; padding: 0 4px; border: 0; background: none; cursor: pointer; font: inherit; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.ex-more-btn::after { content: "+"; font-size: 1rem; }
+.ex-more-btn[aria-expanded="true"]::after { content: "\2212"; }
+.ex-more-btn:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+.ex-more[hidden] { display: none; }
+.ex-more { margin-top: 2px; padding-bottom: 6px; }
+/* The "add to Home Screen" tip waits while a rest timer is showing */
+body.rest-on .install-tip { display: none; }

@@ -2602,6 +2602,14 @@ function setupPrograms() {
     };
     let lineups = []; // what's on screen, per day
     let firstTipShown = new Set();
+    // What's open on the day cards (More panels, set logs, day menus), so a redraw (+ set, a check-off,
+    // a swap) doesn't snap everything shut
+    const openMore = new Set(), openLogs = new Set(), openMenus = new Set();
+    function restoreOpen() {
+        openMore.forEach((k) => { const panel = document.getElementById(`more-${k}`), b = els.grid.querySelector(`[data-more="${k}"]`); if (panel && b) { panel.hidden = false; b.setAttribute("aria-expanded", "true"); } else openMore.delete(k); });
+        openLogs.forEach((k) => { const f = document.getElementById(`log-${k}`), b = els.grid.querySelector(`[data-log="${k}"]`); if (f && b) { f.hidden = false; b.setAttribute("aria-expanded", "true"); } else openLogs.delete(k); });
+        openMenus.forEach((di) => { const m = els.grid.querySelector(`.day-card[data-day="${di}"] .day-menu`); if (m) m.open = true; else openMenus.delete(di); });
+    }
     // Your plan: back-to-back muscles and too much of one muscle, with a one-tap fix
     const goalKeyFor = () => ({ strength: "strength", fatloss: "fit", health: "fit" }[getProfile().goal] || "muscle");
     function balanceNote(di) {
@@ -2763,6 +2771,7 @@ function setupPrograms() {
             </article>`).join("");
 
         updateProgress();
+        restoreOpen();
         renderProfileNote(profile);
         // Only the plan you're actually doing is "your plan" (looking at another one doesn't switch it)
         const cur = store.get("gu-last-plan") || {};
@@ -2860,8 +2869,9 @@ function setupPrograms() {
                         ${!parsed.timed ? `<button type="button" class="chip chip-go" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log sets</button>` : ""}
                         ${cardio ? `<button type="button" class="chip chip-go" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log cardio</button>` : ""}
                         ${x.rest && restSeconds(x.rest) ? `<button type="button" class="rest-btn" data-rest="${restSeconds(x.rest)}" data-rest-name="${escapeHtml(x.name)}"><span aria-hidden="true">&#9654;</span> Rest ${escapeHtml(x.rest)}<span class="visually-hidden">: start rest timer</span></button>` : x.rest ? `<span class="ex-rest">Rest ${escapeHtml(x.rest)}</span>` : ""}
+                        <button type="button" class="ex-more-btn" data-more="${key}" aria-expanded="false" aria-controls="more-${key}">More<span class="visually-hidden"> about ${escapeHtml(x.name)}</span></button>
                     </span>
-                    <details class="ex-more"><summary>More<span class="visually-hidden"> about ${escapeHtml(x.name)}</span></summary>
+                    <div class="ex-more" id="more-${key}" hidden>
                     ${state.goal === "custom" && !parsed.timed && !cardio ? `<span class="ex-sets-adjust" role="group" aria-label="Sets for ${escapeHtml(x.name)}">
                         <button type="button" class="chip" data-sets-adjust="${key}" data-dir="-1" aria-label="One less set of ${escapeHtml(x.name)}"${parsed.sets <= 1 ? " disabled" : ""}>&minus; set</button>
                         <button type="button" class="chip" data-sets-adjust="${key}" data-dir="1" aria-label="One more set of ${escapeHtml(x.name)}"${parsed.sets >= 8 ? " disabled" : ""}>+ set</button>
@@ -2873,7 +2883,7 @@ function setupPrograms() {
                         ${info ? `<button type="button" class="chip" data-howto="${escapeHtml(x.name)}">How to</button>` : ""}
                         ${x.canRotate ? `<button type="button" class="chip" data-swap="${key}">Swap</button>` : ""}
                     </span>
-                    </details>
+                    </div>
                     ${!parsed.timed ? logForm(x, key, parseDose(dose.text), target, profile.unit) : ""}
                     ${cardio ? cardioForm(x, key, profile.unit) : ""}
                 </div>
@@ -3189,6 +3199,12 @@ function setupPrograms() {
     }
 
     /* ----- Events ----- */
+    els.grid.addEventListener("toggle", (e) => {
+        const m = e.target.closest && e.target.classList.contains("day-menu") ? e.target : null;
+        if (!m) return;
+        const di = Number(m.closest(".day-card").dataset.day);
+        if (m.open) openMenus.add(di); else openMenus.delete(di);
+    }, true);
     els.grid.addEventListener("change", (e) => {
         if (!e.target.matches('input[type="checkbox"]')) return;
         const keys = [...els.grid.querySelectorAll('input[type="checkbox"]:checked')].map((b) => b.dataset.key);
@@ -3342,12 +3358,22 @@ function setupPrograms() {
             setTimeout(() => next.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "center" }), 60);
             return;
         }
+        const moreBtn = e.target.closest("[data-more]");
+        if (moreBtn) {
+            const k = moreBtn.dataset.more, panel = document.getElementById(`more-${k}`);
+            if (!panel) return;
+            panel.hidden = !panel.hidden;
+            moreBtn.setAttribute("aria-expanded", String(!panel.hidden));
+            if (panel.hidden) openMore.delete(k); else openMore.add(k);
+            return;
+        }
         const logBtn = e.target.closest("[data-log]");
         if (logBtn) {
             const form = document.getElementById(`log-${logBtn.dataset.log}`);
             const open = form.hidden;
             form.hidden = !open;
             logBtn.setAttribute("aria-expanded", String(open));
+            if (open) openLogs.add(logBtn.dataset.log); else openLogs.delete(logBtn.dataset.log);
             if (open) {
                 // Bring the set boxes into view (not just the date row)
                 form.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "nearest" });
@@ -3361,6 +3387,7 @@ function setupPrograms() {
             const key = cancel.dataset.logCancel;
             dropDraft(document.getElementById(`log-${key}`));
             document.getElementById(`log-${key}`).hidden = true;
+            openLogs.delete(key);
             const btn = els.grid.querySelector(`[data-log="${key}"]`);
             btn.setAttribute("aria-expanded", "false");
             btn.focus();
@@ -3428,6 +3455,7 @@ function setupPrograms() {
         }
         const date = form.elements.date.value || isoDate(new Date());
         dropDraft(form);
+        openLogs.delete(form.id.replace("log-", ""));
         saveSession(form.dataset.exercise, date, unit, sets, formPlan(form));
         const slot = form.id.replace("log-", "");
         const box = document.getElementById(`ex-${slot}`);
