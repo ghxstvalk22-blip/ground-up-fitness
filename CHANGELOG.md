@@ -2,6 +2,16 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-15 · Warm-ups for every exercise, and a shorter home page
+
+- **Every exercise now has its own warm-up and stretches.** We went through all 122 lifting and core exercises and made sure each one gets warm-up moves made for that lift and stretches for every muscle it works, not just the main one (bench press now stretches your triceps too, deadlifts your hamstrings and grip). Exercises that had nothing specific before (carries, shrugs, pull-throughs, reverse hypers, wall sits, core work) now do.
+- **New moves:** shoulder rolls and shrugs, standing hip circles, standing torso twists, self-resisted curls and presses (no equipment), a seated biceps stretch and a triceps wall stretch.
+- **Home workouts get home warm-ups.** If you train at home, it won't ask you to hang from a pull-up bar, and with no equipment it won't ask for bands or dumbbells.
+- **Smarter matching:** a warm-up only counts as "made for" a lift if it works the same muscles, so a leg press day no longer gets arm circles.
+- **Every exercise guide has a "Warm-up & stretches for this" button**, so you can get one for any single exercise.
+- **The home page is about half as long.** We took out the parts that repeated each other (the program tiles, "How it works", the photo strip and the closing banner), and the four "Nervous about starting?" worries are now tap-to-open questions.
+- **If you already have a plan, the home page is just your Continue button, your starting point folded into one line, and the tools.** The beginner pitch and plan quiz stay out of your way (the goals at the top still switch plans).
+
 ## 2026-10-15 · Videos for every warm-up and stretch
 
 - **Every warm-up move and stretch now has a "Watch how" button**, just like the exercise guides. It opens YouTube videos of that exact move, so you can see how it's done instead of only reading the steps. It works in the Warm up window on your workout and in the Warm-ups & stretches list on the Exercises tab.

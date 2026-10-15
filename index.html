@@ -24,10 +24,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-    <script src="splash.js?v=20261015-5"></script>
-    <link rel="stylesheet" href="styles.css?v=20261015-5">
-    <script src="exercises.js?v=20261015-5" defer></script>
-    <script src="script.js?v=20261015-5" defer></script>
+    <script src="splash.js?v=20261015-6"></script>
+    <link rel="stylesheet" href="styles.css?v=20261015-6">
+    <script src="exercises.js?v=20261015-6" defer></script>
+    <script src="script.js?v=20261015-6" defer></script>
 </head>
 
 <body data-page="home">
@@ -79,37 +79,6 @@
 </section>
 
 <main id="main">
-    <section class="block setup-block" id="setup"><div class="container wide" data-setup></div></section>
-
-    <section class="block fears" aria-labelledby="fears-title">
-        <div class="container wide">
-            <p class="kicker">Nervous about starting?</p>
-            <h2 id="fears-title">Good. It means you care.</h2>
-            <p class="section-lede">Almost everyone feels this way their first few weeks. Here's what people worry about, and what this site does about it.</p>
-            <ul class="fear-grid">
-                <li>
-                    <h3>&ldquo;I don't know what to do.&rdquo;</h3>
-                    <p>Every workout is written out: the exercise, the sets, the reps, how long to rest. Tap any exercise to see how it's done.</p>
-                    <a class="text-link" href="programs.html#program-beginner">See a beginner workout</a>
-                </li>
-                <li>
-                    <h3>&ldquo;People will watch me.&rdquo;</h3>
-                    <p>Honestly, most people are thinking about their own set. Our first-day guide covers where to go, what to bring, and the unwritten rules.</p>
-                    <a class="text-link" href="start.html#first-day">Read the first-day guide</a>
-                </li>
-                <li>
-                    <h3>&ldquo;I'm out of shape.&rdquo;</h3>
-                    <p>That's the starting line, not a problem. Every exercise comes with an easier version, and the plans start light on purpose.</p>
-                    <a class="text-link" href="basics.html#faq-weight">How heavy should I go?</a>
-                </li>
-                <li>
-                    <h3>&ldquo;I don't have time.&rdquo;</h3>
-                    <p>Three sessions a week, about 45 minutes each, is enough to see real progress. No 2-hour workouts required.</p>
-                    <a class="text-link" href="basics.html#faq-often">How often should I train?</a>
-                </li>
-            </ul>
-        </div>
-    </section>
 
     <section class="block get-plan" id="get-plan" aria-labelledby="qs-title">
         <div class="container wide get-plan-grid">
@@ -142,90 +111,35 @@
         </div>
     </section>
 
-    <section class="block programs-showcase" aria-labelledby="showcase-title">
+    <section class="block setup-block" id="setup"><div class="container wide" data-setup></div></section>
+
+    <section class="block fears" aria-labelledby="fears-title">
         <div class="container wide">
-            <div class="section-head">
-                <div>
-                    <p class="kicker">The programs</p>
-                    <h2 id="showcase-title">Pick your lane</h2>
-                </div>
-                <a class="text-link" href="programs.html">See every plan</a>
-            </div>
-            <ul class="program-tiles">
-                <li>
-                    <a class="tile" href="programs.html#program-beginner">
-                        <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=70&w=800" alt="" loading="lazy" decoding="async">
-                        <span class="tile-tag">Start here</span>
-                        <span class="tile-body"><strong>New to lifting</strong><small>3 or 4 days &middot; machines and dumbbells</small></span>
-                    </a>
-                </li>
-                <li>
-                    <a class="tile" href="programs.html#program-fatloss">
-                        <img src="https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&q=70&w=800" alt="" loading="lazy" decoding="async">
-                        <span class="tile-tag">Most popular</span>
-                        <span class="tile-body"><strong>Lose fat</strong><small>3 or 4 days &middot; lifting plus conditioning</small></span>
-                    </a>
-                </li>
-                <li>
-                    <a class="tile" href="programs.html#program-classic">
-                        <img src="https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?auto=format&fit=crop&q=70&w=800" alt="" loading="lazy" decoding="async">
-                        <span class="tile-tag">Bodybuilding</span>
-                        <span class="tile-body"><strong>Classic Physique</strong><small>4 or 5 days &middot; build the V-taper</small></span>
-                    </a>
-                </li>
-                <li>
-                    <a class="tile" href="programs.html#program-strength">
-                        <img src="https://images.unsplash.com/photo-1722925541142-5db2668ca492?auto=format&fit=crop&q=70&w=800" alt="" loading="lazy" decoding="async">
-                        <span class="tile-tag">Barbell</span>
-                        <span class="tile-body"><strong>Get stronger</strong><small>3 or 4 days &middot; squat, bench, deadlift</small></span>
-                    </a>
-                </li>
+            <p class="kicker">Nervous about starting?</p>
+            <h2 id="fears-title">Good. It means you care.</h2>
+            <ul class="fear-list">
+                <li><details>
+                    <summary>&ldquo;I don't know what to do.&rdquo;</summary>
+                    <p>Every workout is written out: the exercise, the sets, the reps, how long to rest. Tap any exercise to see how it's done.</p>
+                    <a class="text-link" href="programs.html#program-beginner">See a beginner workout</a>
+                </details></li>
+                <li><details>
+                    <summary>&ldquo;People will watch me.&rdquo;</summary>
+                    <p>Honestly, most people are thinking about their own set. Our first-day guide covers where to go, what to bring, and the unwritten rules.</p>
+                    <a class="text-link" href="start.html#first-day">Read the first-day guide</a>
+                </details></li>
+                <li><details>
+                    <summary>&ldquo;I'm out of shape.&rdquo;</summary>
+                    <p>That's the starting line, not a problem. Every exercise comes with an easier version, and the plans start light on purpose.</p>
+                    <a class="text-link" href="basics.html#faq-weight">How heavy should I go?</a>
+                </details></li>
+                <li><details>
+                    <summary>&ldquo;I don't have time.&rdquo;</summary>
+                    <p>Three sessions a week, about 45 minutes each, is enough to see real progress. No 2-hour workouts required.</p>
+                    <a class="text-link" href="basics.html#faq-often">How often should I train?</a>
+                </details></li>
             </ul>
         </div>
-    </section>
-
-    <section class="block how-it-works" aria-labelledby="how-title">
-        <div class="container wide how-grid">
-            <div class="how-photo">
-                <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=70&w=1000" srcset="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=70&w=700 700w, https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&q=70&w=1200 1200w" sizes="(max-width: 900px) 100vw, 40vw" alt="A man holding a dumbbell between sets" loading="lazy" decoding="async">
-            </div>
-            <div>
-            <p class="kicker">How it works</p>
-            <h2 id="how-title">Three steps. No guesswork.</h2>
-            <ol class="how-steps">
-                <li>
-                    <span class="how-num" aria-hidden="true">1</span>
-                    <h3>Pick a plan</h3>
-                    <p>Choose your goal and how many days you can train. You get a full week laid out, day by day.</p>
-                </li>
-                <li>
-                    <span class="how-num" aria-hidden="true">2</span>
-                    <h3>Follow along</h3>
-                    <p>Tap any exercise for step-by-step form and a demo. Check it off when you're done.</p>
-                </li>
-                <li>
-                    <span class="how-num" aria-hidden="true">3</span>
-                    <h3>Get a little better</h3>
-                    <p>The plan tells you when to add weight. Small jumps, every week, is how everyone gets strong.</p>
-                </li>
-            </ol>
-            </div>
-        </div>
-    </section>
-
-    <section class="lookbook" aria-label="Start, build, keep going">
-        <figure>
-            <img src="https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&q=70&w=900" alt="" loading="lazy" decoding="async">
-            <figcaption><span>Week 1</span>Show up and learn the moves.</figcaption>
-        </figure>
-        <figure>
-            <img src="https://images.unsplash.com/photo-1605296867304-46d5465a13f1?auto=format&fit=crop&q=70&w=900" alt="" loading="lazy" decoding="async">
-            <figcaption><span>Month 3</span>The weights start to climb.</figcaption>
-        </figure>
-        <figure>
-            <img src="https://images.unsplash.com/photo-1549476464-37392f717541?auto=format&fit=crop&q=70&w=900" alt="" loading="lazy" decoding="async">
-            <figcaption><span>Year 1</span>It's just what you do now.</figcaption>
-        </figure>
     </section>
 
     <section class="block tools-teaser" aria-labelledby="tools-teaser-title">
@@ -246,12 +160,6 @@
         </div>
     </section>
 
-    <section class="final-cta" aria-labelledby="final-title">
-        <div class="container wide final-cta-inner">
-            <h2 id="final-title">Your first workout is 45 minutes away.</h2>
-            <a class="btn btn-light" href="#get-plan">Get my plan</a>
-        </div>
-    </section>
 </main>
 
 <div id="site-footer"></div>

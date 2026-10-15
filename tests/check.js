@@ -189,6 +189,14 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(250);
             check(page.url().endsWith("programs.html?today=1#program-build-3") && await page.locator(".day-card").first().isVisible(), "quick start opens the Programs page on Day 1");
             check(/Build muscle · 3 days/.test(await page.locator("#program-head h3").textContent()), "and shows Build muscle, 3 days");
+            // Back on the home page with a plan and a starting point: a short page
+            await page.evaluate(() => localStorage.setItem("gu-profile", JSON.stringify(Object.assign(JSON.parse(localStorage.getItem("gu-profile") || "{}"), { bodyweight: 180 }))));
+            await page.goto(page.url().replace(/programs\.html.*$/, "index.html"), { waitUntil: "load" });
+            await page.waitForTimeout(250);
+            const ret = await page.evaluate(() => ({ cls: document.body.classList.contains("returning"), fears: getComputedStyle(document.querySelector(".fears")).display, plan: getComputedStyle(document.querySelector(".get-plan")).display, fold: !!document.querySelector("#setup .setup-fold:not([open]) .setup-form") }));
+            check(ret.cls && ret.fears === "none" && ret.plan === "none" && ret.fold && /Continue/.test(await page.locator(".hero-actions").textContent()), "returning visitors get a short home page: Continue, and Your starting point folded");
+            await page.locator("#setup .setup-fold > summary").click();
+            check(await page.locator("#setup .setup-form").isVisible(), "tapping Your starting point opens it");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }
@@ -1372,6 +1380,23 @@ async function openPage(browser, file, viewport, hash = "") {
             check(wu.chest.includes("chest") && wu.chestStretch.includes("triceps") && wu.chestStretch.includes("chest"), `a chest & triceps day warms up and stretches chest and triceps (${wu.chest.join(", ")} / ${wu.chestStretch.join(", ")})`);
             check(wu.legs.some((x) => ["quads", "hamstrings", "glutes"].includes(x)) && !wu.upperInLegs && wu.legStretch.includes("quads") && wu.legStretch.includes("hamstrings"), `a leg day gets leg warm-ups and leg stretches (${wu.legs.join(", ")} / ${wu.legStretch.join(", ")})`);
             check(wu.demo, "every warm-up and stretch has a video demo link");
+            const wuAll = await page.evaluate(() => {
+                const out = [];
+                ["gym", "home"].forEach((place) => {
+                    const prof = JSON.parse(localStorage.getItem("gu-profile") || "{}");
+                    localStorage.setItem("gu-profile", JSON.stringify(Object.assign({}, prof, { place })));
+                    Object.keys(EXERCISES).filter((n) => !isCardio(n) && n !== "Stretching or mobility").forEach((n) => {
+                        const w = warmupFor([n]), ms = musclesOf(n);
+                        const gaps = [!w.moves.some((v) => warmupFits(v, n)) && "no matching warm-up", !w.stretches.some((v) => warmupFits(v, n)) && "no matching stretch",
+                            ms.some((m) => !w.moves.some((v) => v.areas.includes(m))) && "a muscle with no warm-up", ms.some((m) => !w.stretches.some((v) => v.areas.includes(m))) && "a muscle with no stretch",
+                            place === "home" && w.moves.some((v) => v.needs === "bar") && "a pull-up bar at home"].filter(Boolean);
+                        if (gaps.length) out.push(`${place} ${n}: ${gaps.join(", ")}`);
+                    });
+                    localStorage.setItem("gu-profile", JSON.stringify(prof));
+                });
+                return out;
+            });
+            check(wuAll.length === 0, `every exercise gets its own warm-up and stretches, at the gym and at home${wuAll.length ? ": " + wuAll.slice(0, 5).join("; ") : ""}`);
             check(wu.ramp !== false && wu.count >= 50 && wu.kinds === 2, `warm-up sets start at the empty bar and stay under your first set; ${wu.count} warm-ups and stretches`);
             const ord = await page.evaluate(() => {
                 const names = ["Leg extension", "Seated hamstring curl", "Leg press", "Back squat", "Hack squat", "Goblet squat", "Romanian deadlift", "Plank"];

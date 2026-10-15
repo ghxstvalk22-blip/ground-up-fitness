@@ -842,6 +842,30 @@ kbd {
     .fear-grid li + li { border-top: 1px solid var(--line); }
 }
 
+/* Home: the four worries as tap-to-open questions */
+.fear-list { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); max-width: 760px; }
+.fear-list li { border-bottom: 1px solid var(--line); }
+.fear-list summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 10px 0; cursor: pointer; list-style: none;
+    font-family: var(--display); font-size: 1.2rem; font-weight: 850; font-stretch: 85%; text-transform: uppercase; line-height: 1.1; }
+.fear-list summary::-webkit-details-marker { display: none; }
+.fear-list summary::after { content: "+"; flex: 0 0 auto; font-size: 1.4rem; font-weight: 700; color: var(--muted); }
+.fear-list details[open] summary::after { content: "\2212"; }
+.fear-list summary:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+.fear-list p { margin: 0 0 10px; color: var(--muted); }
+.fear-list .text-link { display: inline-block; margin-bottom: 16px; }
+
+/* Home for people who already have a plan: just the cover, and Your starting point folded */
+body.returning .fears, body.returning .get-plan:not(:target) { display: none; }
+.setup-fold { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); }
+.setup-fold > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 56px; padding: 10px 0; cursor: pointer; list-style: none; }
+.setup-fold > summary::-webkit-details-marker { display: none; }
+.setup-fold > summary::after { content: "Edit"; margin-left: auto; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; text-decoration: underline; text-decoration-color: var(--volt); text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.setup-fold[open] > summary::after { content: "Close"; }
+.setup-fold > summary:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+.setup-fold-k { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.setup-fold-v { font-weight: 700; }
+.setup-fold[open] > [data-setup] { padding: 16px 0 24px; }
+
 /* ---------- Home: Get your plan ---------- */
 .get-plan { background-color: var(--surface); }
 .get-plan-grid {
@@ -854,7 +878,7 @@ kbd {
 .get-plan-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 900px) {
     .get-plan-grid { grid-template-columns: 1fr; gap: 28px; }
-    .get-plan-photo { min-height: 260px; }
+    .get-plan-photo { display: none; }
 }
 
 .quickstart { align-self: center; }
@@ -1043,7 +1067,10 @@ kbd {
 .teaser-cards strong::after { content: " \2192"; color: var(--accent); }
 .teaser-cards span { color: var(--muted); font-size: 0.9rem; }
 @media (max-width: 860px) { .teaser-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 460px) { .teaser-cards { grid-template-columns: 1fr; } }
+@media (max-width: 460px) { .teaser-cards { grid-template-columns: 1fr; } .teaser-cards a { padding: 14px 16px; } }
+/* Home on phones: tighter spacing between the few sections left */
+@media (max-width: 600px) { body[data-page="home"] .block { padding: 48px 0; } }
+body.returning .setup-block { padding: 24px 0; }
 
 /* ---------- Home: final call to action ---------- */
 .final-cta { background-color: var(--volt); color: #000000; }
@@ -1631,6 +1658,7 @@ select, input, textarea {
 }
 .howto-close:hover { border-color: var(--ink); }
 .howto-demo { width: 100%; margin: 4px 0 18px; }
+.howto-warm { width: 100%; margin: -8px 0 18px; }
 .howto-body h3 { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; margin: 18px 0 6px; }
 .howto-body p { margin: 0; }
 .howto-steps { margin: 0; padding-left: 1.3rem; }
