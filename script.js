@@ -75,6 +75,7 @@ const FEATURES = [
     setupSessions,
     setupMyDashboard,
     setupApp,
+    setupPullRefresh,
     setupCoach,
     setupWeightTrend,
     setupDashboard,
@@ -5203,6 +5204,65 @@ function setupCoach() {
     log.addEventListener("click", (e) => { if (e.target.closest("a[href]") && phone()) store.set(OPEN_KEY, false); });
     // Stay open from page to page; links like #coach open it too
     if (location.hash === "#coach" || store.get(OPEN_KEY) === true) open(location.hash === "#coach");
+}
+
+/* =========================================================
+   FEATURE: Pull down to refresh, in the installed app.
+   The Home Screen app has no browser bar, so it has no refresh of its own (and the page bounce is
+   turned off to keep the tab bar steady). At the very top of the page, drag down and let go to
+   reload. Not inside dialogs, the Coach, form fields, or anything scrolled. Typed sets are kept
+   (gu-log-draft), and sw.js fetches pages fresh first, so this shows the latest version.
+   ========================================================= */
+function setupPullRefresh() {
+    const ptr = document.createElement("div");
+    ptr.className = "ptr";
+    ptr.setAttribute("aria-live", "polite");
+    ptr.innerHTML = `<span class="ptr-icon" aria-hidden="true"></span><span class="ptr-text"></span>`;
+    document.body.appendChild(ptr);
+    const text = ptr.querySelector(".ptr-text");
+    const PULL = 70;
+    let startY = null, pulled = 0, busy = false;
+    const scrolledParent = (el) => { for (let n = el; n && n !== document.body; n = n.parentElement) if (n.scrollTop > 0) return true; return false; };
+    const reset = () => { startY = null; pulled = 0; ptr.classList.remove("is-pulling", "is-ready"); ptr.style.removeProperty("--pull"); ptr.style.removeProperty("--spin"); text.textContent = ""; };
+    document.addEventListener("touchstart", (e) => {
+        if (busy || !document.documentElement.classList.contains("is-app") || e.touches.length !== 1 || window.scrollY > 0) return;
+        const t = e.target;
+        if (!(t instanceof Element) || t.closest("dialog, .coach, input, textarea, select, [contenteditable], [data-no-pull]") || document.querySelector("dialog[open]") || scrolledParent(t)) return;
+        startY = e.touches[0].clientY;
+    }, { passive: true });
+    document.addEventListener("touchmove", (e) => {
+        if (startY === null) return;
+        const dy = e.touches[0].clientY - startY;
+        // Scrolling up or the page moving cancels; a little finger jitter doesn't
+        if (dy < -12 || window.scrollY > 0) { reset(); return; }
+        if (dy <= 0) return;
+        pulled = Math.min(110, dy * 0.55);
+        ptr.style.setProperty("--pull", `${pulled}px`);
+        ptr.style.setProperty("--spin", `${Math.round(pulled * 4)}deg`);
+        ptr.classList.add("is-pulling");
+        ptr.classList.toggle("is-ready", pulled >= PULL);
+        const msg = pulled >= PULL ? "Let go to refresh" : "Pull to refresh";
+        if (text.textContent !== msg) text.textContent = msg;
+    }, { passive: true });
+    const end = () => {
+        if (startY === null) return;
+        if (pulled >= PULL) {
+            busy = true;
+            ptr.classList.add("is-refreshing");
+            text.textContent = "Refreshing";
+            const go = () => location.reload();
+            // Check for a new version of the app too, then reload
+            if ("serviceWorker" in navigator && navigator.serviceWorker.getRegistration) {
+                navigator.serviceWorker.getRegistration().then((r) => (r ? r.update() : null)).catch(() => {}).then(() => setTimeout(go, 150));
+                setTimeout(go, 1500);
+            } else setTimeout(go, 150);
+            startY = null;
+            return;
+        }
+        reset();
+    };
+    document.addEventListener("touchend", end);
+    document.addEventListener("touchcancel", reset);
 }
 
 /* =========================================================

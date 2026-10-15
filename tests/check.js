@@ -954,6 +954,29 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // Installed app: pull down at the top to refresh (a short pull does nothing)
+        {
+            const { page, errors } = await openPage(browser, "me.html", viewport);
+            const pull = (to) => page.evaluate((to) => {
+                document.documentElement.classList.add("is-app");
+                window.scrollTo(0, 0);
+                const el = document.querySelector("main"), at = (y) => [new Touch({ identifier: 1, target: el, clientX: 150, clientY: y })];
+                el.dispatchEvent(new TouchEvent("touchstart", { touches: at(150), bubbles: true }));
+                for (let y = 150; y <= to; y += 15) el.dispatchEvent(new TouchEvent("touchmove", { touches: at(y), bubbles: true }));
+                const shown = document.querySelector(".ptr-text").textContent;
+                window.__stay = 1;
+                el.dispatchEvent(new TouchEvent("touchend", { touches: [], bubbles: true }));
+                return shown;
+            }, to);
+            const short = await pull(200);
+            await page.waitForTimeout(400);
+            check(short === "Pull to refresh" && await page.evaluate(() => window.__stay === 1), "a short pull in the app doesn't refresh");
+            const [ , long] = await Promise.all([page.waitForNavigation({ timeout: 5000 }).catch(() => null), pull(400)]);
+            check(long === "Let go to refresh" && await page.evaluate(() => window.__stay === undefined), "pulling down at the top of the app refreshes the page");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
         // Security: booby-trapped saved data (or a synced account) can't run code on any page
         {
             const BAD = `<img src=x onerror="window.__pwned=1">`;

@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-15 · Pull down to refresh in the app
+
+- **In the Home Screen app, pull down at the top of any page and let go to refresh it.** The app has no browser bar, so until now there was no way to reload. A small "Pull to refresh" tab drops down as you pull; it says "Let go to refresh" once you've pulled far enough. A short pull does nothing, and it never kicks in while you're scrolling, typing, or inside the Coach or a pop-up. Sets you've half-typed are kept, and it checks for a newer version of the app while it reloads.
+
 ## 2026-10-15 · Warm-ups for every exercise, and a shorter home page
 
 - **Every exercise now has its own warm-up and stretches.** We went through all 122 lifting and core exercises and made sure each one gets warm-up moves made for that lift and stretches for every muscle it works, not just the main one (bench press now stretches your triceps too, deadlifts your hamstrings and grip). Exercises that had nothing specific before (carries, shrugs, pull-throughs, reverse hypers, wall sits, core work) now do.
