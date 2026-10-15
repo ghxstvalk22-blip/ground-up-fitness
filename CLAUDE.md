@@ -1,4 +1,10 @@
-# Ground Up Fitness: instructions for Claude
+# Baseline Fitness: instructions for Claude
+
+The site is called **Baseline** ("Baseline Fitness" in page titles); it was renamed from Ground Up Fitness
+at the owner's request. Internal names keep the old one on purpose: storage keys (`gu-`), the repo and
+site address, the Worker address, and the iPhone Shortcut "Ground Up Rest" (owners' phones use that name).
+The logo is a loaded barbell resting on a sky-blue baseline (`.brand-mark` SVG in `setupLayout`, the
+favicon in every page's `<head>`, and `icons/`).
 
 This repo is a static fitness website (plain HTML, CSS, and JavaScript, no build step)
 for people losing weight, lifting, or starting at the gym. It is hosted on GitHub Pages
@@ -64,7 +70,8 @@ ships **one** focused improvement.
    remove an existing feature unless `ROADMAP.md` explicitly asks for it.
 2. **Match the existing look** (a streetwear/gym-brand style the owner asked for, in the spirit of
    YoungLA, DFYNE, Gold's Gym): the Archivo font (condensed for big headlines, expanded for
-   small labels), black/white/bone colors with the one orange accent (`--volt`), sharp corners,
+   small labels), deep slate (`--base`, the dark brand color) with white and cool grey, and the one
+   sky-blue accent (`--volt`, owner's choice; text on it uses `--on-volt`), sharp corners,
    uppercase letter-spaced labels and buttons, black-and-white photos, plain human wording
    (no buzzwords), and working dark mode and phone layouts (no sideways scrolling at 390px wide).
    Most visitors are on phones: anything you tap must be at least 44px tall there, form fields use

@@ -1,5 +1,5 @@
 /* =========================================================
-   GROUND UP FITNESS — script.js
+   BASELINE FITNESS — script.js
 
    HOW THIS FILE IS ORGANIZED
    Each feature lives in its own setupSomething() block below.
@@ -305,7 +305,7 @@ function setupLayout() {
         headerSlot.outerHTML = `
 <header class="site-header">
     <div class="header-inner">
-        <a class="brand" href="index.html"${page === "home" ? ' aria-current="page"' : ""}><span class="brand-mark" aria-hidden="true"></span>Ground Up</a>
+        <a class="brand" href="index.html"${page === "home" ? ' aria-current="page"' : ""}><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="4" y="31" width="56" height="4"/><rect x="11" y="18" width="7" height="30"/><rect x="19" y="23" width="5" height="20"/><rect x="46" y="18" width="7" height="30"/><rect x="40" y="23" width="5" height="20"/></g><rect class="bm-line" x="4" y="51" width="56" height="5"/></svg>Baseline</a>
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
         <nav id="site-nav" aria-label="Main">
             <ul class="nav-list">${navHtml}</ul>
@@ -363,7 +363,7 @@ function setupLayout() {
 <footer class="site-footer">
     <div class="footer-inner">
         <div class="footer-brand">
-            <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span>Ground Up</a>
+            <a class="brand" href="index.html"><svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><g fill="currentColor"><rect x="4" y="31" width="56" height="4"/><rect x="11" y="18" width="7" height="30"/><rect x="19" y="23" width="5" height="20"/><rect x="46" y="18" width="7" height="30"/><rect x="40" y="23" width="5" height="20"/></g><rect class="bm-line" x="4" y="51" width="56" height="5"/></svg>Baseline</a>
             <p>Plans for real people. Start where you are.</p>
         </div>
         <nav class="footer-nav" aria-label="Footer">
@@ -376,7 +376,7 @@ function setupLayout() {
         </nav>
     </div>
     <div class="footer-fine">
-        <p>&copy; <span id="year">2026</span> Ground Up Fitness &middot; Built by Christopher Dippold for ISCI 250</p>
+        <p>&copy; <span id="year">2026</span> Baseline Fitness &middot; Built by Christopher Dippold for ISCI 250</p>
         <p>Information on this site is general fitness education, not medical advice. Check with a doctor before starting if you have a health condition.</p>
         <p>Photos from Unsplash by ${credits}.</p>
         <p class="footer-hint">Press <kbd>/</kbd> anywhere to search the site. <a href="#main">Back to top</a></p>
@@ -390,7 +390,7 @@ function setupLayout() {
     if (banner && here && !banner.querySelector(".breadcrumbs")) {
         banner.insertAdjacentHTML("afterbegin", `
             <nav class="breadcrumbs" aria-label="You are here">
-                <a href="index.html">Ground Up Fitness</a><span aria-hidden="true">&rsaquo;</span><span aria-current="page">${escapeHtml(here.label)}</span>
+                <a href="index.html">Baseline Fitness</a><span aria-hidden="true">&rsaquo;</span><span aria-current="page">${escapeHtml(here.label)}</span>
             </nav>`);
     }
 
@@ -3716,7 +3716,7 @@ function setupRestTimer() {
             document.body.insertAdjacentHTML("beforeend", `<dialog id="ios-timer-setup" class="finish-dialog" aria-labelledby="ios-timer-title"><div class="finish-inner">
                 <p class="finish-kicker">One-time setup · about 1 minute</p>
                 <h2 id="ios-timer-title">Rest timer on your Lock Screen</h2>
-                <p>iPhones only let their own Clock timer count down on the Lock Screen and in the Dynamic Island. This sets up a tiny shortcut so Ground Up can start that timer for you with your exact rest time.</p>
+                <p>iPhones only let their own Clock timer count down on the Lock Screen and in the Dynamic Island. This sets up a tiny shortcut so Baseline can start that timer for you with your exact rest time.</p>
                 <ol class="ios-steps">
                     <li>Open the <strong>Shortcuts</strong> app and tap <strong>+</strong> to make a new shortcut.</li>
                     <li>Tap <strong>Search Actions</strong>, type <strong>Start Timer</strong>, and tap it.</li>
@@ -3724,7 +3724,7 @@ function setupRestTimer() {
                     <li>Tap <strong>minutes</strong> and change it to <strong>seconds</strong>.</li>
                     <li>Tap the name at the top, rename it exactly <strong>${SHORTCUT}</strong>, and tap <strong>Done</strong>.</li>
                 </ol>
-                <p class="finish-tip">After that, tap <strong>Lock Screen timer</strong> during any rest. Your phone switches to Shortcuts for a moment to start the timer; swipe back to Ground Up. Lock your phone and the countdown is there. If you finish resting early, stop the timer from the Lock Screen.</p>
+                <p class="finish-tip">After that, tap <strong>Lock Screen timer</strong> during any rest. Your phone switches to Shortcuts for a moment to start the timer; swipe back to Baseline. Lock your phone and the countdown is there. If you finish resting early, stop the timer from the Lock Screen.</p>
                 <p><a class="btn" href="shortcuts://">Open Shortcuts</a></p>
                 <p class="finish-tip">These steps stay here when you come back.</p>
                 <div class="finish-actions">
@@ -3782,7 +3782,7 @@ function setupRestTimer() {
         pushWrap.hidden = on || !pushAble() || (IS_IOS && !standalone) || Notification.permission === "denied";
         // The Lock Screen timer (Shortcuts) stays as a backup only when push can't be used
         iosWrap.hidden = !IS_IOS || on || !pushWrap.hidden;
-        if (IS_IOS && !standalone && pushAble() && !on) { iosWrap.hidden = false; document.getElementById("rest-ios-note").textContent = "For a buzz when rest is over with no app switching, add Ground Up to your Home Screen (Share, then Add to Home Screen) and open it from there."; }
+        if (IS_IOS && !standalone && pushAble() && !on) { iosWrap.hidden = false; document.getElementById("rest-ios-note").textContent = "For a buzz when rest is over with no app switching, add Baseline to your Home Screen (Share, then Add to Home Screen) and open it from there."; }
     }
     pushBtn.addEventListener("click", () => {
         pushNote.textContent = "Setting it up...";
@@ -3798,7 +3798,7 @@ function setupRestTimer() {
             })
             .catch((err) => {
                 pushNote.textContent = err && err.message === "denied"
-                    ? "Notifications are off for Ground Up. Turn them on in your phone's Settings, then try again."
+                    ? "Notifications are off for Baseline. Turn them on in your phone's Settings, then try again."
                     : "Couldn't turn on rest alarms right now. Try again in a minute.";
             });
     });
@@ -5267,7 +5267,7 @@ function setupPullRefresh() {
 
 /* =========================================================
    FEATURE: Phone app. Works offline (sw.js) and, on a phone, offers
-   once to add Ground Up to the home screen so it opens like an app.
+   once to add Baseline to the home screen so it opens like an app.
    ========================================================= */
 function setupApp() {
     if ("serviceWorker" in navigator && window.isSecureContext && location.protocol !== "file:") {
@@ -5288,7 +5288,7 @@ function setupApp() {
         if (!ios && !deferred) return;
         document.body.insertAdjacentHTML("beforeend", `
 <aside class="install-tip" role="region" aria-label="Add to home screen">
-    <p><strong>Use Ground Up like an app.</strong> ${ios
+    <p><strong>Use Baseline like an app.</strong> ${ios
         ? 'Tap the Share button <span class="share-glyph" aria-hidden="true">&#x2191;</span>, then <strong>Add to Home Screen</strong>.'
         : "Add it to your home screen: it opens full screen and works offline."}</p>
     <div class="install-actions">
@@ -5665,7 +5665,7 @@ function setupShareWorkout() {
             const box = document.getElementById("share-inbox-input");
             const st = document.querySelector(".share-inbox .share-status");
             const m = String(box ? box.value : "").match(/#share=([A-Za-z0-9_-]+)/);
-            if (!m) { if (st) st.textContent = "That doesn't look like a Ground Up workout link."; return; }
+            if (!m) { if (st) st.textContent = "That doesn't look like a Baseline workout link."; return; }
             if (!activateShared(m[1]) && st) st.textContent = "That link didn't work. It may have been cut off. Ask your friend to send it again.";
         }
     });
@@ -5706,7 +5706,7 @@ function setupShareWorkout() {
             const url = shareLink(all ? days.map((_, i) => i) : [di], withName);
             const title = all ? `${days.length}-day plan` : days[di].title || "Workout";
             const status = dlg.querySelector(".share-status");
-            const text = `${withName && name ? `${name} sent you` : "Here's"} a workout on Ground Up Fitness: ${title}`;
+            const text = `${withName && name ? `${name} sent you` : "Here's"} a workout on Baseline Fitness: ${title}`;
             if (navigator.share) {
                 navigator.share({ title: `Workout: ${title}`, text, url }).then(() => shut(dlg)).catch(() => {});
             } else if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -5749,8 +5749,8 @@ function setupShareWorkout() {
             ${shared.days.map((d, i) => `${k > 1 ? `<h3 class="share-day">Day ${i + 1}: ${escapeHtml(d.title)}</h3>` : ""}${listHtml(d)}`).join("")}
             <p class="finish-tip">Weights aren't shared. You'll get your own, from your logs or your starting point.</p>
             ${inSafari ? `<div class="share-app">
-                <p><strong>Use the Ground Up app on your Home Screen?</strong> iPhone opens links in Safari, not in Home Screen apps, so bring it over in 3 taps:</p>
-                <ol class="share-steps"><li>Tap <strong>Copy for the app</strong></li><li>Open Ground Up from your Home Screen</li><li>Go to <strong>Plans</strong> and tap <strong>Paste workout</strong></li></ol>
+                <p><strong>Use the Baseline app on your Home Screen?</strong> iPhone opens links in Safari, not in Home Screen apps, so bring it over in 3 taps:</p>
+                <ol class="share-steps"><li>Tap <strong>Copy for the app</strong></li><li>Open Baseline from your Home Screen</li><li>Go to <strong>Plans</strong> and tap <strong>Paste workout</strong></li></ol>
                 <button type="button" class="btn btn-primary" data-share-copy>Copy for the app</button>
                 <p class="share-status" role="status"></p>
                 <p class="share-note">Not using the app? Add it here in Safari instead:</p></div>` : ""}
@@ -5768,7 +5768,7 @@ function setupShareWorkout() {
         if (copy) copy.addEventListener("click", () => {
             const url = `${location.origin}${location.pathname.replace(/[^/]*$/, "")}programs.html${SHARE_HASH}${code}`;
             const st = inner.querySelector(".share-app .share-status");
-            const done = () => { copy.textContent = "Copied \u2713"; if (st) st.textContent = "Now open Ground Up from your Home Screen."; };
+            const done = () => { copy.textContent = "Copied \u2713"; if (st) st.textContent = "Now open Baseline from your Home Screen."; };
             if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(() => { if (st) st.innerHTML = `Copy this link: <input class="share-url" readonly value="${escapeHtml(url)}" aria-label="Share link">`; });
         });
         show(dlg);
@@ -5890,7 +5890,7 @@ function showMuscleHits(names, title) {
         });
         bodies.querySelectorAll("svg").forEach((svg, k) => {
             const defs = svg.querySelector("defs");
-            if (defs) defs.insertAdjacentHTML("beforeend", `<pattern id="hits-hatch-${k}" patternUnits="userSpaceOnUse" width="22" height="22" patternTransform="rotate(45)"><rect width="22" height="22" fill="#ff5a1f"/><rect width="9" height="22" fill="#1a1a1a"/></pattern>`);
+            if (defs) defs.insertAdjacentHTML("beforeend", `<pattern id="hits-hatch-${k}" patternUnits="userSpaceOnUse" width="22" height="22" patternTransform="rotate(45)"><rect width="22" height="22" style="fill:var(--volt)"/><rect width="9" height="22" fill="#1a1a1a"/></pattern>`);
             svg.querySelectorAll("path.hit-2").forEach((pth) => pth.setAttribute("style", `fill:url(#hits-hatch-${k})`));
         });
         bodies.querySelectorAll(".mm-muscle").forEach((g) => { g.removeAttribute("tabindex"); g.removeAttribute("role"); });
@@ -6576,7 +6576,7 @@ function setupBuilder() {
             // "Worked twice" is orange with dark stripes, so more work looks like more (not like a shadow)
             bodies.querySelectorAll("svg").forEach((svg, k) => {
                 const defs = svg.querySelector("defs");
-                if (defs) defs.insertAdjacentHTML("beforeend", `<pattern id="bc-hatch-${k}" patternUnits="userSpaceOnUse" width="22" height="22" patternTransform="rotate(45)"><rect width="22" height="22" fill="#ff5a1f"/><rect width="9" height="22" fill="#7a1e00"/></pattern>`);
+                if (defs) defs.insertAdjacentHTML("beforeend", `<pattern id="bc-hatch-${k}" patternUnits="userSpaceOnUse" width="22" height="22" patternTransform="rotate(45)"><rect width="22" height="22" style="fill:var(--volt)"/><rect width="9" height="22" fill="#7a1e00"/></pattern>`);
                 svg.querySelectorAll("path.hit-2").forEach((pth) => pth.setAttribute("style", `fill:url(#bc-hatch-${k})`));
             });
             bodies.querySelectorAll(".mm-muscle").forEach((g) => { g.removeAttribute("tabindex"); g.removeAttribute("role"); });
@@ -8233,7 +8233,7 @@ function setupDashboard() {
         const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-        a.download = `ground-up-everything-${isoDate(new Date())}.csv`;
+        a.download = `baseline-everything-${isoDate(new Date())}.csv`;
         document.body.appendChild(a); a.click(); a.remove();
     });
     $("delete-all").addEventListener("click", () => {
@@ -8463,7 +8463,7 @@ function setupProgressPanel() {
         const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-        a.download = `ground-up-log-${isoDate(new Date())}.csv`;
+        a.download = `baseline-log-${isoDate(new Date())}.csv`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -9012,7 +9012,7 @@ function setupContactForm() {
                 body: JSON.stringify({
                     access_key: web3formsKey,
                     subject: `Website message: ${topic}`,
-                    from_name: "Ground Up Fitness website",
+                    from_name: "Baseline Fitness website",
                     replyto: email,
                     name, email, topic, message
                 })

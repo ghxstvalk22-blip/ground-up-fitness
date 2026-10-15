@@ -1,14 +1,14 @@
 {
-  "name": "Ground Up Fitness",
-  "short_name": "Ground Up",
+  "name": "Baseline Fitness",
+  "short_name": "Baseline",
   "description": "Free workout plans, how-tos for every exercise, and a log that tells you what to lift next time. Built for beginners.",
   "id": "./",
   "start_url": "./index.html?source=app",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0d0d0d",
-  "theme_color": "#000000",
+  "background_color": "#0f1a24",
+  "theme_color": "#0f1a24",
   "categories": [
     "health",
     "fitness",

@@ -1,4 +1,4 @@
-/* Browser test for Ground Up Fitness.
+/* Browser test for Baseline Fitness.
    Run: npm install && node tests/check.js
    Exits with code 1 if anything is broken. Screenshots go to tests/screenshots/
    so you can look at the result. Add a check here whenever you add a feature. */
@@ -1267,7 +1267,7 @@ async function openPage(browser, file, viewport, hash = "") {
         {
             const { page, errors } = await openPage(browser, "index.html", viewport, "?intro=1");
             await page.waitForTimeout(400);
-            check(await page.locator(".intro").count() === 1 && /GROUND/.test((await page.locator(".intro-word").textContent()).replace(/\s/g, "")), "the app intro plays with the logo and name");
+            check(await page.locator(".intro").count() === 1 && /BASELINE/.test((await page.locator(".intro-word").textContent()).replace(/\s/g, "")), "the app intro plays with the logo and name");
             await page.locator(".intro").click();
             await page.waitForTimeout(700);
             check(await page.locator(".intro").count() === 0 && !(await page.evaluate(() => document.documentElement.classList.contains("app-splash"))), "a tap skips the intro and shows the app");

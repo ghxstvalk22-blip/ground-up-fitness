@@ -1,4 +1,4 @@
-/* Ground Up Fitness: the intro when the installed phone app opens.
+/* Baseline Fitness: the intro when the installed phone app opens.
    Runs before the page draws: a black cover shows right away (CSS: html.app-splash), then a short
    animated intro plays on top: a slow-zooming black-and-white gym photo, a barbell that lifts, the logo bars rising (and pumping as the orange line sweeps),
    the name sliding in, the orange line, and the tagline. About 2.5 seconds, once per launch,
@@ -19,11 +19,10 @@
             d.innerHTML = '<div class="intro-photo"></div><div class="intro-shade"></div>' +
                 '<div class="intro-center">' +
                 '<svg class="intro-barbell" viewBox="0 0 140 34" focusable="false"><rect x="4" y="15" width="132" height="4" fill="#ffffff"/>' +
-                '<rect x="14" y="3" width="9" height="28" fill="#ffffff"/><rect x="25" y="7" width="7" height="20" fill="#ffffff"/><rect x="34" y="12" width="4" height="10" fill="#ff5a1f"/>' +
-                '<rect x="117" y="3" width="9" height="28" fill="#ffffff"/><rect x="108" y="7" width="7" height="20" fill="#ffffff"/><rect x="102" y="12" width="4" height="10" fill="#ff5a1f"/>' +
-                '<rect x="56" y="14" width="28" height="6" fill="#ff5a1f"/></svg>' +
-                '<div class="intro-mark"><span></span><span></span><span></span></div>' +
-                '<div class="intro-word">' + "GROUND UP".split("").map(function (c, i) { return '<span style="--i:' + i + '">' + (c === " " ? "&nbsp;" : c) + "</span>"; }).join("") + "</div>" +
+                '<rect x="14" y="3" width="9" height="28" fill="#ffffff"/><rect x="25" y="7" width="7" height="20" fill="#ffffff"/><rect x="34" y="12" width="4" height="10" style="fill:var(--volt)"/>' +
+                '<rect x="117" y="3" width="9" height="28" fill="#ffffff"/><rect x="108" y="7" width="7" height="20" fill="#ffffff"/><rect x="102" y="12" width="4" height="10" style="fill:var(--volt)"/>' +
+                '<rect x="56" y="14" width="28" height="6" style="fill:var(--volt)"/></svg>' +
+                '<div class="intro-word">' + "BASELINE".split("").map(function (c, i) { return '<span style="--i:' + i + '">' + (c === " " ? "&nbsp;" : c) + "</span>"; }).join("") + "</div>" +
                 '<div class="intro-line"></div><p class="intro-tag">Nobody walks in <b>ready.</b></p></div>' +
                 '<p class="intro-skip">Tap to skip</p>';
             document.body.appendChild(d);

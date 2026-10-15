@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-15 · New name, new colors, new logo: Baseline
+
+- **Ground Up is now Baseline.** Everywhere you see the name: the header, page titles, the app on your Home Screen, the opening animation, shared workout messages, and exported files. Your saved workouts, logs and settings are untouched.
+- **New colors: deep slate and sky blue** instead of black and orange, in both light and dark mode. The phone's top bar matches too.
+- **New logo: a loaded barbell resting on a blue baseline**, replacing the three bars. It's in the header, the footer, the browser tab icon and the Home Screen app icon. (If you already added the app to your Home Screen, iPhone may keep the old icon until you remove it and add it again.)
+
 ## 2026-10-15 · Pull down to refresh in the app
 
 - **In the Home Screen app, pull down at the top of any page and let go to refresh it.** The app has no browser bar, so until now there was no way to reload. A small "Pull to refresh" tab drops down as you pull; it says "Let go to refresh" once you've pulled far enough. A short pull does nothing, and it never kicks in while you're scrolling, typing, or inside the Coach or a pop-up. Sets you've half-typed are kept, and it checks for a newer version of the app while it reloads.

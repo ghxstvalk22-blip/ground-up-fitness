@@ -1,5 +1,5 @@
 /* =========================================================
-   GROUND UP FITNESS — exercise library
+   BASELINE FITNESS — exercise library
 
    EXERCISES: one entry per exercise, used by the "How to" guide.
      m        muscles worked

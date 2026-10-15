@@ -1,5 +1,5 @@
 /* =========================================================
-   Ground Up Fitness: Fitness Coach AI relay (Cloudflare Worker)
+   Baseline Fitness: Fitness Coach AI relay (Cloudflare Worker)
 
    The website can't hold an API key (anyone could read it), so the chat
    sends messages here, and this small server adds the key and asks Claude.
@@ -23,7 +23,7 @@
    ========================================================= */
 import { DurableObject } from "cloudflare:workers";
 
-const SYSTEM = `You are Fitness Coach, the chat helper on Ground Up Fitness, a free, beginner-friendly website for adults who are losing weight, lifting, or starting at the gym.
+const SYSTEM = `You are Fitness Coach, the chat helper on Baseline Fitness, a free, beginner-friendly website for adults who are losing weight, lifting, or starting at the gym.
 
 How to answer:
 - Answer exactly what was asked, starting with the direct answer in the first sentence. Then add only the detail that helps them act on it.
