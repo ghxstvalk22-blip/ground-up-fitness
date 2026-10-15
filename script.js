@@ -5944,9 +5944,12 @@ function warmupFor(names) {
     }
     return { muscles, moves: pick("move", 4), stretches: pick("stretch", 4), ramp };
 }
+// A YouTube search for the move, like the exercise guides' "Watch a demo"
+const warmupDemo = (w) => `https://www.youtube.com/results?search_query=${encodeURIComponent(w.n.replace(/\s*\(.*?\)/g, "") + (/stretch|pose/i.test(w.n) ? " how to" : w.kind === "stretch" ? " stretch how to" : " warm up how to"))}`;
 const warmupCard = (w, i) => `<li class="wu-item"><label class="wu-check"><input type="checkbox" aria-label="Done: ${escapeHtml(w.n)}"><span class="wu-name">${escapeHtml(w.n)}</span><span class="wu-dose">${escapeHtml(w.dose)}</span></label>
     <details class="wu-how"><summary>How</summary><ol>${w.how.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol></details>
-    ${w.kind === "stretch" ? `<button type="button" class="rest-btn wu-timer" data-rest="30" data-rest-name="${escapeHtml(w.n)}"><span aria-hidden="true">&#9654;</span> 30 s timer</button>` : ""}</li>`;
+    <span class="wu-tools"><a class="wu-watch" href="${warmupDemo(w)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">&#9654;</span> Watch how<span class="visually-hidden">: ${escapeHtml(w.n)} video (opens in a new tab)</span></a>
+    ${w.kind === "stretch" ? `<button type="button" class="rest-btn wu-timer" data-rest="30" data-rest-name="${escapeHtml(w.n)}"><span aria-hidden="true">&#9654;</span> 30 s timer</button>` : ""}</span></li>`;
 function showWarmup(names, title) {
     const plan = warmupFor(names);
     let dlg = document.getElementById("warmup-dialog");

@@ -1366,10 +1366,12 @@ async function openPage(browser, file, viewport, hash = "") {
                 const b = warmupFor(["Back squat", "Romanian deadlift", "Leg press", "Leg extension"]);
                 const areas = (list) => new Set(list.flatMap((w) => w.areas));
                 return { chest: [...areas(a.moves)], chestStretch: [...areas(a.stretches)], legs: [...areas(b.moves)], legStretch: [...areas(b.stretches)],
+                    demo: [...a.moves, ...a.stretches].every((w) => warmupDemo(w).startsWith("https://www.youtube.com/results?search_query=")),
                     upperInLegs: b.moves.some((w) => w.areas.every((x) => ["chest", "triceps", "biceps"].includes(x))), ramp: a.ramp && a.ramp.sets.every(([w]) => w >= 45 && w < a.ramp.w), count: WARMUPS.length, kinds: new Set(WARMUPS.map((w) => w.kind)).size };
             });
             check(wu.chest.includes("chest") && wu.chestStretch.includes("triceps") && wu.chestStretch.includes("chest"), `a chest & triceps day warms up and stretches chest and triceps (${wu.chest.join(", ")} / ${wu.chestStretch.join(", ")})`);
             check(wu.legs.some((x) => ["quads", "hamstrings", "glutes"].includes(x)) && !wu.upperInLegs && wu.legStretch.includes("quads") && wu.legStretch.includes("hamstrings"), `a leg day gets leg warm-ups and leg stretches (${wu.legs.join(", ")} / ${wu.legStretch.join(", ")})`);
+            check(wu.demo, "every warm-up and stretch has a video demo link");
             check(wu.ramp !== false && wu.count >= 50 && wu.kinds === 2, `warm-up sets start at the empty bar and stay under your first set; ${wu.count} warm-ups and stretches`);
             const ord = await page.evaluate(() => {
                 const names = ["Leg extension", "Seated hamstring curl", "Leg press", "Back squat", "Hack squat", "Goblet squat", "Romanian deadlift", "Plank"];

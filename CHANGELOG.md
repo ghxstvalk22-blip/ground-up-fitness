@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-15 · Videos for every warm-up and stretch
+
+- **Every warm-up move and stretch now has a "Watch how" button**, just like the exercise guides. It opens YouTube videos of that exact move, so you can see how it's done instead of only reading the steps. It works in the Warm up window on your workout and in the Warm-ups & stretches list on the Exercises tab.
+
 ## 2026-10-15 · Warm-ups and stretches, made for each workout
 
 - **Every day has a "Warm up" button.** It builds a warm-up for that workout (about 8 minutes):

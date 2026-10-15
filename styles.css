@@ -3743,5 +3743,9 @@ body.rest-on .install-tip { display: none; }
 .wu-how > summary { display: inline-flex; align-items: center; min-height: 36px; cursor: pointer; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .wu-how ol { margin: 0 0 8px; padding-left: 20px; }
 .wu-timer { min-height: 44px; }
+.wu-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 100%; padding-bottom: 6px; }
+.wu-watch { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--ink); color: var(--ink); text-decoration: none; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+.wu-watch:hover { background: var(--ink); color: var(--paper); }
+.wu-watch:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
 .wu-ramp { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; padding: 0; }
 .wu-ramp li { padding: 8px 12px; border: 1px solid var(--line); }
