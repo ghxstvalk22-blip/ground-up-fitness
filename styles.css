@@ -3787,3 +3787,33 @@ body.rest-on .install-tip { display: none; }
 .wu-watch:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
 .wu-ramp { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 8px; padding: 0; }
 .wu-ramp li { padding: 8px 12px; border: 1px solid var(--line); }
+
+/* ---------- Tools: PR warm-up ---------- */
+.pr-lifts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; padding: 0; border: 0; }
+.pr-lifts legend { margin-bottom: 8px; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.pr-lifts label { position: relative; cursor: pointer; }
+.pr-lifts input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.pr-lifts span { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); background: var(--surface); font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.pr-lifts input:checked + span { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.pr-lifts input:focus-visible + span { outline: 3px solid var(--volt); outline-offset: 2px; }
+.pr-first { margin: 16px 0 8px; }
+.pr-first .text-link { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
+.pr-sets { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
+.pr-set { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.pr-check { display: flex; align-items: center; gap: 10px; min-height: 44px; flex: 1 1 200px; cursor: pointer; }
+.pr-check input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--volt); }
+.pr-num { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 4px; background: var(--ink); color: var(--paper); font-size: 0.75rem; font-weight: 900; }
+.pr-w { font-size: 1.15rem; font-weight: 850; font-stretch: 90%; }
+.pr-r { font-weight: 700; }
+.pr-r small { margin-left: 4px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.pr-check input:checked ~ .pr-w, .pr-check input:checked ~ .pr-r { text-decoration: line-through; color: var(--muted); }
+.pr-plates { flex: 1 1 160px; font-size: 0.88rem; color: var(--muted); }
+.pr-set .rest-btn { min-height: 44px; }
+.pr-go { border-bottom: 2px solid var(--ink); background: rgb(var(--volt-rgb) / 0.12); padding-left: 8px; padding-right: 8px; }
+.pr-go .pr-num { background: var(--volt); color: var(--on-volt); }
+.pr-rest-note { font-size: 0.85rem; font-weight: 700; }
+.pr-rules { margin: 16px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.92rem; }
+.pr-rules li + li { margin-top: 6px; }
+.pr-rules strong { color: var(--ink); }
+.pr-done { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 16px; }
+.pr-status { font-weight: 700; }

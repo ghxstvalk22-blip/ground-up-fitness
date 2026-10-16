@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-16 · PR warm-up tool
+
+- **New on the Tools page: PR warm-up.** Going for a new max on squat, bench, deadlift or overhead press? Pick the lift and type the weight you want to hit. You get every warm-up set in order, with the weight, reps, plates on each side, and a rest timer button. It starts with the empty bar (or a light 135 pull for deadlifts) and gets heavier in smaller jumps with fewer reps, so you're warm but not tired when you go for it. Example for a 315 squat: bar ×10, 125×5, 175×3, 215×2, then singles at 245, 275 and 295.
+- **It checks your target.** If your log or the Fitness Coach knows your estimated max, it tells you what percent of it you're going for, and warns you if it's much more than a realistic PR (about 2 to 5% over).
+- **Safety notes for each lift** (safeties or a spotter, stop if a warm-up moves slowly), and a tip for newer lifters to test a heavy 3 to 5 instead.
+- **Hit it? Tap "I hit it: save my PR"** and it goes straight into your log, so your plans use your new number.
+
 ## 2026-10-15 · New name, new colors, new logo: Baseline
 
 - **Ground Up is now Baseline.** Everywhere you see the name: the header, page titles, the app on your Home Screen, the opening animation, shared workout messages, and exported files. Your saved workouts, logs and settings are untouched.

@@ -82,6 +82,7 @@ const FEATURES = [
     setupResetProgress,
     setupAccount,
     setupTools,
+    setupPrWarmup,
     setupContactForm,
     setupShareWorkout,
     setupWarmups,
@@ -132,6 +133,7 @@ const SITE_NAV = [
         ["Calorie estimator", "Daily calories and protein", "tools.html#tool-calories"],
         ["One-rep max", "Estimate your max and working weights", "tools.html#tool-1rm"],
         ["Plate loader", "Which plates go on the bar", "tools.html#tool-plates"],
+        ["PR warm-up", "Warm-up sets before a max attempt", "tools.html#tool-pr"],
         ["Weight trend", "Your 7-day average, not daily noise", "tools.html#tool-weight"]
     ], more: [
         ["Workout log", "Every set and rep you've logged", "me.html#log"]
@@ -8861,6 +8863,142 @@ function setupTools() {
     [els.calForm, els.rmForm, els.plateForm].forEach((f) => f.addEventListener("submit", (e) => e.preventDefault()));
 
     setUnit(unit, { convert: false });
+}
+
+/* =========================================================
+   FEATURE: PR warm-up (Tools). Pick squat, bench, deadlift or overhead press and the weight you
+   want to hit; get the warm-up sets that build up to it. Common strength-coaching practice:
+   start light (the empty bar, or a light pull for deadlifts), make the jumps smaller and the
+   reps fewer as the weight climbs (about 40, 55, 68, 78, 86 and 92% of the attempt, singles from
+   78%), rest longer as it gets heavy, and stop adding sets at the first one that moves slowly or
+   breaks form. Weights round to what you can load. Hit it? It can be saved to your log.
+   ========================================================= */
+// Plates on each side for a total, heaviest first ([] = just the bar; null = can't load it exactly)
+function platesPerSide(total, bar, unit) {
+    let left = (total - bar) / 2;
+    if (left < -1e-9) return null;
+    const out = [];
+    PLATES[unit].forEach((p) => { while (left >= p - 1e-9) { out.push(p); left -= p; } });
+    return left < 1e-6 ? out : null;
+}
+const PR_STEPS = [[0.4, 5, 90], [0.55, 3, 120], [0.68, 2, 120], [0.78, 1, 150], [0.86, 1, 180], [0.92, 1, 210]];
+// The warm-up sets before a max attempt: [{ w, r, rest, label }]
+function prWarmup(lift, target, unit, bar) {
+    const step = unit === "kg" ? 2.5 : 5;
+    const dead = lift === "Deadlift";
+    // Deadlifts start from the floor with plates on (45s or 20s give the right height), not the empty bar
+    const floorStart = bar + 2 * (unit === "kg" ? 20 : 45);
+    const sets = [];
+    // Warm-ups use easy loads: whole 5 lb (2.5 kg) plates per side, no little change plates
+    const side = unit === "kg" ? 2.5 : 5;
+    const add = (w, r, rest, label) => {
+        w = bar + Math.round((w - bar) / (2 * side)) * 2 * side;
+        const last = sets.length ? sets[sets.length - 1].w : 0;
+        if (w >= target || (sets.length && w <= last) || w < bar) return;
+        // Keep it loadable; drop to the next weight down that is
+        while (w > bar && !platesPerSide(w, bar, unit)) w -= step;
+        if (w <= last && sets.length) return;
+        sets.push({ w, r, rest, label: label || "" });
+    };
+    if (!dead) add(bar, 10, 60, "Empty bar");
+    else if (target >= floorStart * 1.25) add(floorStart, 5, 90, "Light pull");
+    PR_STEPS.forEach(([pct, r, rest]) => {
+        const w = Math.round((target * pct) / step) * step;
+        if (dead && pct === 0.4 && sets.length) return; // the light pull already covers it
+        // Early sets need a real jump from the last one; the heavy singles can be closer together
+        if (sets.length && pct < 0.78 && w < sets[sets.length - 1].w * 1.15) return;
+        if (sets.length && w - sets[sets.length - 1].w < step * 2) return;
+        add(w, r, rest);
+    });
+    return sets;
+}
+function setupPrWarmup() {
+    const form = document.getElementById("pr-form"), out = document.getElementById("pr-results"), barSel = document.getElementById("pr-bar");
+    if (!form || !out) return;
+    const unitNow = () => (store.get("gu-unit") === "kg" ? "kg" : "lb");
+    let unit = unitNow();
+    const fillBars = () => {
+        const i = Math.max(0, barSel.selectedIndex);
+        barSel.innerHTML = BARS[unit].map(([w, label]) => `<option value="${w}">${escapeHtml(label)}</option>`).join("");
+        barSel.selectedIndex = Math.min(i, BARS[unit].length - 1);
+    };
+    const t = (n) => String(Math.round(n * 100) / 100);
+    const plateText = (w, bar) => { const p = platesPerSide(w, bar, unit); return !p ? "" : p.length ? `${p.map(t).join(" + ")} each side` : "Just the bar"; };
+    const restText = (s) => (s < 120 ? `${s} s` : `${Math.round(s / 30) / 2} min`).replace(".5 min", "½ min");
+    let shown = "";
+    function render() {
+        const lift = form.elements.lift.value, bar = Number(barSel.value) || (unit === "kg" ? 20 : 45);
+        const target = Number(form.elements.target.value);
+        // Leaving the weight box fires "change"; don't redraw (and swap the buttons mid-tap) when nothing changed
+        const key = [lift, bar, form.elements.target.value, unit].join("|");
+        if (key === shown) return;
+        shown = key;
+        const word = { "Back squat": "squat", "Bench press": "bench", "Deadlift": "deadlift", "Overhead press": "overhead press" }[lift];
+        if (!form.elements.target.value || !(target > 0)) { out.innerHTML = `<p class="result-empty">Enter the weight you want to hit.</p>`; return; }
+        if (target > 2000) { out.innerHTML = `<p class="result-empty">That's more than any bar can hold. Check the number.</p>`; return; }
+        if (target <= bar * 1.2) { out.innerHTML = `<p class="result-empty">That's barely more than the bar (${t(bar)} ${unit}). A few easy sets with the bar is all the warm-up you need.</p>`; return; }
+        const step = unit === "kg" ? 2.5 : 5;
+        const loadable = platesPerSide(target, bar, unit);
+        const sets = prWarmup(lift, target, unit, bar);
+        // How it compares with what we know about your max
+        const known = typeof coachKnownMax === "function" ? coachKnownMax(lift, unit) : null;
+        let compare = "";
+        if (known && known.from !== "your level and bodyweight" && known.m > 0) {
+            const pct = Math.round((target / known.m) * 100);
+            const m = Math.round(known.m / step) * step;
+            compare = pct > 105
+                ? `<p class="result-note warn">That's ${pct}% of your estimated max (${t(m)} ${unit}, from ${escapeHtml(known.from)}). A realistic PR is usually about 2 to 5% over it, around ${t(Math.round((known.m * 1.03) / step) * step)} ${unit}. Going much higher is how lifts get missed and people get hurt.</p>`
+                : `<p class="result-note">Your estimated max is about ${t(m)} ${unit} (from ${escapeHtml(known.from)}), so this is ${pct}% of it.${pct <= 103 ? " A realistic target." : " A real stretch, but doable on a good day."}</p>`;
+        }
+        out.innerHTML = `
+            ${loadable ? "" : `<p class="result-note warn">You can't load exactly ${t(target)} ${unit} with standard plates. Try ${t(Math.floor((target - bar) / (2 * PLATES[unit][PLATES[unit].length - 1])) * 2 * PLATES[unit][PLATES[unit].length - 1] + bar)} ${unit}.</p>`}
+            ${compare}
+            <p class="pr-first">First: 5 minutes of easy cardio, then a few loosen-up moves. <button type="button" class="text-link" data-warmup="${escapeHtml(lift)}" data-warmup-title="${escapeHtml(word)}">Show ${escapeHtml(word)} warm-up moves</button></p>
+            <ol class="pr-sets">
+                ${sets.map((s, i) => `<li class="pr-set">
+                    <label class="pr-check"><input type="checkbox" aria-label="Done: ${t(s.w)} ${unit} for ${s.r}"><span class="pr-num" aria-hidden="true">${i + 1}</span>
+                        <span class="pr-w">${t(s.w)} ${unit}</span><span class="pr-r">× ${s.r}${s.label ? ` <small>${escapeHtml(s.label)}</small>` : ""}</span></label>
+                    <span class="pr-plates">${escapeHtml(plateText(s.w, bar))}</span>
+                    <button type="button" class="rest-btn" data-rest="${s.rest}" data-rest-name="${escapeHtml(word)} warm-up"><span aria-hidden="true">&#9654;</span> Rest ${restText(s.rest)}</button>
+                </li>`).join("")}
+                <li class="pr-set pr-go">
+                    <span class="pr-check"><span class="pr-num" aria-hidden="true">PR</span><span class="pr-w">${t(target)} ${unit}</span><span class="pr-r">× 1</span></span>
+                    <span class="pr-plates">${escapeHtml(plateText(target, bar))}</span>
+                    <span class="pr-rest-note">Rest 3 to 5 min first</span>
+                </li>
+            </ol>
+            <ul class="pr-rules">
+                <li><strong>Every warm-up should feel fast and easy.</strong> If one moves slowly or your form slips, stop there. That's your top for today, and that's fine.</li>
+                <li><strong>Be safe:</strong> ${lift === "Bench press" ? "have a spotter or set the safety arms just below your chest. Never max out on bench alone with no safeties." : lift === "Back squat" ? "squat inside a rack with the safety bars set just below your lowest point, or have a spotter." : lift === "Overhead press" ? "press in a rack with the safeties at shoulder height, and step back far enough to lower it safely if you miss." : "keep your back flat. If your back rounds, drop it and call it a day; no PR is worth an injury."}</li>
+                <li><strong>One shot.</strong> Hit it or miss it, you're done with heavy singles today. If you're newer to lifting (under about 3 months), test a heavy set of 3 to 5 instead and use the One-rep max tool to estimate it.</li>
+                <li>Pain (not just effort) means stop. If it keeps happening, see a doctor or physical therapist.</li>
+            </ul>
+            <div class="pr-done"><button type="button" class="btn btn-primary" data-pr-save>I hit it: save my PR</button><span class="pr-status" role="status"></span></div>`;
+    }
+    out.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-pr-save]");
+        if (!b) return;
+        const lift = form.elements.lift.value, target = Number(form.elements.target.value);
+        if (!(target > 0) || !EXERCISES[lift]) return;
+        saveSession(lift, isoDate(new Date()), unit, [{ w: target, r: 1 }], { sets: 1, low: 1, high: 1 });
+        if (typeof coachSaveLifts === "function") coachSaveLifts([{ name: lift, w: target, r: 1, u: unit }], unit);
+        b.disabled = true;
+        out.querySelector(".pr-status").textContent = `Saved to your log: ${t(target)} ${unit} for 1. Nice work.`;
+    });
+    form.addEventListener("input", render);
+    form.addEventListener("change", render);
+    form.addEventListener("submit", (e) => e.preventDefault());
+    // The page's lb/kg switch
+    document.querySelectorAll('input[name="unit"]').forEach((r) => r.addEventListener("change", () => {
+        const next = unitNow();
+        if (next !== unit && form.elements.target.value) {
+            const f = next === "kg" ? 1 / LB_PER_KG : LB_PER_KG, s = next === "kg" ? 2.5 : 5;
+            form.elements.target.value = String(Math.round((Number(form.elements.target.value) * f) / s) * s);
+        }
+        unit = next; fillBars(); render();
+    }));
+    fillBars();
+    render();
 }
 
 /* =========================================================

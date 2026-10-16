@@ -412,6 +412,26 @@ async function openPage(browser, file, viewport, hash = "") {
 
         // Tools page
         console.log("\ntools features");
+        // PR warm-up: sets climb from the empty bar to just under the attempt, all loadable
+        {
+            const { page, errors } = await openPage(browser, "tools.html", viewport);
+            await page.evaluate(() => { localStorage.setItem("gu-unit", "lb"); localStorage.removeItem("gu-log"); localStorage.removeItem("gu-coach-maxes"); });
+            await page.reload({ waitUntil: "load" });
+            await page.locator('#pr-form input[value="Back squat"]').check({ force: true });
+            await page.fill("#pr-target", "315");
+            await page.waitForTimeout(150);
+            const pr = await page.evaluate(() => {
+                const sets = prWarmup("Back squat", 315, "lb", 45), dl = prWarmup("Deadlift", 405, "lb", 45), kg = prWarmup("Bench press", 100, "kg", 20);
+                const ok = (list, target, bar, unit) => list.every((s, i) => s.w < target && (i === 0 || s.w > list[i - 1].w) && platesPerSide(s.w, bar, unit)) && list[list.length - 1].w >= target * 0.88;
+                return { first: sets[0].w, n: sets.length, ok: ok(sets, 315, 45, "lb") && ok(dl, 405, 45, "lb") && ok(kg, 100, 20, "kg"), dlFirst: dl[0].w, rows: document.querySelectorAll("#pr-results .pr-set").length, rest: document.querySelectorAll("#pr-results [data-rest]").length };
+            });
+            check(pr.first === 45 && pr.dlFirst === 135 && pr.ok && pr.n >= 5 && pr.rows === pr.n + 1 && pr.rest === pr.n, `PR warm-up builds loadable sets up to the attempt (squat ${pr.n} sets from the empty bar, deadlift from 135)`);
+            await page.locator("[data-pr-save]").click();
+            const saved = await page.evaluate(() => { const l = logFor("Back squat"); return l.length && l[l.length - 1].sets[0].w; });
+            check(saved === 315, "saving a PR puts it in the log");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
         {
             const { page, errors } = await openPage(browser, "tools.html", viewport);
             await page.fill("#cal-age", "30");
