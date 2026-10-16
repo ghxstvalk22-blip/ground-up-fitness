@@ -6179,6 +6179,7 @@ function setupWarmups() {
 function setupPlanBar() {
     if (["programs", "me"].includes(document.body.dataset.page) || !document.getElementById("site-footer") && !document.querySelector(".site-footer")) return;
     if (planPaused()) return;
+    if (document.querySelector(".home-next")) return; // the home page's Up next card already shows it
     const info = currentPlanInfo();
     if (!info) return;
     const custom = info.goal === "custom";
@@ -8653,14 +8654,35 @@ function setupHero() {
             document.addEventListener("click", (e) => { if (e.target.closest('a[href="#setup"], a[href="index.html#setup"]')) openIt(); });
         }
     }
-    if (last && PROGRAMS[last.goal] && actions) {
-        const week = Math.max(1, weekOf(programStart(last.goal)));
-        actions.insertAdjacentHTML("afterbegin",
-            `<a class="btn btn-light" href="programs.html?today=1#program-${last.goal}-${last.days}">Continue: ${escapeHtml(PROGRAMS[last.goal].name)}, week ${week}</a>`);
-        const second = actions.querySelector('a[href="#get-plan"]');
-        if (second) { second.classList.remove("btn-light"); second.classList.add("btn-outline-light"); second.textContent = "Pick a different plan"; }
-        const never = actions.querySelector('a[href="start.html"]');
-        if (never) never.remove();
+    // Returning visitors open on what's next: today's day of their plan with a Start / Continue button,
+    // right under a short "Welcome back" (the Your plan bar steps aside on this page, since this card does its job)
+    const info = last && actions ? currentPlanInfo() : null;
+    if (info) {
+        const custom = info.goal === "custom", paused = planPaused();
+        const doneCount = info.items.filter((x) => x.done).length;
+        const kicker = info.weekDone ? `Week ${info.week} done \u2713`
+            : paused ? "Paused · pick it back up"
+            : info.finishedToday ? "Done today \u2713 · Up next time"
+            : info.started ? `In progress · ${doneCount} of ${info.items.length} done`
+            : `Up next${custom ? "" : ` · Week ${info.week}`}`;
+        const title = info.weekDone ? "Week done. Nice work" : custom ? info.title : `Day ${info.di + 1}: ${info.title}`;
+        const go = info.weekDone ? "Open my plan" : info.started || paused ? "Continue workout" : custom ? "Start workout" : `Start Day ${info.di + 1}`;
+        const shown = info.weekDone ? [] : info.items.slice(0, 3), more = info.weekDone ? 0 : info.items.length - shown.length;
+        const h1 = document.querySelector(".hero-copy h1"), who = getProfile().name;
+        if (h1) { h1.classList.add("hero-welcome"); h1.innerHTML = `Welcome back${who ? `, <span class="hl">${escapeHtml(who)}</span>` : ""}.`; }
+        actions.insertAdjacentHTML("afterbegin", `
+<section class="home-next" aria-labelledby="home-next-title">
+    <p class="home-next-k">${escapeHtml(kicker)}</p>
+    <h2 class="home-next-title" id="home-next-title">${escapeHtml(title)}</h2>
+    <p class="home-next-sub">${escapeHtml(info.name)}${custom ? "" : ` · Week ${info.week}`} · ${info.weekDone ? "your next week starts when this one ends" : `${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
+    ${shown.length ? `<ol class="home-next-list">${shown.map((x) => `<li class="${x.done ? "is-done" : ""}"><strong>${escapeHtml(x.name)}</strong> <span>${escapeHtml(x.d)}${x.done ? " · done" : ""}</span></li>`).join("")}${more > 0 ? `<li class="home-next-more">+ ${more} more</li>` : ""}</ol>` : ""}
+    <div class="home-next-actions">
+        <a class="btn btn-primary" href="${info.href}">${escapeHtml(go)} <span aria-hidden="true">&rarr;</span></a>
+        <a class="btn btn-outline-light" href="me.html">My progress</a>
+    </div>
+    <a class="home-next-switch" href="#get-plan">Pick a different plan</a>
+</section>`);
+        document.body.classList.add("has-home-next");
     }
 
     // Ticker: every exercise in every plan, listed twice so the loop is seamless

@@ -857,6 +857,31 @@ kbd {
 
 /* Home for people who already have a plan: just the cover, and Your starting point folded */
 body.returning .fears, body.returning .get-plan:not(:target) { display: none; }
+/* Up next card on the cover: today's day of your plan, first thing you see */
+body.has-home-next .hero-lede, body.has-home-next .hero-setup-link { display: none; }
+.hero h1.hero-welcome { font-size: clamp(2.6rem, 6vw, 4.6rem); max-width: 14ch; margin-bottom: 1rem; overflow-wrap: anywhere; }
+.hero-actions:has(.home-next) { display: block; }
+.home-next {
+    max-width: 560px; padding: 18px 20px 14px;
+    background-color: rgb(var(--base-rgb) / 0.88); color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.16); border-top: 3px solid var(--volt);
+}
+.home-next-k { margin: 0 0 4px; font-size: 0.7rem; font-weight: 800; font-stretch: 112%; letter-spacing: 0.14em; text-transform: uppercase; color: var(--volt); }
+.home-next-title { margin: 0; font-family: var(--display); font-size: clamp(1.5rem, 3.4vw, 2rem); font-weight: 900; font-stretch: 80%; line-height: 1.05; text-transform: uppercase; color: #ffffff; overflow-wrap: anywhere; }
+.home-next-sub { margin: 6px 0 0; font-size: 0.86rem; color: #cfd6dc; }
+.home-next-list { list-style: none; margin: 12px 0 0; padding: 0; border-top: 1px solid rgba(255, 255, 255, 0.14); }
+.home-next-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.9rem; }
+.home-next-list li span { color: #cfd6dc; font-size: 0.84rem; }
+.home-next-list li.is-done strong { text-decoration: line-through; text-decoration-color: var(--volt); color: #a9b2ba; }
+.home-next-list .home-next-more { color: #cfd6dc; font-size: 0.82rem; justify-content: flex-start; }
+.home-next-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.home-next-actions .btn-primary { background-color: var(--volt); border-color: var(--volt); color: var(--on-volt); }
+.home-next-actions .btn-primary:hover, .home-next-actions .btn-primary:focus-visible { background-color: #ffffff; border-color: #ffffff; color: var(--on-volt); }
+.home-next-switch { display: inline-block; min-height: 44px; line-height: 44px; margin-top: 2px; color: #ffffff; font-size: 0.82rem; font-weight: 700; text-decoration: underline; text-decoration-color: var(--volt); text-underline-offset: 3px; }
+@media (max-width: 760px) {
+    .home-next { padding: 14px 14px 8px; }
+    .home-next-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
 .setup-fold { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); }
 .setup-fold > summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; min-height: 56px; padding: 10px 0; cursor: pointer; list-style: none; }
 .setup-fold > summary::-webkit-details-marker { display: none; }

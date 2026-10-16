@@ -194,7 +194,17 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.goto(page.url().replace(/programs\.html.*$/, "index.html"), { waitUntil: "load" });
             await page.waitForTimeout(250);
             const ret = await page.evaluate(() => ({ cls: document.body.classList.contains("returning"), fears: getComputedStyle(document.querySelector(".fears")).display, plan: getComputedStyle(document.querySelector(".get-plan")).display, fold: !!document.querySelector("#setup .setup-fold:not([open]) .setup-form") }));
-            check(ret.cls && ret.fears === "none" && ret.plan === "none" && ret.fold && /Continue/.test(await page.locator(".hero-actions").textContent()), "returning visitors get a short home page: Continue, and Your starting point folded");
+            check(ret.cls && ret.fears === "none" && ret.plan === "none" && ret.fold && /Start Day 1/.test(await page.locator(".home-next").textContent()), "returning visitors get a short home page: Up next, and Your starting point folded");
+            const nx = await page.evaluate(() => {
+                const card = document.querySelector(".home-next"), r = card && card.getBoundingClientRect();
+                return { title: card ? card.querySelector(".home-next-title").textContent : "", rows: document.querySelectorAll(".home-next-list li").length,
+                    top: r ? r.top + scrollY : 9999, lede: getComputedStyle(document.querySelector(".hero-lede")).display,
+                    h1: document.querySelector(".hero h1").textContent, bar: !!document.getElementById("planbar"),
+                    href: card ? card.querySelector(".btn-primary").getAttribute("href") : "" };
+            });
+            check(/^Day 1: /.test(nx.title) && nx.rows >= 2 && nx.lede === "none" && /Welcome back/.test(nx.h1) && !nx.bar && nx.href === "programs.html?today=1#program-build-3" && nx.top < page.viewportSize().height,
+                `home opens with an Up next card for today's day (above the fold, no duplicate plan bar) ${JSON.stringify(nx)}`);
+            await page.screenshot({ path: path.join(SHOTS, `${name}-home-returning.png`) });
             await page.locator("#setup .setup-fold > summary").click();
             check(await page.locator("#setup .setup-form").isVisible(), "tapping Your starting point opens it");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
@@ -381,7 +391,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/Short on time/.test(await page.locator("#program-head h3").textContent()), "Programs reopens the plan you used last");
             await page.goto(url("index.html"));
             await page.waitForTimeout(200);
-            check(/Continue: Short on time/.test(await page.locator(".hero-actions").textContent()), "home page offers to continue your plan");
+            check(/Short on time/.test(await page.locator(".home-next").textContent()) && /program-busy-/.test(await page.locator(".home-next .btn-primary").getAttribute("href")), "home page offers to continue your plan");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }
@@ -1557,7 +1567,7 @@ async function openPage(browser, file, viewport, hash = "") {
 
         // Cancel workout hides the plan until you tap Continue
         {
-            const { page, errors } = await openPage(browser, "index.html", viewport);
+            const { page, errors } = await openPage(browser, "tools.html", viewport);
             await page.evaluate(() => { localStorage.clear(); localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "beginner", days: 3 })); });
             await page.reload({ waitUntil: "load" });
             await page.waitForTimeout(300);
@@ -1570,8 +1580,8 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(300);
             check(await page.locator("#planbar").count() === 0, "the plan stays hidden on other pages");
             await page.goto(url("index.html"), { waitUntil: "load" });
-            const cont = page.locator('a[href*="?today=1"]').first();
-            check(await cont.count() === 1, "the home page still offers Continue");
+            const cont = page.locator('.home-next a[href*="?today=1"]').first();
+            check(await cont.count() === 1 && /Paused/.test(await page.locator(".home-next").textContent()) && /Continue workout/.test(await cont.textContent()), "the home page still offers Continue (the Up next card says it's paused)");
             await page.goto(url("programs.html", "?today=1#program-beginner-3"), { waitUntil: "load" });
             await page.waitForTimeout(300);
             check(await page.evaluate(() => !store.get("gu-plan-paused")), "Continue brings the plan back");

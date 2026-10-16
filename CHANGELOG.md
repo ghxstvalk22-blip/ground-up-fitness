@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-16 · The home page opens on your next workout
+
+- **Coming back to the site now starts with your workout.** If you already have a plan, the home page says "Welcome back" (with your name, if you've added it) and shows a card for today: which day is up (for example "Day 2: Full body B"), the first few exercises with their sets and reps, and one big Start button. If you've already checked off some exercises it says "In progress" and the button says Continue.
+- **It works with your own plan too**, not just the ready-made ones. If you canceled a workout, the card says it's paused and Continue picks it back up. When the whole week is done, it says so.
+- **Less clutter.** The beginner intro line is hidden for returning visitors, and the Your plan bar at the bottom doesn't show on the home page anymore, since the card already does its job. "Pick a different plan" is right under the card if you want to change.
+
 ## 2026-10-16 · See that your day is in the best order
 
 - **Days in your own plan now say when they're already in the best order** ("✓ In the best order: big lifts first while you're fresh, and the same muscle never three times in a row"). The site has been ordering your exercises all along when you save a workout, but it only spoke up when something was out of order, so it was easy to miss. If a day isn't in order, you still get the "Put it in the best order" button.
