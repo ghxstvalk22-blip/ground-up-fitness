@@ -812,6 +812,7 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             await page.evaluate(() => document.querySelector("[data-rest]").click());
             await page.waitForTimeout(500);
+            await page.evaluate(() => document.getElementById("rest-size").click()); // the options live under More
             check(await page.locator("#rest-push").isVisible() && await page.evaluate(() => localStorage.getItem("gu-ios-timer-auto") === null), "rest alarms are offered once the Worker supports them, and nothing jumps to Shortcuts on its own");
             await page.evaluate(() => window.dispatchEvent(new CustomEvent("reststop")));
             await ctx.close();
@@ -970,6 +971,28 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.click('[data-mm-view="front"]');
             await page.locator('.mm-face.is-active [data-m="abs-upper"]').focus();
             check(/Upper abs/.test(await page.locator(".mm-title").textContent()), "muscles work with the keyboard");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
+        // Your plan: remove an exercise from a day; the map shows what the day still hits, with Undo
+        {
+            const { page, errors } = await openPage(browser, "programs.html", viewport);
+            await page.evaluate(() => { saveCustomDays([{ title: "Push", items: [{ n: "Bench press", d: "3 × 5", rest: "2 min" }, { n: "Overhead press", d: "3 × 8", rest: "2 min" }, { n: "Rope pushdown", d: "2 × 10", rest: "90 s" }, { n: "Skull crusher", d: "2 × 10", rest: "90 s" }] }]); localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "custom", days: 1 })); });
+            await page.goto(page.url().replace(/programs\.html.*$/, "programs.html?today=1#program-custom-1"), { waitUntil: "load" });
+            await page.waitForTimeout(400);
+            await page.evaluate(() => document.querySelector('[data-remove-ex="0-3"]').click());
+            await page.waitForTimeout(300);
+            const r1 = await page.evaluate(() => ({ items: customDaysRaw()[0].items.map((i) => i.n).join(","), note: document.querySelector(".hits-removed").textContent, open: document.getElementById("hits-dialog").open, rows: document.querySelectorAll(".day-card .ex-row").length }));
+            check(r1.items === "Bench press,Overhead press,Rope pushdown" && r1.open && /long head/.test(r1.note) && r1.rows === 3, "removing an exercise from your plan updates the day and shows what it still hits");
+            await page.evaluate(() => document.querySelector("[data-hits-undo]").click());
+            await page.waitForTimeout(200);
+            check((await page.evaluate(() => customDaysRaw()[0].items.map((i) => i.n).join(","))) === "Bench press,Overhead press,Rope pushdown,Skull crusher", "Undo puts it back in the same spot");
+            await page.evaluate(() => document.querySelector('[data-remove-ex="0-3"]').click());
+            await page.evaluate(() => document.querySelector("[data-hits-close]").click());
+            await page.evaluate(() => document.querySelector('[data-remove-ex="0-2"]').click());
+            await page.waitForTimeout(200);
+            check(/Triceps doesn't get direct work/.test(await page.locator(".hits-removed").textContent()), "and it says when a muscle loses its last direct exercise");
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }
@@ -1151,9 +1174,30 @@ async function openPage(browser, file, viewport, hash = "") {
                 await w0.fill("");
                 await w0.type("20");
                 check((await form.locator('input[name="w"]').nth(1).inputValue()) === "20", "changing set 1's weight fills the other sets");
+                // Close the keypad first (while typing on a phone, the timer steps aside)
+                await page.evaluate(() => document.activeElement && document.activeElement.blur());
+                await page.waitForTimeout(250);
                 await form.locator("[data-set-done]").first().click();
                 await page.waitForTimeout(200);
                 check(Number(await form.locator('input[name="r"]').first().inputValue()) > 0 && (await form.locator('input[name="r"]').nth(1).inputValue()) === "" && await page.locator("#rest-timer").isVisible(), "ticking a set fills its reps, leaves the others empty, and starts the rest timer");
+                // Ticking another set while resting keeps the same rest going; the timer is small with a More button
+                const endBefore = await page.evaluate(() => (store.get("gu-rest") || {}).endAt);
+                await page.waitForTimeout(1100);
+                await form.locator("[data-set-done]").nth(1).click();
+                await page.waitForTimeout(200);
+                const endAfter = await page.evaluate(() => (store.get("gu-rest") || {}).endAt);
+                check(endBefore && endBefore === endAfter, "ticking another set while resting doesn't restart the timer");
+                const mini = await page.evaluate(() => { const b = document.getElementById("rest-timer"); const small = b.classList.contains("is-mini") && b.getBoundingClientRect().height; document.getElementById("rest-size").click(); const big = b.getBoundingClientRect().height; document.getElementById("rest-size").click(); return { small, big }; });
+                if (viewport.width <= 760) {
+                    await form.locator('input[name="w"]').nth(2).focus();
+                    await page.waitForTimeout(100);
+                    const hid = await page.evaluate(() => getComputedStyle(document.getElementById("rest-timer")).display === "none" && getComputedStyle(document.querySelector(".tabbar")).display === "none");
+                    await page.evaluate(() => document.activeElement.blur());
+                    await page.waitForTimeout(300);
+                    const back = await page.locator("#rest-timer").isVisible();
+                    check(hid && back, "while typing a set on a phone, the timer and tab bar get out of the way, and come back after");
+                }
+                check(mini.small > 0 && mini.small < mini.big && mini.small <= 90, `the rest timer is small, with More to see everything (${Math.round(mini.small)}px vs ${Math.round(mini.big)}px)`);
                 await page.click("#rest-stop");
                 const formId = await form.getAttribute("id");
                 await page.reload({ waitUntil: "load" });
@@ -1163,7 +1207,8 @@ async function openPage(browser, file, viewport, hash = "") {
                 await page.locator(".day-card[data-day='0'] .rest-btn").first().click();
                 await page.waitForTimeout(200);
                 const pad = await page.evaluate(() => parseFloat(getComputedStyle(document.querySelector("main")).paddingBottom));
-                check(await page.evaluate(() => document.body.classList.contains("rest-on")) && pad >= 60, `the rest timer makes room so it doesn't cover the set boxes (${pad}px)`);
+                const timerH = await page.evaluate(() => document.getElementById("rest-timer").getBoundingClientRect().height);
+                check(await page.evaluate(() => document.body.classList.contains("rest-on")) && pad >= 40 && pad >= timerH - 1, `the rest timer makes room so it doesn't cover the set boxes (${pad}px)`);
                 await page.click("#rest-stop");
                 // A weighted lift saved with no weight asks first
                 const f2 = page.locator(`#${formId}`);
@@ -1488,6 +1533,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.goto(url("programs.html", "#program-beginner-3"), { waitUntil: "load" });
             await page.waitForTimeout(300);
             await page.locator(".rest-btn").first().click();
+            await page.evaluate(() => document.getElementById("rest-size").click()); // the options live under More
             check(await page.locator("#rest-ios").isVisible(), "on iPhone the rest timer offers a Lock Screen timer");
             await page.click("#rest-ios");
             check(await page.locator("#ios-timer-setup").isVisible() && /Ground Up Rest/.test(await page.locator("#ios-timer-setup").textContent()), "the first time, it shows the one-time Shortcut setup");

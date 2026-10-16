@@ -1458,6 +1458,15 @@ select, input, textarea {
     .rest-timer-inner { grid-template-columns: 1fr auto; padding-left: 16px; padding-right: 16px; }
     .rest-timer-bar { grid-column: 1 / -1; grid-row: 2; }
 }
+/* Small timer: one slim row with the time, Done resting, and More */
+.rest-timer.is-mini .rest-timer-inner { grid-template-columns: 1fr auto; gap: 6px 12px; padding-top: 6px; padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+.rest-timer.is-mini .rest-timer-text { flex-direction: row; align-items: baseline; gap: 10px; min-width: 0; }
+.rest-timer.is-mini .rest-timer-label { order: 2; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.rest-timer.is-mini .rest-timer-time { font-size: 1.7rem; }
+.rest-timer.is-mini .rest-timer-bar { grid-column: 1 / -1; grid-row: 2; height: 3px; }
+.rest-timer.is-mini #rest-plus, .rest-timer.is-mini .rest-timer-at, .rest-timer.is-mini .rest-timer-alerts,
+.rest-timer.is-mini .rest-push-wrap, .rest-timer.is-mini .rest-ios-wrap { display: none !important; }
+.rest-timer-size { min-width: 64px; justify-content: center; }
 
 .cardio-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; margin-bottom: 10px; }
 .cardio-grid label { display: flex; flex-direction: column; gap: 3px; font-size: 0.75rem; font-weight: 700; color: var(--muted); }
@@ -3817,3 +3826,12 @@ body.rest-on .install-tip { display: none; }
 .pr-rules strong { color: var(--ink); }
 .pr-done { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 16px; }
 .pr-status { font-weight: 700; }
+
+/* Typing on a phone: the tab bar, rest timer and plan bar get out of the way of the keypad */
+@media (max-width: 760px) {
+    body.typing .tabbar, body.typing .rest-timer, body.typing .planbar, body.typing .coach-fab { display: none !important; }
+}
+
+/* Your plan: removing an exercise, and what the day still hits */
+.chip.chip-remove { color: var(--bad); border-color: currentColor; }
+.hits-removed { margin: 0 0 12px; padding: 10px 12px; border-left: 3px solid var(--volt); background: rgb(var(--volt-rgb) / 0.1); }

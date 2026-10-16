@@ -2,6 +2,17 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-16 · Remove an exercise from your plan, and see what's still covered
+
+- **Every exercise in your own plan now has a Remove button** (under More). Take out something you don't want to do anymore, like skull crushers, without rebuilding the day.
+- **Right after, the muscle map shows what that day still hits.** It tells you if a muscle lost its only direct exercise ("Triceps doesn't get direct work on this day anymore"), or if it's still covered but one part gets less work ("less of: long head (triceps)"). Changed your mind? Tap Undo and it goes back in the same spot.
+
+## 2026-10-16 · A calmer rest timer
+
+- **Checking off more sets no longer restarts your rest.** Once a rest is counting, ticking other sets lets it run to the end. (Tapping a Rest button yourself still starts a fresh one.)
+- **The rest timer is smaller.** It's now one slim bar at the bottom with the time, Done resting, and a More button. Tap More for +15 s and the alarm options, and Less to shrink it again. It remembers which size you like.
+- **It stays out of your way while you type.** On iPhone the number pad used to push the timer and tab bar up over the sets you were typing into. Now they step aside while you type and come back when the keypad closes. The rest keeps counting the whole time.
+
 ## 2026-10-16 · PR warm-up tool
 
 - **New on the Tools page: PR warm-up.** Going for a new max on squat, bench, deadlift or overhead press? Pick the lift and type the weight you want to hit. You get every warm-up set in order, with the weight, reps, plates on each side, and a rest timer button. It starts with the empty bar (or a light 135 pull for deadlifts) and gets heavier in smaller jumps with fewer reps, so you're warm but not tired when you go for it. Example for a 315 squat: bar ×10, 125×5, 175×3, 215×2, then singles at 245, 275 and 295.

@@ -76,6 +76,7 @@ const FEATURES = [
     setupMyDashboard,
     setupApp,
     setupPullRefresh,
+    setupTypingMode,
     setupCoach,
     setupWeightTrend,
     setupDashboard,
@@ -2887,6 +2888,7 @@ function setupPrograms() {
                     <span class="ex-actions">
                         ${info ? `<button type="button" class="chip" data-howto="${escapeHtml(x.name)}">How to</button>` : ""}
                         ${x.canRotate ? `<button type="button" class="chip" data-swap="${key}">Swap</button>` : ""}
+                        ${state.goal === "custom" && (lineups[di] || []).length > 1 ? `<button type="button" class="chip chip-remove" data-remove-ex="${key}">Remove<span class="visually-hidden"> ${escapeHtml(x.name)} from this day</span></button>` : ""}
                     </span>
                     </div>
                     ${!parsed.timed ? logForm(x, key, parseDose(dose.text), target, profile.unit) : ""}
@@ -3299,6 +3301,38 @@ function setupPrograms() {
             if (st) st.setAttribute("aria-live", "polite");
             return;
         }
+        // Your plan: take one exercise out of a day, then show what the day still hits (with Undo)
+        const rmEx = e.target.closest("[data-remove-ex]");
+        if (rmEx) {
+            const [di, xi] = rmEx.dataset.removeEx.split("-").map(Number);
+            const days = customDaysRaw();
+            if (!days[di] || !days[di].items[xi] || days[di].items.length < 2) return;
+            const before = days[di].items.map((it) => it.n);
+            const key = progressKey(), doneBefore = store.get(key, []) || [];
+            const [gone] = days[di].items.splice(xi, 1);
+            // Check-offs on that day shift up one past the removed exercise
+            store.set(key, doneBefore.filter((k) => k !== `${di}-${xi}`).map((k) => { const [d, x] = String(k).split("-").map(Number); return d === di && x > xi ? `${d}-${x - 1}` : k; }));
+            clearCustomSwaps(di);
+            openMore.delete(`${di}-${xi}`);
+            saveCustomDays(days);
+            PROGRAMS.custom = loadCustomWorkout();
+            render();
+            const title = days[di].title || `Day ${di + 1}`;
+            showMuscleHits(days[di].items.map((it) => it.n), title, {
+                removed: gone.n, before,
+                undo: () => {
+                    const again = customDaysRaw();
+                    if (!again[di]) return;
+                    again[di].items.splice(Math.min(xi, again[di].items.length), 0, gone);
+                    store.set(key, doneBefore);
+                    saveCustomDays(again);
+                    PROGRAMS.custom = loadCustomWorkout();
+                    render();
+                    showToast("Put back", `${gone.n} is back in ${title}.`);
+                }
+            });
+            return;
+        }
         const mv = e.target.closest("[data-move-day]");
         if (mv) {
             const i = Number(mv.dataset.moveDay), j = i + Number(mv.dataset.dir), days = customDaysRaw();
@@ -3356,9 +3390,12 @@ function setupPrograms() {
             if (!r.value) r.value = r.placeholder;
             row.classList.add("is-done");
             saveDraft(form);
-            // Rest starts right away; the next set's boxes stay above the timer
+            // Rest starts right away; the next set's boxes stay above the timer. If a rest is already
+            // counting (ticking off a few sets at once), leave it running instead of starting over.
             const restBtn = form.closest(".ex-row") && form.closest(".ex-row").querySelector("[data-rest]");
-            if (restBtn) restBtn.click();
+            const timer = document.getElementById("rest-timer");
+            const resting = timer && !timer.hidden && !timer.classList.contains("is-done");
+            if (restBtn && !resting) restBtn.click();
             const next = row.nextElementSibling && row.nextElementSibling.matches(".log-set") ? row.nextElementSibling : form.querySelector("button[type=submit]");
             setTimeout(() => next.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "center" }), 60);
             return;
@@ -3673,6 +3710,7 @@ function setupRestTimer() {
         <div class="rest-timer-buttons">
             <button type="button" class="chip" id="rest-plus">+15 s</button>
             <button type="button" class="chip" id="rest-stop">Done resting</button>
+            <button type="button" class="chip rest-timer-size" id="rest-size" aria-expanded="false" aria-controls="rest-timer"><span class="rest-size-word">More</span><span class="visually-hidden"> timer options</span></button>
         </div>
         <p class="rest-timer-at" id="rest-timer-at"></p>
         <button type="button" class="rest-timer-alerts" id="rest-alerts" hidden>Show the timer on my lock screen</button>
@@ -3688,6 +3726,15 @@ function setupRestTimer() {
     <p class="visually-hidden" id="rest-timer-announce" aria-live="assertive"></p>
 </div>`);
     const box = document.getElementById("rest-timer");
+    // Small by default (just the time, Done resting, and More); More shows +15 s and the alarm options
+    const sizeBtn = document.getElementById("rest-size");
+    const setMini = (mini) => {
+        box.classList.toggle("is-mini", mini);
+        sizeBtn.setAttribute("aria-expanded", String(!mini));
+        sizeBtn.querySelector(".rest-size-word").textContent = mini ? "More" : "Less";
+    };
+    setMini(store.get("gu-rest-mini") !== false);
+    sizeBtn.addEventListener("click", () => { const mini = !box.classList.contains("is-mini"); setMini(mini); store.set("gu-rest-mini", mini); });
     const time = document.getElementById("rest-timer-time");
     const label = document.getElementById("rest-timer-label");
     const fill = document.getElementById("rest-timer-fill");
@@ -5209,6 +5256,24 @@ function setupCoach() {
 }
 
 /* =========================================================
+   FEATURE: Typing on a phone. When the keypad opens, iPhone lifts anything pinned to the bottom
+   (the tab bar, the rest timer) on top of the keypad, right over the boxes you're typing in.
+   While a field has focus on a phone, body.typing hides them; they come back when the keypad
+   closes. The rest keeps counting the whole time.
+   ========================================================= */
+function setupTypingMode() {
+    const phone = window.matchMedia("(max-width: 760px)");
+    const typingField = (el) => el instanceof Element && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]), textarea, select") && !el.closest(".coach");
+    let off = null;
+    document.addEventListener("focusin", (e) => {
+        clearTimeout(off);
+        if (phone.matches && typingField(e.target)) document.body.classList.add("typing");
+    });
+    // A short wait so hopping from one box to the next doesn't flash the bars back in
+    document.addEventListener("focusout", () => { clearTimeout(off); off = setTimeout(() => { if (!typingField(document.activeElement)) document.body.classList.remove("typing"); }, 150); });
+}
+
+/* =========================================================
    FEATURE: Pull down to refresh, in the installed app.
    The Home Screen app has no browser bar, so it has no refresh of its own (and the page bounce is
    turned off to keep the tab bar steady). At the very top of the page, drag down and let go to
@@ -5850,15 +5915,22 @@ function loadMuscleArt(then) {
     sc.onerror = () => { hitsArtLoading = false; };
     document.head.appendChild(sc);
 }
-function showMuscleHits(names, title) {
+function showMuscleHits(names, title, opts = {}) {
     if (typeof MUSCLE_MAP === "undefined" || typeof exerciseHeads !== "function") return;
     const list = names.filter((n) => EXERCISES[n] && !isCardio(n));
     let dlg = document.getElementById("hits-dialog");
     if (!dlg) {
         document.body.insertAdjacentHTML("beforeend", `<dialog id="hits-dialog" class="finish-dialog hits-dialog" aria-labelledby="hits-title"><div class="finish-inner"></div></dialog>`);
         dlg = document.getElementById("hits-dialog");
-        dlg.addEventListener("click", (ev) => { if (ev.target === dlg || ev.target.closest("[data-hits-close]")) { if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); } });
+        dlg.addEventListener("click", (ev) => {
+            const shut = () => { if (typeof dlg.close === "function") dlg.close(); else dlg.removeAttribute("open"); };
+            if (ev.target.closest("[data-hits-undo]")) { shut(); if (typeof dlg._undo === "function") dlg._undo(); dlg._undo = null; return; }
+            if (ev.target === dlg || ev.target.closest("[data-hits-close]")) shut();
+        });
     }
+    dlg._undo = typeof opts.undo === "function" ? opts.undo : null;
+    // Muscle groups a list of exercises works directly
+    const groupsOf = (ns) => new Set(ns.filter((n) => EXERCISES[n] && !isCardio(n)).flatMap((n) => exerciseHeads(n).main.map((id) => { const mp = mmPart(id); return mp ? mp.g.id : null; })).filter(Boolean));
     const mainCount = {}, alsoSet = new Set(), byGroup = {};
     list.forEach((n) => {
         const h = exerciseHeads(n);
@@ -5868,9 +5940,22 @@ function showMuscleHits(names, title) {
     const groups = MUSCLE_MAP.filter((g) => byGroup[g.id]);
     const missing = MUSCLE_MAP.filter((g) => !byGroup[g.id] && g.parts.some((pt) => alsoSet.has(pt.id)));
     const inner = dlg.querySelector(".finish-inner");
+    let removedNote = "";
+    if (opts.removed) {
+        const now = groupsOf(names), lost = MUSCLE_MAP.filter((g) => groupsOf(opts.before || []).has(g.id) && !now.has(g.id));
+        // Parts of a muscle that only the removed exercise worked (say, the triceps' long head after skull crushers go)
+        const partsOf = (ns) => new Set(ns.filter((n) => EXERCISES[n] && !isCardio(n)).flatMap((n) => exerciseHeads(n).main));
+        const nowParts = partsOf(names);
+        const thinner = [...partsOf([opts.removed])].filter((id) => !nowParts.has(id)).map(mmPart).filter((mp) => mp && now.has(mp.g.id));
+        removedNote = `<p class="hits-removed"><strong>${escapeHtml(opts.removed)} is out.</strong> ${lost.length
+            ? `${escapeHtml(lost.map((g) => g.name).join(", "))} ${lost.length > 1 ? "don't" : "doesn't"} get direct work on this day anymore. Add something for ${lost.length > 1 ? "them" : "it"}, or train ${lost.length > 1 ? "them" : "it"} on another day.`
+            : thinner.length ? `The rest of this day still works the same muscles, but less of: ${escapeHtml(thinner.map((mp) => `${mp.p.name.toLowerCase()} (${mp.g.name.toLowerCase()})`).join(", "))}.`
+            : "Everything it worked is still covered by the rest of this day."}</p>`;
+    }
     inner.innerHTML = `
-        <p class="finish-kicker">What this workout hits</p>
+        <p class="finish-kicker">${opts.removed ? "What this day still hits" : "What this workout hits"}</p>
         <h2 id="hits-title">${escapeHtml(title || "Today's workout")}</h2>
+        ${removedNote}
         <div class="bc-bodies hits-bodies" aria-hidden="true"></div>
         <p class="hits-key"><span class="hits-sw hits-sw-1"></span> Worked <span class="hits-sw hits-sw-2"></span> Worked by 2 or more exercises</p>
         <ul class="hits-list">${groups.map((g) => {
@@ -5878,8 +5963,8 @@ function showMuscleHits(names, title) {
             return `<li><strong>${escapeHtml(g.name)}</strong>${two ? ` <b class="bc-x2">2+ exercises</b>` : ""}<span>${[...byGroup[g.id]].map((n) => escapeHtml(n)).join(", ")}</span></li>`;
         }).join("")}</ul>
         ${missing.length ? `<p class="hits-also">Also works a little: ${escapeHtml(missing.map((g) => g.name.toLowerCase()).join(", "))}.</p>` : ""}
-        <div class="finish-actions"><button type="button" class="btn btn-primary" data-hits-close>Got it</button></div>`;
-    if (typeof dlg.showModal === "function") { try { dlg.showModal(); } catch (e) { dlg.setAttribute("open", ""); } } else dlg.setAttribute("open", "");
+        <div class="finish-actions"><button type="button" class="btn btn-primary" data-hits-close>Got it</button>${dlg._undo ? `<button type="button" class="btn" data-hits-undo>Undo: put ${escapeHtml(opts.removed)} back</button>` : ""}</div>`;
+    if (typeof dlg.showModal === "function") { try { if (!dlg.open) dlg.showModal(); } catch (e) { dlg.setAttribute("open", ""); } } else dlg.setAttribute("open", "");
     // The drawing loads only when someone asks for it
     loadMuscleArt(() => {
         const bodies = inner.querySelector(".hits-bodies");
