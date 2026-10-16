@@ -2632,7 +2632,9 @@ function setupPrograms() {
             bits.push(`<p><strong>${b.heavy.count} ${escapeHtml(m)} exercises.</strong> ${b.heavy.limit} is plenty in one workout; past that it's mostly extra tiredness.${b.heavy.suggest ? ` Swap <strong>${escapeHtml(names[b.heavy.replace])}</strong> for <strong>${escapeHtml(b.heavy.suggest)}</strong> (${escapeHtml(BUILD_MUSCLE_NAME[b.heavy.to].toLowerCase())})?` : ""}</p>
                 ${b.heavy.suggest ? `<button type="button" class="btn btn-primary btn-compact" data-balance-swap="${di}" data-from="${b.heavy.replace}" data-to="${escapeHtml(b.heavy.suggest)}">Swap it</button>` : ""}`);
         }
-        return bits.length ? `<div class="day-balance" role="note">${bits.join("")}</div>` : "";
+        if (bits.length) return `<div class="day-balance" role="note">${bits.join("")}</div>`;
+        // Already sorted (the builder orders days when you save): say so, so it's clear it was optimized
+        return `<p class="day-order-ok"><span aria-hidden="true">&#10003;</span> In the best order: big lifts first while you're fresh, and the same muscle never three times in a row.</p>`;
     }
     let notesShown = {};
     // Make the plan on screen "your plan": when you start it, log in it, tick something, or tap Switch

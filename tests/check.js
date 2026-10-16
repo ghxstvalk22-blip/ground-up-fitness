@@ -981,6 +981,18 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.evaluate(() => { saveCustomDays([{ title: "Push", items: [{ n: "Bench press", d: "3 × 5", rest: "2 min" }, { n: "Overhead press", d: "3 × 8", rest: "2 min" }, { n: "Rope pushdown", d: "2 × 10", rest: "90 s" }, { n: "Skull crusher", d: "2 × 10", rest: "90 s" }] }]); localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "custom", days: 1 })); });
             await page.goto(page.url().replace(/programs\.html.*$/, "programs.html?today=1#program-custom-1"), { waitUntil: "load" });
             await page.waitForTimeout(400);
+            // A day out of order offers the fix; once fixed (or already sorted) it says so
+            await page.evaluate(() => { saveCustomDays([{ title: "Mixed", items: [{ n: "Triceps pushdown", d: "2 × 10", rest: "90 s" }, { n: "Lateral raise", d: "2 × 12", rest: "60 s" }, { n: "Bench press", d: "3 × 5", rest: "2 min" }] }]); });
+            await page.reload({ waitUntil: "load" });
+            await page.waitForTimeout(300);
+            const fixShown = await page.locator('.day-card[data-day="0"] [data-fix-order]').count() === 1 && await page.locator('.day-card[data-day="0"] .day-order-ok').count() === 0;
+            await page.evaluate(() => document.querySelector('.day-card[data-day="0"] [data-fix-order]').click());
+            await page.waitForTimeout(300);
+            const fixed = await page.evaluate(() => customDaysRaw()[0].items[0].n === "Bench press" && !!document.querySelector('.day-card[data-day="0"] .day-order-ok'));
+            check(fixShown && fixed, "an out-of-order day offers the best order, and then says it's in the best order");
+            await page.evaluate(() => { saveCustomDays([{ title: "Push", items: [{ n: "Bench press", d: "3 × 5", rest: "2 min" }, { n: "Overhead press", d: "3 × 8", rest: "2 min" }, { n: "Rope pushdown", d: "2 × 10", rest: "90 s" }, { n: "Skull crusher", d: "2 × 10", rest: "90 s" }] }]); });
+            await page.reload({ waitUntil: "load" });
+            await page.waitForTimeout(300);
             await page.evaluate(() => document.querySelector('[data-remove-ex="0-3"]').click());
             await page.waitForTimeout(300);
             const r1 = await page.evaluate(() => ({ items: customDaysRaw()[0].items.map((i) => i.n).join(","), note: document.querySelector(".hits-removed").textContent, open: document.getElementById("hits-dialog").open, rows: document.querySelectorAll(".day-card .ex-row").length }));

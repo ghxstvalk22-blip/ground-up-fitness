@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-16 · See that your day is in the best order
+
+- **Days in your own plan now say when they're already in the best order** ("✓ In the best order: big lifts first while you're fresh, and the same muscle never three times in a row"). The site has been ordering your exercises all along when you save a workout, but it only spoke up when something was out of order, so it was easy to miss. If a day isn't in order, you still get the "Put it in the best order" button.
+
 ## 2026-10-16 · Remove an exercise from your plan, and see what's still covered
 
 - **Every exercise in your own plan now has a Remove button** (under More). Take out something you don't want to do anymore, like skull crushers, without rebuilding the day.

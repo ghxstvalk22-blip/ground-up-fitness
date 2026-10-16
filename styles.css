@@ -3835,3 +3835,7 @@ body.rest-on .install-tip { display: none; }
 /* Your plan: removing an exercise, and what the day still hits */
 .chip.chip-remove { color: var(--bad); border-color: currentColor; }
 .hits-removed { margin: 0 0 12px; padding: 10px 12px; border-left: 3px solid var(--volt); background: rgb(var(--volt-rgb) / 0.1); }
+
+/* Your plan: a quiet line when a day is already in the best order */
+.day-order-ok { display: flex; gap: 8px; margin: 8px 0 4px; font-size: 0.85rem; color: var(--muted); }
+.day-order-ok span { color: var(--accent); font-weight: 900; }
