@@ -6523,8 +6523,8 @@ function setupBuilder() {
                     </fieldset>
                     <p class="builder-goal-why"></p>
                 </div>
-                <div class="builder-pick">
-                    <h3>1. Pick exercises</h3>
+                <div class="builder-pick" id="builder-pick">
+                    <h3>${draft.editing ? "Add exercises" : "1. Pick exercises"}</h3>
                     <div class="field">
                         <label for="builder-search">Search</label>
                         <input id="builder-search" type="search" placeholder="Try press, row, or curl" autocomplete="off">
@@ -6541,10 +6541,10 @@ function setupBuilder() {
                     <ul class="builder-results"></ul>
                 </div>
                 <div class="builder-plan">
-                    <h3>2. Your workout <span class="builder-n"></span></h3>
+                    <h3>${draft.editing ? "Your workout" : "2. Your workout"} <span class="builder-n"></span></h3>
                     <div class="builder-quick" hidden>
                         <button type="button" class="btn btn-compact builder-clear-all">Clear all and start blank</button>
-                        <button type="button" class="btn btn-compact builder-to-pick">+ Add exercises</button>
+                        <button type="button" class="btn btn-compact builder-to-pick" aria-controls="builder-pick">+ Add exercises</button>
                     </div>
                     <div class="field">
                         <label for="builder-name">Name it <span class="field-hint">(optional)</span></label>
@@ -6583,6 +6583,17 @@ function setupBuilder() {
     const search = $("#builder-search"), kitSel = $("#builder-kit"), nameIn = $("#builder-name"), status = $(".builder-status");
     nameIn.value = draft.title;
     const save = () => store.set(BUILDER_KEY, draft);
+    // Editing a day you already have: your workout and its muscle check come first,
+    // and the long exercise list stays folded behind "+ Add exercises" until you want it
+    const pickBox = $(".builder-pick"), toPick = $(".builder-to-pick");
+    let folded = false;
+    function setFold(on) {
+        folded = on;
+        pickBox.hidden = on;
+        toPick.textContent = on ? "+ Add exercises" : "Hide the exercise list";
+        toPick.setAttribute("aria-expanded", on ? "false" : "true");
+    }
+    if (draft.editing && draft.items.length) { body.classList.add("plan-first"); setFold(true); }
     function open(scroll) {
         body.hidden = false;
         openBtn.setAttribute("aria-expanded", "true");
@@ -6590,7 +6601,7 @@ function setupBuilder() {
         renderGoal(); renderResults(); renderList();
         if (scroll) spot.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-    openBtn.addEventListener("click", () => { open(false); search.focus(); });
+    openBtn.addEventListener("click", () => { open(false); (folded ? toPick : search).focus(); });
 
     const goal = () => BUILD_GOALS[draft.goal] ? draft.goal : "muscle";
     // Per-muscle counts for the current workout
@@ -6740,6 +6751,8 @@ function setupBuilder() {
         }).join("") + (draft.items.length > g.total ? `<li class="is-over"><strong>Total</strong> ${draft.items.length} exercises <span class="tally-warn">(${g.total} is plenty for ${g.for})</span></li>` : "");
         $(".builder-empty").hidden = draft.items.length > 0;
         $(".builder-quick").hidden = draft.items.length === 0;
+        // Nothing left to edit? Show the list so you can pick again
+        if (!draft.items.length && folded) setFold(false);
         renderCoverage();
         $(".builder-save").disabled = !draft.items.length;
         let needBody = false;
@@ -6842,6 +6855,7 @@ function setupBuilder() {
         draft.items = []; draft.title = ""; nameIn.value = "";
         save(); renderList(); renderResults();
         status.innerHTML = `Cleared ${cleared.items.length} exercise${cleared.items.length === 1 ? "" : "s"}. Pick your own below. <button type="button" class="text-button builder-undo">Undo</button>`;
+        if (folded) setFold(false);
         if (fromTop) {
             const pick = spot.querySelector(".builder-pick") || search;
             pick.scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
@@ -6851,6 +6865,10 @@ function setupBuilder() {
     $(".builder-clear").addEventListener("click", () => clearAll(false));
     $(".builder-clear-all").addEventListener("click", () => clearAll(true));
     $(".builder-to-pick").addEventListener("click", () => {
+        if (body.classList.contains("plan-first")) {
+            setFold(!folded);
+            if (folded) { status.textContent = "Exercise list folded away."; return; }
+        }
         (spot.querySelector(".builder-pick") || search).scrollIntoView({ behavior: reduceMotion.matches ? "auto" : "smooth", block: "start" });
         search.focus({ preventScroll: true });
     });

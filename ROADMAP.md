@@ -10,7 +10,6 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), still to do, most important first:
 
-- [ ] Editing a day: show Your workout and the muscle check first and fold the 136-exercise list behind "+ Add exercises".
 - [ ] Beginner "Your best lifts": show the heaviest set actually lifted ("25 lb × 15"), with estimated max from Intermediate up.
 - [ ] Swap shows a short list to pick from (same muscles and equipment, with your last weight for each), and every exercise gets Swap. Today it replaces blindly in one tap.
 - [ ] After the plan changes exercises (every 4 weeks for beginners), base the first weight on the exercise it replaced, and show "Replaces Leg press (last 95×10)".
@@ -39,12 +38,15 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Up next card on the home page: a small "Last time" line (date and best set from your last session of that day).
 - [ ] Up next card: when the week is done, show which day starts next week and when.
 
+- [ ] Editing a day: a short "Suggested for this day" list (3 or 4 exercises for muscles the day misses) above the full exercise list.
+
 ## Blocked
 
 (Nothing yet.)
 
 ## Done
 
+- [x] 2026-10-17: Editing a day opens on Your workout and its muscle check; the full exercise list stays folded behind "+ Add exercises" (tap again to hide it).
 - [x] 2026-10-16: Home page for returning users opens with "Welcome back" and an Up next card: today's day of your plan, its first exercises, and Start / Continue (also for your own plan, and when it's paused or the week is done). Your starting point stays folded once filled in.
 - [x] 2026-10-14: My progress counts the same way everywhere: Overview, milestones, streaks, and Lifts count finished workouts (and logged cardio) like the Log tab; best-lift numbers use one rounding on Overview and Lifts, and gains show the unit ("+20 lb").
 - [x] 2026-10-14: Heavy and light versions of the same lift keep their own targets (by rep range); starting weights a bit lighter for more sets; kg barbell and machine weights in 2.5 kg steps; strong entered lifts count toward the best-fit plan with a one-tap "Set my level"; home trainers see dumbbell starting weights.

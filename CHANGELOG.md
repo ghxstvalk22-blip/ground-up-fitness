@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-17 · Editing a workout starts with your workout
+
+- **Changing a day you already have is quicker now.** When you tap Edit on one of your days, the builder opens on that day's exercises, their sets, reps and weights, and the Muscle check. The long list of every exercise (over 130) no longer sits in front of them.
+- **Need another exercise?** Tap **+ Add exercises** and the full list with search and filters opens right below your workout, with the cursor in the search box. Tap **Hide the exercise list** to fold it away again. If you clear out every exercise, the list opens on its own so you can pick new ones.
+- Building a brand-new workout works the same as before. This came from the phone walkthroughs, where testers had to scroll past the whole list to find the day they were editing.
+
 ## 2026-10-16 · The home page opens on your next workout
 
 - **Coming back to the site now starts with your workout.** If you already have a plan, the home page says "Welcome back" (with your name, if you've added it) and shows a card for today: which day is up (for example "Day 2: Full body B"), the first few exercises with their sets and reps, and one big Start button. If you've already checked off some exercises it says "In progress" and the button says Continue.

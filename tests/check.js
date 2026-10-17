@@ -630,6 +630,15 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForURL(/#build/);
             await page.waitForTimeout(400);
             check(/Edit your workout/i.test(await page.locator("#builder-title").textContent()) && await page.locator(".builder-item").count() === 3, "Edit this workout opens the builder with the current exercises");
+            {
+                const planTop = await page.locator(".builder-plan").evaluate((el) => el.getBoundingClientRect().top);
+                const coverVis = await page.locator(".builder-cover").isVisible();
+                check(await page.locator("#builder-pick").isHidden() && coverVis && await page.locator(".builder-to-pick").getAttribute("aria-expanded") === "false" && planTop >= 0, "editing a day shows your workout and its muscle check first, with the exercise list folded away");
+                await page.click(".builder-to-pick");
+                const pickTop = await page.locator("#builder-pick").evaluate((el) => el.getBoundingClientRect().top);
+                const planTop2 = await page.locator(".builder-plan").evaluate((el) => el.getBoundingClientRect().top);
+                check(await page.locator("#builder-search").isVisible() && pickTop > planTop2 && await page.locator(".builder-to-pick").getAttribute("aria-expanded") === "true" && await page.evaluate(() => document.activeElement && document.activeElement.id === "builder-search"), "+ Add exercises opens the exercise list below your workout and jumps to the search");
+            }
             await page.fill("#builder-search", "Iso-lateral row");
             await page.locator('[data-add="Iso-lateral row"]').click();
             await page.locator(".builder-save").click();

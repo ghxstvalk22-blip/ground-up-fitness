@@ -3864,3 +3864,9 @@ body.rest-on .install-tip { display: none; }
 /* Your plan: a quiet line when a day is already in the best order */
 .day-order-ok { display: flex; gap: 8px; margin: 8px 0 4px; font-size: 0.85rem; color: var(--muted); }
 .day-order-ok span { color: var(--accent); font-weight: 900; }
+
+/* Editing a day: your workout and its muscle check first, the exercise list folded below */
+.builder-pick[hidden] { display: none; }
+.builder-body.plan-first { grid-template-columns: minmax(0, 1fr); }
+.builder-body.plan-first .builder-pick { order: 1; border-right: 0; border-bottom: 0; border-top: 1px solid var(--line); }
+.builder-body.plan-first .builder-plan { max-width: 860px; }
