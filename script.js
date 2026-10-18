@@ -6048,7 +6048,22 @@ const DEMO_QUERY = {
     "Ankle rocks": "knee to wall ankle mobility drill how to",
     "Calf raises": "bodyweight calf raises how to",
     "Hip hinges (bodyweight good mornings)": "bodyweight good morning hip hinge how to",
-    "Floor chest opener": "prone pec stretch on floor how to"
+    "Floor chest opener": "prone pec stretch on floor how to",
+    "Rear delt fly": "bent over dumbbell rear delt fly how to",
+    "EZ-bar curl": "standing EZ bar curl how to",
+    "Easy push-ups": "knee push-ups how to for beginners",
+    "Wall slides": "wall angels back against wall how to",
+    "Shoulder rotations at 90 degrees": "standing 90/90 shoulder internal external rotation warm up",
+    "Open books": "side lying open book stretch how to",
+    "Cat-cow": "cat cow stretch how to",
+    "Lat stretch on a rack": "lat stretch holding a pole sit back how to",
+    "Knees-to-chest lower back stretch": "double knee to chest stretch how to",
+    "Hamstring stretch": "leg on bench hamstring stretch how to",
+    "Lying hamstring stretch with a towel": "supine hamstring stretch with towel how to",
+    "Figure-4 glute stretch": "lying figure 4 glute stretch how to",
+    "Wide-leg side lunge stretch": "side lunge adductor stretch how to",
+    "Shin stretch": "kneeling shin stretch how to",
+    "Lying stomach stretch": "cobra ab stretch how to"
 };
 const demoQuery = (name) => DEMO_QUERY[name] || `${name} proper form`;
 const demoUrl = (name) => `https://www.youtube.com/results?search_query=${encodeURIComponent(demoQuery(name))}`;

@@ -9,6 +9,8 @@ Newest changes first. Each daily update adds an entry here.
 ## 2026-10-18 · Demo videos that show the exact exercise
 
 - **We checked the "Watch a demo" search for every exercise, warm-up and stretch,** looking at what YouTube actually returns, and fixed the ones that pulled up the wrong thing. For example, "Machine row" was showing cardio rowing machines, "Iso-lateral row" was showing the low-row machine, "Split squat" led with Bulgarian split squats, "Cable fly" mixed in rear-delt flys, "Close-grip lat pulldown" mixed in other grips, and "Floor chest opener" showed foam-roller stretches. Those searches now name the exact movement and equipment, so the first videos match what the plan asks you to do.
+- **Warm-ups and stretches got the same check.** For example, "Easy push-ups" now shows knee push-ups, "Wall slides" shows wall angels, "Lying stomach stretch" shows the cobra stretch, "Hamstring stretch" shows the heel-on-a-bench version the site describes, and "Shin stretch" shows the kneeling version instead of shin-splint compilations. In all, 48 of the 199 demo searches were changed; the rest already showed the right move.
+
 ## 2026-10-18 · Your best lifts show what you really lifted
 
 - **On My progress, "Your best lifts" now shows the heaviest set you've actually done** at the Beginner level, like "Bench press 145 lb × 6" or "Goblet squat 25 lb × 15", instead of an estimated one-rep max. The green number next to it shows how much heavier that is than your first logged set.
