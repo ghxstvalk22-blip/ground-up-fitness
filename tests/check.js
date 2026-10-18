@@ -1177,7 +1177,12 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/Workout days\s*1/.test(stats) && /Sets logged\s*3/.test(stats) && /^1 workout day this week/.test(hello), `the dashboard and this week's stats count the same finished workouts (${hello.trim().slice(0, 30)} | ${stats.replace(/\s+/g, " ").slice(0, 40)})`);
             check(await page.evaluate(() => milestones().find((m) => m.name === "100 sets").detail === "5 of 100 sets"), "milestones count sets from finished workouts only");
             const best = await page.locator("#me-dash .dash-best li").first().textContent();
-            check(/Bench press/.test(best) && /175 lb/.test(best) && /\+12\.5 lb/.test(best) && await page.locator("#me-dash .dash-best li").count() === 1, `best lifts skip unfinished workouts and show the gain with its unit (${best.trim()})`);
+            check(/Bench press/.test(best) && /145 lb × 6/.test(best) && /\+10 lb/.test(best) && await page.locator("#me-dash .dash-best li").count() === 1, `Beginner best lifts show the heaviest set lifted, skip unfinished workouts, and show the gain with its unit (${best.trim()})`);
+            check(/heaviest set/.test(await page.locator("#me-dash .dash-fine").textContent()), "Beginner best lifts explain they're the heaviest set logged");
+            await page.evaluate(() => setLevel("Intermediate"));
+            await page.waitForTimeout(150);
+            const bestInt = await page.locator("#me-dash .dash-best li").first().textContent();
+            check(/175 lb/.test(bestInt) && !/×/.test(bestInt) && /\+12\.5 lb/.test(bestInt), `Intermediate best lifts show the estimated max (${bestInt.trim()})`);
             await page.click('[data-me-go="lifts"]');
             const lifts = await page.locator("#lift-table tbody").textContent();
             check(/Bench press/.test(lifts) && !/Squat/.test(lifts) && /175 lb max/.test(lifts), `the Lifts tab lists finished workouts and its number matches the dashboard (${lifts.replace(/\s+/g, " ").slice(0, 80)})`);

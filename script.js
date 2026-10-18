@@ -2245,6 +2245,16 @@ function showToast(title, text) {
 // Estimated one-rep max (Epley). Very high-rep sets are capped so they don't inflate it.
 const e1rm = (w, r) => (r <= 1 ? w : w * (1 + Math.min(r, 15) / 30));
 const sessionBest = (entry, unit) => Math.max(...entry.sets.map((s) => e1rm(toUnit(s.w, entry.unit, unit), s.r)));
+// Heaviest set actually lifted in a session (most reps at that weight breaks a tie), for Beginner "Your best lifts"
+function heaviestSet(entry, unit) {
+    let top = null;
+    entry.sets.forEach((s) => {
+        const w = toUnit(s.w, entry.unit, unit), r = Number(s.r) || 0;
+        if (!(w > 0) || r < 1) return;
+        if (!top || w > top.w || (w === top.w && r > top.r)) top = { w, r };
+    });
+    return top;
+}
 
 // Weight jumps: bigger for leg compounds, smaller for everything else
 function weightStep(name, unit, current = Infinity, big = false) {
@@ -5402,9 +5412,17 @@ function setupMyDashboard() {
         const last = sessions[sessions.length - 1];
         // Only finished workouts, like the Log and Lifts tabs
         const log = finishedLog();
+        // Beginners see the heaviest set they really lifted ("25 lb × 15"); Intermediate and up see the estimated max
+        const heavy = !levelAtLeast("Intermediate");
         const best = Object.keys(log).filter((n) => EXERCISES[n] && !isCardio(n)).map((n) => {
             const entries = log[n].filter((e) => e.sets.some((st) => st.w > 0));
             if (!entries.length) return null;
+            if (heavy) {
+                const tops = entries.map((e) => heaviestSet(e, unit)).filter(Boolean);
+                if (!tops.length) return null;
+                const topSet = tops.reduce((a, b) => (b.w > a.w || (b.w === a.w && b.r > a.r) ? b : a));
+                return { n, top: topSet.w, reps: topSet.r, gain: roundWeight(topSet.w, unit) - roundWeight(tops[0].w, unit), sessions: entries.length };
+            }
             const top = Math.max(...entries.map((e) => sessionBest(e, unit)));
             const first = sessionBest(entries[0], unit);
             // Gain from the rounded numbers, so it adds up with what's shown
@@ -5468,8 +5486,8 @@ function setupMyDashboard() {
                 </article>
                 <article class="dash-card">
                     <h3>Your best lifts</h3>
-                    ${best.length ? `<ul class="dash-best">${best.map((b) => `<li><span>${escapeHtml(b.n)}</span><strong>${liftNum(b.top, unit)} ${unit}</strong>${roundWeight(b.gain, unit) > 0 ? `<em>+${liftNum(b.gain, unit)} ${unit}</em>` : ""}</li>`).join("")}</ul>
-                        <p class="dash-fine">${levelAtLeast("Intermediate") ? "Estimated one-rep max from your logged sets" : "Roughly the most you could lift once, worked out from your logged sets (not something to test)"}, and how much it's gone up since your first log.</p>`
+                    ${best.length ? `<ul class="dash-best">${best.map((b) => `<li><span>${escapeHtml(b.n)}</span><strong>${liftNum(b.top, unit)} ${unit}${b.reps ? ` × ${b.reps}` : ""}</strong>${roundWeight(b.gain, unit) > 0 ? `<em>+${liftNum(b.gain, unit)} ${unit}</em>` : ""}</li>`).join("")}</ul>
+                        <p class="dash-fine">${heavy ? "The heaviest set you've logged for each lift (weight × reps), and how much heavier it is than your first one." : "Estimated one-rep max from your logged sets, and how much it's gone up since your first log."}</p>`
                     : `<p class="dash-sub">Log your sets (weight and reps) and your strongest lifts show up here, with how much they've improved.</p>`}
                 </article>
             </div>`;

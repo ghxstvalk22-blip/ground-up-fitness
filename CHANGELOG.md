@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-18 · Your best lifts show what you really lifted
+
+- **On My progress, "Your best lifts" now shows the heaviest set you've actually done** at the Beginner level, like "Bench press 145 lb × 6" or "Goblet squat 25 lb × 15", instead of an estimated one-rep max. The green number next to it shows how much heavier that is than your first logged set.
+- From the Intermediate level up, the card still shows the estimated one-rep max, as before.
+- Why: in the phone walkthroughs, beginners didn't recognize the estimated numbers (they'd never lifted that much), so the card now shows a number they'll remember from the gym.
+
 ## 2026-10-17 · Editing a workout starts with your workout
 
 - **Changing a day you already have is quicker now.** When you tap Edit on one of your days, the builder opens on that day's exercises, their sets, reps and weights, and the Muscle check. The long list of every exercise (over 130) no longer sits in front of them.
