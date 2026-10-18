@@ -6004,6 +6004,48 @@ function showMuscleHits(names, title, opts = {}) {
     });
 }
 
+/* ---------- Demo videos ----------
+   Every "Watch a demo" button opens a YouTube search (a search never points at a video that's been
+   taken down). Most names work as "<name> proper form"; DEMO_QUERY holds searches that were checked
+   one by one so the top results show that exact exercise, machine or stretch. */
+const DEMO_QUERY = {
+    "Split squat": "static split squat how to",
+    "Deadlift": "barbell deadlift how to beginner",
+    "Hamstring curl machine": "leg curl machine how to",
+    "Lying hamstring curl": "lying leg curl machine how to",
+    "Seated calf raise": "seated calf raise machine how to",
+    "Machine chest press": "seated chest press machine how to",
+    "Incline machine press": "incline chest press machine how to",
+    "Cable fly": "cable chest fly how to",
+    "Dumbbell fly": "flat bench dumbbell chest fly how to",
+    "Low-to-high cable fly": "low to high cable fly upper chest tutorial",
+    "Close-grip lat pulldown": "close grip V bar lat pulldown how to",
+    "Chest-supported row": "chest supported T-bar row machine how to",
+    "Machine row": "seated row machine back exercise how to",
+    "Iso-lateral row": "Hammer Strength iso-lateral row how to",
+    "Iso-lateral chest press": "iso-lateral horizontal bench press how to",
+    "Shrug machine": "seated shrug machine how to",
+    "Glute kickback machine": "standing glute kickback machine how to use",
+    "Overhead press": "barbell overhead press how to",
+    "Machine shoulder press": "seated shoulder press machine how to",
+    "Lateral raise": "dumbbell lateral raise how to",
+    "Lean-away lateral raise": "single arm dumbbell lean away lateral raise",
+    "Bike intervals": "stationary bike intervals for beginners",
+    "Rower intervals": "rowing machine intervals for beginners how to",
+    "Incline walk or easy bike": "incline treadmill walking for beginners how to",
+    "Stretching or mobility": "full body stretching routine for beginners",
+    "Steady row": "steady state rowing machine workout for beginners",
+    "Outdoor bike ride": "beginner cycling tips outdoor bike ride",
+    "Bodyweight squats": "bodyweight squat how to tutorial",
+    "Squat with a pause and reach": "deep squat hold with overhead reach warm up",
+    "Ankle rocks": "knee to wall ankle mobility drill how to",
+    "Calf raises": "bodyweight calf raises how to",
+    "Hip hinges (bodyweight good mornings)": "bodyweight good morning hip hinge how to",
+    "Floor chest opener": "prone pec stretch on floor how to"
+};
+const demoQuery = (name) => DEMO_QUERY[name] || `${name} proper form`;
+const demoUrl = (name) => `https://www.youtube.com/results?search_query=${encodeURIComponent(demoQuery(name))}`;
+
 /* =========================================================
    FEATURE: Warm-ups and stretches, paired to your workout
    Before lifting: a few minutes of easy cardio, moving (dynamic) warm-ups for the muscles
@@ -6136,8 +6178,8 @@ function warmupFor(names) {
     }
     return { muscles, moves: pick("move", 4), stretches: pick("stretch", 4), ramp };
 }
-// A YouTube search for the move, like the exercise guides' "Watch a demo"
-const warmupDemo = (w) => `https://www.youtube.com/results?search_query=${encodeURIComponent(w.n.replace(/\s*\(.*?\)/g, "") + (/stretch|pose/i.test(w.n) ? " how to" : w.kind === "stretch" ? " stretch how to" : " warm up how to"))}`;
+// A YouTube search for the move, like the exercise guides' "Watch a demo" (checked searches in DEMO_QUERY win)
+const warmupDemo = (w) => `https://www.youtube.com/results?search_query=${encodeURIComponent(DEMO_QUERY[w.n] || (w.n.replace(/\s*\(.*?\)/g, "") + (/stretch|pose/i.test(w.n) ? " how to" : w.kind === "stretch" ? " stretch how to" : " warm up how to")))}`;
 const warmupCard = (w, i) => `<li class="wu-item"><label class="wu-check"><input type="checkbox" aria-label="Done: ${escapeHtml(w.n)}"><span class="wu-name">${escapeHtml(w.n)}</span><span class="wu-dose">${escapeHtml(w.dose)}</span></label>
     <details class="wu-how"><summary>How</summary><ol>${w.how.map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ol></details>
     <span class="wu-tools"><a class="wu-watch" href="${warmupDemo(w)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">&#9654;</span> Watch how<span class="visually-hidden">: ${escapeHtml(w.n)} video (opens in a new tab)</span></a>
@@ -8459,7 +8501,7 @@ function setupExerciseGuide() {
         if (!x) return;
         current = name;
         const lvl = levelRank(getLevel());
-        const demo = `https://www.youtube.com/results?search_query=${encodeURIComponent(name + " proper form")}`;
+        const demo = demoUrl(name);
         const fam = (familyFor(name) || []).filter((n) => n !== name);
         document.getElementById("howto-title").textContent = name;
         document.getElementById("howto-add").dataset.addEx = name;

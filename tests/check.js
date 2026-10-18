@@ -1504,6 +1504,11 @@ async function openPage(browser, file, viewport, hash = "") {
             check(wu.chest.includes("chest") && wu.chestStretch.includes("triceps") && wu.chestStretch.includes("chest"), `a chest & triceps day warms up and stretches chest and triceps (${wu.chest.join(", ")} / ${wu.chestStretch.join(", ")})`);
             check(wu.legs.some((x) => ["quads", "hamstrings", "glutes"].includes(x)) && !wu.upperInLegs && wu.legStretch.includes("quads") && wu.legStretch.includes("hamstrings"), `a leg day gets leg warm-ups and leg stretches (${wu.legs.join(", ")} / ${wu.legStretch.join(", ")})`);
             check(wu.demo, "every warm-up and stretch has a video demo link");
+            const demos = await page.evaluate(() => {
+                const names = new Set([...Object.keys(EXERCISES), ...WARMUPS.map((w) => w.n)]);
+                return { stray: Object.keys(DEMO_QUERY).filter((k) => !names.has(k)), all: Object.keys(EXERCISES).every((n) => demoUrl(n).startsWith("https://www.youtube.com/results?search_query=") && demoQuery(n).length > 3), checked: Object.keys(DEMO_QUERY).length };
+            });
+            check(demos.all && demos.stray.length === 0 && demos.checked >= 30, `every exercise has a demo search, and every checked search matches a real exercise or stretch (${demos.checked} checked)${demos.stray.length ? ": " + demos.stray.join(", ") : ""}`);
             const wuAll = await page.evaluate(() => {
                 const out = [];
                 ["gym", "home"].forEach((place) => {
