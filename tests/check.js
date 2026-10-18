@@ -994,6 +994,16 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // The menu's "Paste a friend's workout" opens Workouts from friends
+        {
+            const { page, errors } = await openPage(browser, "programs.html", viewport, "#friends");
+            await page.waitForTimeout(500);
+            const fr = await page.evaluate(() => { const s = document.querySelector(".share-inbox"); const r = s.getBoundingClientRect(); return s.open && r.top >= 0 && r.top < innerHeight; });
+            check(fr && await page.locator(".share-inbox [data-share-paste]").isVisible(), "programs.html#friends jumps to Workouts from friends, open, with Paste workout");
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
         // Your plan: remove an exercise from a day; the map shows what the day still hits, with Undo
         {
             const { page, errors } = await openPage(browser, "programs.html", viewport);

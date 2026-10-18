@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-18 · Easier to find "Paste a friend's workout"
+
+- **New link: "Paste a friend's workout"** in the Programs menu (and in search). It takes you straight to Workouts from friends on the Plans page, already open, with the Paste workout button. Before, the section sat at the top of Plans, and opening Plans from your workout scrolled right past it.
+
 ## 2026-10-18 · Demo videos that show the exact exercise
 
 - **We checked the "Watch a demo" search for every exercise, warm-up and stretch,** looking at what YouTube actually returns, and fixed the ones that pulled up the wrong thing. For example, "Machine row" was showing cardio rowing machines, "Iso-lateral row" was showing the low-row machine, "Split squat" led with Bulgarian split squats, "Cable fly" mixed in rear-delt flys, "Close-grip lat pulldown" mixed in other grips, and "Floor chest opener" showed foam-roller stretches. Those searches now name the exact movement and equipment, so the first videos match what the plan asks you to do.

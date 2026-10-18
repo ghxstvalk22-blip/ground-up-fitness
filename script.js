@@ -108,7 +108,8 @@ const SITE_NAV = [
         ["Gym words, decoded", "Sets, reps, failure, deload, and more", "start.html#glossary"]
     ] },
     { label: "Programs", href: "programs.html", page: "programs", items: "programs", more: [
-        ["Build your own workout", "Pick your exercises, get your weights", "programs.html#build"]
+        ["Build your own workout", "Pick your exercises, get your weights", "programs.html#build"],
+        ["Paste a friend's workout", "Open a workout link a friend sent you", "programs.html#friends"]
     ] },
     { label: "Exercises", href: "exercises.html", page: "exercises", items: [
         ["Find by muscle", "Tap a muscle, see how to train it", "exercises.html#muscle-map"],
@@ -5910,6 +5911,12 @@ function setupShareWorkout() {
                 <p class="share-status" role="status"></p>
             </div>
         </details>`);
+    // programs.html#friends (menu and search): jump to Workouts from friends, opened
+    addRoute(/^#friends$/, () => {
+        const box = document.querySelector(".share-inbox");
+        if (box) box.open = true;
+        return { target: box || document.getElementById("main") };
+    });
     const added = store.get("gu-share-added");
     if (added && typeof added.text === "string") {
         store.remove("gu-share-added");
