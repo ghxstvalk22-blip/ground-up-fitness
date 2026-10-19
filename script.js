@@ -1770,6 +1770,37 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
     });
 }
 
+// Swap: a short list to pick from. Same family first (what the rotation would use), then other
+// exercises for the same main muscle with the same equipment; exercises you've logged before come first.
+function swapChoices(program, slotName, current, usedToday, limit = 5) {
+    if (typeof EXERCISES !== "object" || !EXERCISES[current]) return [];
+    const plan = PROGRAMS[program] || {};
+    const avoid = getProfile().avoid;
+    const ok = (n) => EXERCISES[n] && n !== current && !usedToday.has(n) && kitAllows(plan.kit || null, EXERCISES[n].kit)
+        && !(plan.bench === false && NEEDS_BENCH.test(n)) && !avoidedBy(n, avoid);
+    const muscle = builderMuscle(current), eq = equipOf(current);
+    const logged = (n) => (logFor(n).length ? 0 : 1);
+    const byLog = (list) => list.slice().sort((a, b) => logged(a) - logged(b));
+    const all = Object.keys(EXERCISES).filter((n) => builderMuscle(n) === muscle);
+    const fam = familyFor(slotName, program) || familyFor(current, program) || [];
+    const out = [];
+    const add = (list) => list.forEach((n) => { if (ok(n) && !out.includes(n)) out.push(n); });
+    add(fam);
+    add(byLog(all.filter((n) => equipOf(n) === eq)));
+    if (out.length < 3) add(byLog(all));
+    return out.slice(0, limit);
+}
+// "Last 95 lb × 10" (heaviest set of the last session), or "New to you"
+function swapLastText(name, unit) {
+    if (isCardio(name)) return "";
+    const last = logFor(name).slice(-1)[0];
+    if (!last || !Array.isArray(last.sets)) return "New to you";
+    const top = heaviestSet(last, unit);
+    if (top) return `Last ${trimNum(Math.round(top.w * 2) / 2)} ${unit} \u00d7 ${top.r}`;
+    const reps = Math.max(0, ...last.sets.map((st) => Number(st.r) || 0));
+    return reps ? `Last ${reps} reps` : "New to you";
+}
+
 // How many different weekly versions a plan can produce
 function planCombinations(plan, program) {
     if (PROGRAMS[program] && PROGRAMS[program].rotation === "none") return 1;
@@ -2618,6 +2649,7 @@ function setupPrograms() {
         return sets ? { sets, low, high, easy: easyWeek() } : null;
     };
     let lineups = []; // what's on screen, per day
+    let weekItems = []; // this week's plan items per day (before swaps), for Swap's "Put back"
     let firstTipShown = new Set();
     // What's open on the day cards (More panels, set logs, day menus), so a redraw (+ set, a check-off,
     // a swap) doesn't snap everything shut
@@ -2763,6 +2795,7 @@ function setupPrograms() {
 
         // Days
         const thisWeek = weekDays(plan, state.week);
+        weekItems = thisWeek.map((day) => day.items);
         lineups = thisWeek.map((day, di) => dayLineup(state.goal, state.days, di, day.items, state.week, swaps));
         const lastWeek = state.week > 1 && !plan.weeks
             ? plan.days.map((day, di) => dayLineup(state.goal, state.days, di, day.items, state.week - 1, swaps))
@@ -2850,6 +2883,9 @@ function setupPrograms() {
         const info = typeof EXERCISES === "object" ? EXERCISES[x.name] : null;
         const easier = x.name === x.n && x.swap ? x.swap : (info && info.easier) || "";
         const cardio = isCardio(x.name);
+        // Swap: a short list (same muscle and equipment) instead of a blind replace
+        const choices = swapChoices(state.goal, x.n, x.name, new Set((lineups[di] || []).map((y) => y.name)));
+        const original = x.swapped && weekItems[di] ? (dayLineup(state.goal, state.days, di, weekItems[di], state.week, {})[xi] || {}).name : "";
         let target = cardio ? nextCardioTarget(x.name, profile.unit) : nextTarget(x.name, dose.text, profile.unit);
         // Week-by-week plans set the next step themselves
         if (cardio && PROGRAMS[state.goal].plans[state.days].weeks && target && !target.first) target = { ...target, text: "Stick to this week's runs. The plan steps up next week, and repeating a week is fine." };
@@ -2900,9 +2936,14 @@ function setupPrograms() {
                     ${target ? `<span class="ex-target${target.up ? " is-up" : ""}">${target.lastText ? `<span class="ex-last">${(logFor(x.name).slice(-1)[0] || {}).date === isoDate(new Date()) ? "Today so far" : "Last time"}: ${escapeHtml(target.lastText)}</span>` : ""}${escapeHtml(target.text)}</span>` : ""}
                     <span class="ex-actions">
                         ${info ? `<button type="button" class="chip" data-howto="${escapeHtml(x.name)}">How to</button>` : ""}
-                        ${x.canRotate ? `<button type="button" class="chip" data-swap="${key}">Swap</button>` : ""}
+                        ${choices.length || x.swapped ? `<button type="button" class="chip" data-swap="${key}" aria-expanded="false" aria-controls="swap-${key}">Swap<span class="visually-hidden"> ${escapeHtml(x.name)}</span></button>` : ""}
                         ${state.goal === "custom" && (lineups[di] || []).length > 1 ? `<button type="button" class="chip chip-remove" data-remove-ex="${key}">Remove<span class="visually-hidden"> ${escapeHtml(x.name)} from this day</span></button>` : ""}
                     </span>
+                    ${choices.length || x.swapped ? `<div class="swap-pick" id="swap-${key}" hidden>
+                        <p class="swap-pick-head">Swap ${escapeHtml(x.name)} for</p>
+                        ${choices.length ? `<ul class="swap-list">${choices.map((n) => { const last = swapLastText(n, profile.unit); return `<li><button type="button" class="swap-opt" data-swap-to="${key}" data-name="${escapeHtml(n)}">${equipIcon(n)}<span class="swap-opt-name">${escapeHtml(n)}</span>${last ? `<span class="swap-opt-last${last === "New to you" ? " is-new" : ""}">${escapeHtml(last)}</span>` : ""}</button></li>`; }).join("")}</ul>` : ""}
+                        ${x.swapped && original && original !== x.name ? `<button type="button" class="text-button" data-swap-to="${key}" data-name="">Put back ${escapeHtml(original)}</button>` : ""}
+                    </div>` : ""}
                     </div>
                     ${!parsed.timed ? logForm(x, key, parseDose(dose.text), target, profile.unit) : ""}
                     ${cardio ? cardioForm(x, key, profile.unit) : ""}
@@ -3375,23 +3416,31 @@ function setupPrograms() {
             }
             return;
         }
+        // Swap opens a short list to pick from; picking one replaces just that exercise this week
         const swapBtn = e.target.closest("[data-swap]");
         if (swapBtn) {
-            const [di, xi] = swapBtn.dataset.swap.split("-").map(Number);
-            const current = lineups[di][xi];
-            const fam = familyFor(current.n, state.goal) || [current.name];
-            const usedToday = new Set(lineups[di].map((x) => x.name));
-            let i = fam.indexOf(current.name);
-            let next = current.name;
-            for (let step = 1; step <= fam.length; step++) {
-                const candidate = fam[(i + step) % fam.length];
-                if (!usedToday.has(candidate)) { next = candidate; break; }
-            }
+            const panel = document.getElementById(`swap-${swapBtn.dataset.swap}`);
+            if (!panel) return;
+            const open = panel.hidden;
+            panel.hidden = !open;
+            swapBtn.setAttribute("aria-expanded", String(open));
+            if (open) { const first = panel.querySelector(".swap-opt, .text-button"); if (first) first.focus(); }
+            return;
+        }
+        const swapTo = e.target.closest("[data-swap-to]");
+        if (swapTo) {
+            const [di, xi] = swapTo.dataset.swapTo.split("-").map(Number);
+            const to = swapTo.dataset.name || "";
+            const from = lineups[di] && lineups[di][xi] ? lineups[di][xi].name : "";
+            if (!from || (to && !(typeof EXERCISES === "object" && EXERCISES[to]))) return;
             const swaps = store.get(swapsKey(), {}) || {};
-            swaps[`w${state.week}:${di}-${xi}`] = next;
+            if (to) swaps[`w${state.week}:${di}-${xi}`] = to;
+            else delete swaps[`w${state.week}:${di}-${xi}`];
             store.set(swapsKey(), swaps);
             render();
-            const again = els.grid.querySelector(`[data-swap="${di}-${xi}"]`);
+            const now = lineups[di] && lineups[di][xi] ? lineups[di][xi].name : to;
+            showToast("Swapped", `${from} is now ${now} for this week.`);
+            const again = els.grid.querySelector(`[data-swap="${di}-${xi}"]`) || els.grid.querySelector(`[data-more="${di}-${xi}"]`);
             if (again) again.focus();
             return;
         }

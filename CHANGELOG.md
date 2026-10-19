@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-19 · Swap lets you pick what to swap in
+
+- **Swap now shows a short list instead of swapping blindly.** On your plan, open More on an exercise and tap Swap: you get up to five options that work the same main muscle, with the same kind of equipment first. Each one shows the heaviest set you did last time (like "Last 95 lb × 10"), or "New to you" if you've never logged it, so you can pick one you already know your weight for. Tap one to use it for this week.
+- **Changed your mind?** Swap on a swapped exercise also offers "Put back" with the original exercise.
+- **More exercises can be swapped.** Before, only exercises with a built-in rotation group had Swap. Now any exercise with a sensible alternative (same muscle, fits your equipment and your skip list) gets it. Home plans still only offer moves your equipment allows.
+
 ## 2026-10-18 · Easier to find "Paste a friend's workout"
 
 - **New link: "Paste a friend's workout"** in the Programs menu (and in search). It takes you straight to Workouts from friends on the Plans page, already open, with the Paste workout button. Before, the section sat at the top of Plans, and opening Plans from your workout scrolled right past it.

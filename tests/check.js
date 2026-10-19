@@ -294,8 +294,27 @@ async function openPage(browser, file, viewport, hash = "") {
             // Swap changes just that exercise
             const before = await page.locator(".ex-row").nth(1).locator(".ex-name").textContent();
             await page.evaluate(() => { document.querySelectorAll(".ex-more").forEach((d) => { d.hidden = false; }); document.querySelectorAll(".day-menu").forEach((d) => { d.open = true; }); }); await page.locator(".ex-row").nth(1).locator("[data-swap]").click();
+            const swapPanel = page.locator(".ex-row").nth(1).locator(".swap-pick");
+            check(await swapPanel.isVisible() && await page.locator(".ex-row").nth(1).locator("[data-swap]").getAttribute("aria-expanded") === "true", "Swap opens a short list to pick from");
+            const optCount = await swapPanel.locator(".swap-opt").count();
+            check(optCount >= 2 && optCount <= 5, `the swap list has a few choices (${optCount})`);
+            check(/^(Last |New to you)/.test((await swapPanel.locator(".swap-opt-last").first().textContent()).trim()), "each swap choice shows your last weight or that it's new to you");
+            const picked = (await swapPanel.locator(".swap-opt-name").nth(1).textContent()).trim();
+            check(await page.evaluate(([a, b]) => builderMuscle(a) === builderMuscle(b), [before.trim(), picked]), `swap choices work the same main muscle (${before} -> ${picked})`);
+            await swapPanel.locator(".swap-opt").nth(1).click();
             const after = await page.locator(".ex-row").nth(1).locator(".ex-name").textContent();
-            check(before !== after, `Swap changes the exercise (${before} -> ${after})`);
+            check(before !== after && after.trim() === picked, `Swap changes the exercise to the one you picked (${before} -> ${after})`);
+            check(await page.evaluate(() => { const keep = localStorage.getItem("gu-log"); const s = "Barbell back squat" in EXERCISES ? "Barbell back squat" : Object.keys(EXERCISES)[0]; localStorage.setItem("gu-log", JSON.stringify({ [s]: [{ date: "2026-10-01", unit: "lb", sets: [{ w: 95, r: 10 }, { w: 100, r: 8 }] }] })); const t = swapLastText(s, "lb"); if (keep === null) localStorage.removeItem("gu-log"); else localStorage.setItem("gu-log", keep); return t === "Last 100 lb \u00d7 8"; }), "swap choices show the heaviest set from last time");
+            await page.evaluate(() => { document.querySelectorAll(".ex-more").forEach((d) => { d.hidden = false; }); });
+            await page.locator(".ex-row").nth(1).locator("[data-swap]").click();
+            const putBack = page.locator(".ex-row").nth(1).locator('.swap-pick [data-swap-to][data-name=""]');
+            check(await putBack.isVisible() && (await putBack.textContent()).includes(before.trim()), "a swapped exercise offers to put the original back");
+            await putBack.click();
+            check((await page.locator(".ex-row").nth(1).locator(".ex-name").textContent()).trim() === before.trim(), "Put back restores the original exercise");
+            await page.evaluate(() => { document.querySelectorAll(".ex-more").forEach((d) => { d.hidden = false; }); });
+            await page.locator(".ex-row").nth(1).locator("[data-swap]").click();
+            await page.locator(".ex-row").nth(1).locator(".swap-opt").first().click();
+            check(before !== await page.locator(".ex-row").nth(1).locator(".ex-name").textContent(), "picking from the list swaps again");
 
             // Logging sets gives a target next time, and the progress chart draws
             const row = page.locator(".ex-row").nth(2);

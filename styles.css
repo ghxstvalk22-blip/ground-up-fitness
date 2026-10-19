@@ -3870,3 +3870,21 @@ body.rest-on .install-tip { display: none; }
 .builder-body.plan-first { grid-template-columns: minmax(0, 1fr); }
 .builder-body.plan-first .builder-pick { order: 1; border-right: 0; border-bottom: 0; border-top: 1px solid var(--line); }
 .builder-body.plan-first .builder-plan { max-width: 860px; }
+
+/* Swap: a short list to pick from (same muscle and equipment, with your last weight) */
+.swap-pick { margin-top: 8px; padding: 10px; background-color: var(--paper); border-left: 3px solid var(--volt); }
+.swap-pick-head { margin: 0 0 8px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.swap-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.swap-opt {
+    display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 8px 10px;
+    font: inherit; font-size: 0.9rem; text-align: left; color: var(--ink); cursor: pointer;
+    background-color: var(--surface); border: 1px solid var(--line); border-radius: 0;
+}
+.swap-opt:hover { border-color: var(--volt); }
+.swap-opt:focus-visible { outline: 3px solid var(--volt); outline-offset: 2px; }
+.swap-opt-name { flex: 1 1 auto; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+.swap-opt-last { flex: 0 0 auto; font-size: 0.78rem; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.swap-opt-last.is-new { font-weight: 600; font-style: italic; }
+.swap-pick > .text-button { margin-top: 6px; min-height: 44px; }
+.ex-more > .swap-pick[hidden] { display: none; }
+.ex-list .swap-list > li { display: block; padding: 0; border: 0; grid-template-columns: none; }
