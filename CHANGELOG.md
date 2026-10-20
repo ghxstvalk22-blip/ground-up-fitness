@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-20 · New exercises start from the one they replace
+
+- **New exercises start from what you already lift.** When your plan changes an exercise (every 4 weeks on the beginner plan, weekly for some accessories, or when you tap Swap), the new one now says what it replaces and what you did last time, like "Replaces Leg press (last 95×10)". Its suggested first weight is worked out from that number instead of a generic guess, and set a little lighter while you learn the new movement. Why: testers said the first weight on a brand-new exercise felt random after they'd been logging the old one for weeks.
+
 ## 2026-10-19 · Swap lets you pick what to swap in
 
 - **Swap now shows a short list instead of swapping blindly.** On your plan, open More on an exercise and tap Swap: you get up to five options that work the same main muscle, with the same kind of equipment first. Each one shows the heaviest set you did last time (like "Last 95 lb × 10"), or "New to you" if you've never logged it, so you can pick one you already know your weight for. Tap one to use it for this week.

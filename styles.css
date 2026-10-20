@@ -3750,6 +3750,8 @@ details.builder-cover > .bc-warn { margin-bottom: 14px; }
 .ex-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 2px; }
 .ex-main .ex-line .ex-muscle { margin: 0; }
 .ex-up { display: inline-block; margin-top: 4px; font-size: 0.82rem; font-weight: 800; color: var(--good, #1f7a3f); }
+/* "Replaces Leg press (last 95×10)": what this slot had before, so the first weight makes sense */
+.ex-replaces { display: block; margin-top: 4px; font-size: 0.82rem; font-weight: 600; color: var(--muted); }
 .ex-actions-main { align-items: center; margin-top: 10px; }
 .ex-actions-main .rest-btn { min-height: 44px; }
 .chip.chip-go { background-color: var(--ink); color: var(--paper); border-color: var(--ink); }

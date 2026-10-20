@@ -10,7 +10,6 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), still to do, most important first:
 
-- [ ] After the plan changes exercises (every 4 weeks for beginners), base the first weight on the exercise it replaced, and show "Replaces Leg press (last 95×10)".
 - [ ] Your plan: an Undo message after removing a day (today it's a confirm box). (Moving days up/down is done.)
 - [ ] Fitness Coach: Start this workout should land on the day's exercises. (Home workouts without bench moves are done.)
 - [ ] Beginner Progress shows "heaviest set" instead of estimated one-rep maxes; estimated max only for the big lifts.
@@ -39,6 +38,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Your best lifts: tap a lift to see its heaviest set from each session as a small list or chart.
 - [ ] Swap list: a small "Show more" to reveal other equipment for the same muscle (handy when a machine is taken).
 - [ ] Swap: let people pick "swap for every week" as well as "this week only".
+- [ ] Swap list: when picking a new exercise, show the suggested first weight (from the one it replaces) next to "New to you".
 - [ ] Editing a day: a short "Suggested for this day" list (3 or 4 exercises for muscles the day misses) above the full exercise list.
 
 ## Blocked
@@ -47,6 +47,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-10-20: When the plan changes an exercise (the 4-week beginner change, the weekly rotation, or Swap), the new one shows "Replaces Leg press (last 95×10)" and its first weight is worked out from what you last lifted on the old one (a little lighter while you learn it).
 - [x] 2026-10-19: Swap shows a short list to pick from (same family first, then the same main muscle and equipment), each with your last weight or "New to you", plus "Put back" for the original. Every exercise with a fitting alternative gets Swap, not just ones in a rotation family.
 - [x] 2026-10-18: Beginner "Your best lifts" on My progress shows the heaviest set actually lifted ("145 lb × 6") and how much heavier than the first; estimated max from Intermediate up.
 - [x] 2026-10-17: Editing a day opens on Your workout and its muscle check; the full exercise list stays folded behind "+ Add exercises" (tap again to hide it).

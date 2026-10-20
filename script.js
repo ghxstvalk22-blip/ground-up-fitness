@@ -1747,6 +1747,14 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
         const fam = familyFor(x.n, program);
         if (fam && used.has(name) && PROGRAMS[program].rotation !== "none") name = fam.find((n) => !used.has(n)) || name;
         const swapped = swaps[`w${week}:${dayIndex}-${slot}`];
+        // What this slot had before: the plan's own pick (when you swapped), or the previous rotation's pick
+        let replaced = "";
+        if (swapped && swapped !== name) replaced = name;
+        else if (PROGRAMS[program].rotation !== "none" && fam && fam.length > 1) {
+            const prevWeek = mode === "block" ? Math.floor((week - 1) / ROTATION_BLOCK_WEEKS) * ROTATION_BLOCK_WEEKS : week - 1;
+            const prev = prevWeek >= 1 ? rotatedName(x.n, { program, days, day: dayIndex, slot, week: prevWeek, mode }) : "";
+            if (prev && prev !== name) replaced = prev;
+        }
         if (swapped) name = swapped;
         // Moves you asked to skip get a stand-in from the same family
         let skipped = null, skipDose = null;
@@ -1754,7 +1762,7 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
             const kit = PROGRAMS[program] ? PROGRAMS[program].kit : null;
             const fits = (n) => typeof EXERCISES === "object" && EXERCISES[n] && !avoidedBy(n, avoid) && !used.has(n) && kitAllows(kit, EXERCISES[n].kit) && !(PROGRAMS[program].bench === false && NEEDS_BENCH.test(n));
             const alt = (fam || []).find(fits) || (AVOID_SUBS[avoidedBy(name, avoid)] || []).find(fits);
-            if (alt) { skipped = AVOID_MOVES[avoidedBy(name, avoid)][0]; name = alt; }
+            if (alt) { skipped = AVOID_MOVES[avoidedBy(name, avoid)][0]; name = alt; replaced = ""; }
             if (alt) skipDose = coachDose(alt, COACH_COMPOUND.test(alt), getLevel());
         }
         used.add(name);
@@ -1766,7 +1774,8 @@ function dayLineup(program, days, dayIndex, items, week, swaps) {
             if (kind(String(x.d)) !== kind(def)) { d = def; if (rest) rest = defRest; }
             else if (/per (side|leg|arm)/.test(x.d) !== /per (side|leg|arm)/.test(def)) d = /per (side|leg|arm)/.test(def) ? `${x.d} per side` : String(x.d).replace(/ per (side|leg|arm)/, "");
         }
-        return { ...x, d, rest, name, mode, swapped: Boolean(swapped), skipped, canRotate: Boolean(fam && fam.length > 1) };
+        if (replaced === name || (typeof EXERCISES === "object" && !EXERCISES[replaced])) replaced = "";
+        return { ...x, d, rest, name, mode, swapped: Boolean(swapped), skipped, replaced, canRotate: Boolean(fam && fam.length > 1) };
     });
 }
 
@@ -1799,6 +1808,47 @@ function swapLastText(name, unit) {
     if (top) return `Last ${trimNum(Math.round(top.w * 2) / 2)} ${unit} \u00d7 ${top.r}`;
     const reps = Math.max(0, ...last.sets.map((st) => Number(st.r) || 0));
     return reps ? `Last ${reps} reps` : "New to you";
+}
+
+/* ---------- Replaced exercises ----------
+   When the rotation (or Swap) puts a new exercise in a slot, its first weight comes from what you
+   last lifted on the exercise it replaced, scaled by how the two usually compare. */
+function liftShares(name) {
+    return [[name, 1], ...(COACH_RATIOS[name] || []), ...(START_EXTRA[name] || [])].map(([b, s]) => [b, s]);
+}
+// How heavy "to" usually is next to "from" (both compared with the same big lift), or null if we can't tell
+function replacedRatio(from, to) {
+    const a = liftShares(from);
+    for (const [base, share] of liftShares(to)) {
+        const hit = a.find(([b]) => b === base);
+        if (hit && hit[1] > 0) return share / hit[1];
+    }
+    return null;
+}
+// "Replaces Leg press (last 95×10)", or "" when there's nothing logged to compare with
+function replacesText(from, unit) {
+    if (!from || isCardio(from)) return "";
+    const last = logFor(from).slice(-1)[0];
+    if (!last || !Array.isArray(last.sets) || !last.sets.length) return "";
+    const top = heaviestSet(last, unit);
+    const reps = Math.max(0, ...last.sets.map((st) => Number(st.r) || 0));
+    if (!top && !reps) return "";
+    return `Replaces ${from} (last ${top ? `${trimNum(roundWeight(top.w, unit))}\u00d7${top.r}` : `${reps} reps`})`;
+}
+// A first weight for "name" from the last session of the exercise it replaced
+function replacedStart(name, from, d, unit) {
+    if (!from || from === name || isCardio(name) || !d.high) return null;
+    const last = logFor(from).slice(-1)[0];
+    if (!last || !Array.isArray(last.sets) || !last.sets.some((st) => Number(st.w) > 0)) return null;
+    const ratio = replacedRatio(from, name);
+    if (!ratio) return null;
+    // A bit lighter (about 10%) while you learn the new one, and lighter again for more sets
+    const max = sessionBest(last, unit) * ratio * 0.9;
+    const est = max * (1 - 0.02 * Math.min(4, Math.max(0, d.sets - 2))) / (1 + (d.high + 1) / 30);
+    let w = loadableDrop(name, unit, est, 1, false);
+    if (BARBELL.test(name)) w = Math.max(w, unit === "kg" ? 20 : 45);
+    const top = heaviestSet(last, unit);
+    return { weight: w, lastText: top ? `${trimNum(roundWeight(top.w, unit))}\u00d7${top.r}` : "" };
 }
 
 // How many different weekly versions a plan can produce
@@ -2414,8 +2464,8 @@ function loadableDrop(name, unit, top, pct = 0.9, oneStepLess = true) {
 }
 // What to lift next time, based on last time (double progression).
 // Dumbbell moves logged per hand keep saying "each" after the first log too.
-function nextTarget(name, dose, unit) {
-    const t = nextTargetCore(name, dose, unit);
+function nextTarget(name, dose, unit, from = "") {
+    const t = nextTargetCore(name, dose, unit, from);
     if (t && t.each === undefined && t.weight > 0) {
         const s = startMax(name, unit);
         t.each = s ? s.each : /^two (light |heavy )?dumbbells/i.test(((typeof EXERCISES === "object" && EXERCISES[name]) || {}).eq || "");
@@ -2425,7 +2475,7 @@ function nextTarget(name, dose, unit) {
 // Rep bands: heavy (up to 6), medium (7 to 12), light (13+). A lift done heavy one day and light
 // another (like Next-level strength's tiers) gets its target from sessions in the same band.
 const repBand = (high) => (high <= 6 ? 0 : high <= 12 ? 1 : 2);
-function nextTargetCore(name, dose, unit) {
+function nextTargetCore(name, dose, unit, from = "") {
     let entries = logFor(name);
     const d = parseDose(dose);
     if (d.timed) return null;
@@ -2449,6 +2499,14 @@ function nextTargetCore(name, dose, unit) {
         // Fitness Coach workouts can carry a starting weight ("3 × 5 at 230 lb")
         const start = String(dose).match(/at (?:about )?(\d+(?:\.\d+)?) (lb|kg)/);
         if (start) return { first: true, text: `First time? Start at about ${trimNum(roundWeight(toUnit(Number(start[1]), start[2], unit), unit))} ${unit}. Log it and you'll get a target next time.` };
+        // New in this slot: worked out from the exercise it replaced
+        const rs = replacedStart(name, from, d, unit);
+        if (rs) {
+            const s = startMax(name, unit);
+            const each = s ? s.each : equipOf(name) === "db";
+            return { first: true, weight: rs.weight, each, reps: d.high, start: true, replaces: from,
+                text: `New in place of ${from}. Start with about ${trimNum(rs.weight)} ${unit}${each ? " in each hand" : ""}, worked out from your last ${from}${rs.lastText ? ` (${rs.lastText})` : ""} and a little lighter while you learn it. Easy at ${d.high} reps? Go up next set. Form slipping? Go lighter.` };
+        }
         // From their level and bodyweight
         const sw = startWeight(name, d.high, unit, d.sets);
         if (sw) {
@@ -2886,7 +2944,8 @@ function setupPrograms() {
         // Swap: a short list (same muscle and equipment) instead of a blind replace
         const choices = swapChoices(state.goal, x.n, x.name, new Set((lineups[di] || []).map((y) => y.name)));
         const original = x.swapped && weekItems[di] ? (dayLineup(state.goal, state.days, di, weekItems[di], state.week, {})[xi] || {}).name : "";
-        let target = cardio ? nextCardioTarget(x.name, profile.unit) : nextTarget(x.name, dose.text, profile.unit);
+        let target = cardio ? nextCardioTarget(x.name, profile.unit) : nextTarget(x.name, dose.text, profile.unit, x.replaced);
+        const replaces = !cardio && x.replaced && !logFor(x.name).length ? replacesText(x.replaced, profile.unit) : "";
         // Week-by-week plans set the next step themselves
         if (cardio && PROGRAMS[state.goal].plans[state.days].weeks && target && !target.first) target = { ...target, text: "Stick to this week's runs. The plan steps up next week, and repeating a week is fine." };
         // The "first time" tip shows once per day card, not on every exercise
@@ -2920,6 +2979,7 @@ function setupPrograms() {
                     <div class="ex-title"><span class="ex-step" aria-hidden="true">${xi + 1}</span><label for="${id}" class="ex-name">${equipIcon(x.name)}${escapeHtml(x.name)}</label></div>
                     <span class="ex-line"><span class="ex-dose">${escapeHtml(dose.text)}${target && target.weight > 0 && !cardio ? ` <span class="ex-dose-weight">· ${trimNum(target.weight)} ${profile.unit}${target.each ? " each" : ""}</span>` : ""}</span><span class="ex-muscle muscle-${builderMuscle(x.name)}">${escapeHtml(BUILD_MUSCLE_NAME[builderMuscle(x.name)] || "")}</span></span>
                     ${target && target.up ? `<span class="ex-up">&uarr; Heavier than last time</span>` : ""}
+                    ${replaces ? `<span class="ex-replaces">${escapeHtml(replaces)}</span>` : ""}
                     <span class="ex-actions ex-actions-main">
                         ${!parsed.timed ? `<button type="button" class="chip chip-go" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log sets</button>` : ""}
                         ${cardio ? `<button type="button" class="chip chip-go" data-log="${key}" aria-expanded="false" aria-controls="log-${key}">Log cardio</button>` : ""}
@@ -3153,7 +3213,7 @@ function setupPrograms() {
             const hands = ((startWeight(x.name, 10, unit) || {}).each) ? 2 : 1; // per-hand weights count both dumbbells
             if (entry) entry.sets.forEach((st) => { sets += 1; reps += st.r; volume += toUnit(st.w || 0, entry.unit, unit) * st.r * hands; });
             const cardio = isCardio(x.name);
-            const t = cardio ? nextCardioTarget(x.name, unit) : nextTarget(x.name, dose.text, unit);
+            const t = cardio ? nextCardioTarget(x.name, unit) : nextTarget(x.name, dose.text, unit, x.replaced);
             const d = parseDose(dose.text);
             // The same advice the plan card gives, so the two never disagree
             let next = t && t.text ? t.text : "";
@@ -5508,7 +5568,7 @@ function setupMyDashboard() {
             </div>
             ${clash.length ? `<a class="text-link" href="${info.href}">Do ${escapeHtml(info.title)} anyway</a>` : ""}` : "";
         const nextTargets = info && !info.weekDone ? info.items.slice(0, 3).map((x) => {
-            const t = isCardio(x.name) ? null : nextTarget(x.name, x.d, unit);
+            const t = isCardio(x.name) ? null : nextTarget(x.name, x.d, unit, x.replaced);
             return { name: x.name, text: t && t.weight > 0 ? `${trimNum(t.weight)} ${unit}${t.each ? " each" : ""} × ${t.reps || parseDose(x.d).high}` : x.d };
         }) : [];
         box.innerHTML = `
@@ -5613,7 +5673,7 @@ function currentPlanInfo() {
     const today = isoDate(new Date());
     // The same sets and reps the plan page shows this week (your goal, time, waves, light week)
     const prof = getProfile(), light = !plan.weeks && isLightWeek(last.goal, days, week);
-    const items = dayLineup(last.goal, days, di, day.items, week, swaps).map((x, xi) => ({ name: x.name, d: personalDose(last.goal, x, xi, prof, week, light).text, done: done.has(`${di}-${xi}`) || logFor(x.name).some((e) => e.date === today) }));
+    const items = dayLineup(last.goal, days, di, day.items, week, swaps).map((x, xi) => ({ name: x.name, replaced: x.replaced, d: personalDose(last.goal, x, xi, prof, week, light).text, done: done.has(`${di}-${xi}`) || logFor(x.name).some((e) => e.date === today) }));
     const started = !weekDone && items.some((x) => x.done);
     // A workout from this plan was already finished today
     const finishedToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === today && x.plan === last.goal);

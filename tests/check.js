@@ -316,6 +316,31 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator(".ex-row").nth(1).locator(".swap-opt").first().click();
             check(before !== await page.locator(".ex-row").nth(1).locator(".ex-name").textContent(), "picking from the list swaps again");
 
+            // A new exercise in a slot (rotation or Swap) gets its first weight from the one it replaced
+            const repl = await page.evaluate(() => {
+                const keep = localStorage.getItem("gu-log");
+                localStorage.setItem("gu-log", JSON.stringify({ "Leg press": [{ date: "2026-10-01", unit: "lb", sets: [{ w: 95, r: 10 }, { w: 95, r: 10 }] }] }));
+                const t = nextTarget("Hack squat", "3 × 10–12", "lb", "Leg press");
+                const text = replacesText("Leg press", "lb");
+                const plain = nextTarget("Hack squat", "3 × 10–12", "lb");
+                // The beginner plan changes exercises every 4 weeks: find a slot that changed and check it names the old one
+                const plan = PROGRAMS.beginner.plans[Object.keys(PROGRAMS.beginner.plans)[0]];
+                const days = Object.keys(PROGRAMS.beginner.plans)[0];
+                let rot = null;
+                plan.days.forEach((day, di) => { const a = dayLineup("beginner", days, di, day.items, 4, {}), b = dayLineup("beginner", days, di, day.items, 5, {}), c = dayLineup("beginner", days, di, day.items, 7, {});
+                    b.forEach((x, xi) => { if (!rot && x.name !== a[xi].name) rot = { was: a[xi].name, now: x.name, replaced: x.replaced, later: c[xi].replaced, wk4: a[xi].replaced }; }); });
+                if (keep === null) localStorage.removeItem("gu-log"); else localStorage.setItem("gu-log", keep);
+                return { w: t && t.weight, start: t && t.start, replaces: t && t.replaces, text, plainW: plain && plain.weight, rot };
+            });
+            check(repl.text === "Replaces Leg press (last 95×10)", `the plan names the exercise it replaced (${repl.text})`);
+            check(repl.replaces === "Leg press" && repl.start && repl.w > 0 && repl.w < 95, `the first weight comes from the replaced exercise, a bit lighter (${repl.w} lb)`);
+            check(repl.rot && repl.rot.replaced === repl.rot.was && repl.rot.later === repl.rot.was, `a rotated slot knows what it replaced for its whole 4-week block (${repl.rot && `${repl.rot.was} -> ${repl.rot.now}`})`);
+            const swappedFrom = await page.evaluate(() => { const row = document.querySelectorAll(".ex-row")[1]; return row ? row.querySelector(".ex-name").textContent.trim() : ""; });
+            await page.evaluate(([orig]) => { window.__keepLog = localStorage.getItem("gu-log"); const log = JSON.parse(window.__keepLog || "{}"); log[orig] = [{ date: "2026-10-01", unit: "lb", sets: [{ w: 50, r: 10 }] }]; localStorage.setItem("gu-log", JSON.stringify(log)); window.dispatchEvent(new CustomEvent("logchange", { detail: { fromPanel: true } })); }, [before.trim()]);
+            const replLine = page.locator(".ex-row").nth(1).locator(".ex-replaces");
+            check(swappedFrom !== before.trim() && await replLine.count() === 1 && (await replLine.textContent()).includes(`Replaces ${before.trim()} (last 50×10)`), "a swapped exercise shows what it replaces and your last weight on it");
+            await page.evaluate(() => { if (window.__keepLog === null) localStorage.removeItem("gu-log"); else localStorage.setItem("gu-log", window.__keepLog); window.dispatchEvent(new CustomEvent("logchange", { detail: { fromPanel: true } })); });
+
             // Logging sets gives a target next time, and the progress chart draws
             const row = page.locator(".ex-row").nth(2);
             const exName = await row.locator(".ex-name").textContent();
