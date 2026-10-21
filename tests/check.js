@@ -880,6 +880,44 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.evaluate(() => window.dispatchEvent(new CustomEvent("reststop")));
             await ctx.close();
         }
+        // Remove day: no confirm box; the day goes, check-offs move with their days, and Undo puts it all back
+        {
+            const c = await browser.newContext({ viewport: { width: 390, height: 844 } });
+            const p = await c.newPage();
+            const errs = [];
+            let asked = false;
+            p.on("pageerror", (e) => errs.push(e.message));
+            p.on("dialog", (d) => { asked = true; d.accept().catch(() => {}); });
+            await p.route(/fonts\.|unsplash/, (r) => r.abort());
+            await p.goto(url("programs.html"), { waitUntil: "load" });
+            const wk = await p.evaluate(() => {
+                const d = (t, n) => ({ title: t, items: [{ n, d: "3 × 8–12", rest: "90 s" }] });
+                saveCustomDays([d("Legs", "Leg press"), d("Back", "Lat pulldown"), d("Arms", "Dumbbell curl")]);
+                localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "custom", days: 3 }));
+                const w = Math.max(1, weekOf(programStart("custom")));
+                localStorage.setItem(`gu-progress-custom-3-w${w}`, JSON.stringify(["0-0", "2-0"]));
+                return w;
+            });
+            await p.reload({ waitUntil: "load" });
+            await p.waitForTimeout(300);
+            await Promise.all([p.waitForNavigation(), p.evaluate(() => document.querySelector('[data-remove-day="1"]').click())]);
+            await p.waitForTimeout(400);
+            const gone = await p.evaluate((w) => ({ titles: customDaysRaw().map((d) => d.title).join(","), done: localStorage.getItem(`gu-progress-custom-2-w${w}`) }), wk);
+            check(!asked && gone.titles === "Legs,Arms" && gone.done === '["0-0","1-0"]', `Remove day takes the day out without a confirm box and check-offs stay with their days (${gone.titles} ${gone.done})`);
+            check(await p.locator("#toast:not([hidden]) [data-undo-day]").isVisible() && /Day 2 \(Back\)/.test(await p.locator("#toast").textContent()), "a Day removed message offers Undo");
+            const h = await p.locator("[data-undo-day]").evaluate((b) => b.getBoundingClientRect().height);
+            check(h >= 44, `the Undo button is big enough to tap (${h}px)`);
+            await p.screenshot({ path: path.join(SHOTS, "undo-remove-day-phone.png") });
+            await Promise.all([p.waitForNavigation(), p.locator("[data-undo-day]").click()]);
+            await p.waitForTimeout(400);
+            const back = await p.evaluate((w) => ({ titles: customDaysRaw().map((d) => d.title).join(","), done: localStorage.getItem(`gu-progress-custom-3-w${w}`), last: JSON.parse(localStorage.getItem("gu-last-plan")).days }), wk);
+            check(back.titles === "Legs,Back,Arms" && back.done === '["0-0","2-0"]' && back.last === 3 && await p.locator("#program-custom-3, .day-card").count() > 0, `Undo puts the day and its check-offs back (${back.titles} ${back.done})`);
+            await p.reload({ waitUntil: "load" });
+            await p.waitForTimeout(300);
+            check(await p.locator("#toast:not([hidden]) [data-undo-day]").count() === 0, "the Undo message shows only once");
+            check(errs.length === 0, `no script errors while removing a day ${errs.join(" ")}`);
+            await c.close();
+        }
         // Share a workout: friend 1's day slots in as the day friend 2 is on (Day 3 here), weights not shared
         {
             const c1 = await browser.newContext({ viewport: { width: 390, height: 844 } });

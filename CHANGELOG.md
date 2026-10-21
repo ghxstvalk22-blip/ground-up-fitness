@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-21 · Undo after removing a day
+
+- **Removing a day from Your plan no longer asks "Are you sure?" first.** Open a day's "···" menu and tap Remove day: it goes right away, and a "Day removed" message pops up with an **Undo** button (it stays for about 12 seconds). Undo puts the day back in the same spot, with its checkmarks and swaps. Why: testers found the old pop-up box slow and easy to tap through; an Undo is quicker and forgives a mistaken tap.
+- **Checkmarks stay with their days.** If you'd already ticked off exercises on later days this week, they now move up with those days instead of getting mixed up.
+
 ## 2026-10-20 · New exercises start from the one they replace
 
 - **New exercises start from what you already lift.** When your plan changes an exercise (every 4 weeks on the beginner plan, weekly for some accessories, or when you tap Swap), the new one now says what it replaces and what you did last time, like "Replaces Leg press (last 95×10)". Its suggested first weight is worked out from that number instead of a generic guess, and set a little lighter while you learn the new movement. Why: testers said the first weight on a brand-new exercise felt random after they'd been logging the old one for weeks.

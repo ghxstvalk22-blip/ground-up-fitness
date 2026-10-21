@@ -86,6 +86,7 @@ const FEATURES = [
     setupPrWarmup,
     setupContactForm,
     setupShareWorkout,
+    setupUndoRemoveDay,
     setupWarmups,
     setupLinks,      // keep after features that add routes
     setupPageTransitions,
@@ -3467,13 +3468,23 @@ function setupPrograms() {
         const rm = e.target.closest("[data-remove-day]");
         if (rm) {
             const i = Number(rm.dataset.removeDay), days = customDaysRaw();
-            if (days.length > 1 && days[i] && window.confirm(`Remove Day ${i + 1} (${days[i].title || "workout"}) from My workout? Your logged sets stay.`)) {
-                days.splice(i, 1);
-                clearCustomSwaps();
-                saveCustomDays(days);
-                store.set("gu-last-plan", { goal: "custom", days: days.length });
-                location.assign(`programs.html?w=${Date.now()}#program-custom-${days.length}`);
-            }
+            if (days.length < 2 || !days[i]) return;
+            // No confirm box: the day goes right away and the next page offers Undo (setupUndoRemoveDay)
+            const n = days.length;
+            const wk = currentWeek(), oldKey = `gu-progress-custom-${n}-w${wk}`, newKey = `gu-progress-custom-${n - 1}-w${wk}`;
+            const saved = {}, swaps = {};
+            [oldKey, newKey].forEach((k) => { saved[k] = store.get(k, null); });
+            try { Object.keys(localStorage).filter((k) => k.startsWith("gu-swaps-custom-")).forEach((k) => { swaps[k] = store.get(k, null); }); } catch (err) { /* storage blocked */ }
+            store.set("gu-undo-day", { at: Date.now(), n: i + 1, title: String(days[i].title || "").slice(0, 60), days: days.slice(), last: store.get("gu-last-plan", null), saved, swaps });
+            // This week's check-offs stay with their day: later days move up one
+            const moved = (saved[oldKey] || []).map((k) => String(k).split("-").map(Number)).filter(([d]) => d !== i).map(([d, x]) => `${d > i ? d - 1 : d}-${x}`);
+            days.splice(i, 1);
+            store.remove(oldKey);
+            store.set(newKey, moved);
+            clearCustomSwaps();
+            saveCustomDays(days);
+            store.set("gu-last-plan", { goal: "custom", days: days.length });
+            location.assign(`programs.html?w=${Date.now()}#program-custom-${days.length}`);
             return;
         }
         // Swap opens a short list to pick from; picking one replaces just that exercise this week
@@ -5832,6 +5843,40 @@ function shareLink(dayIndexes, withName = true) {
     return `${location.origin}${location.pathname.replace(/[^/]*$/, "")}programs.html${SHARE_HASH}${shareEncode(payload)}`;
 }
 // Put shared days into Your plan at position "pos" (the days after it move down), or replace it
+/* ---------- Undo after removing a day from Your plan ----------
+   Remove day saves the plan as it was in "gu-undo-day" and reloads Plans; this shows a
+   "Day removed" message with an Undo button that puts the day, its check-offs, and swaps back. */
+function setupUndoRemoveDay() {
+    if (document.body.dataset.page !== "programs") return;
+    const rec = store.get("gu-undo-day");
+    if (!rec) return;
+    store.remove("gu-undo-day"); // shown once; a later reload doesn't bring it back
+    if (typeof rec !== "object" || !(Date.now() - Number(rec.at) < 2 * 60 * 1000) || !Array.isArray(rec.days) || rec.days.length < 2) return;
+    const okKey = (k) => /^gu-(progress|swaps)-custom-[\w-]+$/.test(k);
+    const title = String(rec.title || "").replace(/[<>]/g, "").slice(0, 60);
+    showToast("Day removed", `Day ${Number(rec.n) || ""}${title ? ` (${title})` : ""} is out of Your plan. Your logged sets stay.`);
+    const box = document.getElementById("toast");
+    if (!box) return;
+    box.insertAdjacentHTML("beforeend", '<button type="button" class="toast-link toast-undo" data-undo-day>Undo</button>');
+    const btn = box.querySelector("[data-undo-day]");
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => { box.hidden = true; }, 12000);
+    try { btn.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    btn.addEventListener("click", () => {
+        const back = rec.days.filter((d) => d && typeof d === "object" && Array.isArray(d.items)).slice(0, 7);
+        if (back.length < 2) return;
+        clearCustomSwaps();
+        [rec.saved, rec.swaps].forEach((group) => {
+            if (!group || typeof group !== "object") return;
+            Object.keys(group).filter(okKey).forEach((k) => { if (group[k] == null) store.remove(k); else store.set(k, group[k]); });
+        });
+        saveCustomDays(back);
+        const last = rec.last && typeof rec.last === "object" ? rec.last : { goal: "custom", days: back.length };
+        store.set("gu-last-plan", last.goal === "custom" ? { goal: "custom", days: back.length } : last);
+        location.assign(`programs.html?w=${Date.now()}#program-custom-${back.length}`);
+    });
+}
+
 function addSharedDays(newDays, pos, replace = false) {
     const days = customDaysRaw();
     const onCustom = (store.get("gu-last-plan") || {}).goal === "custom";

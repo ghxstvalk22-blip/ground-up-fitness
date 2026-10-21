@@ -3890,3 +3890,7 @@ body.rest-on .install-tip { display: none; }
 .swap-pick > .text-button { margin-top: 6px; min-height: 44px; }
 .ex-more > .swap-pick[hidden] { display: none; }
 .ex-list .swap-list > li { display: block; padding: 0; border: 0; grid-template-columns: none; }
+
+/* Undo button in the "Day removed" message */
+.toast-undo { margin-top: 10px; min-height: 44px; padding: 0 18px; font: inherit; font-weight: 800; font-stretch: 112%; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--on-volt); background-color: var(--volt); border: 0; cursor: pointer; display: inline-block; }
+.toast-undo:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
