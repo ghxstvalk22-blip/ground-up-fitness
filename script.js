@@ -5340,12 +5340,22 @@ function setupCoach() {
     function startWorkout() {
         if (!last || !last.items.length) return;
         const unit = last.unit || getProfile().unit;
-        store.set("gu-custom", { title: last.title, items: last.items.map((x) => ({ n: x.n, d: x.w ? `${x.d} at ${x.guess ? "about " : ""}${trimNum(x.w)} ${unit}${x.each ? " each" : ""}` : x.d, rest: x.rest })) });
-        saveCustomDays([store.get("gu-custom")]);
-        store.set("gu-last-plan", { goal: "custom", days: 1 });
-        say(`<p>Saved as <strong>My workout</strong>. Opening it on the Plans page, where you can log your sets.</p>`);
+        const items = last.items.map((x) => ({ n: x.n, d: x.w ? `${x.d} at ${x.guess ? "about " : ""}${trimNum(x.w)} ${unit}${x.each ? " each" : ""}` : x.d, rest: x.rest }));
+        // Best order first (big lifts, then smaller moves), so Plans opens straight on the exercises
+        const day = { title: last.title, items: orderDayItems(items)[0] };
+        // Already on Your plan: it goes in as today's day (the first one you haven't finished this
+        // week) and the rest move down one, like a pasted workout. Otherwise it starts a fresh Your plan.
+        const mine = customDaysRaw();
+        const onCustom = (store.get("gu-last-plan") || {}).goal === "custom";
+        const week = Math.max(1, weekOf(programStart("custom")));
+        const done = new Set(store.get(`gu-progress-custom-${mine.length}-w${week}`, []) || []);
+        let pos = mine.findIndex((d, di) => !d.items.every((_, xi) => done.has(`${di}-${xi}`)));
+        if (pos < 0) pos = mine.length;
+        const replace = !onCustom || !mine.length || mine.length >= 7;
+        const n = addSharedDays([day], replace ? 0 : pos, replace);
+        say(`<p>Saved to <strong>Your plan</strong>${replace ? "" : ` as Day ${pos + 1}`}. Opening it on the Plans page, where you can log your sets.</p>`);
         if (phone()) store.set(OPEN_KEY, false);
-        setTimeout(() => { location.assign(`programs.html?w=${Date.now()}#program-custom-1`); }, 350);
+        setTimeout(() => { location.assign(`programs.html?w=${Date.now()}#program-custom-${n}`); }, 350);
     }
 
     // Questions typed somewhere else on the page (like the home page cover)

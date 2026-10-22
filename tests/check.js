@@ -791,6 +791,28 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(300);
             check(/Your plan/.test(await page.locator(".program-head h3").textContent()) && /Chest & Triceps/.test(await page.locator(".day-card h4").first().textContent()), "Start this workout opens it as My workout on the Plans page");
             check(await page.locator(".day-card [data-log]").count() >= 3, "My workout can be logged like any plan");
+            check(await page.locator(".day-card [data-fix-order]").count() === 0, "a Coach workout is saved in the best order (no \"better order\" box first)");
+            // On a multi-day Your plan, Start this workout goes in as today's day and Plans lands on it
+            await page.evaluate(() => {
+                const week = Math.max(1, weekOf(programStart("custom")));
+                Object.keys(localStorage).filter((k) => k.startsWith("gu-progress-custom-")).forEach((k) => localStorage.removeItem(k));
+                localStorage.setItem("gu-custom", JSON.stringify({ days: [{ title: "Legs", items: [{ n: "Back squat", d: "3 × 8", rest: "2 min" }] }, { title: "Pull", items: [{ n: "Lat pulldown", d: "3 × 10", rest: "90 s" }] }] }));
+                localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "custom", days: 2 }));
+                localStorage.setItem(`gu-progress-custom-2-w${week}`, JSON.stringify(["0-0"]));
+                localStorage.setItem("gu-coach-open", "true");
+            });
+            await page.goto(url("tools.html"), { waitUntil: "load" });
+            await page.waitForTimeout(300);
+            await page.locator(".coach-msg.is-coach [data-coach-start]").last().click();
+            await page.waitForURL(/programs\.html.*#program-custom-3/);
+            await page.waitForTimeout(400);
+            const landed = await page.evaluate(() => {
+                const card = document.querySelector(".day-card.is-next");
+                const r = card ? card.getBoundingClientRect() : null;
+                return { titles: [...document.querySelectorAll(".day-card h4")].map((h) => h.textContent), next: card ? card.querySelector("h4").textContent : "", onScreen: !!r && r.top >= -5 && r.top < innerHeight / 2 };
+            });
+            check(landed.titles.length === 3 && /Legs/.test(landed.titles[0]) && /Chest & Triceps/.test(landed.titles[1]) && /Pull/.test(landed.titles[2]) && /Chest & Triceps/.test(landed.next) && landed.onScreen,
+                `Coach's Start this workout keeps Your plan, goes in as today's day, and lands on it (${JSON.stringify(landed)})`);
             // A tampered saved chat can't run code when it's loaded back
             await page.evaluate(() => {
                 localStorage.setItem("gu-coach-history", JSON.stringify([{ who: "coach", html: `<img src=x onerror="window.__pwned=1"><p onclick="window.__pwned=1">hi</p><a href="javascript:window.__pwned=1">x</a><button data-howto="<script>">y</button>` }]));

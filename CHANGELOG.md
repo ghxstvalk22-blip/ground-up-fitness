@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-22 · Fitness Coach workouts land where you train
+
+- **"Start this workout" in the Fitness Coach now opens right on that workout's exercises.** The Coach puts the exercises in the best order first (big lifts while you're fresh, smaller moves after), so the Plans page opens on Exercise 1 instead of a "There's a better order for this day" box.
+- **It no longer wipes out Your plan.** If you're following a plan you built with several days, the Coach's workout goes in as today's day (the first one you haven't finished this week) and your other days move down one, with their checkmarks kept. Before, it quietly replaced all of your days. If you're on one of the ready-made plans, it starts a fresh Your plan with no leftover checkmarks, so it never opens already marked "Done". Why: testers tapped Start and landed on the wrong day, or on a workout that looked finished.
+
 ## 2026-10-21 · Undo after removing a day
 
 - **Removing a day from Your plan no longer asks "Are you sure?" first.** Open a day's "···" menu and tap Remove day: it goes right away, and a "Day removed" message pops up with an **Undo** button (it stays for about 12 seconds). Undo puts the day back in the same spot, with its checkmarks and swaps. Why: testers found the old pop-up box slow and easy to tap through; an Undo is quicker and forgives a mistaken tap.
