@@ -1297,6 +1297,29 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(150);
             const bestInt = await page.locator("#me-dash .dash-best li").first().textContent();
             check(/175 lb/.test(bestInt) && !/×/.test(bestInt) && /\+12\.5 lb/.test(bestInt), `Intermediate best lifts show the estimated max (${bestInt.trim()})`);
+            // Estimated max only for the big lifts: a curl keeps its heaviest set at Intermediate
+            await page.evaluate(() => {
+                const log = JSON.parse(localStorage.getItem("gu-log"));
+                const d = (k) => { const x = new Date(); x.setDate(x.getDate() - k); return x.toISOString().slice(0, 10); };
+                log["Dumbbell curl"] = [{ date: d(7), unit: "lb", sets: [{ w: 20, r: 12 }] }, { date: d(0), unit: "lb", sets: [{ w: 25, r: 10 }, { w: 25, r: 8 }] }];
+                localStorage.setItem("gu-log", JSON.stringify(log));
+                const ses = JSON.parse(localStorage.getItem("gu-sessions"));
+                ses.forEach((x) => x.names.push("Dumbbell curl"));
+                localStorage.setItem("gu-sessions", JSON.stringify(ses));
+                window.dispatchEvent(new Event("logchange"));
+            });
+            await page.waitForTimeout(150);
+            const bestRows = await page.locator("#me-dash .dash-best li").allTextContents();
+            const curlRow = bestRows.find((t) => /Dumbbell curl/.test(t)) || "";
+            const benchRow = bestRows.find((t) => /Bench press/.test(t)) || "";
+            check(/25 lb × 10/.test(curlRow) && /\+5 lb/.test(curlRow) && /175 lb/.test(benchRow) && !/×/.test(benchRow), `Intermediate best lifts: estimated max for big lifts, heaviest set for small ones (${bestRows.map((t) => t.trim()).join(" | ")})`);
+            check(/Big lifts show an estimated one-rep max/.test(await page.locator("#me-dash .dash-fine").textContent()), "the best lifts note explains the mix of maxes and heaviest sets");
+            await page.evaluate(() => {
+                const log = JSON.parse(localStorage.getItem("gu-log"));
+                delete log["Dumbbell curl"];
+                localStorage.setItem("gu-log", JSON.stringify(log));
+                window.dispatchEvent(new Event("logchange"));
+            });
             await page.click('[data-me-go="lifts"]');
             const lifts = await page.locator("#lift-table tbody").textContent();
             check(/Bench press/.test(lifts) && !/Squat/.test(lifts) && /175 lb max/.test(lifts), `the Lifts tab lists finished workouts and its number matches the dashboard (${lifts.replace(/\s+/g, " ").slice(0, 80)})`);

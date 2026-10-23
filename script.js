@@ -5543,12 +5543,13 @@ function setupMyDashboard() {
         const last = sessions[sessions.length - 1];
         // Only finished workouts, like the Log and Lifts tabs
         const log = finishedLog();
-        // Beginners see the heaviest set they really lifted ("25 lb × 15"); Intermediate and up see the estimated max
+        // Beginners see the heaviest set they really lifted ("25 lb × 15"); Intermediate and up see the estimated max,
+        // but only for the big lifts (BIG_LIFT): a one-rep max of a curl or a lateral raise means little, so those keep the heaviest set
         const heavy = !levelAtLeast("Intermediate");
         const best = Object.keys(log).filter((n) => EXERCISES[n] && !isCardio(n)).map((n) => {
             const entries = log[n].filter((e) => e.sets.some((st) => st.w > 0));
             if (!entries.length) return null;
-            if (heavy) {
+            if (heavy || !BIG_LIFT.test(n)) {
                 const tops = entries.map((e) => heaviestSet(e, unit)).filter(Boolean);
                 if (!tops.length) return null;
                 const topSet = tops.reduce((a, b) => (b.w > a.w || (b.w === a.w && b.r > a.r) ? b : a));
@@ -5618,7 +5619,7 @@ function setupMyDashboard() {
                 <article class="dash-card">
                     <h3>Your best lifts</h3>
                     ${best.length ? `<ul class="dash-best">${best.map((b) => `<li><span>${escapeHtml(b.n)}</span><strong>${liftNum(b.top, unit)} ${unit}${b.reps ? ` × ${b.reps}` : ""}</strong>${roundWeight(b.gain, unit) > 0 ? `<em>+${liftNum(b.gain, unit)} ${unit}</em>` : ""}</li>`).join("")}</ul>
-                        <p class="dash-fine">${heavy ? "The heaviest set you've logged for each lift (weight × reps), and how much heavier it is than your first one." : "Estimated one-rep max from your logged sets, and how much it's gone up since your first log."}</p>`
+                        <p class="dash-fine">${heavy ? "The heaviest set you've logged for each lift (weight × reps), and how much heavier it is than your first one." : best.some((b) => !b.reps) && best.some((b) => b.reps) ? "Big lifts show an estimated one-rep max; smaller lifts show the heaviest set you've logged (weight × reps). The green number is how much it's gone up since your first log." : best.some((b) => b.reps) ? "The heaviest set you've logged for each lift (weight × reps), and how much heavier it is than your first one. Big lifts like squat, bench and deadlift show an estimated one-rep max." : "Estimated one-rep max from your logged sets, and how much it's gone up since your first log."}</p>`
                     : `<p class="dash-sub">Log your sets (weight and reps) and your strongest lifts show up here, with how much they've improved.</p>`}
                 </article>
             </div>`;

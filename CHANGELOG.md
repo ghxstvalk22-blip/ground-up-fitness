@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-23 · Best lifts: one-rep max only where it makes sense
+
+- **"Your best lifts" on My progress now mixes the two kinds of numbers sensibly.** From the Intermediate level up, big lifts like squat, bench press, deadlift, presses and rows still show an estimated one-rep max. Smaller lifts like curls, lateral raises and other single-muscle moves now show the heaviest set you actually did, like "Dumbbell curl 25 lb × 10", with how much heavier it is than your first one. Beginners keep seeing the heaviest set for every lift, as before.
+- Why: nobody tests a one-rep max on a curl, so an estimated max for one was a number people didn't recognize. The note under the card explains which lifts show which number.
+
 ## 2026-10-22 · Fitness Coach workouts land where you train
 
 - **"Start this workout" in the Fitness Coach now opens right on that workout's exercises.** The Coach puts the exercises in the best order first (big lifts while you're fresh, smaller moves after), so the Plans page opens on Exercise 1 instead of a "There's a better order for this day" box.
