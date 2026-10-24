@@ -1693,6 +1693,20 @@ async function openPage(browser, file, viewport, hash = "") {
             check(en.kid === null, "no calorie estimate for anyone under 18");
             check(await page.evaluate(() => !familyFor("Reverse lunge", "homedb") || familyFor("Reverse lunge", "homedb").every((n) => !NEEDS_BENCH.test(n))), "the no-bench home plan never swaps in a bench move");
             check(!res.row.up && /1 of 3 sets/.test(res.row.text), "doing fewer sets than planned keeps the weight and asks for all the sets first");
+            // Next target counts the sets you actually did: warm-ups don't count, extra sets are a bonus, lighter sets aren't "done at this weight"
+            const res5 = await page.evaluate(() => {
+                const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+                const plan = { sets: 3, low: 6, high: 8 };
+                localStorage.setItem("gu-log", JSON.stringify({
+                    "Bench press": [{ date: d(3), unit: "lb", sets: [{ w: 45, r: 10 }, { w: 135, r: 5 }, { w: 185, r: 8 }], plan }],
+                    "Back squat": [{ date: d(3), unit: "lb", sets: [{ w: 225, r: 8 }, { w: 225, r: 8 }, { w: 225, r: 8 }, { w: 225, r: 5 }], plan }],
+                    "Barbell row": [{ date: d(3), unit: "lb", sets: [{ w: 135, r: 8 }, { w: 125, r: 8 }, { w: 125, r: 8 }], plan }]
+                }));
+                return { warm: nextTarget("Bench press", "3 × 6–8", "lb"), extra: nextTarget("Back squat", "3 × 6–8", "lb"), lighter: nextTarget("Barbell row", "3 × 6–8", "lb") };
+            });
+            check(!res5.warm.up && res5.warm.weight === 185 && res5.warm.setsDone === 1 && /1 of 3 sets/.test(res5.warm.text) && /warm-up/.test(res5.warm.text), `lighter warm-up sets don't count as sets done (${res5.warm.text})`);
+            check(res5.extra.up && res5.extra.weight > 225 && /bonus/.test(res5.extra.text), `an extra set past the plan doesn't hold the weight back (225 -> ${res5.extra.weight})`);
+            check(!res5.lighter.up && res5.lighter.weight === 135 && /1 of 3 sets were at 135/.test(res5.lighter.text), `sets done lighter than your top weight: stay and do them all at it (${res5.lighter.text})`);
             check(res.raise.up && res.raise.weight === 17.5, `light lifts go up in the smallest step (15 -> ${res.raise.weight})`);
             check(/^4 × 3–5/.test(res.strength) && /^3 × 5/.test(res.strengthNew), `strength sets and reps follow the research ranges (${res.strength}, beginner ${res.strengthNew})`);
             await page.evaluate(() => localStorage.clear());

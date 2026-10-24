@@ -2531,8 +2531,13 @@ function nextTargetCore(name, dose, unit, from = "") {
     const sets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, unit), unit, last.unit === unit ? null : name), r: s.r }));
     const top = Math.max(...sets.map((s) => s.w));
     const working = sets.filter((s) => s.w === top);
-    const allTop = working.length >= Math.min(was.sets, sets.length) && working.every((s) => s.r >= was.high);
-    const anyLow = working.some((s) => s.r < was.low);
+    // Count the sets you actually did: lighter warm-up sets (under about 90% of your top weight) don't count,
+    // and extra sets past the plan are a bonus, so only the planned number of sets at your top weight are judged
+    const done = sets.filter((s) => s.w >= top * 0.9 - 1e-9).length;
+    const judged = working.slice(0, was.sets);
+    const extra = working.length > was.sets;
+    const allTop = judged.length >= was.sets && judged.every((s) => s.r >= was.high);
+    const anyLow = judged.some((s) => s.r < was.low);
     if (last !== newest && top > 0 && !allTop) {
         return { weight: top, reps: d.high, lastText, text: `Back to ${trimNum(top)} ${unit} after the lighter week. Aim for ${d.low}–${d.high} reps on every set.` };
     }
@@ -2541,16 +2546,22 @@ function nextTargetCore(name, dose, unit, from = "") {
         return { weight: 0, lastText, text: allTop ? "You hit every rep. Add a rep or two, or try the harder version." : "Aim for one more rep than last time." };
     }
     // Fewer sets than planned last time: get all the sets in before adding weight
-    if (working.length < was.sets && sets.length < was.sets) {
-        return { weight: top, reps: d.high, lastText, text: `Stay at ${trimNum(top)} ${unit}. Last time you did ${sets.length} of ${was.sets} sets; get all ${d.sets} in, then the weight goes up.` };
+    if (done < was.sets) {
+        const warm = sets.length > done ? " (lighter warm-up sets don't count)" : "";
+        return { weight: top, reps: d.high, lastText, setsDone: done, text: `Stay at ${trimNum(top)} ${unit}. Last time you did ${done} of ${was.sets} sets${warm}; get all ${d.sets} in, then the weight goes up.` };
+    }
+    // All the sets done, but some of them lighter: do them all at this weight first
+    if (working.length < was.sets) {
+        return { weight: top, reps: d.high, lastText, setsDone: working.length, text: `Stay at ${trimNum(top)} ${unit}. Last time ${working.length} of ${was.sets} sets were at ${trimNum(top)} ${unit}; do all ${d.sets} at it, then the weight goes up.` };
     }
     if (allTop) {
         // Beat the top of the range by 2 or more on every set (the "2-for-2" idea): a bigger jump
-        const big = working.every((s) => s.r >= was.high + 2);
+        const big = judged.every((s) => s.r >= was.high + 2);
         const w = top + weightStep(name, unit, top, big);
-        return { weight: w, reps: d.low, lastText, up: true, text: big
+        const bonus = extra ? " Your extra set was a bonus and doesn't count against you." : "";
+        return { weight: w, reps: d.low, lastText, up: true, text: (big
             ? `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You beat ${was.high} reps by 2 or more on every set, so this is a bigger jump.`
-            : `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You hit the top of the range on every set.` };
+            : `Go up to ${trimNum(w)} ${unit} for ${d.low}+ reps. You hit the top of the range on every set.`) + bonus };
     }
     if (anyLow) {
         const prev = prevEntries[prevEntries.length - 1];

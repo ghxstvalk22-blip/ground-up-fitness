@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-24 (Next time's weight counts the sets you really did)
+
+- **Warm-up sets no longer count as working sets.** If you log a couple of light warm-ups and then only one heavy set, the app now sees that as 1 of 3 sets done and tells you to get all your sets in before the weight goes up. Before, the warm-ups could be mistaken for finished sets.
+- **An extra set is a bonus, not a penalty.** If the plan says 3 sets and you add a 4th that runs out of steam, the weight still goes up as long as the 3 planned sets hit the top of the range.
+- **Sets done lighter are noticed.** If one set was at 135 lb and the rest at 125, the next target says to do all of them at 135 first, then go up.
+
 ## 2026-10-23 · Best lifts: one-rep max only where it makes sense
 
 - **"Your best lifts" on My progress now mixes the two kinds of numbers sensibly.** From the Intermediate level up, big lifts like squat, bench press, deadlift, presses and rows still show an estimated one-rep max. Smaller lifts like curls, lateral raises and other single-muscle moves now show the heaviest set you actually did, like "Dumbbell curl 25 lb × 10", with how much heavier it is than your first one. Beginners keep seeing the heaviest set for every lift, as before.
