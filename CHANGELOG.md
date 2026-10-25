@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-25 (Your lifts don't drop after a light week)
+
+- **"Now" on the Lifts tab uses your best recent session.** It looks at your best workout from the last 3 weeks for each lift, not only the last one. So a light week (or a tired day) no longer makes your number, or the "In 8 weeks" number, suddenly go down. The chart note says which day "Now" comes from when it isn't the latest.
+- **"What are you training for?" starts on your goal.** If you set a goal in Your starting point, the Lifts tab opens on Strength (goal: get stronger), Endurance (goal: lose fat), or Both (anything else). Picking one yourself still sticks.
+
 ## 2026-10-24 (Next time's weight counts the sets you really did)
 
 - **Warm-up sets no longer count as working sets.** If you log a couple of light warm-ups and then only one heavy set, the app now sees that as 1 of 3 sets done and tells you to get all your sets in before the weight goes up. Before, the warm-ups could be mistaken for finished sets.

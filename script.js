@@ -2654,11 +2654,27 @@ function projectLift(name, unit, experience, weeksAhead = 8, only = null) {
         const observed = slope / my;
         rate = Math.min(Math.max((observed + base) / 2, 0), base * 2);
     }
+    // "Now" is the best session of the last 3 weeks, so one light week (a deload,
+    // a tired day) doesn't drop your number or the projection that grows from it
+    let bestIndex = points.length - 1;
+    points.forEach((p, i) => {
+        if (last.date - p.date <= RECENT_BEST_DAYS * 864e5 && p.value > points[bestIndex].value) bestIndex = i;
+    });
+    const now = points[bestIndex].value;
     const projection = [];
     for (let w = 1; w <= weeksAhead; w++) {
-        projection.push({ date: addDays(last.date, w * 7), value: last.value * Math.pow(1 + rate, w) });
+        projection.push({ date: addDays(last.date, w * 7), value: now * Math.pow(1 + rate, w) });
     }
-    return { points, projection, rate };
+    return { points, projection, rate, now, bestIndex };
+}
+const RECENT_BEST_DAYS = 21;
+
+// Which "What are you training for?" view to start on: your saved pick,
+// otherwise your goal from Your starting point (strength → Strength,
+// losing fat → Endurance, everything else → Both)
+function trainForStart(raw, goal) {
+    if (["strength", "endurance", "both"].includes(raw)) return raw;
+    return goal === "strength" ? "strength" : goal === "fatloss" ? "endurance" : "both";
 }
 
 /* =========================================================
@@ -8420,8 +8436,10 @@ function setupDashboard() {
         const proj = projectLift(name, profile.unit, profile.experience, 8, entries);
         const last = entries[entries.length - 1];
         const lastSets = last.sets.map((s) => ({ w: roundWeight(toUnit(s.w, last.unit, profile.unit), profile.unit), r: s.r }));
-        const top = Math.max(...lastSets.map((s) => s.w));
-        const nowMax = proj.points[proj.points.length - 1].value;
+        // Working weight from your best recent session (not a light week)
+        const best = entries[proj.bestIndex] || last;
+        const top = Math.max(...best.sets.map((s) => roundWeight(toUnit(s.w, best.unit, profile.unit), profile.unit)));
+        const nowMax = proj.now;
         const laterMax = proj.projection[proj.projection.length - 1].value;
         return { entries, proj, last, lastSets, top, nowMax, laterMax, nowReps: repsAt(nowMax, top), laterReps: repsAt(laterMax, top) };
     }
@@ -8486,7 +8504,7 @@ function setupDashboard() {
         } else {
             $("lift-chart-title").textContent = `${name}: estimated one-rep max (${u})`;
             drawTrendChart(svg, x.proj.points, x.proj.projection, { unit: u });
-            $("lift-chart-note").textContent = `Estimated max about ${fmt(x.nowMax)} ${u} now; about ${fmt(x.laterMax)} ${u} by ${shortDate(x.proj.projection[x.proj.projection.length - 1].date)} at roughly ${(x.proj.rate * 100).toFixed(1)}% a week, based on ${x.entries.length} session${x.entries.length === 1 ? "" : "s"}. A projection, not a promise: progress slows as you get stronger.${store.get(PROFILE_KEY) && store.get(PROFILE_KEY).experience ? "" : " Tip: set your experience under Make it yours on the Programs page for a more accurate estimate."}`;
+            $("lift-chart-note").textContent = `Estimated max about ${fmt(x.nowMax)} ${u} now; about ${fmt(x.laterMax)} ${u} by ${shortDate(x.proj.projection[x.proj.projection.length - 1].date)} at roughly ${(x.proj.rate * 100).toFixed(1)}% a week, based on ${x.entries.length} session${x.entries.length === 1 ? "" : "s"}.${x.proj.bestIndex < x.entries.length - 1 ? ` "Now" uses your best session of the last 3 weeks (${shortDate(x.proj.points[x.proj.bestIndex].date)}), so a lighter day doesn't pull it down.` : ""} A projection, not a promise: progress slows as you get stronger.${store.get(PROFILE_KEY) && store.get(PROFILE_KEY).experience ? "" : " Tip: set your experience under Make it yours on the Programs page for a more accurate estimate."}`;
         }
     }
 
@@ -8610,8 +8628,9 @@ function setupDashboard() {
 
     function renderAll() {
         const profile = getProfile();
-        if (!radios.some((r) => r.checked && r.value === profile.trainFor)) {
-            const r = radios.find((x) => x.value === profile.trainFor);
+        const startOn = trainForStart((store.get(PROFILE_KEY, {}) || {}).trainFor, profile.goal);
+        if (!radios.some((r) => r.checked && r.value === startOn)) {
+            const r = radios.find((x) => x.value === startOn);
             if (r) r.checked = true;
         }
         const mode = currentMode();
@@ -8622,6 +8641,7 @@ function setupDashboard() {
         renderCardio(profile);
     }
     window.addEventListener("logchange", renderAll);
+    window.addEventListener("profilechange", renderAll);
     renderAll();
 }
 

@@ -1323,6 +1323,25 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.click('[data-me-go="lifts"]');
             const lifts = await page.locator("#lift-table tbody").textContent();
             check(/Bench press/.test(lifts) && !/Squat/.test(lifts) && /175 lb max/.test(lifts), `the Lifts tab lists finished workouts and its number matches the dashboard (${lifts.replace(/\s+/g, " ").slice(0, 80)})`);
+            // "Now" is the best recent session: a light week doesn't drop it or the projection
+            const lightWeek = await page.evaluate(() => {
+                const d = (k) => { const x = new Date(); x.setDate(x.getDate() - k); return x.toISOString().slice(0, 10); };
+                const heavy = [{ date: d(14), unit: "lb", sets: [{ w: 150, r: 5 }] }, { date: d(7), unit: "lb", sets: [{ w: 160, r: 5 }] }];
+                const p1 = projectLift("x", "lb", "new", 8, heavy);
+                const p2 = projectLift("x", "lb", "new", 8, heavy.concat({ date: d(0), unit: "lb", sets: [{ w: 135, r: 5 }] }));
+                const old = projectLift("x", "lb", "new", 8, [{ date: d(40), unit: "lb", sets: [{ w: 200, r: 5 }] }, { date: d(0), unit: "lb", sets: [{ w: 135, r: 5 }] }]);
+                return { same: Math.abs(p1.now - p2.now) < 0.01 && p2.bestIndex === 1, later: p2.projection[7].value >= p1.now - 0.01, old: old.bestIndex === 1 };
+            });
+            check(lightWeek.same && lightWeek.later && lightWeek.old, `Lifts "Now" uses the best session of the last 3 weeks, not a lighter last one (${JSON.stringify(lightWeek)})`);
+            await page.evaluate(() => {
+                const pr = JSON.parse(localStorage.getItem("gu-profile") || "{}");
+                delete pr.trainFor; pr.goal = "strength";
+                localStorage.setItem("gu-profile", JSON.stringify(pr));
+                window.dispatchEvent(new Event("profilechange"));
+            });
+            await page.waitForTimeout(100);
+            const startOn = await page.evaluate(() => [trainForStart(undefined, "fatloss"), trainForStart(undefined, ""), trainForStart("both", "strength")].join());
+            check(await page.locator('input[name="trainfor"][value="strength"]').isChecked() && startOn === "endurance,both,both", `"What are you training for?" starts on your goal until you pick one (${startOn})`);
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.evaluate(() => localStorage.clear());
             await page.close();
