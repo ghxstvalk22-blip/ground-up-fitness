@@ -2188,8 +2188,10 @@ function logFor(name) {
 function saveSession(name, date, unit, sets, plan) {
     const before = logFor(name);
     const log = getLog();
+    const prev = (log[name] || []).find((e) => e && e.date === date);
     const list = (log[name] || []).filter((e) => e.date !== date);
-    const entry = { date, unit, sets };
+    // When it was first saved that day, so the Log tab can list a day's exercises in the order you did them
+    const entry = { date, unit, sets, t: prev && Number.isFinite(prev.t) ? prev.t : Date.now() };
     // What the plan asked for that day (sets, rep range, and whether it was a recover/light week),
     // so next time's target is judged against that day's plan, not this week's
     if (plan && [plan.sets, plan.low, plan.high].every((n) => Number.isInteger(n) && n > 0 && n <= 100)) entry.plan = { sets: plan.sets, low: plan.low, high: plan.high, ...(plan.easy ? { easy: true } : {}) };
@@ -8227,7 +8229,7 @@ function setupLogHistory() {
         const log = getLog();
         return Object.entries(log).flatMap(([name, list]) => (Array.isArray(list) ? list : [])
             .filter((e) => e && typeof e.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && Array.isArray(e.sets))
-            .map((e) => ({ name, date: e.date, unit: e.unit === "kg" ? "kg" : "lb", sets: e.sets.filter((st) => st && Number.isFinite(Number(st.r))) })))
+            .map((e) => ({ name, date: e.date, t: Number.isFinite(e.t) ? e.t : null, unit: e.unit === "kg" ? "kg" : "lb", sets: e.sets.filter((st) => st && Number.isFinite(Number(st.r))) })))
             .filter((r) => r.sets.length)
             // Only workouts you finished (tapped Finish workout): sets from that day that belong to the finished workout
             .filter((r) => submitted(r));
@@ -8266,9 +8268,19 @@ function setupLogHistory() {
             more.hidden = true;
             return;
         }
-        // Group by week (Monday to Sunday), then by day, newest first
+        // Group by week (Monday to Sunday), then by day, newest first.
+        // Inside a day, exercises go in the order you did them: when each was saved,
+        // else their place in the finished workout, else A to Z (older logs)
+        const sessionList = (store.get("gu-sessions", []) || []).filter((x) => x && typeof x.date === "string" && Array.isArray(x.names));
+        const placeOf = new Map();
+        sessionList.forEach((x) => x.names.forEach((n) => {
+            const k = `${x.date}|${n}`;
+            if (typeof n === "string" && !placeOf.has(k)) placeOf.set(k, placeOf.size);
+        }));
+        const place = (r) => (placeOf.has(`${r.date}|${r.name}`) ? placeOf.get(`${r.date}|${r.name}`) : Number.MAX_SAFE_INTEGER);
+        const doneOrder = (a, b) => (a.t !== null && b.t !== null && a.t !== b.t ? a.t - b.t : (place(a) - place(b)) || a.name.localeCompare(b.name));
         const byDay = new Map();
-        list.slice().sort((a, b) => b.date.localeCompare(a.date) || a.name.localeCompare(b.name)).forEach((r) => {
+        list.slice().sort((a, b) => b.date.localeCompare(a.date) || doneOrder(a, b)).forEach((r) => {
             if (!byDay.has(r.date)) byDay.set(r.date, []);
             byDay.get(r.date).push(r);
         });

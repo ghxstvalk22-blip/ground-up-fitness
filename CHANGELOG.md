@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-26 (Your log follows the order you lifted)
+
+- **The Log tab on My progress now lists each day's exercises in the order you did them**, not alphabetically. If you squatted first and did curls last, that's how the day reads.
+- How: every exercise you log now quietly notes when it was first saved that day (fixing a set later doesn't change it). Workouts logged before today follow the order of the finished workout instead.
+- Why: testers wanted to look back at a session and see it the way it happened.
+
 ## 2026-10-25 (Your lifts don't drop after a light week)
 
 - **"Now" on the Lifts tab uses your best recent session.** It looks at your best workout from the last 3 weeks for each lift, not only the last one. So a light week (or a tired day) no longer makes your number, or the "In 8 weeks" number, suddenly go down. The chart note says which day "Now" comes from when it isn't the latest.

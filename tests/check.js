@@ -1231,6 +1231,40 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator("#log-days .log-day").count() === 2 && await page.evaluate(() => logFor("Bench press").length === 2), "a mistaken entry can be removed from the log");
             await page.click("#log-undo");
             check(await page.locator("#log-days .log-day").count() === 3 && await page.evaluate(() => logFor("Bench press").length === 3), "Undo puts it back");
+            // A day's exercises are listed in the order they were done, not A to Z
+            const keepLog = await page.evaluate(() => [localStorage.getItem("gu-log"), localStorage.getItem("gu-sessions")]);
+            const stamped = await page.evaluate(() => {
+                const today = isoDate(new Date());
+                saveSession("Back squat", today, "lb", [{ w: 95, r: 5 }]);
+                const first = logFor("Back squat").find((e) => e.date === today).t;
+                saveSession("Back squat", today, "lb", [{ w: 95, r: 6 }]);
+                return Number.isFinite(first) && logFor("Back squat").find((e) => e.date === today).t === first;
+            });
+            check(stamped, "saving a set records when it was first done that day (an edit keeps the time)");
+            await page.evaluate(() => {
+                const today = isoDate(new Date());
+                const log = JSON.parse(localStorage.getItem("gu-log"));
+                log["Bench press"].find((e) => e.date === today).t = 3000;
+                log["Back squat"] = [{ date: today, unit: "lb", sets: [{ w: 95, r: 5 }], t: 1000 }];
+                log["Barbell row"] = [{ date: today, unit: "lb", sets: [{ w: 95, r: 8 }], t: 2000 }];
+                localStorage.setItem("gu-log", JSON.stringify(log));
+                const ss = JSON.parse(localStorage.getItem("gu-sessions"));
+                ss.push({ date: today, plan: "custom", days: 1, day: 0, title: "Extra", names: ["Bench press", "Barbell row", "Back squat"], exercises: 3, sets: 3, reps: 18, volume: 0, unit: "lb" });
+                localStorage.setItem("gu-sessions", JSON.stringify(ss));
+                window.dispatchEvent(new CustomEvent("logchange", { detail: {} }));
+            });
+            const dayOrder = await page.locator("#log-days .log-day").first().locator(".log-day-name").allTextContents();
+            check(dayOrder.join("|") === "Back squat|Barbell row|Bench press", `the Log tab lists a day's exercises in the order they were done (got ${dayOrder.join(", ")})`);
+            await page.evaluate(() => {
+                const today = isoDate(new Date());
+                const log = JSON.parse(localStorage.getItem("gu-log"));
+                Object.values(log).forEach((list) => list.forEach((e) => { if (e.date === today) delete e.t; }));
+                localStorage.setItem("gu-log", JSON.stringify(log));
+                window.dispatchEvent(new CustomEvent("logchange", { detail: {} }));
+            });
+            const placeOrder = await page.locator("#log-days .log-day").first().locator(".log-day-name").allTextContents();
+            check(placeOrder.join("|") === "Bench press|Barbell row|Back squat", `older logs without a time follow the finished workout's order (got ${placeOrder.join(", ")})`);
+            await page.evaluate(([l, s]) => { localStorage.setItem("gu-log", l); localStorage.setItem("gu-sessions", s); window.dispatchEvent(new CustomEvent("logchange", { detail: {} })); }, keepLog);
             await page.click('[data-me-go="lifts"]');
             check(!(await page.evaluate(() => document.documentElement.classList.contains("app-splash"))), "the loading screen only shows in the installed app, not the website");
             await page.click('[data-me-go="lifts"]');

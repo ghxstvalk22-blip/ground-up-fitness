@@ -10,7 +10,6 @@ actually use (personal, beginner-friendly, not "AI-looking"), in a YoungLA / DFY
 
 From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), still to do, most important first:
 
-- [ ] Log tab: list a day's exercises in the order they were done, not A to Z.
 - [ ] Calorie tool fills in weight and sex from Your starting point; a small weigh-in box and trend on My progress.
 
 ## Ideas
@@ -41,6 +40,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Editing a day: a short "Suggested for this day" list (3 or 4 exercises for muscles the day misses) above the full exercise list.
 
 - [ ] Lifts chart: mark the session "Now" comes from (a ring on its dot) when it isn't the latest one.
+- [ ] Log tab: show the time of day each workout was done ("6:40 pm") next to the date, now that sets carry a time.
 
 ## Blocked
 
@@ -48,6 +48,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-10-26: Log tab lists a day's exercises in the order you did them (each logged exercise now records when it was first saved; older logs follow the finished workout's order), instead of A to Z.
 - [x] 2026-10-25: Lifts tab: "Now" (and the 8-week number) uses your best session of the last 3 weeks, so a light week or a tired day doesn't drop it; endurance reps use that session's working weight. "What are you training for?" starts on your goal from Your starting point (Strength for strength, Endurance for losing fat, otherwise Both) until you pick one.
 - [x] 2026-10-24: Next target counts the sets you actually did: lighter warm-up sets don't count as sets done, an extra set past the plan is a bonus and no longer holds the weight back, and sets done lighter than your top weight ask you to do them all at that weight before it goes up.
 - [x] 2026-10-23: "Your best lifts" on My progress: from Intermediate up, the estimated one-rep max shows only for big lifts (squat, bench, deadlift, presses, rows and similar); smaller lifts like curls and raises show the heaviest set lifted ("25 lb × 10"). Beginners already saw the heaviest set (2026-10-18).
