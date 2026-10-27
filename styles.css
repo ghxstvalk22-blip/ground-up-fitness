@@ -2451,6 +2451,20 @@ select, input, textarea {
 .mini-bar div { height: 100%; background-color: var(--volt); }
 @media (max-width: 760px) { .me-stats { grid-template-columns: 1fr 1fr; } }
 .me-h2-gap { margin-top: 44px; }
+/* Weigh-in on My progress */
+.weighin-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 24px; align-items: start; }
+.weighin-form label { display: block; font-weight: 600; margin-bottom: 6px; }
+.weighin-row { display: flex; gap: 8px; }
+.weighin-row input { flex: 1; min-width: 0; font-size: 16px; }
+.weighin-row .btn { flex: none; }
+.weighin-form .result-note { margin-top: 10px; }
+.weighin-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background-color: var(--line); border: 1px solid var(--line); }
+.weighin-stats > div { background-color: var(--surface); padding: 12px; }
+.weighin-stats span { display: block; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.weighin-stats strong { display: block; font-family: var(--display); font-size: 1.9rem; font-weight: 900; font-stretch: 75%; line-height: 1.1; }
+.weighin-stats small { font-size: 0.82rem; font-weight: 600; color: var(--muted); }
+.weighin-chart { display: block; width: 100%; height: auto; margin-top: 12px; }
+@media (max-width: 760px) { .weighin-grid { grid-template-columns: 1fr; } }
 .milestone-count { margin: -4px 0 14px; color: var(--muted); font-weight: 600; }
 .milestone-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; }
 .milestone-grid li { display: grid; grid-template-columns: 34px 1fr; column-gap: 10px; align-items: center; padding: 12px; border: 1px dashed var(--line); background-color: var(--surface); color: var(--muted); }

@@ -79,6 +79,7 @@ const FEATURES = [
     setupTypingMode,
     setupCoach,
     setupWeightTrend,
+    setupWeighIn,
     setupDashboard,
     setupResetProgress,
     setupAccount,
@@ -7966,6 +7967,133 @@ function setupMuscleMap() {
    the 7-day average, and the weekly rate of change, with a gentle
    note if loss is faster than generally recommended.
    ========================================================= */
+/* ---------- Weigh-ins (gu-weights), shared by the Tools trend and My progress ----------
+   Only real dates and sensible numbers get through, in the unit asked for, oldest first. */
+function weighIns(unit) {
+    const raw = store.get("gu-weights", []);
+    return (Array.isArray(raw) ? raw : [])
+        .filter((e) => e && typeof e.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && Number(e.w) > 0 && Number(e.w) < 1000)
+        .map((e) => ({ date: e.date, w: toUnit(Number(e.w), e.unit === "kg" ? "kg" : "lb", unit) }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+// 7-day average now and the weekly change over about the last two weeks (null until there's a week of data)
+function weightTrendNow(items) {
+    if (!items.length) return null;
+    const avgAt = (end) => {
+        const start = addDays(end, -6);
+        const win = items.filter((x) => { const d = parseIso(x.date); return d >= start && d <= end; });
+        return win.reduce((s, x) => s + x.w, 0) / win.length;
+    };
+    const lastDate = parseIso(items[items.length - 1].date);
+    const now = avgAt(lastDate);
+    const spanDays = (lastDate - parseIso(items[0].date)) / 864e5;
+    if (spanDays < 7 || items.length < 4) return { now, perWeek: null, pct: null };
+    const target = addDays(lastDate, -Math.min(14, spanDays));
+    const earlier = items.reduce((best, e) => (Math.abs(parseIso(e.date) - target) < Math.abs(parseIso(best.date) - target) ? e : best));
+    const weeks = Math.max(1, (lastDate - parseIso(earlier.date)) / (7 * 864e5));
+    const perWeek = (now - avgAt(parseIso(earlier.date))) / weeks;
+    return { now, perWeek, pct: (perWeek / now) * 100 };
+}
+
+// The newest weigh-in becomes Your starting point's bodyweight (in the profile's own unit), so
+// starting weights and the calorie tool follow your real weight
+function syncBodyweight() {
+    const raw = store.get(PROFILE_KEY, {});
+    const p = raw && typeof raw === "object" ? raw : {};
+    const pu = getProfile().unit;
+    const items = weighIns(pu);
+    if (!items.length) return;
+    p.bodyweight = trimNum(Math.round(items[items.length - 1].w * 10) / 10);
+    p.unit = pu;
+    store.set(PROFILE_KEY, p);
+}
+
+/* =========================================================
+   FEATURE: Weigh-in on My progress (Overview)
+   A quick "today's weight" box, the 7-day average and weekly change, and a small chart of
+   the last 30 days. Uses the same gu-weights as the Weight trend tool.
+   ========================================================= */
+function setupWeighIn() {
+    const box = document.getElementById("weighin");
+    if (!box) return;
+    const unit = () => (store.get("gu-unit") === "kg" ? "kg" : "lb");
+    const r1 = (n) => trimNum(Math.round(n * 10) / 10);
+    let msg = "";
+
+    function spark(items, u) {
+        const recent = items.filter((e) => parseIso(e.date) >= addDays(new Date(), -30));
+        if (recent.length < 2) return "";
+        const W = 320, H = 84, pad = 8;
+        const t0 = parseIso(recent[0].date).getTime(), t1 = Math.max(parseIso(recent[recent.length - 1].date).getTime(), t0 + 864e5);
+        const vals = recent.map((e) => e.w);
+        const lo = Math.min(...vals) - 0.5, hi = Math.max(...vals) + 0.5;
+        const x = (e) => (pad + ((parseIso(e.date).getTime() - t0) / (t1 - t0)) * (W - 2 * pad)).toFixed(1);
+        const y = (v) => (pad + (1 - (v - lo) / (hi - lo)) * (H - 2 * pad)).toFixed(1);
+        const avg = recent.map((e) => {
+            const end = parseIso(e.date), start = addDays(end, -6);
+            const win = items.filter((z) => { const d = parseIso(z.date); return d >= start && d <= end; });
+            return { date: e.date, v: win.reduce((s, z) => s + z.w, 0) / win.length };
+        });
+        const first = recent[0], last = recent[recent.length - 1];
+        return `<svg class="weighin-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Your weigh-ins over the last 30 days, from ${r1(first.w)} ${u} on ${shortDate(parseIso(first.date))} to ${r1(last.w)} ${u} on ${shortDate(parseIso(last.date))}">
+            ${recent.map((e) => `<circle class="weight-dot" cx="${x(e)}" cy="${y(e.w)}" r="3"/>`).join("")}
+            <path class="chart-line" d="${avg.map((p, i) => `${i ? "L" : "M"}${x(p)},${y(p.v)}`).join("")}"/>
+        </svg>`;
+    }
+
+    function render() {
+        const u = unit();
+        const items = weighIns(u);
+        const last = items[items.length - 1];
+        const today = isoDate(new Date());
+        const tr = weightTrendNow(items);
+        let stats = `<p class="result-empty">Weigh in a few times a week (mornings are best) and your trend shows up here.</p>`;
+        if (tr) {
+            const change = tr.perWeek == null ? `<strong>…</strong><small>after a week of weigh-ins</small>`
+                : `<strong>${tr.perWeek > 0 ? "+" : ""}${r1(tr.perWeek)}</strong><small>${u} a week</small>`;
+            stats = `<div class="weighin-stats">
+                    <div><span>Last weigh-in</span><strong>${r1(last.w)}</strong><small>${u}, ${last.date === today ? "today" : shortDate(parseIso(last.date))}</small></div>
+                    <div><span>7-day average</span><strong>${r1(tr.now)}</strong><small>${u}</small></div>
+                    <div><span>Weekly change</span>${change}</div>
+                </div>
+                ${spark(items, u)}
+                ${tr.pct != null && tr.pct < -1 ? `<p class="result-note warn">That's faster than the 0.5 to 1% a week most experts suggest. Eating a little more can help you keep your muscle and energy. If you're worried about how you're eating, a doctor or registered dietitian can help.</p>` : ""}`;
+        }
+        const done = last && last.date === today;
+        box.innerHTML = `<div class="weighin-grid">
+                <form class="weighin-form" id="weighin-form" novalidate>
+                    <label for="wi-value">${done ? "Update today's weight" : "Today's weight"} (${u})</label>
+                    <div class="weighin-row">
+                        <input id="wi-value" name="weight" type="number" inputmode="decimal" step="0.1" min="0" placeholder="${last ? r1(last.w) : u === "kg" ? "80" : "180"}">
+                        <button class="btn btn-primary btn-compact" type="submit">Save</button>
+                    </div>
+                    <p class="log-status" id="weighin-status" role="status">${escapeHtml(msg)}</p>
+                    <p class="result-note">Your weight jumps around with water and salt; the 7-day average shows what's really happening. <a href="tools.html#tool-weight">See the full trend</a>.</p>
+                </form>
+                <div class="weighin-trend" aria-live="polite">${stats}</div>
+            </div>`;
+    }
+
+    box.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = box.querySelector("#wi-value");
+        const w = Number(input.value);
+        const kg = unit() === "kg" ? w : w / 2.20462;
+        if (!w || kg < 30 || kg > 350) { msg = "Enter your weight to save it."; render(); box.querySelector("#wi-value").focus(); return; }
+        const date = isoDate(new Date());
+        const all = (Array.isArray(store.get("gu-weights", [])) ? store.get("gu-weights", []) : []).filter((x) => x && x.date !== date);
+        all.push({ date, w, unit: unit() });
+        store.set("gu-weights", all);
+        syncBodyweight();
+        msg = `Saved: ${trimNum(w)} ${unit()} today.`;
+        render();
+        window.dispatchEvent(new CustomEvent("logchange"));
+    });
+    window.addEventListener("logchange", render); // a unit switch in Your starting point
+    render();
+}
+
 function setupWeightTrend() {
     const form = document.getElementById("weight-form");
     if (!form) return;
@@ -8056,6 +8184,7 @@ function setupWeightTrend() {
         const all = (store.get(KEY, []) || []).filter((x) => x.date !== date);
         all.push({ date, w, unit: unit() });
         store.set(KEY, all);
+        syncBodyweight();
         form.elements.weight.value = "";
         render();
     });
@@ -8410,8 +8539,9 @@ function setupDashboard() {
         const days = new Set([...activeDates()].filter(inWeek));
         const sets = finishedSetCount(finishedLog(), inWeek);
         const minutes = cardioMinutesInWeek();
-        const weights = (store.get("gu-weights", []) || []).filter((w) => parseIso(w.date) >= addDays(new Date(), -7));
-        const bw = weights.length ? weights.reduce((sum, w) => sum + toUnit(w.w, w.unit, profile.unit), 0) / weights.length : null;
+        // Same 7-day average as the Bodyweight card and the Weight trend tool (when you've weighed in this week)
+        const wIns = weighIns(profile.unit);
+        const bw = wIns.length && parseIso(wIns[wIns.length - 1].date) >= addDays(new Date(), -6) ? weightTrendNow(wIns).now : null;
         // Streaks, records, and milestones show up after a few workouts, so day one stays simple
         const hooked = activeDates().size >= 3;
         stats.innerHTML = `

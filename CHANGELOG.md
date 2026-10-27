@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-27 (Weigh in right from My progress)
+
+- **New Bodyweight card on My progress (Overview tab).** Type today's weight and tap Save. It shows your last weigh-in, your 7-day average, how much you're changing per week, and a small chart of the last 30 days. If you're losing faster than about 1% a week, it gently suggests eating a little more, the same way the Weight trend tool does.
+- **Your weight now flows everywhere.** Saving a weigh-in (here or in the Weight trend tool) updates your bodyweight in Your starting point, so suggested starting weights and the calorie tool (which already fills in your weight and sex) use your latest weight.
+- The "Bodyweight (7-day avg)" number under This week now matches the new card and the Weight trend tool exactly.
+- Why: testers wanted to log their weight where they already check their progress, without a trip to the Tools page.
+
 ## 2026-10-26 (Your log follows the order you lifted)
 
 - **The Log tab on My progress now lists each day's exercises in the order you did them**, not alphabetically. If you squatted first and did curls last, that's how the day reads.

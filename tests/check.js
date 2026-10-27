@@ -518,6 +518,38 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.close();
         }
 
+        // Weigh-in on My progress: trend from the same weigh-ins, and saving one updates Your starting point and the calorie tool
+        {
+            const { page, errors } = await openPage(browser, "me.html", viewport);
+            await page.evaluate(() => {
+                localStorage.clear();
+                const days = []; const today = new Date();
+                for (let i = 14; i >= 1; i--) {
+                    const d = new Date(today); d.setDate(d.getDate() - i);
+                    days.push({ date: isoDate(d), w: 200 - (14 - i) * 0.6, unit: "lb" });
+                }
+                localStorage.setItem("gu-weights", JSON.stringify(days));
+                localStorage.setItem("gu-profile", JSON.stringify({ sex: "female", unit: "lb", bodyweight: "210" }));
+            });
+            await page.reload();
+            await page.waitForTimeout(250);
+            check(await page.locator("#weighin").isVisible() && /7-day average/.test(await page.locator("#weighin").textContent()) && /Weekly change/.test(await page.locator("#weighin").textContent()), "My progress shows the 7-day average and weekly change");
+            check(await page.locator("#weighin .weighin-chart circle").count() >= 10 && await page.locator("#weighin .warn").count() === 1, "the weigh-in card draws the last 30 days and cautions about fast loss");
+            await page.fill("#wi-value", "191.5");
+            await page.locator("#weighin-form button[type=submit]").click();
+            await page.waitForTimeout(150);
+            const saved = await page.evaluate(() => ({ list: JSON.parse(localStorage.getItem("gu-weights")), bw: getProfile().bodyweight }));
+            check(saved.list.some((e) => e.date === saved.list[saved.list.length - 1].date && e.w === 191.5) && saved.bw === "191.5" && /Saved/.test(await page.locator("#weighin-status").textContent()), `saving today's weight updates Your starting point (bodyweight ${saved.bw})`);
+            const bb = await page.locator("#weighin-form button[type=submit]").boundingBox();
+            check(viewport.width > 390 || (bb && bb.height >= 44), "the weigh-in Save button is easy to tap on phones");
+            await page.goto(url("tools.html"), { waitUntil: "load" });
+            await page.waitForTimeout(200);
+            check(await page.inputValue("#cal-weight") === "191.5" && await page.locator('#cal-form input[name="sex"][value="female"]').isChecked(), "the calorie tool fills in your latest weight and sex");
+            await page.evaluate(() => localStorage.clear());
+            check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
+            await page.close();
+        }
+
         // Exercise library: search, filter, and how-to
         {
             const { page, errors } = await openPage(browser, "exercises.html", viewport, "#back");
