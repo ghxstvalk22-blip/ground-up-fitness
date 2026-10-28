@@ -1921,6 +1921,9 @@ function getProfile() {
         heightCm: hcm >= 120 && hcm <= 230 ? String(Math.round(hcm)) : "",
         bodyfat: bf >= 3 && bf <= 60 ? String(bf) : "",
         activity: pick(String(p.activity || ""), ["", "1.2", "1.375", "1.55", "1.725"], ""),
+        // Optional goal weight from the Bodyweight card (kept in the unit it was typed in)
+        goalWeight: Number(p.goalWeight) > 0 && Number(p.goalWeight) < 1000 ? String(Number(p.goalWeight)) : "",
+        goalUnit: pick(p.goalUnit, ["lb", "kg"], "lb"),
         avoid: Array.isArray(p.avoid) ? p.avoid.filter((k) => Object.keys(AVOID_MOVES).includes(k)) : []
     };
 }
@@ -8042,10 +8045,42 @@ function setupWeighIn() {
         </svg>`;
     }
 
+    let goalMsg = "", goalOpen = false;
+    // The saved goal in the unit shown (or 0)
+    function goalIn(u) {
+        const p = getProfile();
+        return p.goalWeight ? toUnit(Number(p.goalWeight), p.goalUnit, u) : 0;
+    }
+    // Progress toward the goal: how far to go, a bar from the first weigh-in, and a safe pace
+    // (losing 0.5 to 1% of bodyweight a week, gaining 0.25 to 0.5%, as mainstream guidance suggests)
+    function goalView(items, tr, u) {
+        const goal = goalIn(u);
+        if (!goal || !tr) return "";
+        const now = tr.now, start = items[0].w;
+        const left = goal - now;
+        const close = Math.abs(left) <= (u === "kg" ? 0.5 : 1);
+        if (close) return `<div class="weighin-goal-view"><p><strong>You're at your goal weight (${r1(goal)} ${u}).</strong> Keep training and weighing in; holding steady is a win too.</p></div>`;
+        const losing = left < 0;
+        const total = Math.abs(goal - start);
+        const done = total > 0 && (losing ? start > now : start < now) ? Math.min(1, Math.abs(start - now) / total) : 0;
+        const pct = Math.round(done * 100);
+        const [lo, hi] = losing ? [0.005, 0.01] : [0.0025, 0.005];
+        const away = Math.abs(left);
+        const wkFast = Math.max(1, Math.round(away / (now * hi))), wkSlow = Math.max(1, Math.round(away / (now * lo)));
+        const onWay = tr.perWeek != null && (losing ? tr.perWeek < 0 : tr.perWeek > 0);
+        const yours = onWay ? ` At your current pace, about ${Math.max(1, Math.round(away / Math.abs(tr.perWeek)))} weeks.` : "";
+        return `<div class="weighin-goal-view">
+                <p><strong>${r1(away)} ${u} to ${losing ? "lose" : "gain"}</strong> to reach ${r1(goal)} ${u} (from your 7-day average).</p>
+                <div class="weighin-goal-bar" aria-hidden="true"><span style="width: ${pct}%"></span></div>
+                <p class="result-note">${pct}% of the way from your first weigh-in (${r1(start)} ${u}). A steady pace of ${losing ? "0.5 to 1%" : "0.25 to 0.5%"} of your weight a week (about ${r1(now * lo)} to ${r1(now * hi)} ${u}) gets you there in roughly ${wkFast === wkSlow ? wkFast : `${wkFast} to ${wkSlow}`} weeks.${yours}</p>
+            </div>`;
+    }
+
     function render() {
         const u = unit();
         const items = weighIns(u);
         const last = items[items.length - 1];
+        const goal = goalIn(u);
         const today = isoDate(new Date());
         const tr = weightTrendNow(items);
         let stats = `<p class="result-empty">Weigh in a few times a week (mornings are best) and your trend shows up here.</p>`;
@@ -8058,6 +8093,7 @@ function setupWeighIn() {
                     <div><span>Weekly change</span>${change}</div>
                 </div>
                 ${spark(items, u)}
+                ${goalView(items, tr, u)}
                 ${tr.pct != null && tr.pct < -1 ? `<p class="result-note warn">That's faster than the 0.5 to 1% a week most experts suggest. Eating a little more can help you keep your muscle and energy. If you're worried about how you're eating, a doctor or registered dietitian can help.</p>` : ""}`;
         }
         const done = last && last.date === today;
@@ -8070,6 +8106,20 @@ function setupWeighIn() {
                     </div>
                     <p class="log-status" id="weighin-status" role="status">${escapeHtml(msg)}</p>
                     <p class="result-note">Your weight jumps around with water and salt; the 7-day average shows what's really happening. <a href="tools.html#tool-weight">See the full trend</a>.</p>
+                    <details class="setup-more weighin-goal"${goalOpen ? " open" : ""}>
+                        <summary>Goal weight<span>${goal ? `${r1(goal)} ${u}` : "Optional: see how far you have to go"}</span></summary>
+                        <div class="setup-more-body">
+                            <div>
+                                <label for="wi-goal">Goal weight (${u})</label>
+                                <div class="weighin-row">
+                                    <input id="wi-goal" type="number" inputmode="decimal" step="0.1" min="0" value="${goal ? r1(goal) : ""}">
+                                    <button class="btn btn-primary btn-compact" type="button" data-goal-save>Set goal</button>
+                                </div>
+                                <p class="log-status" id="wi-goal-status" role="status">${escapeHtml(goalMsg)}</p>
+                            </div>
+                            ${goal ? `<button class="text-button" type="button" data-goal-clear>Remove goal</button>` : ""}
+                        </div>
+                    </details>
                 </form>
                 <div class="weighin-trend" aria-live="polite">${stats}</div>
             </div>`;
@@ -8077,6 +8127,8 @@ function setupWeighIn() {
 
     box.addEventListener("submit", (e) => {
         e.preventDefault();
+        // Enter in the goal box sets the goal instead of saving a weigh-in
+        if (document.activeElement && document.activeElement.id === "wi-goal") { box.querySelector("[data-goal-save]").click(); return; }
         const input = box.querySelector("#wi-value");
         const w = Number(input.value);
         const kg = unit() === "kg" ? w : w / 2.20462;
@@ -8089,6 +8141,33 @@ function setupWeighIn() {
         msg = `Saved: ${trimNum(w)} ${unit()} today.`;
         render();
         window.dispatchEvent(new CustomEvent("logchange"));
+    });
+    box.addEventListener("click", (e) => {
+        const save = e.target.closest("[data-goal-save]"), clear = e.target.closest("[data-goal-clear]");
+        if (!save && !clear) return;
+        const raw = store.get(PROFILE_KEY, {});
+        const p = raw && typeof raw === "object" ? raw : {};
+        goalOpen = true;
+        if (clear) {
+            delete p.goalWeight; delete p.goalUnit;
+            store.set(PROFILE_KEY, p);
+            goalMsg = "Goal removed.";
+            render();
+            box.querySelector("#wi-goal").focus();
+            return;
+        }
+        const w = Number(box.querySelector("#wi-goal").value);
+        const kg = unit() === "kg" ? w : w / 2.20462;
+        const cm = Number(getProfile().heightCm);
+        if (!w || kg < 30 || kg > 350) goalMsg = "Enter the weight you'd like to reach.";
+        else if (cm && kg / Math.pow(cm / 100, 2) < 18.5) goalMsg = "That's below the healthy range for your height (a BMI under 18.5), so it isn't saved. A doctor or registered dietitian can help you pick a safe goal.";
+        else {
+            p.goalWeight = w; p.goalUnit = unit();
+            store.set(PROFILE_KEY, p);
+            goalMsg = `Goal set: ${trimNum(w)} ${unit()}.`;
+        }
+        render();
+        box.querySelector("#wi-goal").focus();
     });
     window.addEventListener("logchange", render); // a unit switch in Your starting point
     render();

@@ -2,6 +2,13 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-28 (Set a goal weight)
+
+- **Optional goal weight on the Bodyweight card (My progress, Overview tab).** Open "Goal weight", type the weight you'd like to reach, and tap Set goal. The card then shows how much is left to lose or gain (based on your 7-day average, so daily ups and downs don't throw it off), a bar showing how far you've come since your first weigh-in, and roughly how many weeks it takes at a safe, steady pace: 0.5 to 1% of your weight a week to lose, or 0.25 to 0.5% to gain. If you're already heading the right way, it also shows how long it'd take at your current pace.
+- **Safety first.** If you've entered your height, a goal below a healthy weight for it (a BMI under 18.5) isn't saved, and the card suggests talking with a doctor or registered dietitian. The existing "faster than 1% a week" caution stays.
+- You can change or remove the goal at any time; it's saved on your device only.
+- Why: a trend is easier to stick with when you can see where it's heading.
+
 ## 2026-10-27 (Weigh in right from My progress)
 
 - **New Bodyweight card on My progress (Overview tab).** Type today's weight and tap Save. It shows your last weigh-in, your 7-day average, how much you're changing per week, and a small chart of the last 30 days. If you're losing faster than about 1% a week, it gently suggests eating a little more, the same way the Weight trend tool does.

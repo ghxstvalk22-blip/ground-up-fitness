@@ -42,7 +42,8 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Lifts chart: mark the session "Now" comes from (a ring on its dot) when it isn't the latest one.
 - [ ] Log tab: show the time of day each workout was done ("6:40 pm") next to the date, now that sets carry a time.
 - [ ] Bodyweight card: a gentle "Weigh in today?" nudge on the home page's Up next card when it's been 4+ days since the last weigh-in (only for people who already weigh in).
-- [ ] Bodyweight card: show progress toward an optional goal weight, with a safe-pace note (0.5 to 1% a week).
+- [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
+- [ ] Up next card on the home page: a small "X lb to go" line under the bodyweight nudge for people with a goal weight.
 
 ## Blocked
 
@@ -50,6 +51,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-10-28: Goal weight on the Bodyweight card (My progress): set an optional goal and see how much is left to lose or gain (from your 7-day average), a progress bar from your first weigh-in, and how long a safe pace takes (0.5 to 1% a week to lose, 0.25 to 0.5% to gain), plus your current pace when you're heading the right way. A goal below a healthy weight for your height (BMI under 18.5) isn't saved and points to a doctor or registered dietitian.
 - [x] 2026-10-27: Bodyweight card on My progress (Overview): type today's weight and save; it shows your last weigh-in, 7-day average, weekly change, a small 30-day chart, and the same gentle caution as the Weight trend tool if you're losing fast. Saving a weigh-in (here or in the Weight trend tool) updates your bodyweight in Your starting point, so starting weights and the calorie tool (which already fills in weight and sex) use your latest weight. The "This week" bodyweight number now matches.
 - [x] 2026-10-26: Log tab lists a day's exercises in the order you did them (each logged exercise now records when it was first saved; older logs follow the finished workout's order), instead of A to Z.
 - [x] 2026-10-25: Lifts tab: "Now" (and the 8-week number) uses your best session of the last 3 weeks, so a light week or a tired day doesn't drop it; endurance reps use that session's working weight. "What are you training for?" starts on your goal from Your starting point (Strength for strength, Endurance for losing fat, otherwise Both) until you pick one.

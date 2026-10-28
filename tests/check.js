@@ -542,6 +542,23 @@ async function openPage(browser, file, viewport, hash = "") {
             check(saved.list.some((e) => e.date === saved.list[saved.list.length - 1].date && e.w === 191.5) && saved.bw === "191.5" && /Saved/.test(await page.locator("#weighin-status").textContent()), `saving today's weight updates Your starting point (bodyweight ${saved.bw})`);
             const bb = await page.locator("#weighin-form button[type=submit]").boundingBox();
             check(viewport.width > 390 || (bb && bb.height >= 44), "the weigh-in Save button is easy to tap on phones");
+            // Goal weight: progress, a safe pace, and no goal below a healthy weight for your height
+            await page.locator(".weighin-goal > summary").click();
+            await page.fill("#wi-goal", "180");
+            await page.locator("[data-goal-save]").click();
+            await page.waitForTimeout(100);
+            const gv = await page.locator(".weighin-goal-view").textContent().catch(() => "");
+            check(/to lose/.test(gv) && /0\.5 to 1%/.test(gv) && /weeks/.test(gv) && await page.evaluate(() => getProfile().goalWeight) === "180", `a goal weight shows how far to go and a safe pace (${gv.trim().slice(0, 80)})`);
+            const gb = await page.locator("[data-goal-save]").boundingBox();
+            check(viewport.width > 390 || (gb && gb.height >= 44), "the Set goal button is easy to tap on phones");
+            check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "the goal weight box fits without sideways scrolling");
+            await page.evaluate(() => { const p = JSON.parse(localStorage.getItem("gu-profile")); p.heightCm = 170; localStorage.setItem("gu-profile", JSON.stringify(p)); });
+            await page.fill("#wi-goal", "100");
+            await page.press("#wi-goal", "Enter");
+            await page.waitForTimeout(100);
+            check(/healthy range/.test(await page.locator("#wi-goal-status").textContent()) && await page.evaluate(() => getProfile().goalWeight) === "180", "a goal below a healthy weight for your height isn't saved");
+            await page.locator("[data-goal-clear]").click();
+            check(await page.evaluate(() => getProfile().goalWeight) === "" && await page.locator(".weighin-goal-view").count() === 0, "Remove goal clears it");
             await page.goto(url("tools.html"), { waitUntil: "load" });
             await page.waitForTimeout(200);
             check(await page.inputValue("#cal-weight") === "191.5" && await page.locator('#cal-form input[name="sex"][value="female"]').isChecked(), "the calorie tool fills in your latest weight and sex");
