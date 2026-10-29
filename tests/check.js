@@ -436,6 +436,31 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.goto(url("index.html"));
             await page.waitForTimeout(200);
             check(/Short on time/.test(await page.locator(".home-next").textContent()) && /program-busy-/.test(await page.locator(".home-next .btn-primary").getAttribute("href")), "home page offers to continue your plan");
+            check(await page.locator(".home-next-weigh").count() === 0, "no bodyweight line on the home card for people who don't weigh in");
+            // People who weigh in: a nudge after 4+ days without one, and how far is left to a goal weight
+            await page.evaluate(() => {
+                const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return isoDate(x); };
+                store.set("gu-weights", [{ date: d(12), w: 200, unit: "lb" }, { date: d(10), w: 199, unit: "lb" }, { date: d(8), w: 198.5, unit: "lb" }, { date: d(5), w: 198, unit: "lb" }]);
+                store.set("gu-unit", "lb");
+                const p = store.get(PROFILE_KEY, {}); p.goalWeight = "180"; p.goalUnit = "lb"; store.set(PROFILE_KEY, p);
+            });
+            await page.reload();
+            await page.waitForTimeout(200);
+            {
+                const wl = await page.locator(".home-next-weigh").textContent();
+                check(/Weigh in today\?/.test(wl) && /5 days ago/.test(wl) && /lb to lose to reach 180 lb/.test(wl) && await page.locator('.home-next-weigh a[href="me.html#weighin"]').count() === 1, `home card nudges a weigh-in and shows how far to the goal (${wl.trim().slice(0, 90)})`);
+                const lh = await page.locator(".home-next-weigh a").evaluate((a) => a.getBoundingClientRect().height);
+                check(lh >= 44, "the weigh-in link is easy to tap");
+                await page.locator(".home-next").screenshot({ path: path.join(SHOTS, `${name}-home-weigh.png`) });
+            }
+            await page.evaluate(() => {
+                const all = store.get("gu-weights", []); all.push({ date: isoDate(new Date()), w: 197.5, unit: "lb" }); store.set("gu-weights", all);
+                const p = store.get(PROFILE_KEY, {}); delete p.goalWeight; delete p.goalUnit; store.set(PROFILE_KEY, p);
+            });
+            await page.reload();
+            await page.waitForTimeout(200);
+            check(await page.locator(".home-next-weigh").count() === 0, "no bodyweight line after weighing in today with no goal");
+            await page.evaluate(() => { store.remove ? store.remove("gu-weights") : store.set("gu-weights", []); });
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();
         }

@@ -874,6 +874,9 @@ body.has-home-next .hero-lede, body.has-home-next .hero-setup-link { display: no
 .home-next-list li span { color: #cfd6dc; font-size: 0.84rem; }
 .home-next-list li.is-done strong { text-decoration: line-through; text-decoration-color: var(--volt); color: #a9b2ba; }
 .home-next-list .home-next-more { color: #cfd6dc; font-size: 0.82rem; justify-content: flex-start; }
+.home-next-weigh { margin: 12px 0 0; padding: 0 0 0 10px; border-left: 3px solid var(--volt); font-size: 0.86rem; color: #cfd6dc; }
+.home-next-weigh strong { color: #ffffff; }
+.home-next-weigh a { display: block; width: fit-content; min-height: 44px; line-height: 44px; color: #ffffff; font-weight: 700; text-decoration: underline; text-decoration-color: var(--volt); text-underline-offset: 3px; }
 .home-next-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .home-next-actions .btn-primary { background-color: var(--volt); border-color: var(--volt); color: var(--on-volt); }
 .home-next-actions .btn-primary:hover, .home-next-actions .btn-primary:focus-visible { background-color: #ffffff; border-color: #ffffff; color: var(--on-volt); }

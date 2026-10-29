@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-29 (Weigh-in reminder on the home page)
+
+- **A small bodyweight line on the home page's Up next card**, only for people who already weigh in. If it's been 4 or more days since your last weigh-in, it gently asks "Weigh in today?" and says how long it's been. If you've set a goal weight, it also shows how much is left to lose or gain (from your 7-day average, the same number My progress uses).
+- A "Weigh in" link takes you straight to the Bodyweight card on My progress. Once you've weighed in today and have no goal set, the line steps aside.
+- Why: regular weigh-ins make the trend more accurate, and seeing your goal on the first screen keeps it in mind without adding another page to check.
+
 ## 2026-10-28 (Set a goal weight)
 
 - **Optional goal weight on the Bodyweight card (My progress, Overview tab).** Open "Goal weight", type the weight you'd like to reach, and tap Set goal. The card then shows how much is left to lose or gain (based on your 7-day average, so daily ups and downs don't throw it off), a bar showing how far you've come since your first weigh-in, and roughly how many weeks it takes at a safe, steady pace: 0.5 to 1% of your weight a week to lose, or 0.25 to 0.5% to gain. If you're already heading the right way, it also shows how long it'd take at your current pace.

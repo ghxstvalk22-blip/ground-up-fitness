@@ -9185,6 +9185,22 @@ function setupHero() {
         const title = info.weekDone ? "Week done. Nice work" : custom ? info.title : `Day ${info.di + 1}: ${info.title}`;
         const go = info.weekDone ? "Open my plan" : info.started || paused ? "Continue workout" : custom ? "Start workout" : `Start Day ${info.di + 1}`;
         const shown = info.weekDone ? [] : info.items.slice(0, 3), more = info.weekDone ? 0 : info.items.length - shown.length;
+        // Bodyweight line for people who already weigh in: a gentle nudge after 4+ days without one,
+        // and how far is left to a goal weight (from the 7-day average, like My progress)
+        let weighLine = "";
+        {
+            const wu = store.get("gu-unit") === "kg" ? "kg" : "lb", wItems = weighIns(wu);
+            if (wItems.length >= 2) {
+                const lastW = wItems[wItems.length - 1];
+                const ago = Math.round((parseIso(isoDate(new Date())) - parseIso(lastW.date)) / 864e5);
+                const pr = getProfile(), goal = pr.goalWeight ? toUnit(Number(pr.goalWeight), pr.goalUnit, wu) : 0;
+                const tr = weightTrendNow(wItems), r1 = (n) => trimNum(Math.round(n * 10) / 10);
+                const parts = [];
+                if (ago >= 4) parts.push(`<strong>Weigh in today?</strong> Your last one was ${ago} days ago.`);
+                if (goal && tr && Math.abs(goal - tr.now) > (wu === "kg" ? 0.5 : 1)) parts.push(`${r1(Math.abs(goal - tr.now))} ${wu} to ${goal < tr.now ? "lose" : "gain"} to reach ${r1(goal)} ${wu}.`);
+                if (parts.length) weighLine = `<p class="home-next-weigh">${parts.join(" ")} <a href="me.html#weighin">${ago >= 4 ? "Weigh in" : "See my weight"}</a></p>`;
+            }
+        }
         const h1 = document.querySelector(".hero-copy h1"), who = getProfile().name;
         if (h1) { h1.classList.add("hero-welcome"); h1.innerHTML = `Welcome back${who ? `, <span class="hl">${escapeHtml(who)}</span>` : ""}.`; }
         actions.insertAdjacentHTML("afterbegin", `
@@ -9193,6 +9209,7 @@ function setupHero() {
     <h2 class="home-next-title" id="home-next-title">${escapeHtml(title)}</h2>
     <p class="home-next-sub">${escapeHtml(info.name)}${custom ? "" : ` · Week ${info.week}`} · ${info.weekDone ? "your next week starts when this one ends" : `${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
     ${shown.length ? `<ol class="home-next-list">${shown.map((x) => `<li class="${x.done ? "is-done" : ""}"><strong>${escapeHtml(x.name)}</strong> <span>${escapeHtml(x.d)}${x.done ? " · done" : ""}</span></li>`).join("")}${more > 0 ? `<li class="home-next-more">+ ${more} more</li>` : ""}</ol>` : ""}
+    ${weighLine}
     <div class="home-next-actions">
         <a class="btn btn-primary" href="${info.href}">${escapeHtml(go)} <span aria-hidden="true">&rarr;</span></a>
         <a class="btn btn-outline-light" href="me.html">My progress</a>
