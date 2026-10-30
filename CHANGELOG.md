@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-30 (Reaching your goal weight shows on the home page)
+
+- **The home page's Up next card now celebrates reaching your goal weight.** Once your 7-day average is within 1 lb (0.5 kg) of the goal you set, the bodyweight line says "You're at your goal weight" and that holding steady is a win too, instead of showing "0.4 lb to lose". The My progress Bodyweight card already said this; now the home page matches.
+- Why: the last stretch of a goal shouldn't look like unfinished business. Seeing that you made it, right on the first screen, is a better reward than a tiny number left to go.
+
 ## 2026-10-29 (Weigh-in reminder on the home page)
 
 - **A small bodyweight line on the home page's Up next card**, only for people who already weigh in. If it's been 4 or more days since your last weigh-in, it gently asks "Weigh in today?" and says how long it's been. If you've set a goal weight, it also shows how much is left to lose or gain (from your 7-day average, the same number My progress uses).

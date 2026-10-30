@@ -460,6 +460,16 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.reload();
             await page.waitForTimeout(200);
             check(await page.locator(".home-next-weigh").count() === 0, "no bodyweight line after weighing in today with no goal");
+            // Reaching the goal (within 1 lb of the 7-day average) shows a short "at your goal" note
+            await page.evaluate(() => { const p = store.get(PROFILE_KEY, {}); p.goalWeight = "198"; p.goalUnit = "lb"; store.set(PROFILE_KEY, p); });
+            await page.reload();
+            await page.waitForTimeout(200);
+            {
+                const wl = (await page.locator(".home-next-weigh").count()) ? await page.locator(".home-next-weigh").textContent() : "";
+                check(/at your goal weight/.test(wl) && /198 lb/.test(wl) && !/to lose/.test(wl) && /See my weight/.test(wl), `home card says when you're at your goal weight (${wl.trim().slice(0, 80)})`);
+                if (wl) await page.locator(".home-next").screenshot({ path: path.join(SHOTS, `${name}-home-goal.png`) });
+            }
+            await page.evaluate(() => { const p = store.get(PROFILE_KEY, {}); delete p.goalWeight; delete p.goalUnit; store.set(PROFILE_KEY, p); });
             await page.evaluate(() => { store.remove ? store.remove("gu-weights") : store.set("gu-weights", []); });
             check(errors.length === 0, `no script errors ${errors.length ? JSON.stringify(errors) : ""}`);
             await page.close();

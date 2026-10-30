@@ -9186,7 +9186,8 @@ function setupHero() {
         const go = info.weekDone ? "Open my plan" : info.started || paused ? "Continue workout" : custom ? "Start workout" : `Start Day ${info.di + 1}`;
         const shown = info.weekDone ? [] : info.items.slice(0, 3), more = info.weekDone ? 0 : info.items.length - shown.length;
         // Bodyweight line for people who already weigh in: a gentle nudge after 4+ days without one,
-        // and how far is left to a goal weight (from the 7-day average, like My progress)
+        // and how far is left to a goal weight (from the 7-day average, like My progress), or a short
+        // "You're at your goal" note once within 1 lb / 0.5 kg of it
         let weighLine = "";
         {
             const wu = store.get("gu-unit") === "kg" ? "kg" : "lb", wItems = weighIns(wu);
@@ -9197,7 +9198,9 @@ function setupHero() {
                 const tr = weightTrendNow(wItems), r1 = (n) => trimNum(Math.round(n * 10) / 10);
                 const parts = [];
                 if (ago >= 4) parts.push(`<strong>Weigh in today?</strong> Your last one was ${ago} days ago.`);
-                if (goal && tr && Math.abs(goal - tr.now) > (wu === "kg" ? 0.5 : 1)) parts.push(`${r1(Math.abs(goal - tr.now))} ${wu} to ${goal < tr.now ? "lose" : "gain"} to reach ${r1(goal)} ${wu}.`);
+                const atGoal = goal && tr && Math.abs(goal - tr.now) <= (wu === "kg" ? 0.5 : 1);
+                if (atGoal) parts.push(`<strong>You're at your goal weight</strong> (${r1(goal)} ${wu}). Holding steady is a win too.`);
+                else if (goal && tr) parts.push(`${r1(Math.abs(goal - tr.now))} ${wu} to ${goal < tr.now ? "lose" : "gain"} to reach ${r1(goal)} ${wu}.`);
                 if (parts.length) weighLine = `<p class="home-next-weigh">${parts.join(" ")} <a href="me.html#weighin">${ago >= 4 ? "Weigh in" : "See my weight"}</a></p>`;
             }
         }
