@@ -42,7 +42,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Lifts chart: mark the session "Now" comes from (a ring on its dot) when it isn't the latest one.
 - [ ] Log tab: show the time of day each workout was done ("6:40 pm") next to the date, now that sets carry a time.
 - [ ] Home page bodyweight line: when someone has been at their goal weight for a few weeks, a small "Set a new goal?" link to the Bodyweight card.
-- [ ] My progress dashboard: a small "Weighed in X days ago" note on the This week bodyweight tile.
+- [ ] Bodyweight tile: a small up/down arrow with this week's change next to the 7-day average.
 - [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
 
 ## Blocked
@@ -51,6 +51,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-10-31: My progress "This week" bodyweight tile says when you last weighed in ("Weighed in today", "yesterday", "5 days ago") with a Weigh in link after 4 or more days; if your last weigh-in is over a week old it shows how long ago instead of "Add one". Its links now go to the Bodyweight card on the same page.
 - [x] 2026-10-30: Home page Up next card: once your 7-day average is within 1 lb (0.5 kg) of your goal weight, the bodyweight line says "You're at your goal weight" (holding steady is a win too) instead of showing how much is left; its link opens your weight on My progress.
 - [x] 2026-10-29: Bodyweight line on the home page's Up next card, for people who already weigh in: "Weigh in today?" when it's been 4 or more days since the last weigh-in, and how much is left to lose or gain to a goal weight (from the 7-day average). A "Weigh in" link goes straight to the Bodyweight card on My progress.
 - [x] 2026-10-28: Goal weight on the Bodyweight card (My progress): set an optional goal and see how much is left to lose or gain (from your 7-day average), a progress bar from your first weigh-in, and how long a safe pace takes (0.5 to 1% a week to lose, 0.25 to 0.5% to gain), plus your current pace when you're heading the right way. A goal below a healthy weight for your height (BMI under 18.5) isn't saved and points to a doctor or registered dietitian.

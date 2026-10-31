@@ -8621,6 +8621,15 @@ function setupDashboard() {
         // Same 7-day average as the Bodyweight card and the Weight trend tool (when you've weighed in this week)
         const wIns = weighIns(profile.unit);
         const bw = wIns.length && parseIso(wIns[wIns.length - 1].date) >= addDays(new Date(), -6) ? weightTrendNow(wIns).now : null;
+        // How long since the last weigh-in, so an old average doesn't look current
+        const wAgo = wIns.length ? Math.round((parseIso(isoDate(new Date())) - parseIso(wIns[wIns.length - 1].date)) / 864e5) : -1;
+        const wAgoText = wAgo === 0 ? "Weighed in today" : wAgo === 1 ? "Weighed in yesterday" : `Weighed in ${wAgo} days ago`;
+        const bwCell = bw
+            ? `<strong>${trimNum(Math.round(bw * 10) / 10)}<small> ${profile.unit}</small></strong>
+                <small class="stat-note">${wAgoText}${wAgo >= 4 ? `. <a href="me.html#weighin">Weigh in</a>` : ""}</small>`
+            : wIns.length
+                ? `<strong><a href="me.html#weighin">Weigh in</a></strong><small class="stat-note">Last one was ${wAgo} days ago</small>`
+                : `<strong><a href="me.html#weighin">Add one</a></strong>`;
         // Streaks, records, and milestones show up after a few workouts, so day one stays simple
         const hooked = activeDates().size >= 3;
         stats.innerHTML = `
@@ -8628,7 +8637,7 @@ function setupDashboard() {
             <div><span>Sets logged</span><strong>${sets}</strong></div>
             <div><span>Cardio minutes</span><strong>${minutes}<small> / 150</small></strong>
                 <div class="mini-bar" aria-hidden="true"><div style="width:${Math.min(100, (minutes / 150) * 100)}%"></div></div></div>
-            <div><span>Bodyweight (7-day avg)</span><strong>${bw ? `${trimNum(Math.round(bw * 10) / 10)}<small> ${profile.unit}</small>` : `<a href="tools.html#tool-weight">Add one</a>`}</strong></div>
+            <div class="stat-bw"><span>Bodyweight (7-day avg)</span>${bwCell}</div>
             ${hooked ? `<div><span>Streak</span><strong>${weekStreak()}<small> week${weekStreak() === 1 ? "" : "s"}</small></strong></div>
             <div><span>Personal records</span><strong>${getPRs().length}</strong></div>` : ""}`;
         const ms = document.getElementById("milestones");

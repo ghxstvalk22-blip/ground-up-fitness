@@ -575,6 +575,19 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(150);
             const saved = await page.evaluate(() => ({ list: JSON.parse(localStorage.getItem("gu-weights")), bw: getProfile().bodyweight }));
             check(saved.list.some((e) => e.date === saved.list[saved.list.length - 1].date && e.w === 191.5) && saved.bw === "191.5" && /Saved/.test(await page.locator("#weighin-status").textContent()), `saving today's weight updates Your starting point (bodyweight ${saved.bw})`);
+            check(/Weighed in today/.test(await page.locator("#me-stats .stat-bw").textContent()), "the This week bodyweight tile says when you last weighed in");
+            const keepW = await page.evaluate(() => localStorage.getItem("gu-weights"));
+            await page.evaluate(() => {
+                const d = new Date(); d.setDate(d.getDate() - 9);
+                localStorage.setItem("gu-weights", JSON.stringify([{ date: isoDate(d), w: 195, unit: "lb" }]));
+                window.dispatchEvent(new CustomEvent("logchange"));
+            });
+            await page.waitForTimeout(100);
+            const oldTile = await page.locator("#me-stats .stat-bw").textContent();
+            check(/Last one was 9 days ago/.test(oldTile) && await page.locator('#me-stats .stat-bw a[href="me.html#weighin"]').count() === 1, `an old weigh-in shows how long ago it was and links to Weigh in (${oldTile.replace(/\s+/g, " ").trim()})`);
+            await page.evaluate((w) => localStorage.setItem("gu-weights", w), keepW);
+            await page.reload();
+            await page.waitForTimeout(250);
             const bb = await page.locator("#weighin-form button[type=submit]").boundingBox();
             check(viewport.width > 390 || (bb && bb.height >= 44), "the weigh-in Save button is easy to tap on phones");
             // Goal weight: progress, a safe pace, and no goal below a healthy weight for your height

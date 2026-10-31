@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-10-31 (Your bodyweight number says how fresh it is)
+
+- **The "This week" bodyweight tile on My progress now says when you last weighed in**: "Weighed in today", "Weighed in yesterday", or "Weighed in 5 days ago". After 4 or more days it adds a "Weigh in" link. If your last weigh-in is more than a week old, the tile says how long ago it was (instead of a plain "Add one"), and its link takes you to the Bodyweight card on the same page rather than the Tools page.
+- Why: a 7-day average from several days ago can look like today's number. Showing its age makes the number honest and gives a gentle nudge to step on the scale.
+
 ## 2026-10-30 (Reaching your goal weight shows on the home page)
 
 - **The home page's Up next card now celebrates reaching your goal weight.** Once your 7-day average is within 1 lb (0.5 kg) of the goal you set, the bodyweight line says "You're at your goal weight" and that holding steady is a win too, instead of showing "0.4 lb to lose". The My progress Bodyweight card already said this; now the home page matches.

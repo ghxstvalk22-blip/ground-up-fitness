@@ -2450,6 +2450,8 @@ select, input, textarea {
 .me-stats strong { font-family: var(--display); font-size: 2.4rem; font-weight: 900; font-stretch: 75%; line-height: 1.1; }
 .me-stats small { font-family: var(--sans); font-size: 0.9rem; font-weight: 600; color: var(--muted); }
 .me-stats a { font-family: var(--sans); font-size: 1rem; color: var(--ink); }
+.me-stats .stat-note { display: block; margin-top: 4px; font-size: 0.8rem; line-height: 1.35; }
+.me-stats .stat-note a { font-size: inherit; }
 .mini-bar { height: 6px; margin-top: 8px; background-color: var(--line); }
 .mini-bar div { height: 100%; background-color: var(--volt); }
 @media (max-width: 760px) { .me-stats { grid-template-columns: 1fr 1fr; } }
