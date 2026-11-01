@@ -2452,6 +2452,8 @@ select, input, textarea {
 .me-stats a { font-family: var(--sans); font-size: 1rem; color: var(--ink); }
 .me-stats .stat-note { display: block; margin-top: 4px; font-size: 0.8rem; line-height: 1.35; }
 .me-stats .stat-note a { font-size: inherit; }
+.me-stats .stat-trend { display: block; margin-top: 2px; font-size: 0.85rem; font-weight: 700; color: var(--ink); }
+.me-stats .stat-trend i { font-style: normal; font-size: 0.7em; margin-right: 2px; color: var(--muted); vertical-align: 1px; }
 .mini-bar { height: 6px; margin-top: 8px; background-color: var(--line); }
 .mini-bar div { height: 100%; background-color: var(--volt); }
 @media (max-width: 760px) { .me-stats { grid-template-columns: 1fr 1fr; } }

@@ -8620,12 +8620,23 @@ function setupDashboard() {
         const minutes = cardioMinutesInWeek();
         // Same 7-day average as the Bodyweight card and the Weight trend tool (when you've weighed in this week)
         const wIns = weighIns(profile.unit);
-        const bw = wIns.length && parseIso(wIns[wIns.length - 1].date) >= addDays(new Date(), -6) ? weightTrendNow(wIns).now : null;
+        const bwTrend = wIns.length && parseIso(wIns[wIns.length - 1].date) >= addDays(new Date(), -6) ? weightTrendNow(wIns) : null;
+        const bw = bwTrend ? bwTrend.now : null;
+        // Weekly change next to the average (same number as the Bodyweight card), with an arrow and words
+        // so it doesn't rely on the arrow alone
+        let bwChange = "";
+        if (bwTrend && bwTrend.perWeek != null) {
+            const ch = Math.round(bwTrend.perWeek * 10) / 10;
+            const flat = Math.abs(bwTrend.perWeek) < (profile.unit === "kg" ? 0.05 : 0.1);
+            bwChange = flat
+                ? `<small class="stat-trend is-flat"><i aria-hidden="true">&#9654;</i> Steady this week</small>`
+                : `<small class="stat-trend ${ch < 0 ? "is-down" : "is-up"}"><i aria-hidden="true">${ch < 0 ? "&#9660;" : "&#9650;"}</i> <span class="visually-hidden">${ch < 0 ? "Down" : "Up"} </span>${trimNum(Math.abs(ch))} ${profile.unit} a week</small>`;
+        }
         // How long since the last weigh-in, so an old average doesn't look current
         const wAgo = wIns.length ? Math.round((parseIso(isoDate(new Date())) - parseIso(wIns[wIns.length - 1].date)) / 864e5) : -1;
         const wAgoText = wAgo === 0 ? "Weighed in today" : wAgo === 1 ? "Weighed in yesterday" : `Weighed in ${wAgo} days ago`;
         const bwCell = bw
-            ? `<strong>${trimNum(Math.round(bw * 10) / 10)}<small> ${profile.unit}</small></strong>
+            ? `<strong>${trimNum(Math.round(bw * 10) / 10)}<small> ${profile.unit}</small></strong>${bwChange}
                 <small class="stat-note">${wAgoText}${wAgo >= 4 ? `. <a href="me.html#weighin">Weigh in</a>` : ""}</small>`
             : wIns.length
                 ? `<strong><a href="me.html#weighin">Weigh in</a></strong><small class="stat-note">Last one was ${wAgo} days ago</small>`

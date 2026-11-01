@@ -576,6 +576,8 @@ async function openPage(browser, file, viewport, hash = "") {
             const saved = await page.evaluate(() => ({ list: JSON.parse(localStorage.getItem("gu-weights")), bw: getProfile().bodyweight }));
             check(saved.list.some((e) => e.date === saved.list[saved.list.length - 1].date && e.w === 191.5) && saved.bw === "191.5" && /Saved/.test(await page.locator("#weighin-status").textContent()), `saving today's weight updates Your starting point (bodyweight ${saved.bw})`);
             check(/Weighed in today/.test(await page.locator("#me-stats .stat-bw").textContent()), "the This week bodyweight tile says when you last weighed in");
+            const trendTxt = (await page.locator("#me-stats .stat-bw .stat-trend").textContent()).replace(/\s+/g, " ").trim();
+            check(/Down [\d.]+ lb a week/.test(trendTxt) && await page.locator("#me-stats .stat-bw .stat-trend.is-down i[aria-hidden=true]").count() === 1, `the bodyweight tile shows this week's change with an arrow and words (${trendTxt})`);
             const keepW = await page.evaluate(() => localStorage.getItem("gu-weights"));
             await page.evaluate(() => {
                 const d = new Date(); d.setDate(d.getDate() - 9);

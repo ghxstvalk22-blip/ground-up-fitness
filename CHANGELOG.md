@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-01 (Bodyweight tile shows which way you're heading)
+
+- **The "This week" bodyweight tile on My progress now shows your weekly change** right under the 7-day average: a small down or up arrow with the amount, like "▼ 1.1 lb a week", or "Steady this week" when it's barely moving. It's the same number as "Weekly change" on the Bodyweight card, and it appears once you have about a week of weigh-ins. Screen readers hear "Down 1.1 lb a week".
+- Why: the average alone doesn't tell you if things are moving. Seeing the direction at a glance makes the tile more useful without opening the full card.
+
 ## 2026-10-31 (Your bodyweight number says how fresh it is)
 
 - **The "This week" bodyweight tile on My progress now says when you last weighed in**: "Weighed in today", "Weighed in yesterday", or "Weighed in 5 days ago". After 4 or more days it adds a "Weigh in" link. If your last weigh-in is more than a week old, the tile says how long ago it was (instead of a plain "Add one"), and its link takes you to the Bodyweight card on the same page rather than the Tools page.
