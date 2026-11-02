@@ -9221,7 +9221,17 @@ function setupHero() {
                 const atGoal = goal && tr && Math.abs(goal - tr.now) <= (wu === "kg" ? 0.5 : 1);
                 if (atGoal) parts.push(`<strong>You're at your goal weight</strong> (${r1(goal)} ${wu}). Holding steady is a win too.`);
                 else if (goal && tr) parts.push(`${r1(Math.abs(goal - tr.now))} ${wu} to ${goal < tr.now ? "lose" : "gain"} to reach ${r1(goal)} ${wu}.`);
-                if (parts.length) weighLine = `<p class="home-next-weigh">${parts.join(" ")} <a href="me.html#weighin">${ago >= 4 ? "Weigh in" : "See my weight"}</a></p>`;
+                // Weekly change with an arrow and words, the same number as the Bodyweight card and the
+                // My progress tile (only while the last weigh-in is under a week old, so it stays current)
+                let trendTxt = "";
+                if (parts.length && tr && tr.perWeek != null && ago <= 6) {
+                    const ch = Math.round(tr.perWeek * 10) / 10;
+                    const flat = Math.abs(tr.perWeek) < (wu === "kg" ? 0.05 : 0.1);
+                    trendTxt = flat
+                        ? `<span class="home-next-trend is-flat"><i aria-hidden="true">&#9654;</i> Steady this week</span>`
+                        : `<span class="home-next-trend ${ch < 0 ? "is-down" : "is-up"}"><i aria-hidden="true">${ch < 0 ? "&#9660;" : "&#9650;"}</i> ${ch < 0 ? "Down" : "Up"} ${trimNum(Math.abs(ch))} ${wu} a week</span>`;
+                }
+                if (parts.length) weighLine = `<p class="home-next-weigh">${parts.join(" ")}${trendTxt} <a href="me.html#weighin">${ago >= 4 ? "Weigh in" : "See my weight"}</a></p>`;
             }
         }
         const h1 = document.querySelector(".hero-copy h1"), who = getProfile().name;

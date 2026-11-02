@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-02
+
+- **Home page: weekly weight change on the Up next card.** For people who weigh in, the bodyweight line on the home page's Up next card now also shows how your weight is moving: a small arrow with words, like "▼ Down 1.5 lb a week" or "Steady this week". It's the same number as the Bodyweight card on My progress, and it only shows while your last weigh-in is less than a week old, so it never shows an out-of-date trend. Why: you can see if things are heading the right way the moment you open the site, without opening My progress.
+
 ## 2026-11-01 (Bodyweight tile shows which way you're heading)
 
 - **The "This week" bodyweight tile on My progress now shows your weekly change** right under the 7-day average: a small down or up arrow with the amount, like "▼ 1.1 lb a week", or "Steady this week" when it's barely moving. It's the same number as "Weekly change" on the Bodyweight card, and it appears once you have about a week of weigh-ins. Screen readers hear "Down 1.1 lb a week".

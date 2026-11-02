@@ -449,6 +449,8 @@ async function openPage(browser, file, viewport, hash = "") {
             {
                 const wl = await page.locator(".home-next-weigh").textContent();
                 check(/Weigh in today\?/.test(wl) && /5 days ago/.test(wl) && /lb to lose to reach 180 lb/.test(wl) && await page.locator('.home-next-weigh a[href="me.html#weighin"]').count() === 1, `home card nudges a weigh-in and shows how far to the goal (${wl.trim().slice(0, 90)})`);
+                const tt = (await page.locator(".home-next-weigh .home-next-trend").textContent()).replace(/\s+/g, " ").trim();
+                check(/Down [\d.]+ lb a week/.test(tt) && await page.locator(".home-next-weigh .home-next-trend.is-down i[aria-hidden=true]").count() === 1, `home card's bodyweight line shows the weekly change with an arrow and words (${tt})`);
                 const lh = await page.locator(".home-next-weigh a").evaluate((a) => a.getBoundingClientRect().height);
                 check(lh >= 44, "the weigh-in link is easy to tap");
                 await page.locator(".home-next").screenshot({ path: path.join(SHOTS, `${name}-home-weigh.png`) });
@@ -467,6 +469,7 @@ async function openPage(browser, file, viewport, hash = "") {
             {
                 const wl = (await page.locator(".home-next-weigh").count()) ? await page.locator(".home-next-weigh").textContent() : "";
                 check(/at your goal weight/.test(wl) && /198 lb/.test(wl) && !/to lose/.test(wl) && /See my weight/.test(wl), `home card says when you're at your goal weight (${wl.trim().slice(0, 80)})`);
+                check(await page.locator(".home-next-weigh .home-next-trend").count() === 1, "the at-goal line also shows this week's change");
                 if (wl) await page.locator(".home-next").screenshot({ path: path.join(SHOTS, `${name}-home-goal.png`) });
             }
             await page.evaluate(() => { const p = store.get(PROFILE_KEY, {}); delete p.goalWeight; delete p.goalUnit; store.set(PROFILE_KEY, p); });
