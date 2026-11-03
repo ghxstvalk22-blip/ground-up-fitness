@@ -40,9 +40,9 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Editing a day: a short "Suggested for this day" list (3 or 4 exercises for muscles the day misses) above the full exercise list.
 
 - [ ] Lifts chart: mark the session "Now" comes from (a ring on its dot) when it isn't the latest one.
-- [ ] Log tab: show the time of day each workout was done ("6:40 pm") next to the date, now that sets carry a time.
 - [ ] Home page bodyweight line: when someone has been at their goal weight for a few weeks, a small "Set a new goal?" link to the Bodyweight card.
 - [ ] Bodyweight card: a short "Your pace" note when the weekly change has been faster than a safe pace for two weeks in a row, pointing to a doctor or registered dietitian.
+- [ ] Log tab: a small "Morning / Afternoon / Evening" summary of when you usually train, once there are a few weeks of timed workouts.
 - [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
 
 ## Blocked
@@ -51,6 +51,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-11-03: Log tab on My progress shows the time of day each workout was done next to its date ("Tue, Nov 3 · 6:40 pm"), from when its first exercise was saved; older logs without a saved time show just the date.
 - [x] 2026-11-02: Home page Up next card: the bodyweight line also shows this week's change with an arrow and words ("▼ Down 1.5 lb a week", or "Steady this week"), the same number as the Bodyweight card, while your last weigh-in is under a week old.
 - [x] 2026-11-01: My progress "This week" bodyweight tile shows the weekly change under the 7-day average with a down/up arrow and words ("▼ 1.1 lb a week", or "Steady this week"), matching the Bodyweight card's Weekly change.
 - [x] 2026-10-31: My progress "This week" bodyweight tile says when you last weighed in ("Weighed in today", "yesterday", "5 days ago") with a Weigh in link after 4 or more days; if your last weigh-in is over a week old it shows how long ago instead of "Add one". Its links now go to the Bodyweight card on the same page.

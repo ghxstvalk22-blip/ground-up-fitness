@@ -1357,6 +1357,21 @@ async function openPage(browser, file, viewport, hash = "") {
             });
             const dayOrder = await page.locator("#log-days .log-day").first().locator(".log-day-name").allTextContents();
             check(dayOrder.join("|") === "Back squat|Barbell row|Bench press", `the Log tab lists a day's exercises in the order they were done (got ${dayOrder.join(", ")})`);
+            // Each day shows the time of day it was done (from its first saved exercise); days without saved times show none
+            check(!(await page.locator("#log-days .log-day").first().locator(".log-day-time").count()), "a day whose saved times aren't from that date shows no time of day");
+            await page.evaluate(() => {
+                const today = isoDate(new Date());
+                const at = (h, m) => { const x = new Date(); x.setHours(h, m, 0, 0); return x.getTime(); };
+                const log = JSON.parse(localStorage.getItem("gu-log"));
+                log["Back squat"].find((e) => e.date === today).t = at(18, 40);
+                log["Barbell row"].find((e) => e.date === today).t = at(18, 55);
+                log["Bench press"].find((e) => e.date === today).t = at(19, 10);
+                localStorage.setItem("gu-log", JSON.stringify(log));
+                window.dispatchEvent(new CustomEvent("logchange", { detail: {} }));
+            });
+            const dayTime = page.locator("#log-days .log-day").first().locator(".log-day-time time");
+            check(await dayTime.count() === 1 && (await dayTime.textContent()).trim() === "6:40 pm" && /T18:40$/.test(await dayTime.getAttribute("datetime")), "the Log tab shows the time of day a workout was done (\"6:40 pm\")");
+            check(!(await page.locator("#log-days .log-week").nth(1).locator(".log-day-time").count()), "older logs without a saved time show no time of day");
             await page.evaluate(() => {
                 const today = isoDate(new Date());
                 const log = JSON.parse(localStorage.getItem("gu-log"));

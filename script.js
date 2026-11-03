@@ -8419,6 +8419,15 @@ function setupActiveWorkout() {
    Every logged set, newest first, grouped by day. Filter to one
    exercise, remove a mistaken entry (with Undo). Reads gu-log only.
    ========================================================= */
+// When a day's workout was done, from the earliest saved time of its exercises (only if it falls on that date)
+function logTimeOfDay(items, date) {
+    const times = (items || []).map((r) => r && r.t).filter((t) => Number.isFinite(t) && t > 0 && isoDate(new Date(t)) === date);
+    if (!times.length) return null;
+    const d = new Date(Math.min(...times));
+    const label = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }).replace(/\s*([AP])M$/i, (_, x) => ` ${x.toLowerCase()}m`);
+    return { label, iso: `${date}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}` };
+}
+
 function setupLogHistory() {
     const daysEl = document.getElementById("log-days");
     if (!daysEl) return;
@@ -8515,8 +8524,10 @@ function setupLogHistory() {
                 </summary>
                 ${dayList.map(([date, items], di) => {
                     const d = parseIso(date), dc = count(items);
+                    // Time of day: when the first exercise of that day was saved ("6:40 pm"); older logs have none
+                    const at = logTimeOfDay(items, date);
                     return `<details class="log-day" data-key="d${date}"${isOpen(`d${date}`, wi === 0 && di === 0) ? " open" : ""}>
-                        <summary><span>${escapeHtml(fmtDay(d, { weekday: "short", month: "short", day: "numeric" }))}</span>
+                        <summary><span>${escapeHtml(fmtDay(d, { weekday: "short", month: "short", day: "numeric" }))}${at ? `<span class="log-day-time"> · <time datetime="${escapeHtml(at.iso)}">${escapeHtml(at.label)}</time></span>` : ""}</span>
                             <small>${plural(items.length, "exercise")} · ${plural(dc.sets, "set")} · ${plural(dc.reps, "rep")}</small></summary>
                         <ul class="log-day-list">${items.map((r) => `
                             <li>

@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-03 (Log shows what time you trained)
+
+- **The Log tab on My progress now shows the time of day for each workout**, next to the date, like "Tue, Nov 3 · 6:40 pm". It's the time you saved your first exercise that day. Older entries saved before the site recorded times simply show the date, as before.
+- Why: it helps you spot patterns (morning vs. evening workouts) and remember which session was which.
+
 ## 2026-11-02
 
 - **Home page: weekly weight change on the Up next card.** For people who weigh in, the bodyweight line on the home page's Up next card now also shows how your weight is moving: a small arrow with words, like "▼ Down 1.5 lb a week" or "Steady this week". It's the same number as the Bodyweight card on My progress, and it only shows while your last weigh-in is less than a week old, so it never shows an out-of-date trend. Why: you can see if things are heading the right way the moment you open the site, without opening My progress.

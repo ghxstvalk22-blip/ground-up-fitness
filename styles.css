@@ -3463,6 +3463,7 @@ html:has(.me-tabs-wrap) { scroll-padding-top: calc(var(--header-h) + 64px); }
 .log-week-stats { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
 .log-day { margin: 0; border: 0; border-top: 1px solid var(--line); background: none; }
 .log-day > summary { min-height: 52px; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.log-day-time { font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--muted); white-space: nowrap; }
 .log-day > summary small { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; text-transform: none; color: var(--muted); }
 .log-day[open] > summary { background-color: var(--paper); }
 .log-day .log-day-list > li { padding-left: 24px; }
