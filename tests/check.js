@@ -288,6 +288,18 @@ async function openPage(browser, file, viewport, hash = "") {
             check(setCount(await accessoryDose()) === setCount(w1Acc) && !(await page.evaluate(() => localStorage.getItem("gu-light-weeks") || "")).includes("classic"), "turning the light week off puts the sets back");
             await pickGoal(page, "c25k");
             check(await page.locator("#week-light").isHidden(), "Couch to 5K has no light-week button (you repeat a week instead)");
+            // Couch to 5K: "Repeat week 1 instead" on week 2 shows week 1's runs again, and the plan steps up a week later
+            check(await page.locator("#week-repeat").isHidden(), "week 1 of Couch to 5K has nothing to repeat");
+            await page.locator("#week-next").click();
+            check(await page.locator("#week-repeat-btn").isVisible() && /Repeat week 1/.test(await page.locator("#week-repeat-btn").textContent()) && /walk 2 min/.test(await page.locator(".day-card").first().textContent()), "week 2 offers to repeat week 1");
+            await page.locator("#week-repeat-btn").click();
+            check(await page.locator("#week-repeat-btn").getAttribute("aria-pressed") === "true" && /^Week 1 again/.test(await page.locator("#week-label").textContent()) && /walk 1½ min/.test(await page.locator(".day-card").first().textContent()), "repeating shows week 1's runs again as \"Week 1 again\"");
+            await page.locator("#week-next").click();
+            check(/^Week 2\b/.test(await page.locator("#week-label").textContent()) && /walk 2 min/.test(await page.locator(".day-card").first().textContent()), "after a repeated week the plan steps up to week 2");
+            await page.locator("#week-prev").click();
+            await page.locator("#week-repeat-btn").click();
+            check(/^Week 2\b/.test(await page.locator("#week-label").textContent()) && !(await page.evaluate(() => localStorage.getItem("gu-repeat-weeks") || "")).includes("c25k"), "Undo puts the plan back on schedule");
+            await page.locator("#week-today").click();
             await pickGoal(page, "classic");
             await page.locator('input[name="days"][value="4"]').check({ force: true });
 

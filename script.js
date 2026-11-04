@@ -2132,6 +2132,38 @@ function setLightWeek(goal, days, week, on) {
     store.set("gu-light-weeks", all);
 }
 
+/* ---------- Repeat a week (week-by-week plans like Couch to 5K) ----------
+   A calendar week can repeat the plan week before it, so the plan steps up a week later.
+   Saved per plan as { "goal-days": [calendar week numbers] } in gu-repeat-weeks.
+   Check-offs stay keyed by calendar week, so a repeated week starts with a clean slate. */
+function repeatWeeks() {
+    const raw = store.get("gu-repeat-weeks", {});
+    const out = {};
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+    Object.keys(raw).forEach((k) => {
+        if (!/^[a-z0-9-]{1,40}-\d{1,2}$/.test(k) || !Array.isArray(raw[k])) return;
+        const weeks = raw[k].filter((w) => Number.isInteger(w) && w >= 2 && w <= 520).slice(-60);
+        if (weeks.length) out[k] = weeks;
+    });
+    return out;
+}
+const isRepeatWeek = (goal, days, week) => (repeatWeeks()[`${goal}-${days}`] || []).includes(week);
+// Which week of the plan a calendar week shows, after any repeats up to and including it
+function planWeekOf(goal, days, week) {
+    const plan = PROGRAMS[goal] && PROGRAMS[goal].plans[days];
+    if (!plan || !plan.weeks) return week;
+    const repeats = (repeatWeeks()[`${goal}-${days}`] || []).filter((w) => w <= week).length;
+    return Math.max(1, week - repeats);
+}
+function setRepeatWeek(goal, days, week, on) {
+    const all = repeatWeeks();
+    const key = `${goal}-${days}`;
+    const weeks = new Set(all[key] || []);
+    if (on) weeks.add(week); else weeks.delete(week);
+    if (weeks.size) all[key] = [...weeks].sort((a, b) => a - b); else delete all[key];
+    store.set("gu-repeat-weeks", all);
+}
+
 function personalDose(program, item, slot, profile, week = 1, light = false) {
     const d = parseDose(item.d);
     const notes = [];
@@ -2733,6 +2765,8 @@ function setupPrograms() {
     const currentWeek = () => Math.max(1, weekOf(programStart(state.goal)));
     // Week-by-week plans (Couch to 5K) repeat a week instead, so they don't get the light-week button
     const lightOn = () => !PROGRAMS[state.goal].plans[state.days].weeks && isLightWeek(state.goal, state.days, state.week);
+    // The plan week on screen (Couch to 5K can repeat a week, so it may trail the calendar week)
+    const planWeek = () => planWeekOf(state.goal, state.days, state.week);
     // This week is lighter on purpose (Recover week or a light week you chose)
     const easyWeek = () => lightOn() || (PROGRAMS[state.goal].waves !== false && levelAtLeast("Advanced") && wavePhase(state.week).key === "recover");
     // The plan behind a log form ("sets|low|high"), saved with the session
@@ -2843,7 +2877,9 @@ function setupPrograms() {
         const start = programStart(state.goal);
         const monday = addDays(start, (state.week - 1) * 7);
         const now = currentWeek();
-        els.weekLabel.textContent = `Week ${state.week}${state.week === now ? " · this week" : state.week > now ? " · preview" : ""}`;
+        const shownWeek = plan.weeks ? planWeek() : state.week;
+        const again = plan.weeks && isRepeatWeek(state.goal, state.days, state.week);
+        els.weekLabel.textContent = `Week ${shownWeek}${again ? " again" : ""}${state.week === now ? " · this week" : state.week > now ? " · preview" : ""}`;
         els.weekDates.textContent = `${shortDate(monday)} – ${shortDate(addDays(monday, 6))}`;
         els.weekPrev.disabled = state.week <= 1;
         els.weekToday.hidden = state.week === now;
@@ -2880,13 +2916,29 @@ function setupPrograms() {
                 ? "Half the sets at about 10% lighter. Stop each set with a few reps to spare. Next week goes back to normal on its own."
                 : "Feeling run down, sore all over, or short on sleep? A light week keeps the habit going while your body catches up.";
         }
+        // Couch to 5K: repeat the week before instead of stepping up (a normal part of the plan)
+        const repeatBox = document.getElementById("week-repeat");
+        if (repeatBox) {
+            const on = Boolean(plan.weeks) && isRepeatWeek(state.goal, state.days, state.week);
+            const prevPlanWeek = state.week > 1 ? planWeekOf(state.goal, state.days, state.week - 1) : 0;
+            // Only when there's an earlier week to repeat, and not once the plan is finished
+            repeatBox.hidden = !plan.weeks || (!on && (!prevPlanWeek || prevPlanWeek >= plan.weeks.length));
+            const btn = document.getElementById("week-repeat-btn");
+            const note = document.getElementById("week-repeat-note");
+            repeatBox.classList.toggle("is-on", on);
+            btn.setAttribute("aria-pressed", String(on));
+            btn.textContent = on ? `Repeating week ${prevPlanWeek} \u2713 \u00b7 Undo` : `Repeat week ${prevPlanWeek} instead`;
+            note.textContent = on
+                ? `This week has week ${prevPlanWeek}'s runs again. The plan steps up next week, one week later than before.`
+                : `Last week's runs felt too hard? Do week ${prevPlanWeek} again before moving on. Plenty of people repeat a week; it still counts.`;
+        }
         els.variety.hidden = !seasoned;
         els.variety.textContent = combos > 1
             ? `This plan can be put together ${bigNumber(combos)} different ways. ${p.rotation === "block" ? "Exercises change every 4 weeks." : "Accessories rotate weekly; main lifts every 4 weeks."}`
             : "";
 
         // Days
-        const thisWeek = weekDays(plan, state.week);
+        const thisWeek = weekDays(plan, planWeek());
         weekItems = thisWeek.map((day) => day.items);
         lineups = thisWeek.map((day, di) => dayLineup(state.goal, state.days, di, day.items, state.week, swaps));
         const lastWeek = state.week > 1 && !plan.weeks
@@ -3137,7 +3189,7 @@ function setupPrograms() {
         const total = boxes.length;
         const streak = weekStreak();
         els.label.textContent = (checked === total && total > 0
-            ? `Week ${state.week} done. Nice work. Next week's plan is ready when you are.`
+            ? `Week ${planWeek()} done. Nice work. Next week's plan is ready when you are.`
             : `${checked} of ${total} exercises done this week`) + (streak >= 2 ? ` · ${streak}-week streak` : "");
         els.fill.style.width = total ? (checked / total) * 100 + "%" : "0";
         let nextFound = false;
@@ -3171,7 +3223,7 @@ function setupPrograms() {
 
     /* ----- Continue: from a finished day to the next one (or build it, or next week) ----- */
     function continueFrom(di) {
-        const list = weekDays(PROGRAMS[state.goal].plans[state.days], state.week);
+        const list = weekDays(PROGRAMS[state.goal].plans[state.days], planWeek());
         if (list[di + 1]) {
             const card = els.grid.querySelector(`.day-card[data-day="${di + 1}"]`);
             if (card) {
@@ -3189,7 +3241,7 @@ function setupPrograms() {
         }
     }
     const continueLabel = (di) => {
-        const list = weekDays(PROGRAMS[state.goal].plans[state.days], state.week);
+        const list = weekDays(PROGRAMS[state.goal].plans[state.days], planWeek());
         if (list[di + 1]) return `Continue to Day ${di + 2}: ${list[di + 1].title}`;
         if (state.goal === "custom" && list.length < 7) return `Continue to Day ${di + 2}: build it`;
         return "Week done. Go to next week";
@@ -3238,7 +3290,7 @@ function setupPrograms() {
         const profile = getProfile(), unit = profile.unit;
         const today = isoDate(new Date());
         const p = PROGRAMS[state.goal];
-        const day = weekDays(p.plans[state.days], state.week)[di];
+        const day = weekDays(p.plans[state.days], planWeek())[di];
         const items = lineups[di] || [];
         let sets = 0, reps = 0, volume = 0;
         const lines = items.map((x, xi) => {
@@ -3284,7 +3336,7 @@ function setupPrograms() {
         function showFinish() {
         const prs = getPRs().filter((r) => r.date === today);
         const streak = weekStreak();
-        const dayList = weekDays(p.plans[state.days], state.week);
+        const dayList = weekDays(p.plans[state.days], planWeek());
         const nextDay = dayList[di + 1] || null;
         let dlg = document.getElementById("finish-dialog");
         if (!dlg) {
@@ -3387,7 +3439,7 @@ function setupPrograms() {
         const hb = e.target.closest("[data-hits]");
         if (hb) {
             const di = Number(hb.dataset.hits);
-            const day = weekDays(PROGRAMS[state.goal].plans[state.days], state.week)[di];
+            const day = weekDays(PROGRAMS[state.goal].plans[state.days], planWeek())[di];
             showMuscleHits((lineups[di] || []).map((x) => x.name), day ? `Day ${di + 1}: ${day.title}` : "");
             return;
         }
@@ -3715,6 +3767,12 @@ function setupPrograms() {
     els.weekPrev.addEventListener("click", () => goToWeek(state.week - 1));
     els.weekNext.addEventListener("click", () => goToWeek(state.week + 1));
     els.weekToday.addEventListener("click", () => goToWeek(currentWeek()));
+    const repeatBtn = document.getElementById("week-repeat-btn");
+    if (repeatBtn) repeatBtn.addEventListener("click", () => {
+        setRepeatWeek(state.goal, state.days, state.week, !isRepeatWeek(state.goal, state.days, state.week));
+        render();
+        repeatBtn.focus({ preventScroll: true });
+    });
     const lightBtn = document.getElementById("week-light-btn");
     if (lightBtn) lightBtn.addEventListener("click", () => {
         setLightWeek(state.goal, state.days, state.week, !lightOn());
@@ -5720,7 +5778,7 @@ function currentPlanInfo() {
     const week = Math.max(1, weekOf(programStart(last.goal)));
     const done = new Set(store.get(`gu-progress-${last.goal}-${days}-w${week}`, []) || []);
     const swaps = store.get(`gu-swaps-${last.goal}-${days}`, {}) || {};
-    const list = weekDays(plan, week);
+    const list = weekDays(plan, planWeekOf(last.goal, days, week));
     let di = list.findIndex((d, i) => !d.items.every((_, xi) => done.has(`${i}-${xi}`)));
     const weekDone = di < 0;
     if (weekDone) di = 0;

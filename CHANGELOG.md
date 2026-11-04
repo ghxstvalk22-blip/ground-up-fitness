@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-04 (Couch to 5K: repeat a week)
+
+- **Couch to 5K now has a "Repeat week … instead" button.** On the Plans page, in the week bar (from week 2 on), one tap swaps that week's runs for the week before's, so you can do a hard week again before stepping up. The week is labelled "Week 3 again", its checkmarks start fresh, and every week after moves back by one, so the plan still steps up in order. Tap the button again (Undo) to put things back. The Your plan bar at the bottom of the site shows the right week too.
+- Why: repeating a week is a normal part of Couch to 5K (the plan itself says so), but until now the site always moved you on by the calendar.
+
 ## 2026-11-03 (Log shows what time you trained)
 
 - **The Log tab on My progress now shows the time of day for each workout**, next to the date, like "Tue, Nov 3 · 6:40 pm". It's the time you saved your first exercise that day. Older entries saved before the site recorded times simply show the date, as before.
