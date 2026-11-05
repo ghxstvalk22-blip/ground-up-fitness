@@ -5790,7 +5790,9 @@ function currentPlanInfo() {
     const started = !weekDone && items.some((x) => x.done);
     // A workout from this plan was already finished today
     const finishedToday = (store.get("gu-sessions", []) || []).some((x) => x && x.date === today && x.plan === last.goal);
-    return { goal: last.goal, days, week, di, weekDone, started, finishedToday, name: p.name, title: day.title, items, href: `programs.html?today=1#program-${last.goal}-${days}` };
+    // Couch to 5K and other week-by-week plans: the plan's own week (after repeats), and "again" on a repeated week
+    const weekLabel = plan.weeks ? `Week ${planWeekOf(last.goal, days, week)}${isRepeatWeek(last.goal, days, week) ? " again" : ""}` : `Week ${week}`;
+    return { goal: last.goal, days, week, weekLabel, di, weekDone, started, finishedToday, name: p.name, title: day.title, items, href: `programs.html?today=1#program-${last.goal}-${days}` };
 }
 
 // Cancel workout: stop the rest timer, drop half-typed sets, and hide the Your plan bar until you tap Continue.
@@ -6527,7 +6529,7 @@ function setupPlanBar() {
 <section class="planbar${open ? " is-open" : ""}" id="planbar" aria-label="Your plan">
     <div class="planbar-head">
         <button type="button" class="planbar-toggle" aria-expanded="${open}" aria-controls="planbar-list">
-            <span class="planbar-kicker">${info.finishedToday && !info.weekDone ? "Done today \u2713 · Next time" : `<span class="live-dot" aria-hidden="true"></span>Your plan${custom ? "" : ` · Week ${info.week}`}`}</span>
+            <span class="planbar-kicker">${info.finishedToday && !info.weekDone ? "Done today \u2713 · Next time" : `<span class="live-dot" aria-hidden="true"></span>Your plan${custom ? "" : ` · ${info.weekLabel}`}`}</span>
             <strong>${info.weekDone ? "Week done. Nice work" : `${escapeHtml(custom ? info.title : `Day ${info.di + 1}: ${info.title}`)}`}</strong>
             <span class="planbar-sub">${escapeHtml(info.name)} · ${doneCount} of ${info.items.length} done</span>
         </button>
@@ -8458,7 +8460,7 @@ function setupActiveWorkout() {
         box.innerHTML = `
             <p class="kicker">${paused ? "Paused" : info.weekDone ? "Week done" : "Active workout"}</p>
             <h2>${escapeHtml(info.weekDone ? "All done this week" : info.goal === "custom" ? `Day ${info.di + 1}: ${info.title}` : `Day ${info.di + 1}: ${info.title}`)}</h2>
-            <p class="section-lede">${escapeHtml(info.name)}${info.goal === "custom" ? "" : ` · Week ${info.week}`} · ${doneN} of ${info.items.length} done</p>
+            <p class="section-lede">${escapeHtml(info.name)}${info.goal === "custom" ? "" : ` · ${info.weekLabel}`} · ${doneN} of ${info.items.length} done</p>
             <div class="aw-bar" aria-hidden="true"><div style="width:${info.items.length ? Math.round((doneN / info.items.length) * 100) : 0}%"></div></div>
             ${info.weekDone ? `<p class="section-lede">Nice work. Up next on the Overview tab has a workout ready for your next training day.</p>` : `<ul class="aw-list">${rows}</ul>`}
             <p class="dash-actions">
@@ -9266,11 +9268,11 @@ function setupHero() {
     if (info) {
         const custom = info.goal === "custom", paused = planPaused();
         const doneCount = info.items.filter((x) => x.done).length;
-        const kicker = info.weekDone ? `Week ${info.week} done \u2713`
+        const kicker = info.weekDone ? `${info.weekLabel} done \u2713`
             : paused ? "Paused · pick it back up"
             : info.finishedToday ? "Done today \u2713 · Up next time"
             : info.started ? `In progress · ${doneCount} of ${info.items.length} done`
-            : `Up next${custom ? "" : ` · Week ${info.week}`}`;
+            : `Up next${custom ? "" : ` · ${info.weekLabel}`}`;
         const title = info.weekDone ? "Week done. Nice work" : custom ? info.title : `Day ${info.di + 1}: ${info.title}`;
         const go = info.weekDone ? "Open my plan" : info.started || paused ? "Continue workout" : custom ? "Start workout" : `Start Day ${info.di + 1}`;
         const shown = info.weekDone ? [] : info.items.slice(0, 3), more = info.weekDone ? 0 : info.items.length - shown.length;
@@ -9309,7 +9311,7 @@ function setupHero() {
 <section class="home-next" aria-labelledby="home-next-title">
     <p class="home-next-k">${escapeHtml(kicker)}</p>
     <h2 class="home-next-title" id="home-next-title">${escapeHtml(title)}</h2>
-    <p class="home-next-sub">${escapeHtml(info.name)}${custom ? "" : ` · Week ${info.week}`} · ${info.weekDone ? "your next week starts when this one ends" : `${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
+    <p class="home-next-sub">${escapeHtml(info.name)}${custom ? "" : ` · ${info.weekLabel}`} · ${info.weekDone ? "your next week starts when this one ends" : `${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
     ${shown.length ? `<ol class="home-next-list">${shown.map((x) => `<li class="${x.done ? "is-done" : ""}"><strong>${escapeHtml(x.name)}</strong> <span>${escapeHtml(x.d)}${x.done ? " · done" : ""}</span></li>`).join("")}${more > 0 ? `<li class="home-next-more">+ ${more} more</li>` : ""}</ol>` : ""}
     ${weighLine}
     <div class="home-next-actions">

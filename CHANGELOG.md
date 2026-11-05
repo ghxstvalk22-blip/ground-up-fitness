@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-05 (Repeated Couch to 5K weeks show the same everywhere)
+
+- **When you repeat a Couch to 5K week, the whole site now says so.** The home page's Up next card, the Your plan bar at the bottom of each page, and the Active tab on My progress show "Week 3 again" (the week of the plan you're actually doing), just like the Plans page. Before, they showed the calendar week, so after a repeat the home page could say "Week 4" while you were running week 3's runs.
+- Why: yesterday's "Repeat week" button changed the runs but not these labels, which could be confusing.
+
 ## 2026-11-04 (Couch to 5K: repeat a week)
 
 - **Couch to 5K now has a "Repeat week … instead" button.** On the Plans page, in the week bar (from week 2 on), one tap swaps that week's runs for the week before's, so you can do a hard week again before stepping up. The week is labelled "Week 3 again", its checkmarks start fresh, and every week after moves back by one, so the plan still steps up in order. Tap the button again (Undo) to put things back. The Your plan bar at the bottom of the site shows the right week too.

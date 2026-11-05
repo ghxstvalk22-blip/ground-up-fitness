@@ -449,6 +449,24 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(200);
             check(/Short on time/.test(await page.locator(".home-next").textContent()) && /program-busy-/.test(await page.locator(".home-next .btn-primary").getAttribute("href")), "home page offers to continue your plan");
             check(await page.locator(".home-next-weigh").count() === 0, "no bodyweight line on the home card for people who don't weigh in");
+            // Couch to 5K with a repeated week: the Up next card says "Week 2 again", like the Plans page
+            {
+                const saved = await page.evaluate(() => ({ last: localStorage.getItem("gu-last-plan"), start: localStorage.getItem("gu-start-c25k"), rep: localStorage.getItem("gu-repeat-weeks") }));
+                await page.evaluate(() => {
+                    localStorage.setItem("gu-last-plan", JSON.stringify({ goal: "c25k", days: 3 }));
+                    localStorage.setItem("gu-start-c25k", JSON.stringify(isoDate(addDays(mondayOf(new Date()), -14))));
+                    localStorage.setItem("gu-repeat-weeks", JSON.stringify({ "c25k-3": [3] }));
+                });
+                await page.reload();
+                await page.waitForTimeout(200);
+                const sub = await page.locator(".home-next").textContent();
+                check(/Week 2 again/.test(sub) && !/Week 3/.test(sub), "a repeated Couch to 5K week shows as \"Week 2 again\" on the home page's Up next card");
+                await page.evaluate((s) => {
+                    for (const [k, v] of [["gu-last-plan", s.last], ["gu-start-c25k", s.start], ["gu-repeat-weeks", s.rep]]) { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); }
+                }, saved);
+                await page.reload();
+                await page.waitForTimeout(200);
+            }
             // People who weigh in: a nudge after 4+ days without one, and how far is left to a goal weight
             await page.evaluate(() => {
                 const d = (n) => { const x = new Date(); x.setDate(x.getDate() - n); return isoDate(x); };

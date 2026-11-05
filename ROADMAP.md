@@ -43,7 +43,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Bodyweight card: a short "Your pace" note when the weekly change has been faster than a safe pace for two weeks in a row, pointing to a doctor or registered dietitian.
 - [ ] Log tab: a small "Morning / Afternoon / Evening" summary of when you usually train, once there are a few weeks of timed workouts.
 - [ ] Couch to 5K: after week 9, a small "You did it" card with next steps (keep 3 runs a week, or try the Cardio plan).
-- [ ] Couch to 5K: on the Up next card, mention when a week is being repeated ("Week 3 again").
+- [ ] Couch to 5K: on My progress, a small "Weeks repeated: 1" note so people see repeating is normal and still counts.
 - [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
 
 ## Blocked
@@ -52,6 +52,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-11-05: Couch to 5K: when a week is being repeated, the home page's Up next card, the Your plan bar, and the Active tab on My progress say "Week 3 again" (the plan's own week), matching the Plans page, instead of the calendar week number.
 - [x] 2026-11-04: Couch to 5K: a "Repeat week 3 instead" button in the week bar (from week 2 on) gives you the week before's runs again; the week shows as "Week 3 again", the plan steps up a week later, and checkmarks start fresh. Tap again (Undo) to put the plan back on schedule. The Your plan bar shows the right week too.
 - [x] 2026-11-03: Log tab on My progress shows the time of day each workout was done next to its date ("Tue, Nov 3 · 6:40 pm"), from when its first exercise was saved; older logs without a saved time show just the date.
 - [x] 2026-11-02: Home page Up next card: the bodyweight line also shows this week's change with an arrow and words ("▼ Down 1.5 lb a week", or "Steady this week"), the same number as the Bodyweight card, while your last weigh-in is under a week old.
