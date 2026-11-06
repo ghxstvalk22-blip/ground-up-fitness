@@ -42,8 +42,9 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Home page bodyweight line: when someone has been at their goal weight for a few weeks, a small "Set a new goal?" link to the Bodyweight card.
 - [ ] Bodyweight card: a short "Your pace" note when the weekly change has been faster than a safe pace for two weeks in a row, pointing to a doctor or registered dietitian.
 - [ ] Log tab: a small "Morning / Afternoon / Evening" summary of when you usually train, once there are a few weeks of timed workouts.
-- [ ] Couch to 5K: after week 9, a small "You did it" card with next steps (keep 3 runs a week, or try the Cardio plan).
 - [ ] Couch to 5K: on My progress, a small "Weeks repeated: 1" note so people see repeating is normal and still counts.
+- [ ] Couch to 5K "You did it" card: a "Keep running" button that sets up 3 easy 30-minute runs a week as Your plan.
+- [ ] Home page Up next card: a small "You finished Couch to 5K" line once the plan is done, linking to the next-steps card.
 - [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
 
 ## Blocked
@@ -52,6 +53,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-11-06: Couch to 5K: once all of week 9's runs are checked off (or the calendar has moved past week 9), the week bar on the Plans page shows a "You did it" card with next steps (keep 3 runs a week, add a few minutes at a time, or try the Cardio plan, with a button to it). The "Repeat a week" button steps aside once the plan is done.
 - [x] 2026-11-05: Couch to 5K: when a week is being repeated, the home page's Up next card, the Your plan bar, and the Active tab on My progress say "Week 3 again" (the plan's own week), matching the Plans page, instead of the calendar week number.
 - [x] 2026-11-04: Couch to 5K: a "Repeat week 3 instead" button in the week bar (from week 2 on) gives you the week before's runs again; the week shows as "Week 3 again", the plan steps up a week later, and checkmarks start fresh. Tap again (Undo) to put the plan back on schedule. The Your plan bar shows the right week too.
 - [x] 2026-11-03: Log tab on My progress shows the time of day each workout was done next to its date ("Tue, Nov 3 · 6:40 pm"), from when its first exercise was saved; older logs without a saved time show just the date.

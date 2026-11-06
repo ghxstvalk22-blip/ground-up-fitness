@@ -2,6 +2,11 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-06 (Couch to 5K: a "You did it" card)
+
+- **Finishing Couch to 5K now gets a proper finish line.** On the Plans page, once you've checked off all three runs of week 9 (or the calendar has moved past week 9), the week bar shows a "You did it" card: nine weeks, 30 minutes of running without stopping. It suggests what to do next (keep running 3 times a week, add a few minutes at a time, or step up to the Cardio plan) with a button that opens the Cardio plan. The "Repeat a week" button steps aside once you're done.
+- Why: before, the plan just kept showing week 9 with nothing to mark the finish or point to what comes next.
+
 ## 2026-11-05 (Repeated Couch to 5K weeks show the same everywhere)
 
 - **When you repeat a Couch to 5K week, the whole site now says so.** The home page's Up next card, the Your plan bar at the bottom of each page, and the Active tab on My progress show "Week 3 again" (the week of the plan you're actually doing), just like the Plans page. Before, they showed the calendar week, so after a repeat the home page could say "Week 4" while you were running week 3's runs.

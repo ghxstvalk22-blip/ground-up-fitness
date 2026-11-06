@@ -1570,6 +1570,11 @@ select, input, textarea {
 .week-light.is-on .week-light-btn { color: var(--on-volt); background-color: var(--volt); border-color: var(--volt); }
 .week-light-note { flex: 1 1 260px; margin: 0; font-size: 0.85rem; opacity: 0.85; }
 .week-light.is-on .week-light-note { opacity: 1; }
+a.week-light-btn { display: inline-flex; align-items: center; text-decoration: none; }
+.week-bar.is-finished .week-repeat:not(.is-on) { display: none; }
+.week-finish-title { flex: 1 1 100%; margin: 0; font-size: 1rem; }
+.week-finish-mark { display: inline-grid; place-items: center; width: 1.5em; height: 1.5em; margin-right: 4px; color: var(--on-volt); background: var(--volt); font-weight: 900; }
+.week-finish .week-light-btn { color: var(--on-volt); background-color: var(--volt); border-color: var(--volt); }
 
 .jump-today { margin: -8px 0 24px; }
 @media (max-width: 600px) { .jump-today { width: 100%; } }
@@ -2781,7 +2786,7 @@ select, input, textarea {
     .program-head h3 { font-size: 16pt; margin: 0; }
     .program-head p, .program-meta, .week-variety, .day-status, .ex-badges, .ex-swap { display: none !important; }
     .week-bar { display: block; background: #ffffff; color: #000000; border: 0; padding: 0; margin: 0 0 8pt; }
-    .week-light-btn { display: none !important; }
+    .week-light-btn, .week-finish { display: none !important; }
     .week-info strong { font-size: 11pt; }
     .week-step, #week-today { display: none !important; }
     .day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt; }

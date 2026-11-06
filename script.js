@@ -3192,6 +3192,16 @@ function setupPrograms() {
             ? `Week ${planWeek()} done. Nice work. Next week's plan is ready when you are.`
             : `${checked} of ${total} exercises done this week`) + (streak >= 2 ? ` · ${streak}-week streak` : "");
         els.fill.style.width = total ? (checked / total) * 100 + "%" : "0";
+        // Couch to 5K (and any week-by-week plan): a "You did it" card once the last week is all checked off,
+        // or once the calendar has moved past the last week
+        const finishBox = document.getElementById("week-finish");
+        if (finishBox) {
+            const wk = PROGRAMS[state.goal].plans[state.days].weeks;
+            const pw = planWeek();
+            finishBox.hidden = !(wk && state.goal === "c25k" && ((pw === wk.length && total > 0 && checked === total) || (pw > wk.length && state.week <= currentWeek())));
+            // Once it's done, "Repeat week 8 instead" no longer makes sense (unless it's already on)
+            finishBox.parentElement.classList.toggle("is-finished", !finishBox.hidden);
+        }
         let nextFound = false;
         els.grid.querySelectorAll(".day-card").forEach((card) => {
             const dayBoxes = [...card.querySelectorAll('input[type="checkbox"]')];

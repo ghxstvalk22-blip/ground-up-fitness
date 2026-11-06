@@ -299,6 +299,16 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator("#week-prev").click();
             await page.locator("#week-repeat-btn").click();
             check(/^Week 2\b/.test(await page.locator("#week-label").textContent()) && !(await page.evaluate(() => localStorage.getItem("gu-repeat-weeks") || "")).includes("c25k"), "Undo puts the plan back on schedule");
+            // Couch to 5K: checking off all of week 9 shows the "You did it" card with next steps
+            await page.locator("#week-today").click();
+            check(await page.locator("#week-finish").isHidden(), "no \"You did it\" card before the plan is finished");
+            for (let i = 0; i < 8; i++) await page.locator("#week-next").click();
+            check(/^Week 9\b/.test(await page.locator("#week-label").textContent()) && await page.locator("#week-finish").isHidden(), "week 9 has no \"You did it\" card until its runs are checked off");
+            await page.evaluate(() => document.querySelectorAll('#program-days input[type="checkbox"], .day-card input[type="checkbox"]').forEach((b) => { if (!b.checked) b.click(); }));
+            check(await page.locator("#week-finish").isVisible() && /You did it/.test(await page.locator("#week-finish").textContent()) && (await page.locator("#week-finish-cardio").getAttribute("href")) === "programs.html#program-cardio-3", "finishing week 9 shows \"You did it\" with a link to the Cardio plan");
+            check(await page.locator("#week-repeat").isHidden(), "once the plan is finished it no longer offers to repeat a week");
+            await page.evaluate(() => document.querySelectorAll('.day-card input[type="checkbox"]').forEach((b) => { if (b.checked) b.click(); }));
+            check(await page.locator("#week-finish").isHidden(), "unchecking week 9 hides the card again");
             await page.locator("#week-today").click();
             await pickGoal(page, "classic");
             await page.locator('input[name="days"][value="4"]').check({ force: true });
