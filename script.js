@@ -152,6 +152,7 @@ const SITE_NAV = [
         ["Will lifting make me bulky?", "", "basics.html#faq-bulky"],
         ["Cardio or weights for fat loss?", "", "basics.html#faq-cardio"],
         ["How much protein do I need?", "", "basics.html#faq-protein"],
+        ["Protein in common foods", "", "basics.html#faq-protein-foods"],
         ["Should women train differently?", "", "basics.html#faq-women"],
         ["Use it like an app on your phone", "", "basics.html#faq-app"],
         ["Who can see my logs?", "", "basics.html#faq-privacy"],
@@ -9526,6 +9527,7 @@ function setupTools() {
             </div>
             ${floored ? `<p class="result-note warn">Your goal would put you below ${fmt(floor)} calories a day, so the target is held at ${fmt(floor)}. Try the slower option instead.</p>` : ""}
             <p class="result-note">${en.method === "katch" ? "Worked out from your lean mass (your body fat %), which is the more precise formula when you know it." : "Worked out from your weight, height, age, and sex (Mifflin-St Jeor). Add your body fat % if you know it for a closer number."} Resting burn: about ${fmt(Math.round(bmr / 10) * 10)} calories.</p>
+            <p class="result-note" id="cal-protein-note">That's about ${fmt(Math.round(proteinLow / 4))}–${fmt(Math.round(proteinHigh / 4))} g of protein at each of 4 meals. <a href="basics.html#faq-protein-foods">See how much protein common foods have</a>.</p>
             <p class="result-note">This is a starting estimate. Follow it for 2 to 3 weeks, watch your average weight, and adjust by about 100 to 200 calories if it isn't moving the way you want. For a personal eating plan, or if you have a health condition, talk to a registered dietitian or your doctor.</p>`;
     }
 

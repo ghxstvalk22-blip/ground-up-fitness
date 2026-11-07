@@ -571,6 +571,7 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.fill("#cal-in", "10");
             await page.fill("#cal-weight", "185");
             check(/\d/.test(await page.locator("#cal-results .result.big .result-value").textContent().catch(() => "")), "calorie estimator gives a number");
+            check(await page.locator("#cal-protein-note a[href='basics.html#faq-protein-foods']").count() === 1 && /g of protein at each of 4 meals/.test(await page.locator("#cal-protein-note").textContent()), "calorie tool splits protein per meal and links to protein foods");
             await page.fill("#rm-weight", "185");
             await page.fill("#rm-reps", "5");
             check((await page.locator("#rm-results .result-value").textContent().catch(() => "")).startsWith("215"), "one-rep max math is right (185 x 5 = 215)");
@@ -1978,6 +1979,19 @@ async function openPage(browser, file, viewport, hash = "") {
             const { page } = await openPage(browser, "basics.html", viewport, "#faq-protein");
             check(await page.locator("#faq-protein").evaluate((d) => d.open), "linking to a question opens its answer");
             check(await page.locator("#faq-women a[href='programs.html#program-glutes']").count() === 1, "men and women answer links to the focus plans");
+            // Protein in common foods: a list under the protein answer, linked from it, with a health note
+            check(await page.locator("#faq-protein a[href='#faq-protein-foods']").count() === 1, "the protein answer links to the protein foods list");
+            await page.locator("#faq-protein a[href='#faq-protein-foods']").click();
+            await page.waitForTimeout(400);
+            check(await page.locator("#faq-protein-foods").evaluate((d) => d.open), "the protein foods link opens the list");
+            const pf = await page.locator("#faq-protein-foods .protein-foods li").count();
+            check(pf >= 16, `protein foods list has enough foods (${pf})`);
+            check(await page.locator("#faq-protein-foods .protein-foods li").first().evaluate((li) => /\d+ g/.test(li.querySelector(".pf-g").textContent) && li.querySelector(".pf-food small").textContent.length > 0), "each food shows a serving and grams");
+            check(/registered dietitian/.test(await page.locator("#faq-protein-foods").textContent()), "protein foods list points to a dietitian for health conditions");
+            check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "protein foods list fits without sideways scrolling");
+            await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein.png`) });
+            await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
+            await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein-dark.png`) });
             await page.close();
         }
     }

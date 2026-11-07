@@ -2,6 +2,12 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-07 (Protein in common foods)
+
+- **A new "Which foods have the most protein?" answer on the Gym basics page.** It lists about 20 everyday foods (chicken, fish, beef, eggs, Greek yogurt, milk, tofu, lentils, beans, nuts, and even bread and pasta) with a typical serving and roughly how many grams of protein it has, plus an easy example day of eating. It reminds people to check the label, and to ask a doctor or registered dietitian if they have kidney disease or another health condition.
+- The "How much protein do I need?" answer links to the new list, and the calorie tool now also shows your protein split over 4 meals ("about 30–40 g at each of 4 meals") with a link to the foods. You can also find it in search by typing "protein".
+- Why: the site told people their daily protein number but not which foods get them there, and this was the first idea on the list.
+
 ## 2026-11-06 (Couch to 5K: a "You did it" card)
 
 - **Finishing Couch to 5K now gets a proper finish line.** On the Plans page, once you've checked off all three runs of week 9 (or the calendar has moved past week 9), the week bar shows a "You did it" card: nine weeks, 30 minutes of running without stopping. It suggests what to do next (keep running 3 times a week, add a few minutes at a time, or step up to the Cardio plan) with a button that opens the Cardio plan. The "Repeat a week" button steps aside once you're done.

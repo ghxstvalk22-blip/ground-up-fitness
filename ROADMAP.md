@@ -14,7 +14,6 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Ideas
 
-- [ ] Protein food guide: common foods and roughly how much protein a typical serving has.
 - [ ] Import a downloaded workout log (CSV) so people can move to a new phone. Export already exists.
 - [ ] More exercise variety: add guides for more machine and cable variations so the weekly rotation has even more options.
 - [ ] Muscle map: link each muscle to a ready-made plan that focuses on it, and let people pick muscles to build a custom workout.
@@ -46,6 +45,8 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Couch to 5K "You did it" card: a "Keep running" button that sets up 3 easy 30-minute runs a week as Your plan.
 - [ ] Home page Up next card: a small "You finished Couch to 5K" line once the plan is done, linking to the next-steps card.
 - [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
+- [ ] Protein foods list: a "kg / lb" note or metric-first servings for people who set kg in Your starting point.
+- [ ] Fitness Coach: when someone asks which foods have protein, link straight to the protein foods list.
 
 ## Blocked
 
@@ -53,6 +54,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-11-07: Protein in common foods: a new "Which foods have the most protein?" answer on Gym basics lists about 20 everyday foods (meat and fish, eggs and dairy, plant foods, everyday carbs) with a typical serving and its grams of protein, an easy sample day, and a see-a-doctor-or-dietitian note. The protein answer links to it, and the calorie tool now shows protein per meal (split over 4 meals) with a link to the list.
 - [x] 2026-11-06: Couch to 5K: once all of week 9's runs are checked off (or the calendar has moved past week 9), the week bar on the Plans page shows a "You did it" card with next steps (keep 3 runs a week, add a few minutes at a time, or try the Cardio plan, with a button to it). The "Repeat a week" button steps aside once the plan is done.
 - [x] 2026-11-05: Couch to 5K: when a week is being repeated, the home page's Up next card, the Your plan bar, and the Active tab on My progress say "Week 3 again" (the plan's own week), matching the Plans page, instead of the calendar week number.
 - [x] 2026-11-04: Couch to 5K: a "Repeat week 3 instead" button in the week bar (from week 2 on) gives you the week before's runs again; the week shows as "Week 3 again", the plan steps up a week later, and checkmarks start fresh. Tap again (Undo) to put the plan back on schedule. The Your plan bar shows the right week too.
