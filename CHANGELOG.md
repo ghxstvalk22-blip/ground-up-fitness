@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-08
+
+- **Fitness Coach knows about the protein foods list.** Ask the Coach "what foods are high in protein?" or "how do I get more protein?" and it now names everyday protein foods (chicken, fish, eggs, Greek yogurt, tofu, lentils and more), explains the easy way to get there (some protein in each meal), and links straight to the "Protein in common foods" list on Gym basics, the calorie and protein estimator, and a doctor-or-dietitian note. Other protein questions ("how much protein do I need?") link the list too. When the AI coach answers a protein foods question, a link to the list is always added at the end, so people land on the site's own numbers.
+
 ## 2026-11-07 (Protein in common foods)
 
 - **A new "Which foods have the most protein?" answer on the Gym basics page.** It lists about 20 everyday foods (chicken, fish, beef, eggs, Greek yogurt, milk, tofu, lentils, beans, nuts, and even bread and pasta) with a typical serving and roughly how many grams of protein it has, plus an easy example day of eating. It reminds people to check the label, and to ask a doctor or registered dietitian if they have kidney disease or another health condition.

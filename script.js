@@ -4990,6 +4990,16 @@ function coachMarkdown(md) {
     return out.join("");
 }
 
+// Questions about which foods have protein ("what foods are high in protein?") get the protein foods list
+const coachProteinFoodsQ = (t) => /\bprotein\b/.test(t)
+    && /\b(foods?|sources?|rich|snacks?|vegan|vegetarian|plant|breakfast|lunch|dinner|high[- ]in|has the most|have the most|get (more|enough)|hit my|reach my)\b/.test(t)
+    && !/\b(powder|shakes?|supplements?|creatine)\b/.test(t);
+const COACH_PROTEIN_LINK = `<a href="basics.html#faq-protein-foods">Protein in common foods</a>`;
+function coachProteinFoodsReply() {
+    return `<p>Good everyday protein foods: chicken, fish, lean beef, eggs, Greek yogurt, cottage cheese, milk, tofu, lentils, beans, and edamame. Most people get there by putting one of them in each meal, about 20 to 40 g of protein, 3 or 4 times a day.</p>
+        <p>${COACH_PROTEIN_LINK} lists about 20 foods with a typical serving and its grams of protein, plus an easy sample day. Your own daily number is in the <a href="tools.html#tool-calories">calorie and protein estimator</a>. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
+}
+
 // The workout block the AI adds, checked line by line: real exercises only, simple doses, sane weights
 function coachAiWorkout(raw) {
     let data;
@@ -5182,7 +5192,8 @@ function setupCoach() {
         }
         // Food questions ("how much should I eat to lose weight?") come before anything about lifting weight
         if (/\b(diet|eat|eating|calories?|protein|meal|food|macros?|supplements?|creatine)\b/.test(t) && !req.groups.length && !req.lifts.length) {
-            say(`<p>For food, start with the <a href="tools.html#tool-calories">calorie and protein estimator</a>${/\bsupplement|creatine\b/.test(t) ? ` and the <a href="supplements.html">supplements guide</a>` : ""}. It gives a daily range that's safe for losing weight slowly. For a personal eating plan, especially with a health condition, a registered dietitian or your doctor is the right person to ask.</p>`);
+            if (coachProteinFoodsQ(t)) { say(coachProteinFoodsReply()); return; }
+            say(`<p>For food, start with the <a href="tools.html#tool-calories">calorie and protein estimator</a>${/\bsupplement|creatine\b/.test(t) ? ` and the <a href="supplements.html">supplements guide</a>` : ""}${/\bprotein\b/.test(t) ? `, and see how much protein common foods have in ${COACH_PROTEIN_LINK}` : ""}. It gives a daily range that's safe for losing weight slowly. For a personal eating plan, especially with a health condition, a registered dietitian or your doctor is the right person to ask.</p>`);
             return;
         }
         // Numbers people tell us ("I bench 225 for 5") are saved for every workout after this
@@ -5296,7 +5307,8 @@ function setupCoach() {
         }
         // Food and weight questions: point to the right tools, and to a professional
         if (/\b(diet|eat|eating|calories?|protein|meal|food|macros?|supplements?|creatine)\b/.test(t) && !req.groups.length) {
-            say(`<p>For food, start with the <a href="tools.html#tool-calories">calorie and protein estimator</a>${/\bsupplement|creatine\b/.test(t) ? ` and the <a href="supplements.html">supplements guide</a>` : ""}. For a personal eating plan, especially with a health condition, a registered dietitian or your doctor is the right person to ask.</p>`);
+            if (coachProteinFoodsQ(t)) { say(coachProteinFoodsReply()); return; }
+            say(`<p>For food, start with the <a href="tools.html#tool-calories">calorie and protein estimator</a>${/\bsupplement|creatine\b/.test(t) ? ` and the <a href="supplements.html">supplements guide</a>` : ""}${/\bprotein\b/.test(t) ? `, and see how much protein common foods have in ${COACH_PROTEIN_LINK}` : ""}. For a personal eating plan, especially with a health condition, a registered dietitian or your doctor is the right person to ask.</p>`);
             return;
         }
         // Which plan should I follow?
@@ -5412,7 +5424,7 @@ function setupCoach() {
         }).then((res) => res.json().then((data) => ({ ok: res.ok, data })))
             .then(({ ok, data }) => {
                 if (!ok || !data || typeof data.text !== "string") throw new Error((data && data.error) || "error");
-                finish(() => showAi(data.text));
+                finish(() => showAi(data.text, text));
             })
             .catch((err) => finish(() => {
                 const busy = /too many|busy/i.test(String(err && err.message));
@@ -5420,13 +5432,17 @@ function setupCoach() {
                 reply(text);
             }));
     }
-    function showAi(raw) {
+    function showAi(raw, question) {
         let text = String(raw).slice(0, 12000);
         let workout = null;
         const m = text.match(/<workout>([\s\S]*?)<\/workout>/i);
         if (m) { workout = coachAiWorkout(m[1]); text = text.replace(m[0], "").trim(); }
         text = text.replace(/<\/?workout>/gi, "");
         let html = coachMarkdown(text);
+        // A question about protein foods always ends with the site's list, even if the AI didn't link it
+        if (question && coachProteinFoodsQ(String(question).toLowerCase()) && !/faq-protein-foods/.test(html)) {
+            html += `<p class="coach-fine">See how much protein common foods have: ${COACH_PROTEIN_LINK}.</p>`;
+        }
         if (workout) {
             last = workout;
             lastReq = null;

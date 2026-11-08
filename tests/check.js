@@ -920,6 +920,13 @@ async function openPage(browser, file, viewport, hash = "") {
             check(/3 × 5 at 230 lb/.test(weighed) && /about \d+ lb each hand/.test(weighed) && /max about 275 lb/.test(weighed), `telling Coach your bench puts real weights on the workout (${(weighed.match(/Bench press[^·]*/) || [""])[0]})`);
             check(/max about 345 lb/.test(await ask("how much should I squat? I can do 315 for 3")) && /Back squat focus/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "Coach works out a max from weight and reps");
             check(/1 or 2 good reps left/.test(await ask("how much weight should I use")), "Coach explains how to pick a weight");
+            {
+                const pf = await ask("what foods are high in protein?");
+                const pfMsg = page.locator(".coach-msg.is-coach").last();
+                check(/Greek yogurt/.test(pf) && /registered dietitian/.test(pf) && await pfMsg.locator("a[href='basics.html#faq-protein-foods']").count() === 1, "Coach answers which foods have protein with a link to the protein foods list");
+                await ask("how much protein do I need?");
+                check(await page.locator(".coach-msg.is-coach").last().locator("a[href='basics.html#faq-protein-foods']").count() === 1 && await page.locator(".coach-msg.is-coach").last().locator("a[href='tools.html#tool-calories']").count() === 1, "Coach's protein-amount answer links to the estimator and the protein foods list");
+            }
             check(/Build muscle/.test(await ask("build muscle chest and back")) && /What I heard/i.test(await page.locator(".coach-msg.is-coach").last().textContent()), "Coach reads the goal from the request");
             await ask("chest and triceps, 30 minutes");
             // The chat stays open, with its history, when you move to another page
@@ -1018,6 +1025,10 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.evaluate(() => (store.get("gu-custom") || { items: [] }).items.some((x) => /225 lb/.test(x.d))), "Start saves the AI's workout as My workout");
             await page.click("#coach-fab").catch(() => {});
             if (!(await page.locator("#coach").isVisible())) await page.click("#coach-fab");
+            await page.fill("#coach-input", "which foods have the most protein?");
+            await page.press("#coach-input", "Enter");
+            await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 8000 });
+            check(await page.locator(".coach-msg.is-coach").last().locator(".coach-fine a[href='basics.html#faq-protein-foods']").count() === 1, "an AI answer about protein foods always ends with a link to the site's list");
             mode = "down";
             await page.fill("#coach-input", "chest and back");
             await page.press("#coach-input", "Enter");
