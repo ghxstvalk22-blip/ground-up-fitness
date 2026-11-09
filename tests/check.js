@@ -1999,10 +1999,24 @@ async function openPage(browser, file, viewport, hash = "") {
             check(pf >= 16, `protein foods list has enough foods (${pf})`);
             check(await page.locator("#faq-protein-foods .protein-foods li").first().evaluate((li) => /\d+ g/.test(li.querySelector(".pf-g").textContent) && li.querySelector(".pf-food small").textContent.length > 0), "each food shows a serving and grams");
             check(/registered dietitian/.test(await page.locator("#faq-protein-foods").textContent()), "protein foods list points to a dietitian for health conditions");
+            // Jump to row: one link per food group, each lands on its heading
+            const jumps = await page.locator("#faq-protein-foods .pf-jump a").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+            check(jumps.length === 4 && await page.evaluate((ids) => ids.every((h) => { const el = document.querySelector(h); return el && el.matches(".pf-head"); }), jumps), "protein foods Jump to row links to every food group");
+            check(await page.locator("#faq-protein-foods .pf-jump a").evaluateAll((as) => as.every((a) => a.getBoundingClientRect().height >= 44)), "protein foods Jump to links are big enough to tap");
+            await page.locator("#faq-protein-foods .pf-jump a[href='#pf-plant']").click();
+            await page.waitForTimeout(700);
+            check(await page.evaluate(() => { const r = document.getElementById("pf-plant").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight / 2; }), "Jump to Plant foods scrolls to that group");
             check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "protein foods list fits without sideways scrolling");
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein.png`) });
             await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein-dark.png`) });
+            await page.close();
+        }
+        // Linking straight to a part inside a closed answer opens that answer
+        {
+            const { page } = await openPage(browser, "basics.html", viewport, "#pf-carbs");
+            await page.waitForTimeout(500);
+            check(await page.locator("#faq-protein-foods").evaluate((d) => d.open) && await page.locator("#pf-carbs").isVisible(), "linking to a food group opens the protein foods list");
             await page.close();
         }
     }

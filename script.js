@@ -574,8 +574,10 @@ function goTo(hash, { push = true } = {}) {
     }
     if (!target) return false;
 
-    // FAQ answers open when you link straight to them
+    // FAQ answers open when you link straight to them (or to a part inside one)
     if (target.tagName === "DETAILS") target.open = true;
+    const holder = target.parentElement && target.parentElement.closest("details");
+    if (holder) holder.open = true;
 
     if (push && location.hash !== hash) history.pushState(null, "", hash);
     window.dispatchEvent(new Event("routechange"));

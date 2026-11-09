@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-09
+
+- **Protein foods list: "Jump to" buttons.** The "Which foods have the most protein?" answer on Gym basics now starts with a row of buttons (Meat and fish, Eggs and dairy, Plant foods, Carbs). Tap one to skip straight to that group, which saves a lot of scrolling on a phone. Also, a link that points to a part inside a closed answer now opens that answer on its own.
+
 ## 2026-11-08
 
 - **Fitness Coach knows about the protein foods list.** Ask the Coach "what foods are high in protein?" or "how do I get more protein?" and it now names everyday protein foods (chicken, fish, eggs, Greek yogurt, tofu, lentils and more), explains the easy way to get there (some protein in each meal), and links straight to the "Protein in common foods" list on Gym basics, the calorie and protein estimator, and a doctor-or-dietitian note. Other protein questions ("how much protein do I need?") link the list too. When the AI coach answers a protein foods question, a link to the list is always added at the end, so people land on the site's own numbers.

@@ -24,10 +24,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-    <script src="splash.js?v=20261108-1"></script>
-    <link rel="stylesheet" href="styles.css?v=20261108-1">
-    <script src="exercises.js?v=20261108-1" defer></script>
-    <script src="script.js?v=20261108-1" defer></script>
+    <script src="splash.js?v=20261109-1"></script>
+    <link rel="stylesheet" href="styles.css?v=20261109-1">
+    <script src="exercises.js?v=20261109-1" defer></script>
+    <script src="script.js?v=20261109-1" defer></script>
 </head>
 
 <body data-page="basics">
@@ -96,7 +96,14 @@
                 <details id="faq-protein-foods">
                     <summary>Which foods have the most protein?</summary>
                     <p>Roughly how much protein a typical serving has. Most people reach their target by putting one of these in each meal: about 20 to 40 grams, 3 or 4 times a day. Numbers are rounded and brands vary, so the label on the pack wins.</p>
-                    <h3 class="pf-head">Meat and fish</h3>
+                    <nav class="pf-jump" aria-label="Jump to a food group">
+                        <span class="pf-jump-label" aria-hidden="true">Jump to</span>
+                        <a href="#pf-meat">Meat and fish</a>
+                        <a href="#pf-dairy">Eggs and dairy</a>
+                        <a href="#pf-plant">Plant foods</a>
+                        <a href="#pf-carbs">Carbs</a>
+                    </nav>
+                    <h3 class="pf-head" id="pf-meat">Meat and fish</h3>
                     <ul class="protein-foods">
                         <li><span class="pf-food">Chicken breast, cooked<small>3 oz (85 g), about the size of a deck of cards</small></span><span class="pf-g">26 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Salmon, cooked<small>3 oz (85 g)</small></span><span class="pf-g">22 g<span class="visually-hidden"> grams</span></span></li>
@@ -105,7 +112,7 @@
                         <li><span class="pf-food">Shrimp, cooked<small>3 oz (85 g)</small></span><span class="pf-g">20 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Turkey slices (deli)<small>2 oz (56 g)</small></span><span class="pf-g">10 g<span class="visually-hidden"> grams</span></span></li>
                     </ul>
-                    <h3 class="pf-head">Eggs and dairy</h3>
+                    <h3 class="pf-head" id="pf-dairy">Eggs and dairy</h3>
                     <ul class="protein-foods">
                         <li><span class="pf-food">Greek yogurt, plain<small>6 oz (170 g) cup</small></span><span class="pf-g">17 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Cottage cheese<small>½ cup (113 g)</small></span><span class="pf-g">12 g<span class="visually-hidden"> grams</span></span></li>
@@ -113,7 +120,7 @@
                         <li><span class="pf-food">Cheese, cheddar<small>1 oz (28 g) slice</small></span><span class="pf-g">7 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Egg<small>1 large</small></span><span class="pf-g">6 g<span class="visually-hidden"> grams</span></span></li>
                     </ul>
-                    <h3 class="pf-head">Plant foods</h3>
+                    <h3 class="pf-head" id="pf-plant">Plant foods</h3>
                     <ul class="protein-foods">
                         <li><span class="pf-food">Edamame, shelled<small>1 cup (155 g)</small></span><span class="pf-g">18 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Lentils, cooked<small>1 cup (200 g)</small></span><span class="pf-g">18 g<span class="visually-hidden"> grams</span></span></li>
@@ -122,7 +129,7 @@
                         <li><span class="pf-food">Peanut butter<small>2 tablespoons</small></span><span class="pf-g">7 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Almonds<small>1 oz (28 g), about 23</small></span><span class="pf-g">6 g<span class="visually-hidden"> grams</span></span></li>
                     </ul>
-                    <h3 class="pf-head">Everyday carbs (they add up)</h3>
+                    <h3 class="pf-head" id="pf-carbs">Everyday carbs (they add up)</h3>
                     <ul class="protein-foods">
                         <li><span class="pf-food">Whole wheat bread<small>2 slices</small></span><span class="pf-g">8 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Pasta, cooked<small>1 cup (140 g)</small></span><span class="pf-g">8 g<span class="visually-hidden"> grams</span></span></li>
