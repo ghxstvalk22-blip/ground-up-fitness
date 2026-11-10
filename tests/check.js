@@ -2006,6 +2006,12 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator("#faq-protein-foods .pf-jump a[href='#pf-plant']").click();
             await page.waitForTimeout(700);
             check(await page.evaluate(() => { const r = document.getElementById("pf-plant").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight / 2; }), "Jump to Plant foods scrolls to that group");
+            // Back to top after the last group returns to the Jump to row
+            const back = page.locator("#faq-protein-foods .pf-back a[href='#pf-top']");
+            check(await back.count() === 1 && await back.evaluate((a) => a.getBoundingClientRect().height >= 44 && !!a.closest("details").querySelector("#pf-top.pf-jump") && a.compareDocumentPosition(document.getElementById("pf-carbs")) & Node.DOCUMENT_POSITION_PRECEDING), "protein foods list ends with a Back to top link after the last group");
+            await back.click();
+            await page.waitForTimeout(700);
+            check(await page.evaluate(() => { const r = document.getElementById("pf-top").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight / 2; }), "Back to top scrolls to the Jump to row");
             check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "protein foods list fits without sideways scrolling");
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein.png`) });
             await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });

@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-10
+
+- **Protein foods list: "Back to top" button.** At the end of the "Which foods have the most protein?" answer on Gym basics, a new Back to top button takes you straight back to the Jump to buttons, so on a phone you can hop between food groups without scrolling all the way up.
+
 ## 2026-11-09
 
 - **Protein foods list: "Jump to" buttons.** The "Which foods have the most protein?" answer on Gym basics now starts with a row of buttons (Meat and fish, Eggs and dairy, Plant foods, Carbs). Tap one to skip straight to that group, which saves a lot of scrolling on a phone. Also, a link that points to a part inside a closed answer now opens that answer on its own.

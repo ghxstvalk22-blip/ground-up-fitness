@@ -2566,6 +2566,11 @@ a.week-light-btn { display: inline-flex; align-items: center; text-decoration: n
 .pf-jump a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 0.72rem; font-weight: 800; font-stretch: 110%; letter-spacing: 0.08em; text-transform: uppercase; }
 .pf-jump a:hover { border-color: var(--ink); }
 .pf-jump a:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
+.pf-back { margin: 14px 0 0; }
+.pf-back a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 0.72rem; font-weight: 800; font-stretch: 110%; letter-spacing: 0.08em; text-transform: uppercase; }
+.pf-back a::before { content: "\2191"; content: "\2191" / ""; font-size: 0.9rem; letter-spacing: 0; }
+.pf-back a:hover { border-color: var(--ink); }
+.pf-back a:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
 .faq .pf-head { margin: 20px 0 6px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 .protein-foods { list-style: none; margin: 0 0 8px; padding: 0; max-width: 62ch; border-top: 1px solid var(--line); }
 .protein-foods li { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
