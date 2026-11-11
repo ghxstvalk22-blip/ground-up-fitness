@@ -46,7 +46,8 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Home page Up next card: a small "You finished Couch to 5K" line once the plan is done, linking to the next-steps card.
 - [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
 - [ ] Protein foods list: a "kg / lb" note or metric-first servings for people who set kg in Your starting point.
-- [ ] Fitness Coach: when someone asks for a high-protein snack or breakfast, offer two or three quick ideas from the protein foods list.
+- [ ] Fitness Coach: high-protein lunch and dinner ideas too, built the same way from the protein foods list.
+- [ ] Fitness Coach: a vegetarian twist on the protein snack and breakfast ideas when someone says they don't eat meat.
 - [ ] Gym basics: the same "Jump to" and "Back to top" links for other long answers, if any grow past a couple of screens on a phone.
 
 ## Blocked
@@ -55,6 +56,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-11-11: Fitness Coach: asking for a high-protein snack or breakfast ("high protein snack ideas", "protein breakfast?") gets three quick ideas with grams from the protein foods list, a link to the list, and a doctor-or-dietitian note, with buttons for the other meal and "How much protein do I need?".
 - [x] 2026-11-10: Protein foods list: a "Back to top" link after the last group (under the dietitian note) takes phone users straight back to the Jump to row.
 - [x] 2026-11-09: Protein foods list: a "Jump to" row (Meat and fish, Eggs and dairy, Plant foods, Carbs) at the top of the list on Gym basics, so phone users can skip straight to the group they want. Links to a part inside a closed answer now open that answer too.
 - [x] 2026-11-08: Fitness Coach: asking which foods have protein ("what foods are high in protein?", "how do I get more protein?") gets a short answer with everyday protein foods and a link straight to the protein foods list on Gym basics, plus the calorie tool and a doctor-or-dietitian note. Other protein questions link the list too, and when the AI coach answers a protein foods question, a link to the list is always added at the end.

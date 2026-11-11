@@ -924,6 +924,12 @@ async function openPage(browser, file, viewport, hash = "") {
                 const pf = await ask("what foods are high in protein?");
                 const pfMsg = page.locator(".coach-msg.is-coach").last();
                 check(/Greek yogurt/.test(pf) && /registered dietitian/.test(pf) && await pfMsg.locator("a[href='basics.html#faq-protein-foods']").count() === 1, "Coach answers which foods have protein with a link to the protein foods list");
+                const snack = await ask("any high protein snack ideas?");
+                const snackMsg = page.locator(".coach-msg.is-coach").last();
+                check(await snackMsg.locator("ul.coach-steps li").count() === 3 && /edamame/i.test(snack) && /\d+ g/.test(snack) && /registered dietitian/.test(snack) && await snackMsg.locator("a[href='basics.html#faq-protein-foods']").count() === 1, "Coach gives three high-protein snack ideas with grams and a link to the protein foods list");
+                check(await page.locator("#coach-chips [data-coach-say='High-protein breakfast ideas'], .chip[data-coach-say='High-protein breakfast ideas']").count() >= 1, "snack ideas offer breakfast ideas next");
+                const bfast = await ask("protein breakfast?");
+                check(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps li").count() === 3 && /eggs/.test(bfast) && /breakfast ideas/.test(bfast), "Coach gives three high-protein breakfast ideas");
                 await ask("how much protein do I need?");
                 check(await page.locator(".coach-msg.is-coach").last().locator("a[href='basics.html#faq-protein-foods']").count() === 1 && await page.locator(".coach-msg.is-coach").last().locator("a[href='tools.html#tool-calories']").count() === 1, "Coach's protein-amount answer links to the estimator and the protein foods list");
             }

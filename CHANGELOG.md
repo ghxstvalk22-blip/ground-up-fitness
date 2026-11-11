@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-11
+
+- **Fitness Coach: high-protein snack and breakfast ideas.** Ask the Coach something like "high protein snack ideas" or "protein breakfast?" and it now gives three quick ideas with about how many grams of protein each has (taken from the protein foods list on Gym basics), a line for the other meal, a link to the full list, and a see-your-doctor-or-dietitian note. Buttons under the answer offer breakfast (or snack) ideas next and "How much protein do I need?".
+
 ## 2026-11-10
 
 - **Protein foods list: "Back to top" button.** At the end of the "Which foods have the most protein?" answer on Gym basics, a new Back to top button takes you straight back to the Jump to buttons, so on a phone you can hop between food groups without scrolling all the way up.
