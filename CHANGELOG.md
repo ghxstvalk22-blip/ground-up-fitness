@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-12
+
+- **Fitness Coach: high-protein lunch and dinner ideas.** Yesterday the Coach learned snack and breakfast ideas; now asking "high protein lunch ideas" or "protein ideas for dinner?" gets three easy meals too, each with about how many grams of protein it has (worked out from the Protein in common foods list). It links to that list, reminds people with a health condition to check with a doctor or registered dietitian, and offers buttons for the next meal so people can plan a whole day in a few taps.
+
 ## 2026-11-11
 
 - **Fitness Coach: high-protein snack and breakfast ideas.** Ask the Coach something like "high protein snack ideas" or "protein breakfast?" and it now gives three quick ideas with about how many grams of protein each has (taken from the protein foods list on Gym basics), a line for the other meal, a link to the full list, and a see-your-doctor-or-dietitian note. Buttons under the answer offer breakfast (or snack) ideas next and "How much protein do I need?".

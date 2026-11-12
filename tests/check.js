@@ -930,6 +930,12 @@ async function openPage(browser, file, viewport, hash = "") {
                 check(await page.locator("#coach-chips [data-coach-say='High-protein breakfast ideas'], .chip[data-coach-say='High-protein breakfast ideas']").count() >= 1, "snack ideas offer breakfast ideas next");
                 const bfast = await ask("protein breakfast?");
                 check(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps li").count() === 3 && /eggs/.test(bfast) && /breakfast ideas/.test(bfast), "Coach gives three high-protein breakfast ideas");
+                const lunch = await ask("high protein lunch ideas");
+                const lunchMsg = page.locator(".coach-msg.is-coach").last();
+                check(await lunchMsg.locator("ul.coach-steps li").count() === 3 && /lunch ideas/.test(lunch) && /tuna/i.test(lunch) && /registered dietitian/.test(lunch) && await lunchMsg.locator("a[href='basics.html#faq-protein-foods']").count() === 1, "Coach gives three high-protein lunch ideas with a link to the protein foods list");
+                check(await page.locator(".chip[data-coach-say='High-protein dinner ideas']").count() >= 1, "lunch ideas offer dinner ideas next");
+                const dinner = await ask("protein ideas for dinner?");
+                check(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps li").count() === 3 && /dinner ideas/.test(dinner) && /salmon/i.test(dinner) && /vegetables/.test(dinner), "Coach gives three high-protein dinner ideas");
                 await ask("how much protein do I need?");
                 check(await page.locator(".coach-msg.is-coach").last().locator("a[href='basics.html#faq-protein-foods']").count() === 1 && await page.locator(".coach-msg.is-coach").last().locator("a[href='tools.html#tool-calories']").count() === 1, "Coach's protein-amount answer links to the estimator and the protein foods list");
             }
