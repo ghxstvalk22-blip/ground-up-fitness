@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-13
+
+- **Fitness Coach asks "which meal?"** Asking for "high-protein meal ideas" without saying which meal used to get a general food answer. Now the Coach asks which meal and shows four buttons (breakfast, lunch, dinner, snack); tap one to get three quick ideas with the grams of protein in each. Questions like "how much protein per meal?" still get the protein-amount answer.
+
 ## 2026-11-12
 
 - **Fitness Coach: high-protein lunch and dinner ideas.** Yesterday the Coach learned snack and breakfast ideas; now asking "high protein lunch ideas" or "protein ideas for dinner?" gets three easy meals too, each with about how many grams of protein it has (worked out from the Protein in common foods list). It links to that list, reminds people with a health condition to check with a doctor or registered dietitian, and offers buttons for the next meal so people can plan a whole day in a few taps.

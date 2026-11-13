@@ -46,7 +46,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Home page Up next card: a small "You finished Couch to 5K" line once the plan is done, linking to the next-steps card.
 - [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
 - [ ] Protein foods list: a "kg / lb" note or metric-first servings for people who set kg in Your starting point.
-- [ ] Fitness Coach: "high-protein meal ideas" (no meal named) could ask which meal with four quick buttons.
+- [ ] Fitness Coach: after the which-meal buttons, a fifth "A whole day" button that strings breakfast, lunch, dinner and a snack into one sample day with a total.
 - [ ] Fitness Coach: a vegetarian twist on the protein snack and breakfast ideas when someone says they don't eat meat.
 - [ ] Gym basics: the same "Jump to" and "Back to top" links for other long answers, if any grow past a couple of screens on a phone.
 
@@ -56,6 +56,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-11-13: Fitness Coach: asking for high-protein meal ideas without naming a meal ("high protein meal ideas", "any protein meal ideas?") asks which meal, with four buttons (breakfast, lunch, dinner, snack) that each give that meal's three quick ideas. Questions like "how much protein per meal?" still get the protein-amount answer.
 - [x] 2026-11-12: Fitness Coach: asking for high-protein lunch or dinner ideas gets three quick ideas with grams from the protein foods list (chicken or tuna sandwiches, lentils and rice, beef pasta, salmon and rice, tofu and edamame stir-fry), a link to the list, a doctor-or-dietitian note, and buttons for the next meal.
 - [x] 2026-11-11: Fitness Coach: asking for a high-protein snack or breakfast ("high protein snack ideas", "protein breakfast?") gets three quick ideas with grams from the protein foods list, a link to the list, and a doctor-or-dietitian note, with buttons for the other meal and "How much protein do I need?".
 - [x] 2026-11-10: Protein foods list: a "Back to top" link after the last group (under the dietitian note) takes phone users straight back to the Jump to row.

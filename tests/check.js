@@ -936,6 +936,16 @@ async function openPage(browser, file, viewport, hash = "") {
                 check(await page.locator(".chip[data-coach-say='High-protein dinner ideas']").count() >= 1, "lunch ideas offer dinner ideas next");
                 const dinner = await ask("protein ideas for dinner?");
                 check(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps li").count() === 3 && /dinner ideas/.test(dinner) && /salmon/i.test(dinner) && /vegetables/.test(dinner), "Coach gives three high-protein dinner ideas");
+                // "High-protein meal ideas" with no meal named asks which meal, with four buttons
+                const which = await ask("high protein meal ideas");
+                const mealChips = await page.locator(".chip[data-coach-say^='High-protein']").evaluateAll((cs) => cs.map((c) => c.dataset.coachSay));
+                check(/Which meal/.test(which) && ["breakfast", "lunch", "dinner", "snack"].every((k) => mealChips.includes(`High-protein ${k} ideas`)) && await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").count() === 0, "Coach asks which meal for high-protein meal ideas, with four meal buttons");
+                check(await page.locator(".chip[data-coach-say='High-protein lunch ideas']").last().evaluate((c) => c.getBoundingClientRect().height >= 44 || innerWidth > 600), "meal buttons are big enough to tap on phones");
+                await page.locator(".chip[data-coach-say='High-protein lunch ideas']").last().click();
+                await page.locator(".coach-typing").waitFor({ state: "attached", timeout: 500 }).catch(() => {});
+                await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 4000 });
+                check(/lunch ideas/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "tapping a meal button gives that meal's ideas");
+                check(/Which meal/.test(await ask("any protein meal ideas?")) && !/Which meal/.test(await ask("how much protein per meal?")), "the which-meal question doesn't catch protein-amount questions");
                 await ask("how much protein do I need?");
                 check(await page.locator(".coach-msg.is-coach").last().locator("a[href='basics.html#faq-protein-foods']").count() === 1 && await page.locator(".coach-msg.is-coach").last().locator("a[href='tools.html#tool-calories']").count() === 1, "Coach's protein-amount answer links to the estimator and the protein foods list");
             }
