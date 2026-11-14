@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-14
+
+- **Fitness Coach: a whole high-protein day.** When you ask the Coach for high-protein meal ideas, there's now a fifth button, "A whole high-protein day". It puts one idea from breakfast, lunch, a snack and dinner together into one sample day, shows the grams of protein for each, and adds them up (about 100 g). You can also just ask for "a sample high protein day" or "a protein meal plan". It links to the calorie and protein estimator for your own number and reminds people with health conditions to ask a doctor or registered dietitian. Why: it shows how the single-meal ideas add up over a whole day, which was on the ideas list.
+
 ## 2026-11-13
 
 - **Fitness Coach asks "which meal?"** Asking for "high-protein meal ideas" without saying which meal used to get a general food answer. Now the Coach asks which meal and shows four buttons (breakfast, lunch, dinner, snack); tap one to get three quick ideas with the grams of protein in each. Questions like "how much protein per meal?" still get the protein-amount answer.

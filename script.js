@@ -5049,7 +5049,21 @@ const COACH_PROTEIN_MEALS = ["breakfast", "lunch", "dinner", "snack"];
 function coachProteinAskMealReply() {
     return `<p>Happy to. Which meal? Pick one below and I'll give you three quick ideas with the grams of protein in each, from ${COACH_PROTEIN_LINK}.</p>`;
 }
-const coachProteinAskMealChips = () => COACH_PROTEIN_MEALS.map((k) => `High-protein ${k} ideas`);
+const coachProteinAskMealChips = () => [...COACH_PROTEIN_MEALS.map((k) => `High-protein ${k} ideas`), "A whole high-protein day"];
+
+// "A whole high-protein day" strings one idea from each meal into a sample day, with the total
+const coachProteinDayQ = (t) => /\bprotein\b/.test(t)
+    && /\b(whole|full|sample|example|typical)( high[- ]protein)? day\b|\bday of (eating|meals|food)\b|\bmeal plan\b|\ba (high[- ])?protein day\b/.test(t)
+    && !/\b(powder|shakes?|supplements?|creatine|bars?|how much|need|per day|a day)\b/.test(t.replace(/\b(whole|full|sample|example|typical|protein) day\b/g, ""));
+const COACH_PROTEIN_DAY = [["Breakfast", "breakfast", 0], ["Lunch", "lunch", 0], ["Snack", "snack", 0], ["Dinner", "dinner", 1]];
+function coachProteinDayReply() {
+    const day = COACH_PROTEIN_DAY.map(([label, kind, i]) => [label, ...COACH_PROTEIN_IDEAS[kind][i]]);
+    const total = day.reduce((sum, [, , g]) => sum + g, 0);
+    return `<p>One easy high-protein day, one idea from each meal:</p>
+        <ul class="coach-steps">${day.map(([label, food, g]) => `<li><strong>${label}:</strong> ${food}, about <strong>${g} g</strong></li>`).join("")}</ul>
+        <p>Total: about <strong>${total} g</strong> of protein. That's a sample, not a target: your own daily number is in the <a href="tools.html#tool-calories">calorie and protein estimator</a>, and you can swap any meal for another idea. Numbers are rounded from ${COACH_PROTEIN_LINK}; the label on the pack wins. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
+}
+const coachProteinDayChips = () => ["High-protein breakfast ideas", "High-protein dinner ideas", "How much protein do I need?"];
 
 // The workout block the AI adds, checked line by line: real exercises only, simple doses, sane weights
 function coachAiWorkout(raw) {
@@ -5243,6 +5257,7 @@ function setupCoach() {
         }
         // Food questions ("how much should I eat to lose weight?") come before anything about lifting weight
         if (/\b(diet|eat|eating|calories?|protein|meal|food|macros?|supplements?|creatine)\b/.test(t) && !req.groups.length && !req.lifts.length) {
+            if (coachProteinDayQ(t)) { say(coachProteinDayReply()); suggest(coachProteinDayChips()); return; }
             if (coachProteinAskMealQ(t)) { say(coachProteinAskMealReply()); suggest(coachProteinAskMealChips()); return; }
             if (coachProteinMealQ(t)) { say(coachProteinMealReply(t)); suggest(coachProteinChips(t)); return; }
             if (coachProteinFoodsQ(t)) { say(coachProteinFoodsReply()); return; }
@@ -5360,6 +5375,7 @@ function setupCoach() {
         }
         // Food and weight questions: point to the right tools, and to a professional
         if (/\b(diet|eat|eating|calories?|protein|meal|food|macros?|supplements?|creatine)\b/.test(t) && !req.groups.length) {
+            if (coachProteinDayQ(t)) { say(coachProteinDayReply()); suggest(coachProteinDayChips()); return; }
             if (coachProteinAskMealQ(t)) { say(coachProteinAskMealReply()); suggest(coachProteinAskMealChips()); return; }
             if (coachProteinMealQ(t)) { say(coachProteinMealReply(t)); suggest(coachProteinChips(t)); return; }
             if (coachProteinFoodsQ(t)) { say(coachProteinFoodsReply()); return; }

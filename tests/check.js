@@ -946,6 +946,20 @@ async function openPage(browser, file, viewport, hash = "") {
                 await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 4000 });
                 check(/lunch ideas/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "tapping a meal button gives that meal's ideas");
                 check(/Which meal/.test(await ask("any protein meal ideas?")) && !/Which meal/.test(await ask("how much protein per meal?")), "the which-meal question doesn't catch protein-amount questions");
+                // A fifth button strings one idea from each meal into a whole sample day with a total
+                await ask("any protein meal ideas?");
+                const dayChip = page.locator(".chip[data-coach-say='A whole high-protein day']").last();
+                check(await dayChip.count() === 1, "the which-meal question offers a whole-day button");
+                await dayChip.click();
+                await page.locator(".coach-typing").waitFor({ state: "attached", timeout: 500 }).catch(() => {});
+                await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 4000 });
+                const dayMsg = page.locator(".coach-msg.is-coach").last();
+                const dayText = await dayMsg.textContent();
+                const dayGrams = await dayMsg.locator("ul.coach-steps li").evaluateAll((ls) => ls.map((li) => +(li.textContent.match(/about (\d+) g/) || [])[1]));
+                const dayTotal = +(dayText.match(/Total: about (\d+) g/) || [])[1];
+                check(dayGrams.length === 4 && ["Breakfast", "Lunch", "Snack", "Dinner"].every((m) => dayText.includes(m + ":")) && dayGrams.every((g) => g > 0) && dayTotal === dayGrams.reduce((a, b) => a + b, 0), `Coach's whole high-protein day lists four meals with a matching total (${dayTotal} g)`);
+                check(/registered dietitian/.test(dayText) && await dayMsg.locator("a[href='tools.html#tool-calories']").count() === 1 && await dayMsg.locator("a[href='basics.html#faq-protein-foods']").count() === 1, "the whole day links the estimator and protein foods list, with a dietitian note");
+                check(/Total/.test(await ask("give me a sample high protein day of eating")) && !/Total/.test(await ask("how much protein a day do I need?")), "a whole-day question gets the sample day, but protein-amount questions don't");
                 await ask("how much protein do I need?");
                 check(await page.locator(".coach-msg.is-coach").last().locator("a[href='basics.html#faq-protein-foods']").count() === 1 && await page.locator(".coach-msg.is-coach").last().locator("a[href='tools.html#tool-calories']").count() === 1, "Coach's protein-amount answer links to the estimator and the protein foods list");
             }
