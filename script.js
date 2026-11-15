@@ -5027,18 +5027,43 @@ const COACH_PROTEIN_IDEAS = {
         ["3.5 oz firm tofu and a cup of edamame stir-fried, over a cup of rice", 37],
     ],
 };
+// Vegetarian twist: "I don't eat meat" or "vegetarian" swaps the meat and fish ideas for eggs, dairy, beans, and tofu
+const coachVegQ = (t) => /\b(vegetarian|veggie|meatless|plant[- ]based|vegan|no meat|without meat|(do ?n[o']?t|never|can'?t|cannot) eat (any )?(meat|chicken|beef|fish))\b/.test(t);
+const coachVeganQ = (t) => /\b(vegan|plant[- ]based|no (animal|dairy))\b/.test(t);
+const COACH_PROTEIN_VEG = {
+    snack: [
+        ["A cup of shelled edamame", 18],
+        ["Greek yogurt cup (6 oz), plain, with berries", 17],
+        ["½ cup cottage cheese with an ounce of almonds", 18],
+    ],
+    lunch: [
+        ["A cup of lentils over a cup of rice, with a boiled egg", 28],
+        ["A cup of black beans on 2 slices of whole wheat toast with a slice of cheddar", 30],
+        ["2 eggs and a slice of cheddar on 2 slices of whole wheat bread", 27],
+    ],
+    dinner: [
+        ["3.5 oz firm tofu and a cup of edamame stir-fried, over a cup of rice", 37],
+        ["A cup of lentils in a tomato sauce over a cup of pasta", 26],
+        ["A cup of chickpeas and a cup of rice, topped with an ounce of cheddar", 26],
+    ],
+};
+const coachProteinIdeas = (kind, veg) => (veg && COACH_PROTEIN_VEG[kind]) || COACH_PROTEIN_IDEAS[kind];
+const COACH_VEGAN_NOTE = "Vegan? Skip the eggs, yogurt, and cheese and lean on tofu, edamame, lentils, and beans (a cup of edamame and 3.5 oz of tofu is about 33 g); soy milk and soy yogurt have more protein than most other plant milks.";
 // Which meal a protein-ideas question is about, and the other meals to offer next
 const coachProteinKind = (t) => /\b(breakfasts?|morning)\b/.test(t) ? "breakfast" : /\blunch(es)?\b/.test(t) ? "lunch" : /\b(dinners?|suppers?)\b/.test(t) ? "dinner" : "snack";
 const coachProteinChips = (t) => {
     const kind = coachProteinKind(t);
     const next = { breakfast: ["snack", "lunch"], snack: ["breakfast", "dinner"], lunch: ["dinner", "snack"], dinner: ["lunch", "breakfast"] }[kind];
-    return [...next.map((k) => `High-protein ${k} ideas`), "How much protein do I need?"];
+    const veg = coachVegQ(t);
+    return [...next.map((k) => `${veg ? "Vegetarian high-protein" : "High-protein"} ${k} ideas`), veg ? "A whole vegetarian high-protein day" : `Vegetarian high-protein ${kind} ideas`, "How much protein do I need?"];
 };
 function coachProteinMealReply(t) {
     const kind = coachProteinKind(t);
+    const veg = coachVegQ(t);
     const other = { breakfast: "snack", snack: "breakfast" }[kind];
-    return `<p>Three quick high-protein ${kind} ideas:</p>
-        <ul class="coach-steps">${COACH_PROTEIN_IDEAS[kind].map(([food, g]) => `<li>${food}: about <strong>${g} g</strong> of protein</li>`).join("")}</ul>
+    return `<p>Three quick high-protein ${veg ? "vegetarian " : ""}${kind} ideas${veg ? " (no meat or fish)" : ""}:</p>
+        <ul class="coach-steps">${coachProteinIdeas(kind, veg).map(([food, g]) => `<li>${food}: about <strong>${g} g</strong> of protein</li>`).join("")}</ul>
+        ${veg && coachVeganQ(t) ? `<p>${COACH_VEGAN_NOTE}</p>` : ""}
         <p>${other ? `For a ${other}, ${kind === "breakfast" ? "a cup of edamame or a Greek yogurt cup (17 to 18 g) works well" : "Greek yogurt with oats or 2 eggs on toast gets about 20 g"}.` : "Fill the rest of the plate with vegetables or a salad."} Numbers are rounded from ${COACH_PROTEIN_LINK}, which has about 20 foods and an easy sample day; the label on the pack wins. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
 }
 
@@ -5046,24 +5071,31 @@ function coachProteinMealReply(t) {
 const coachProteinAskMealQ = (t) => /\bprotein\b/.test(t) && /\b(meals?|recipes?|ideas?)\b/.test(t) && !coachProteinMealQ(t)
     && !/\b(powder|shakes?|supplements?|creatine|bars?|how much|need|per meal|each meal|every meal)\b/.test(t);
 const COACH_PROTEIN_MEALS = ["breakfast", "lunch", "dinner", "snack"];
-function coachProteinAskMealReply() {
-    return `<p>Happy to. Which meal? Pick one below and I'll give you three quick ideas with the grams of protein in each, from ${COACH_PROTEIN_LINK}.</p>`;
+function coachProteinAskMealReply(t = "") {
+    return `<p>Happy to. Which meal? Pick one below and I'll give you three quick ${coachVegQ(t) ? "vegetarian " : ""}ideas with the grams of protein in each, from ${COACH_PROTEIN_LINK}.</p>`;
 }
-const coachProteinAskMealChips = () => [...COACH_PROTEIN_MEALS.map((k) => `High-protein ${k} ideas`), "A whole high-protein day"];
+const coachProteinAskMealChips = (t = "") => {
+    const veg = coachVegQ(t);
+    return [...COACH_PROTEIN_MEALS.map((k) => `${veg ? "Vegetarian high-protein" : "High-protein"} ${k} ideas`), veg ? "A whole vegetarian high-protein day" : "A whole high-protein day"];
+};
 
 // "A whole high-protein day" strings one idea from each meal into a sample day, with the total
 const coachProteinDayQ = (t) => /\bprotein\b/.test(t)
-    && /\b(whole|full|sample|example|typical)( high[- ]protein)? day\b|\bday of (eating|meals|food)\b|\bmeal plan\b|\ba (high[- ])?protein day\b/.test(t)
+    && /\b(whole|full|sample|example|typical)( (vegetarian|veggie|vegan|meatless|plant[- ]based))?( high[- ]protein)? day\b|\bday of (eating|meals|food)\b|\bmeal plan\b|\ba (vegetarian |veggie |vegan )?(high[- ])?protein day\b/.test(t)
     && !/\b(powder|shakes?|supplements?|creatine|bars?|how much|need|per day|a day)\b/.test(t.replace(/\b(whole|full|sample|example|typical|protein) day\b/g, ""));
 const COACH_PROTEIN_DAY = [["Breakfast", "breakfast", 0], ["Lunch", "lunch", 0], ["Snack", "snack", 0], ["Dinner", "dinner", 1]];
-function coachProteinDayReply() {
-    const day = COACH_PROTEIN_DAY.map(([label, kind, i]) => [label, ...COACH_PROTEIN_IDEAS[kind][i]]);
+function coachProteinDayReply(t = "") {
+    const veg = coachVegQ(t);
+    const day = COACH_PROTEIN_DAY.map(([label, kind, i]) => [label, ...coachProteinIdeas(kind, veg)[veg ? 0 : i]]);
     const total = day.reduce((sum, [, , g]) => sum + g, 0);
-    return `<p>One easy high-protein day, one idea from each meal:</p>
+    return `<p>One easy high-protein ${veg ? "vegetarian " : ""}day, one idea from each meal${veg ? " (no meat or fish)" : ""}:</p>
         <ul class="coach-steps">${day.map(([label, food, g]) => `<li><strong>${label}:</strong> ${food}, about <strong>${g} g</strong></li>`).join("")}</ul>
+        ${veg && coachVeganQ(t) ? `<p>${COACH_VEGAN_NOTE}</p>` : ""}
         <p>Total: about <strong>${total} g</strong> of protein. That's a sample, not a target: your own daily number is in the <a href="tools.html#tool-calories">calorie and protein estimator</a>, and you can swap any meal for another idea. Numbers are rounded from ${COACH_PROTEIN_LINK}; the label on the pack wins. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
 }
-const coachProteinDayChips = () => ["High-protein breakfast ideas", "High-protein dinner ideas", "How much protein do I need?"];
+const coachProteinDayChips = (t = "") => coachVegQ(t)
+    ? ["Vegetarian high-protein lunch ideas", "Vegetarian high-protein dinner ideas", "How much protein do I need?"]
+    : ["High-protein breakfast ideas", "High-protein dinner ideas", "A whole vegetarian high-protein day", "How much protein do I need?"];
 
 // The workout block the AI adds, checked line by line: real exercises only, simple doses, sane weights
 function coachAiWorkout(raw) {
@@ -5257,8 +5289,8 @@ function setupCoach() {
         }
         // Food questions ("how much should I eat to lose weight?") come before anything about lifting weight
         if (/\b(diet|eat|eating|calories?|protein|meal|food|macros?|supplements?|creatine)\b/.test(t) && !req.groups.length && !req.lifts.length) {
-            if (coachProteinDayQ(t)) { say(coachProteinDayReply()); suggest(coachProteinDayChips()); return; }
-            if (coachProteinAskMealQ(t)) { say(coachProteinAskMealReply()); suggest(coachProteinAskMealChips()); return; }
+            if (coachProteinDayQ(t)) { say(coachProteinDayReply(t)); suggest(coachProteinDayChips(t)); return; }
+            if (coachProteinAskMealQ(t)) { say(coachProteinAskMealReply(t)); suggest(coachProteinAskMealChips(t)); return; }
             if (coachProteinMealQ(t)) { say(coachProteinMealReply(t)); suggest(coachProteinChips(t)); return; }
             if (coachProteinFoodsQ(t)) { say(coachProteinFoodsReply()); return; }
             say(`<p>For food, start with the <a href="tools.html#tool-calories">calorie and protein estimator</a>${/\bsupplement|creatine\b/.test(t) ? ` and the <a href="supplements.html">supplements guide</a>` : ""}${/\bprotein\b/.test(t) ? `, and see how much protein common foods have in ${COACH_PROTEIN_LINK}` : ""}. It gives a daily range that's safe for losing weight slowly. For a personal eating plan, especially with a health condition, a registered dietitian or your doctor is the right person to ask.</p>`);
@@ -5375,8 +5407,8 @@ function setupCoach() {
         }
         // Food and weight questions: point to the right tools, and to a professional
         if (/\b(diet|eat|eating|calories?|protein|meal|food|macros?|supplements?|creatine)\b/.test(t) && !req.groups.length) {
-            if (coachProteinDayQ(t)) { say(coachProteinDayReply()); suggest(coachProteinDayChips()); return; }
-            if (coachProteinAskMealQ(t)) { say(coachProteinAskMealReply()); suggest(coachProteinAskMealChips()); return; }
+            if (coachProteinDayQ(t)) { say(coachProteinDayReply(t)); suggest(coachProteinDayChips(t)); return; }
+            if (coachProteinAskMealQ(t)) { say(coachProteinAskMealReply(t)); suggest(coachProteinAskMealChips(t)); return; }
             if (coachProteinMealQ(t)) { say(coachProteinMealReply(t)); suggest(coachProteinChips(t)); return; }
             if (coachProteinFoodsQ(t)) { say(coachProteinFoodsReply()); return; }
             say(`<p>For food, start with the <a href="tools.html#tool-calories">calorie and protein estimator</a>${/\bsupplement|creatine\b/.test(t) ? ` and the <a href="supplements.html">supplements guide</a>` : ""}${/\bprotein\b/.test(t) ? `, and see how much protein common foods have in ${COACH_PROTEIN_LINK}` : ""}. For a personal eating plan, especially with a health condition, a registered dietitian or your doctor is the right person to ask.</p>`);

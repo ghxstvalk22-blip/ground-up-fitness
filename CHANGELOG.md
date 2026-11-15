@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-15
+
+- **Fitness Coach: vegetarian high-protein ideas.** Tell the Coach you're vegetarian or don't eat meat (for example "I don't eat meat, any high protein snack ideas?") and its snack, lunch, dinner and whole-day ideas leave out meat and fish, using eggs, Greek yogurt, cottage cheese, cheese, beans, lentils, edamame and tofu instead, still with grams of protein from the protein foods list. Every regular meal answer now has a "Vegetarian" button too, and vegan questions get a short note on which foods to skip. Why: a lot of people looking for protein ideas don't eat meat, and the old ideas leaned on chicken, tuna, beef and salmon.
+
 ## 2026-11-14
 
 - **Fitness Coach: a whole high-protein day.** When you ask the Coach for high-protein meal ideas, there's now a fifth button, "A whole high-protein day". It puts one idea from breakfast, lunch, a snack and dinner together into one sample day, shows the grams of protein for each, and adds them up (about 100 g). You can also just ask for "a sample high protein day" or "a protein meal plan". It links to the calorie and protein estimator for your own number and reminds people with health conditions to ask a doctor or registered dietitian. Why: it shows how the single-meal ideas add up over a whole day, which was on the ideas list.

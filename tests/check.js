@@ -962,6 +962,28 @@ async function openPage(browser, file, viewport, hash = "") {
                 check(/Total/.test(await ask("give me a sample high protein day of eating")) && !/Total/.test(await ask("how much protein a day do I need?")), "a whole-day question gets the sample day, but protein-amount questions don't");
                 await ask("how much protein do I need?");
                 check(await page.locator(".coach-msg.is-coach").last().locator("a[href='basics.html#faq-protein-foods']").count() === 1 && await page.locator(".coach-msg.is-coach").last().locator("a[href='tools.html#tool-calories']").count() === 1, "Coach's protein-amount answer links to the estimator and the protein foods list");
+                // Vegetarian twist: no meat or fish in the ideas, and the buttons stay vegetarian
+                const meaty = /chicken|tuna|turkey|beef|salmon|shrimp/i;
+                const vSnack = await ask("I don't eat meat, any high protein snack ideas?");
+                const vSnackMsg = page.locator(".coach-msg.is-coach").last();
+                check(/vegetarian snack ideas/.test(vSnack) && await vSnackMsg.locator("ul.coach-steps li").count() === 3 && !meaty.test(await vSnackMsg.locator("ul.coach-steps").textContent()) && /registered dietitian/.test(vSnack), "Coach gives meat-free snack ideas when someone doesn't eat meat");
+                check(await page.locator(".chip[data-coach-say='Vegetarian high-protein breakfast ideas']").count() >= 1 && await page.locator(".chip[data-coach-say='A whole vegetarian high-protein day']").count() >= 1, "vegetarian ideas offer vegetarian buttons next");
+                for (const q of ["vegetarian high protein lunch ideas", "vegetarian protein dinner ideas", "vegetarian protein breakfast"]) {
+                    await ask(q);
+                    const list = await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent();
+                    check(!meaty.test(list) && (list.match(/about \d+ g/g) || []).length === 3, `"${q}" gives three meat-free ideas`);
+                }
+                await ask("high protein lunch ideas");
+                await page.locator(".chip[data-coach-say='Vegetarian high-protein lunch ideas']").last().click();
+                await page.locator(".coach-typing").waitFor({ state: "attached", timeout: 500 }).catch(() => {});
+                await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 4000 });
+                check(!meaty.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()), "regular meal ideas offer a vegetarian button that works");
+                const vDay = await ask("a whole vegetarian high-protein day");
+                const vDayMsg = page.locator(".coach-msg.is-coach").last();
+                const vGrams = await vDayMsg.locator("ul.coach-steps li").evaluateAll((ls) => ls.map((li) => +(li.textContent.match(/about (\d+) g/) || [])[1]));
+                check(vGrams.length === 4 && !meaty.test(await vDayMsg.locator("ul.coach-steps").textContent()) && +(vDay.match(/Total: about (\d+) g/) || [])[1] === vGrams.reduce((a, b) => a + b, 0), "Coach's vegetarian whole day has four meat-free meals with a matching total");
+                check(/Vegan\?/.test(await ask("vegan high protein snack ideas")) && !/Vegan\?/.test(await ask("high protein snack ideas")), "vegan questions get the vegan note, others don't");
+                check(/Which meal/.test(await ask("vegetarian protein meal ideas")) && await page.locator(".chip[data-coach-say='Vegetarian high-protein dinner ideas']").count() >= 1, "vegetarian which-meal question offers vegetarian meal buttons");
             }
             check(/Build muscle/.test(await ask("build muscle chest and back")) && /What I heard/i.test(await page.locator(".coach-msg.is-coach").last().textContent()), "Coach reads the goal from the request");
             await ask("chest and triceps, 30 minutes");
