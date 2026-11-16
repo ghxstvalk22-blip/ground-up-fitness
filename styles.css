@@ -2566,6 +2566,16 @@ a.week-light-btn { display: inline-flex; align-items: center; text-decoration: n
 .pf-jump a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 0.72rem; font-weight: 800; font-stretch: 110%; letter-spacing: 0.08em; text-transform: uppercase; }
 .pf-jump a:hover { border-color: var(--ink); }
 .pf-jump a:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
+.pf-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0 0; }
+.pf-veg-btn { font: inherit; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px; background-color: transparent; border: 1px solid var(--line); color: var(--ink); cursor: pointer; font-size: 0.72rem; font-weight: 800; font-stretch: 110%; letter-spacing: 0.08em; text-transform: uppercase; }
+.pf-veg-btn::before { content: ""; width: 12px; height: 12px; border: 1px solid currentColor; flex: none; }
+.pf-veg-btn:hover { border-color: var(--ink); }
+.pf-veg-btn:focus-visible { outline: 2px solid var(--volt); outline-offset: 2px; }
+.pf-veg-btn[aria-pressed="true"] { background-color: var(--ink); border-color: var(--ink); color: var(--paper); }
+.pf-veg-btn[aria-pressed="true"]::before { background-color: var(--volt); border-color: var(--volt); }
+.pf-veg-note { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.pf-veg-note:empty { display: none; }
+.pf-veg-on [data-meat] { display: none !important; }
 .pf-back { margin: 14px 0 0; }
 .pf-back a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 0.72rem; font-weight: 800; font-stretch: 110%; letter-spacing: 0.08em; text-transform: uppercase; }
 .pf-back a::before { content: "\2191"; content: "\2191" / ""; font-size: 0.9rem; letter-spacing: 0; }

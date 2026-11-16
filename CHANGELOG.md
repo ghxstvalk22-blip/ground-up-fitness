@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-16
+
+- **Protein foods list: a Vegetarian button.** On Gym basics, open "Which foods have the most protein?" and tap **Vegetarian** under the Jump to row. The meat and fish group (and its Jump to link) disappears, leaving eggs, dairy, plant foods and carbs, with a short note for vegans on what to skip. Your choice is remembered on this phone or computer; tap it again to see everything. Why: people who don't eat meat had to scroll past a whole group that wasn't for them, and this was on the ideas list.
+
 ## 2026-11-15
 
 - **Fitness Coach: vegetarian high-protein ideas.** Tell the Coach you're vegetarian or don't eat meat (for example "I don't eat meat, any high protein snack ideas?") and its snack, lunch, dinner and whole-day ideas leave out meat and fish, using eggs, Greek yogurt, cottage cheese, cheese, beans, lentils, edamame and tofu instead, still with grams of protein from the protein foods list. Every regular meal answer now has a "Vegetarian" button too, and vegan questions get a short note on which foods to skip. Why: a lot of people looking for protein ideas don't eat meat, and the old ideas leaned on chicken, tuna, beef and salmon.

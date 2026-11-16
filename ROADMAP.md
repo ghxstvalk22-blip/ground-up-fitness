@@ -48,7 +48,8 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Protein foods list: a "kg / lb" note or metric-first servings for people who set kg in Your starting point.
 - [ ] Fitness Coach: a "Swap a meal" button under the whole high-protein day that trades one meal for another idea and updates the total.
 - [ ] Fitness Coach: remember "I don't eat meat" (saved on the device) so later protein ideas are vegetarian without asking again.
-- [ ] Protein foods list on Gym basics: a small "Vegetarian" filter that hides meat and fish.
+- [ ] Protein foods list: a "Vegan" option next to Vegetarian that also hides eggs and dairy, with a short note on getting enough protein from plants.
+- [ ] Fitness Coach: use the Vegetarian choice from the protein foods list (saved on the device) so its meal ideas start meat-free.
 - [ ] Gym basics: the same "Jump to" and "Back to top" links for other long answers, if any grow past a couple of screens on a phone.
 
 ## Blocked
@@ -57,6 +58,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-11-16: Protein foods list on Gym basics: a "Vegetarian" button under the Jump to row hides the meat and fish group (and its Jump to link), says what it hid with a short vegan tip, and is remembered on this device. Tap again to show everything.
 - [x] 2026-11-15: Fitness Coach: a vegetarian twist on the high-protein meal ideas. Saying "vegetarian", "veggie", "meatless" or "I don't eat meat" gets meat-free snack, lunch and dinner ideas (eggs, dairy, beans, lentils, tofu; breakfast ideas were already meat-free), a vegetarian whole day (about 105 g), and vegetarian buttons for the next meal. Regular meal ideas offer a "Vegetarian" button. Vegan questions add a short note on which foods to skip and lean on.
 - [x] 2026-11-14: Fitness Coach: a fifth "A whole high-protein day" button after the which-meal buttons (or asking for "a sample high protein day" or "a protein meal plan") strings breakfast, lunch, a snack and dinner from the meal ideas into one sample day with grams for each and a total (about 100 g), with links to the calorie and protein estimator and the protein foods list, and a doctor-or-dietitian note. "How much protein a day?" still gets the protein-amount answer.
 - [x] 2026-11-13: Fitness Coach: asking for high-protein meal ideas without naming a meal ("high protein meal ideas", "any protein meal ideas?") asks which meal, with four buttons (breakfast, lunch, dinner, snack) that each give that meal's three quick ideas. Questions like "how much protein per meal?" still get the protein-amount answer.

@@ -2071,6 +2071,21 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.waitForTimeout(700);
             check(await page.evaluate(() => { const r = document.getElementById("pf-top").getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight / 2; }), "Back to top scrolls to the Jump to row");
             check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "protein foods list fits without sideways scrolling");
+            // Vegetarian toggle hides meat and fish (and its Jump to link), is remembered, and turns back off
+            const veg = page.locator("#pf-veg");
+            check(await veg.isVisible() && await veg.getAttribute("aria-pressed") === "false" && await veg.evaluate((b) => b.getBoundingClientRect().height >= 44), "protein foods list has a Vegetarian toggle, off by default, big enough to tap");
+            await veg.click();
+            check(await veg.getAttribute("aria-pressed") === "true" && !(await page.locator("#pf-meat").isVisible()) && !(await page.locator("#pf-meat-list").isVisible()) && !(await page.locator("#faq-protein-foods .pf-jump a[href='#pf-meat']").isVisible()) && await page.locator("#pf-plant").isVisible() && await page.locator("#pf-dairy").isVisible(), "Vegetarian hides meat and fish but keeps eggs, dairy and plant foods");
+            check(/Meat and fish hidden/.test(await page.locator("#pf-veg-note").textContent()), "Vegetarian says what it hid");
+            check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Vegetarian view fits without sideways scrolling");
+            await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein-veg.png`) });
+            await page.reload();
+            await page.waitForTimeout(300);
+            await page.evaluate(() => { document.getElementById("faq-protein-foods").open = true; });
+            check(await page.locator("#pf-veg").getAttribute("aria-pressed") === "true" && !(await page.locator("#pf-meat").isVisible()), "Vegetarian is remembered on this device");
+            await page.locator("#pf-veg").click();
+            check(await page.locator("#pf-veg").getAttribute("aria-pressed") === "false" && await page.locator("#pf-meat-list").isVisible(), "tapping Vegetarian again shows meat and fish");
+            await page.evaluate(() => localStorage.removeItem("gu-pf-veg"));
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein.png`) });
             await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein-dark.png`) });

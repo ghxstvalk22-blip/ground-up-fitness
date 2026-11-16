@@ -89,6 +89,7 @@ const FEATURES = [
     setupShareWorkout,
     setupUndoRemoveDay,
     setupWarmups,
+    setupProteinVeg,
     setupLinks,      // keep after features that add routes
     setupPageTransitions,
     setupJump
@@ -652,6 +653,30 @@ function setupPageTransitions() {
    The list is built from the main menu, so new menu links
    show up here automatically.
    ========================================================= */
+// Protein foods list (Gym basics): a "Vegetarian" toggle that hides meat and fish, remembered on this device
+function setupProteinVeg() {
+    const btn = document.getElementById("pf-veg");
+    const list = document.getElementById("faq-protein-foods");
+    const note = document.getElementById("pf-veg-note");
+    if (!btn || !list || !note) return;
+    btn.hidden = false;
+    function show(on, announce) {
+        list.classList.toggle("pf-veg-on", on);
+        btn.setAttribute("aria-pressed", on ? "true" : "false");
+        note.textContent = on
+            ? "Meat and fish hidden. Vegan? Skip eggs and dairy too and lean on tofu, edamame, lentils and beans."
+            : (announce ? "Showing all foods." : "");
+    }
+    // Someone linking straight to meat and fish should see it
+    const wantsMeat = location.hash === "#pf-meat";
+    show(store.get("gu-pf-veg", false) === true && !wantsMeat, false);
+    btn.addEventListener("click", () => {
+        const on = btn.getAttribute("aria-pressed") !== "true";
+        store.set("gu-pf-veg", on);
+        show(on, true);
+    });
+}
+
 function setupJump() {
     const dialog = document.getElementById("jump");
     const opener = document.querySelector(".jump-toggle");

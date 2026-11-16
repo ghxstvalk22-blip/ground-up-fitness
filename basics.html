@@ -24,10 +24,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-    <script src="splash.js?v=20261115-1"></script>
-    <link rel="stylesheet" href="styles.css?v=20261115-1">
-    <script src="exercises.js?v=20261115-1" defer></script>
-    <script src="script.js?v=20261115-1" defer></script>
+    <script src="splash.js?v=20261116-1"></script>
+    <link rel="stylesheet" href="styles.css?v=20261116-1">
+    <script src="exercises.js?v=20261116-1" defer></script>
+    <script src="script.js?v=20261116-1" defer></script>
 </head>
 
 <body data-page="basics">
@@ -98,13 +98,17 @@
                     <p>Roughly how much protein a typical serving has. Most people reach their target by putting one of these in each meal: about 20 to 40 grams, 3 or 4 times a day. Numbers are rounded and brands vary, so the label on the pack wins.</p>
                     <nav class="pf-jump" id="pf-top" aria-label="Jump to a food group">
                         <span class="pf-jump-label" aria-hidden="true">Jump to</span>
-                        <a href="#pf-meat">Meat and fish</a>
+                        <a href="#pf-meat" data-meat>Meat and fish</a>
                         <a href="#pf-dairy">Eggs and dairy</a>
                         <a href="#pf-plant">Plant foods</a>
                         <a href="#pf-carbs">Carbs</a>
                     </nav>
-                    <h3 class="pf-head" id="pf-meat">Meat and fish</h3>
-                    <ul class="protein-foods">
+                    <div class="pf-filter">
+                        <button type="button" class="pf-veg-btn" id="pf-veg" aria-pressed="false" aria-controls="pf-meat-list" hidden>Vegetarian</button>
+                        <p class="pf-veg-note" id="pf-veg-note" role="status"></p>
+                    </div>
+                    <h3 class="pf-head" id="pf-meat" data-meat>Meat and fish</h3>
+                    <ul class="protein-foods" id="pf-meat-list" data-meat>
                         <li><span class="pf-food">Chicken breast, cooked<small>3 oz (85 g), about the size of a deck of cards</small></span><span class="pf-g">26 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Salmon, cooked<small>3 oz (85 g)</small></span><span class="pf-g">22 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Lean ground beef (90%), cooked<small>3 oz (85 g)</small></span><span class="pf-g">22 g<span class="visually-hidden"> grams</span></span></li>
