@@ -24,10 +24,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap" rel="stylesheet">
-    <script src="splash.js?v=20261116-1"></script>
-    <link rel="stylesheet" href="styles.css?v=20261116-1">
-    <script src="exercises.js?v=20261116-1" defer></script>
-    <script src="script.js?v=20261116-1" defer></script>
+    <script src="splash.js?v=20261117-1"></script>
+    <link rel="stylesheet" href="styles.css?v=20261117-1">
+    <script src="exercises.js?v=20261117-1" defer></script>
+    <script src="script.js?v=20261117-1" defer></script>
 </head>
 
 <body data-page="basics">
@@ -99,12 +99,13 @@
                     <nav class="pf-jump" id="pf-top" aria-label="Jump to a food group">
                         <span class="pf-jump-label" aria-hidden="true">Jump to</span>
                         <a href="#pf-meat" data-meat>Meat and fish</a>
-                        <a href="#pf-dairy">Eggs and dairy</a>
+                        <a href="#pf-dairy" data-dairy>Eggs and dairy</a>
                         <a href="#pf-plant">Plant foods</a>
                         <a href="#pf-carbs">Carbs</a>
                     </nav>
                     <div class="pf-filter">
                         <button type="button" class="pf-veg-btn" id="pf-veg" aria-pressed="false" aria-controls="pf-meat-list" hidden>Vegetarian</button>
+                        <button type="button" class="pf-veg-btn" id="pf-vegan" aria-pressed="false" aria-controls="pf-meat-list pf-dairy-list" hidden>Vegan</button>
                         <p class="pf-veg-note" id="pf-veg-note" role="status"></p>
                     </div>
                     <h3 class="pf-head" id="pf-meat" data-meat>Meat and fish</h3>
@@ -116,8 +117,8 @@
                         <li><span class="pf-food">Shrimp, cooked<small>3 oz (85 g)</small></span><span class="pf-g">20 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Turkey slices (deli)<small>2 oz (56 g)</small></span><span class="pf-g">10 g<span class="visually-hidden"> grams</span></span></li>
                     </ul>
-                    <h3 class="pf-head" id="pf-dairy">Eggs and dairy</h3>
-                    <ul class="protein-foods">
+                    <h3 class="pf-head" id="pf-dairy" data-dairy>Eggs and dairy</h3>
+                    <ul class="protein-foods" id="pf-dairy-list" data-dairy>
                         <li><span class="pf-food">Greek yogurt, plain<small>6 oz (170 g) cup</small></span><span class="pf-g">17 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Cottage cheese<small>½ cup (113 g)</small></span><span class="pf-g">12 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Milk (any fat level)<small>1 cup (240 ml)</small></span><span class="pf-g">8 g<span class="visually-hidden"> grams</span></span></li>
@@ -130,6 +131,7 @@
                         <li><span class="pf-food">Lentils, cooked<small>1 cup (200 g)</small></span><span class="pf-g">18 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Tofu, firm<small>3.5 oz (100 g)</small></span><span class="pf-g">15 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Black beans or chickpeas, cooked<small>1 cup (170 g)</small></span><span class="pf-g">15 g<span class="visually-hidden"> grams</span></span></li>
+                        <li><span class="pf-food">Soy milk, unsweetened<small>1 cup (240 ml)</small></span><span class="pf-g">7 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Peanut butter<small>2 tablespoons</small></span><span class="pf-g">7 g<span class="visually-hidden"> grams</span></span></li>
                         <li><span class="pf-food">Almonds<small>1 oz (28 g), about 23</small></span><span class="pf-g">6 g<span class="visually-hidden"> grams</span></span></li>
                     </ul>

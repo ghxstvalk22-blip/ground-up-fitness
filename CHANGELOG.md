@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-17
+
+- **Protein foods list: a Vegan button.** On Gym basics, open "Which foods have the most protein?" and tap **Vegan** next to Vegetarian. Meat, fish, eggs and dairy disappear, leaving plant foods and carbs, with a short note: mix plant proteins through the day, aim toward the top of your range, and a registered dietitian can help you plan it (including vitamin B12). Unsweetened soy milk was added to the plant foods. Your choice is remembered on this device; tap Vegetarian to bring eggs and dairy back, or tap Vegan again to see everything. Why: vegans still had to scroll past eggs and dairy, and this was on the ideas list.
+
 ## 2026-11-16
 
 - **Protein foods list: a Vegetarian button.** On Gym basics, open "Which foods have the most protein?" and tap **Vegetarian** under the Jump to row. The meat and fish group (and its Jump to link) disappears, leaving eggs, dairy, plant foods and carbs, with a short note for vegans on what to skip. Your choice is remembered on this phone or computer; tap it again to see everything. Why: people who don't eat meat had to scroll past a whole group that wasn't for them, and this was on the ideas list.

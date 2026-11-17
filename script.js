@@ -653,27 +653,43 @@ function setupPageTransitions() {
    The list is built from the main menu, so new menu links
    show up here automatically.
    ========================================================= */
-// Protein foods list (Gym basics): a "Vegetarian" toggle that hides meat and fish, remembered on this device
+// Protein foods list (Gym basics): "Vegetarian" (hides meat and fish) and "Vegan" (also hides eggs and dairy)
+// toggles, remembered on this device as gu-pf-veg: true (vegetarian), "vegan", or false
 function setupProteinVeg() {
     const btn = document.getElementById("pf-veg");
+    const veganBtn = document.getElementById("pf-vegan");
     const list = document.getElementById("faq-protein-foods");
     const note = document.getElementById("pf-veg-note");
     if (!btn || !list || !note) return;
     btn.hidden = false;
-    function show(on, announce) {
-        list.classList.toggle("pf-veg-on", on);
-        btn.setAttribute("aria-pressed", on ? "true" : "false");
-        note.textContent = on
-            ? "Meat and fish hidden. Vegan? Skip eggs and dairy too and lean on tofu, edamame, lentils and beans."
-            : (announce ? "Showing all foods." : "");
+    if (veganBtn) veganBtn.hidden = false;
+    const NOTES = {
+        veg: "Meat and fish hidden. Vegan? Tap Vegan to hide eggs and dairy too.",
+        vegan: "Meat, fish, eggs and dairy hidden. Plant protein is easier to reach when you mix sources through the day (tofu, edamame, lentils, beans, soy milk, whole grains) and aim toward the top of your daily range. A registered dietitian can help you plan it, including vitamin B12."
+    };
+    function show(mode, announce) {
+        list.classList.toggle("pf-veg-on", mode === "veg");
+        list.classList.toggle("pf-vegan-on", mode === "vegan");
+        btn.setAttribute("aria-pressed", mode === "veg" ? "true" : "false");
+        if (veganBtn) veganBtn.setAttribute("aria-pressed", mode === "vegan" ? "true" : "false");
+        note.textContent = NOTES[mode] || (announce ? "Showing all foods." : "");
     }
-    // Someone linking straight to meat and fish should see it
-    const wantsMeat = location.hash === "#pf-meat";
-    show(store.get("gu-pf-veg", false) === true && !wantsMeat, false);
+    function save(mode) { store.set("gu-pf-veg", mode === "vegan" ? "vegan" : mode === "veg"); }
+    const saved = store.get("gu-pf-veg", false);
+    let mode = saved === "vegan" && veganBtn ? "vegan" : saved === true ? "veg" : "all";
+    // Someone linking straight to a hidden group should see it
+    if (location.hash === "#pf-meat") mode = "all";
+    if (location.hash === "#pf-dairy" && mode === "vegan") mode = "veg";
+    show(mode, false);
     btn.addEventListener("click", () => {
-        const on = btn.getAttribute("aria-pressed") !== "true";
-        store.set("gu-pf-veg", on);
-        show(on, true);
+        mode = mode === "veg" ? "all" : "veg";
+        save(mode);
+        show(mode, true);
+    });
+    if (veganBtn) veganBtn.addEventListener("click", () => {
+        mode = mode === "vegan" ? "all" : "vegan";
+        save(mode);
+        show(mode, true);
     });
 }
 
