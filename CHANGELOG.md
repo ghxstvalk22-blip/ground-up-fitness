@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-18
+
+- **Fitness Coach remembers your Vegetarian or Vegan choice.** If you tapped **Vegetarian** or **Vegan** on the protein foods list (Gym basics, "Which foods have the most protein?"), the Coach now starts its high-protein snack, lunch, dinner and whole-day ideas meat-free without you having to say so each time. It says why in one line ("Meat-free because you picked Vegetarian...") with a link to change it, and a "with meat" button shows every idea. Vegan adds the short note on skipping eggs and dairy. The choice stays on your device: these meal-idea answers come from the Coach's own built-in ideas, so nothing about it is sent to the AI. Why: people who set the choice once shouldn't have to repeat it, and this was on the ideas list.
+
 ## 2026-11-17
 
 - **Protein foods list: a Vegan button.** On Gym basics, open "Which foods have the most protein?" and tap **Vegan** next to Vegetarian. Meat, fish, eggs and dairy disappear, leaving plant foods and carbs, with a short note: mix plant proteins through the day, aim toward the top of your range, and a registered dietitian can help you plan it (including vitamin B12). Unsweetened soy milk was added to the plant foods. Your choice is remembered on this device; tap Vegetarian to bring eggs and dairy back, or tap Vegan again to see everything. Why: vegans still had to scroll past eggs and dairy, and this was on the ideas list.

@@ -984,6 +984,24 @@ async function openPage(browser, file, viewport, hash = "") {
                 check(vGrams.length === 4 && !meaty.test(await vDayMsg.locator("ul.coach-steps").textContent()) && +(vDay.match(/Total: about (\d+) g/) || [])[1] === vGrams.reduce((a, b) => a + b, 0), "Coach's vegetarian whole day has four meat-free meals with a matching total");
                 check(/Vegan\?/.test(await ask("vegan high protein snack ideas")) && !/Vegan\?/.test(await ask("high protein snack ideas")), "vegan questions get the vegan note, others don't");
                 check(/Which meal/.test(await ask("vegetarian protein meal ideas")) && await page.locator(".chip[data-coach-say='Vegetarian high-protein dinner ideas']").count() >= 1, "vegetarian which-meal question offers vegetarian meal buttons");
+                // The Vegetarian / Vegan choice saved on the protein foods list starts the Coach's ideas meat-free
+                await page.evaluate(() => localStorage.setItem("gu-pf-veg", "true"));
+                const sSnack = await ask("high protein snack ideas");
+                check(/Meat-free because you picked Vegetarian/.test(sSnack) && !meaty.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()) && !/Vegan\?/.test(sSnack), "a saved Vegetarian choice makes the Coach's snack ideas meat-free and says why");
+                const meatChip = page.locator(".chip[data-coach-say='High-protein snack ideas with meat']").last();
+                check(await meatChip.count() === 1 && await meatChip.evaluate((c) => c.getBoundingClientRect().height >= 44 || innerWidth > 600), "saved-choice ideas offer a big enough \"with meat\" button");
+                await meatChip.click();
+                await page.locator(".coach-typing").waitFor({ state: "attached", timeout: 500 }).catch(() => {});
+                await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 4000 });
+                check(meaty.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()) && !/Meat-free because/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "the \"with meat\" button brings meat and fish ideas back");
+                const sDay = await ask("a whole high-protein day");
+                check(/Meat-free because/.test(sDay) && !meaty.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()) && await page.locator(".chip[data-coach-say='A whole high-protein day with meat']").count() >= 1, "a saved Vegetarian choice makes the whole day meat-free, with a with-meat button");
+                check(/Meat-free because/.test(await ask("protein meal ideas")) && await page.locator(".chip[data-coach-say='Vegetarian high-protein lunch ideas']").count() >= 1, "a saved Vegetarian choice makes the which-meal buttons vegetarian");
+                await page.evaluate(() => localStorage.setItem("gu-pf-veg", JSON.stringify("vegan")));
+                const vgLunch = await ask("high protein lunch ideas");
+                check(/picked Vegan/.test(vgLunch) && /Vegan\?/.test(vgLunch) && !meaty.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()), "a saved Vegan choice adds the vegan note to meal ideas");
+                await page.evaluate(() => localStorage.removeItem("gu-pf-veg"));
+                check(!/Meat-free because/.test(await ask("high protein snack ideas")), "without a saved choice, ideas are the regular ones");
             }
             check(/Build muscle/.test(await ask("build muscle chest and back")) && /What I heard/i.test(await page.locator(".coach-msg.is-coach").last().textContent()), "Coach reads the goal from the request");
             await ask("chest and triceps, 30 minutes");
@@ -1087,6 +1105,17 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.press("#coach-input", "Enter");
             await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 8000 });
             check(await page.locator(".coach-msg.is-coach").last().locator(".coach-fine a[href='basics.html#faq-protein-foods']").count() === 1, "an AI answer about protein foods always ends with a link to the site's list");
+            {
+                // A saved Vegetarian choice keeps meal ideas built in, so the setting never leaves the device
+                await page.evaluate(() => localStorage.setItem("gu-pf-veg", "true"));
+                const sentBefore = sent.length;
+                await page.fill("#coach-input", "high protein snack ideas");
+                await page.press("#coach-input", "Enter");
+                await page.locator(".coach-typing").waitFor({ state: "attached", timeout: 500 }).catch(() => {});
+                await page.locator(".coach-typing").waitFor({ state: "detached", timeout: 8000 });
+                check(sent.length === sentBefore && /Meat-free because you picked Vegetarian/.test(await page.locator(".coach-msg.is-coach").last().textContent()), "with AI on, a saved Vegetarian choice answers meal ideas on the device without sending anything");
+                await page.evaluate(() => localStorage.removeItem("gu-pf-veg"));
+            }
             mode = "down";
             await page.fill("#coach-input", "chest and back");
             await page.press("#coach-input", "Enter");

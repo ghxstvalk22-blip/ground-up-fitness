@@ -5069,8 +5069,23 @@ const COACH_PROTEIN_IDEAS = {
     ],
 };
 // Vegetarian twist: "I don't eat meat" or "vegetarian" swaps the meat and fish ideas for eggs, dairy, beans, and tofu
-const coachVegQ = (t) => /\b(vegetarian|veggie|meatless|plant[- ]based|vegan|no meat|without meat|(do ?n[o']?t|never|can'?t|cannot) eat (any )?(meat|chicken|beef|fish))\b/.test(t);
-const coachVeganQ = (t) => /\b(vegan|plant[- ]based|no (animal|dairy))\b/.test(t);
+const coachVegSaid = (t) => /\b(vegetarian|veggie|meatless|plant[- ]based|vegan|no meat|without meat|(do ?n[o']?t|never|can'?t|cannot) eat (any )?(meat|chicken|beef|fish))\b/.test(t);
+const coachVeganSaid = (t) => /\b(vegan|plant[- ]based|no (animal|dairy))\b/.test(t);
+// The Vegetarian or Vegan choice from the protein foods list (gu-pf-veg) starts meal ideas meat-free,
+// unless the question says otherwise ("with meat"); returns "veg", "vegan", or "" when it applies
+const coachMeatQ = (t) => /\b(with|include|including|plus|and) (meat|fish|chicken)\b|\b(meat|fish|chicken) (ideas|too|options)\b/.test(t);
+function coachDietSaved(t) {
+    if (coachVegSaid(t) || coachMeatQ(t)) return "";
+    const saved = store.get("gu-pf-veg", false);
+    return saved === "vegan" ? "vegan" : saved === true ? "veg" : "";
+}
+const coachVegQ = (t) => coachVegSaid(t) || !!coachDietSaved(t);
+const coachVeganQ = (t) => coachVeganSaid(t) || (coachDietSaved(t) === "vegan" && !/\b(vegetarian|veggie)\b/.test(t));
+// A line saying why the ideas are meat-free, with a way to see everything
+const coachDietNote = (t) => {
+    const d = coachDietSaved(t);
+    return d ? `<p>Meat-free because you picked ${d === "vegan" ? "Vegan" : "Vegetarian"} on the ${COACH_PROTEIN_LINK} list (saved on this device). Tap a "with meat" button below to see every idea, or change it on that list.</p>` : "";
+};
 const COACH_PROTEIN_VEG = {
     snack: [
         ["A cup of shelled edamame", 18],
@@ -5096,13 +5111,14 @@ const coachProteinChips = (t) => {
     const kind = coachProteinKind(t);
     const next = { breakfast: ["snack", "lunch"], snack: ["breakfast", "dinner"], lunch: ["dinner", "snack"], dinner: ["lunch", "breakfast"] }[kind];
     const veg = coachVegQ(t);
-    return [...next.map((k) => `${veg ? "Vegetarian high-protein" : "High-protein"} ${k} ideas`), veg ? "A whole vegetarian high-protein day" : `Vegetarian high-protein ${kind} ideas`, "How much protein do I need?"];
+    return [...next.map((k) => `${veg ? "Vegetarian high-protein" : "High-protein"} ${k} ideas`), veg ? "A whole vegetarian high-protein day" : `Vegetarian high-protein ${kind} ideas`,
+        ...(coachDietSaved(t) ? [`High-protein ${kind} ideas with meat`] : []), "How much protein do I need?"];
 };
 function coachProteinMealReply(t) {
     const kind = coachProteinKind(t);
     const veg = coachVegQ(t);
     const other = { breakfast: "snack", snack: "breakfast" }[kind];
-    return `<p>Three quick high-protein ${veg ? "vegetarian " : ""}${kind} ideas${veg ? " (no meat or fish)" : ""}:</p>
+    return `${coachDietNote(t)}<p>Three quick high-protein ${veg ? "vegetarian " : ""}${kind} ideas${veg ? " (no meat or fish)" : ""}:</p>
         <ul class="coach-steps">${coachProteinIdeas(kind, veg).map(([food, g]) => `<li>${food}: about <strong>${g} g</strong> of protein</li>`).join("")}</ul>
         ${veg && coachVeganQ(t) ? `<p>${COACH_VEGAN_NOTE}</p>` : ""}
         <p>${other ? `For a ${other}, ${kind === "breakfast" ? "a cup of edamame or a Greek yogurt cup (17 to 18 g) works well" : "Greek yogurt with oats or 2 eggs on toast gets about 20 g"}.` : "Fill the rest of the plate with vegetables or a salad."} Numbers are rounded from ${COACH_PROTEIN_LINK}, which has about 20 foods and an easy sample day; the label on the pack wins. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
@@ -5113,11 +5129,12 @@ const coachProteinAskMealQ = (t) => /\bprotein\b/.test(t) && /\b(meals?|recipes?
     && !/\b(powder|shakes?|supplements?|creatine|bars?|how much|need|per meal|each meal|every meal)\b/.test(t);
 const COACH_PROTEIN_MEALS = ["breakfast", "lunch", "dinner", "snack"];
 function coachProteinAskMealReply(t = "") {
-    return `<p>Happy to. Which meal? Pick one below and I'll give you three quick ${coachVegQ(t) ? "vegetarian " : ""}ideas with the grams of protein in each, from ${COACH_PROTEIN_LINK}.</p>`;
+    return `${coachDietNote(t)}<p>Happy to. Which meal? Pick one below and I'll give you three quick ${coachVegQ(t) ? "vegetarian " : ""}ideas with the grams of protein in each, from ${COACH_PROTEIN_LINK}.</p>`;
 }
 const coachProteinAskMealChips = (t = "") => {
     const veg = coachVegQ(t);
-    return [...COACH_PROTEIN_MEALS.map((k) => `${veg ? "Vegetarian high-protein" : "High-protein"} ${k} ideas`), veg ? "A whole vegetarian high-protein day" : "A whole high-protein day"];
+    return [...COACH_PROTEIN_MEALS.map((k) => `${veg ? "Vegetarian high-protein" : "High-protein"} ${k} ideas`), veg ? "A whole vegetarian high-protein day" : "A whole high-protein day",
+        ...(coachDietSaved(t) ? ["A whole high-protein day with meat"] : [])];
 };
 
 // "A whole high-protein day" strings one idea from each meal into a sample day, with the total
@@ -5129,13 +5146,13 @@ function coachProteinDayReply(t = "") {
     const veg = coachVegQ(t);
     const day = COACH_PROTEIN_DAY.map(([label, kind, i]) => [label, ...coachProteinIdeas(kind, veg)[veg ? 0 : i]]);
     const total = day.reduce((sum, [, , g]) => sum + g, 0);
-    return `<p>One easy high-protein ${veg ? "vegetarian " : ""}day, one idea from each meal${veg ? " (no meat or fish)" : ""}:</p>
+    return `${coachDietNote(t)}<p>One easy high-protein ${veg ? "vegetarian " : ""}day, one idea from each meal${veg ? " (no meat or fish)" : ""}:</p>
         <ul class="coach-steps">${day.map(([label, food, g]) => `<li><strong>${label}:</strong> ${food}, about <strong>${g} g</strong></li>`).join("")}</ul>
         ${veg && coachVeganQ(t) ? `<p>${COACH_VEGAN_NOTE}</p>` : ""}
         <p>Total: about <strong>${total} g</strong> of protein. That's a sample, not a target: your own daily number is in the <a href="tools.html#tool-calories">calorie and protein estimator</a>, and you can swap any meal for another idea. Numbers are rounded from ${COACH_PROTEIN_LINK}; the label on the pack wins. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
 }
 const coachProteinDayChips = (t = "") => coachVegQ(t)
-    ? ["Vegetarian high-protein lunch ideas", "Vegetarian high-protein dinner ideas", "How much protein do I need?"]
+    ? ["Vegetarian high-protein lunch ideas", "Vegetarian high-protein dinner ideas", ...(coachDietSaved(t) ? ["A whole high-protein day with meat"] : []), "How much protein do I need?"]
     : ["High-protein breakfast ideas", "High-protein dinner ideas", "A whole vegetarian high-protein day", "How much protein do I need?"];
 
 // The workout block the AI adds, checked line by line: real exercises only, simple doses, sane weights
@@ -5501,7 +5518,9 @@ function setupCoach() {
         if (thinking) return;
         // With the AI switched on, everything but the safety replies and "start" goes to it
         const quick = coachUnderstand(text);
-        if (coachAiOn() && !quick.pain && !isMinor(quick.t) && !(last && /^\s*(start|start this workout|let'?s go|go)\s*[.!]*\s*$/.test(quick.t))) { askAi(text); return; }
+        // Meal ideas under a saved Vegetarian/Vegan choice stay built in, so that setting never leaves the device
+        const dietLocal = coachDietSaved(quick.t) && (coachProteinDayQ(quick.t) || coachProteinAskMealQ(quick.t) || coachProteinMealQ(quick.t));
+        if (coachAiOn() && !dietLocal && !quick.pain && !isMinor(quick.t) && !(last && /^\s*(start|start this workout|let'?s go|go)\s*[.!]*\s*$/.test(quick.t))) { askAi(text); return; }
         thinking = true;
         const sendBtn = form.querySelector("button[type=submit]");
         sendBtn.disabled = true;
