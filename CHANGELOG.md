@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-19
+
+- **Real vegan meal ideas from the Fitness Coach.** Ask the Coach for vegan high-protein breakfast, snack, lunch or dinner ideas (or pick **Vegan** on the protein foods list on Gym basics) and you now get ideas with no meat, fish, eggs or dairy: a tofu scramble on toast, black beans on toast, roasted chickpeas, lentil pasta, a bean chili, and more, with grams of protein from the protein foods list. "A whole vegan high-protein day" puts four together (about 105 g). Each vegan answer adds a short note: mix plant proteins through the day, and a registered dietitian can help plan a vegan diet, including vitamin B12. Vegan answers offer vegan buttons for the next meal, and vegetarian answers now offer a Vegan button. Why: before, vegans got the vegetarian ideas (with eggs and yogurt) plus a note on what to skip, and this was on the ideas list.
+
 ## 2026-11-18
 
 - **Fitness Coach remembers your Vegetarian or Vegan choice.** If you tapped **Vegetarian** or **Vegan** on the protein foods list (Gym basics, "Which foods have the most protein?"), the Coach now starts its high-protein snack, lunch, dinner and whole-day ideas meat-free without you having to say so each time. It says why in one line ("Meat-free because you picked Vegetarian...") with a link to change it, and a "with meat" button shows every idea. Vegan adds the short note on skipping eggs and dairy. The choice stays on your device: these meal-idea answers come from the Coach's own built-in ideas, so nothing about it is sent to the AI. Why: people who set the choice once shouldn't have to repeat it, and this was on the ideas list.

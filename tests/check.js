@@ -982,7 +982,19 @@ async function openPage(browser, file, viewport, hash = "") {
                 const vDayMsg = page.locator(".coach-msg.is-coach").last();
                 const vGrams = await vDayMsg.locator("ul.coach-steps li").evaluateAll((ls) => ls.map((li) => +(li.textContent.match(/about (\d+) g/) || [])[1]));
                 check(vGrams.length === 4 && !meaty.test(await vDayMsg.locator("ul.coach-steps").textContent()) && +(vDay.match(/Total: about (\d+) g/) || [])[1] === vGrams.reduce((a, b) => a + b, 0), "Coach's vegetarian whole day has four meat-free meals with a matching total");
-                check(/Vegan\?/.test(await ask("vegan high protein snack ideas")) && !/Vegan\?/.test(await ask("high protein snack ideas")), "vegan questions get the vegan note, others don't");
+                // True vegan ideas: no meat, fish, eggs, or dairy (soy milk is fine), with a B12 / dietitian note
+                const animal = /chicken|tuna|turkey|beef|salmon|shrimp|egg|yogurt|cheese|cheddar|cottage|(?<!soy )milk|whey/i;
+                for (const kind of ["breakfast", "snack", "lunch", "dinner"]) {
+                    const vg = await ask(`vegan high protein ${kind} ideas`);
+                    const list = await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent();
+                    check(!animal.test(list) && (list.match(/about \d+ g/g) || []).length === 3 && /vitamin B12/.test(vg) && /registered dietitian/.test(vg), `vegan ${kind} ideas have no animal foods (${(list.match(/about \d+ g/g) || []).join(", ")})`);
+                }
+                check(await page.locator(".chip[data-coach-say='A whole vegan high-protein day']").count() >= 1 && await page.locator(".chip[data-coach-say='Vegan high-protein lunch ideas']").count() >= 1, "vegan ideas offer vegan buttons next");
+                const vgDay = await ask("a whole vegan high-protein day");
+                const vgDayGrams = await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps li").evaluateAll((ls) => ls.map((li) => +(li.textContent.match(/about (\d+) g/) || [])[1]));
+                check(vgDayGrams.length === 4 && !animal.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()) && +(vgDay.match(/Total: about (\d+) g/) || [])[1] === vgDayGrams.reduce((a, b) => a + b, 0), `Coach's vegan whole day has four plant-only meals with a matching total (${vgDayGrams.reduce((a, b) => a + b, 0)} g)`);
+                check(!/vitamin B12/.test(await ask("high protein snack ideas")) && !/vitamin B12/.test(await ask("vegetarian high protein snack ideas")), "only vegan ideas get the vegan note");
+                check(await page.locator(".chip[data-coach-say='Vegan high-protein snack ideas']").count() >= 1, "vegetarian ideas offer a Vegan button");
                 check(/Which meal/.test(await ask("vegetarian protein meal ideas")) && await page.locator(".chip[data-coach-say='Vegetarian high-protein dinner ideas']").count() >= 1, "vegetarian which-meal question offers vegetarian meal buttons");
                 // The Vegetarian / Vegan choice saved on the protein foods list starts the Coach's ideas meat-free
                 await page.evaluate(() => localStorage.setItem("gu-pf-veg", "true"));
@@ -999,7 +1011,9 @@ async function openPage(browser, file, viewport, hash = "") {
                 check(/Meat-free because/.test(await ask("protein meal ideas")) && await page.locator(".chip[data-coach-say='Vegetarian high-protein lunch ideas']").count() >= 1, "a saved Vegetarian choice makes the which-meal buttons vegetarian");
                 await page.evaluate(() => localStorage.setItem("gu-pf-veg", JSON.stringify("vegan")));
                 const vgLunch = await ask("high protein lunch ideas");
-                check(/picked Vegan/.test(vgLunch) && /Vegan\?/.test(vgLunch) && !meaty.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()), "a saved Vegan choice adds the vegan note to meal ideas");
+                check(/Fully plant-based because you picked Vegan/.test(vgLunch) && /vitamin B12/.test(vgLunch) && !animal.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()), "a saved Vegan choice gives true vegan meal ideas with the vegan note");
+                check(await page.locator(".chip[data-coach-say='Vegan high-protein dinner ideas']").count() >= 1 && await page.locator(".chip[data-coach-say='High-protein lunch ideas with meat']").count() >= 1, "saved Vegan ideas offer vegan buttons and a with-meat button");
+                check(!/Fully plant-based/.test(await ask("vegetarian high protein lunch ideas")), "asking for vegetarian ideas with Vegan saved gives the vegetarian ones");
                 await page.evaluate(() => localStorage.removeItem("gu-pf-veg"));
                 check(!/Meat-free because/.test(await ask("high protein snack ideas")), "without a saved choice, ideas are the regular ones");
             }
