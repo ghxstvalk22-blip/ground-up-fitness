@@ -50,7 +50,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Protein foods list: a couple more vegan staples (tempeh, seitan, pea-protein milk) with typical grams per serving.
 - [ ] Fitness Coach: when someone says "I don't eat meat" or "I'm vegan", offer a button to save that as the Vegetarian/Vegan choice (same setting as the protein foods list), so later ideas start meat-free.
 - [ ] Fitness Coach: a "Swap" button on each vegan idea that trades it for another vegan idea of the same meal, so tofu twice in a day is easy to avoid.
-- [ ] Protein foods list: when Vegan is on, change the easy sample day line under the list to a plant-only day (tofu scramble, black beans on toast, edamame, lentil pasta).
+- [ ] Protein foods list: a "Plan my day" link under the sample day that asks the Fitness Coach for a whole high-protein day with the same Vegetarian/Vegan choice.
 - [ ] Gym basics: the same "Jump to" and "Back to top" links for other long answers, if any grow past a couple of screens on a phone.
 
 ## Blocked
@@ -59,6 +59,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 
 ## Done
 
+- [x] 2026-11-20: Protein foods list: the "An easy day could look like" line under the list follows the Vegetarian/Vegan choice: Vegetarian swaps chicken and salmon for eggs and a bean chili, Vegan gives a plant-only day (oats with soy milk, tofu or black bean wrap, lentils with pasta or rice, edamame or almonds).
 - [x] 2026-11-19: Fitness Coach: true vegan meal ideas. Asking for vegan breakfast, snack, lunch, dinner or a whole day (or having Vegan saved on the protein foods list) now gives plant-only ideas with no eggs or dairy (tofu scramble, black beans on toast, roasted chickpeas, lentil pasta, bean chili), grams from the protein foods list, a whole vegan day of about 105 g, and a note on mixing plant proteins with a registered dietitian and vitamin B12. Vegan buttons follow, and vegetarian ideas offer a Vegan button.
 - [x] 2026-11-18: Fitness Coach uses the Vegetarian or Vegan choice saved on the protein foods list: high-protein snack, lunch, dinner, which-meal and whole-day ideas start meat-free (Vegan adds the vegan note), with a line saying why, a link to change it, and a "with meat" button to see every idea. With the AI coach on, these meal-idea questions are answered on the device, so the choice is never sent anywhere.
 - [x] 2026-11-17: Protein foods list on Gym basics: a "Vegan" button next to Vegetarian hides meat, fish, eggs and dairy (and their Jump to links), with a short plant-protein note pointing to a registered dietitian. Remembered on this device; Vegetarian and Vegan swap with one tap. Added unsweetened soy milk to plant foods.

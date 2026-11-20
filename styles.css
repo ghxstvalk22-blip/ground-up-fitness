@@ -2577,6 +2577,10 @@ a.week-light-btn { display: inline-flex; align-items: center; text-decoration: n
 .pf-veg-note:empty { display: none; }
 .pf-veg-on [data-meat] { display: none !important; }
 .pf-vegan-on [data-meat], .pf-vegan-on [data-dairy] { display: none !important; }
+/* The sample day under the list follows the Vegetarian / Vegan choice */
+.pf-day[data-day="veg"], .pf-day[data-day="vegan"] { display: none; }
+.pf-veg-on .pf-day[data-day="all"], .pf-vegan-on .pf-day[data-day="all"] { display: none; }
+.pf-veg-on .pf-day[data-day="veg"], .pf-vegan-on .pf-day[data-day="vegan"] { display: inline; }
 .pf-back { margin: 14px 0 0; }
 .pf-back a { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-size: 0.72rem; font-weight: 800; font-stretch: 110%; letter-spacing: 0.08em; text-transform: uppercase; }
 .pf-back a::before { content: "\2191"; content: "\2191" / ""; font-size: 0.9rem; letter-spacing: 0; }

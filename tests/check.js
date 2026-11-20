@@ -2135,6 +2135,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await vegan.getAttribute("aria-pressed") === "true" && await page.locator("#pf-veg").getAttribute("aria-pressed") === "false" && !(await page.locator("#pf-meat-list").isVisible()) && !(await page.locator("#pf-dairy-list").isVisible()) && !(await page.locator("#faq-protein-foods .pf-jump a[href='#pf-dairy']").isVisible()) && await page.locator("#pf-plant").isVisible() && await page.locator("#pf-carbs").isVisible(), "Vegan hides meat, fish, eggs and dairy but keeps plant foods and carbs");
             check(/eggs and dairy hidden/i.test(await page.locator("#pf-veg-note").textContent()) && /registered dietitian/.test(await page.locator("#pf-veg-note").textContent()), "Vegan explains plant protein and points to a registered dietitian");
             check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "Vegan view fits without sideways scrolling");
+            check(!/yogurt|milk,|chicken|salmon|egg/i.test((await page.locator("#pf-day").innerText())) && /soy milk/.test((await page.locator("#pf-day").innerText())) && /tofu/.test((await page.locator("#pf-day").innerText())), "Vegan turns the sample day into a plant-only day");
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein-vegan.png`) });
             await page.reload();
             await page.waitForTimeout(300);
@@ -2142,8 +2143,10 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator("#pf-vegan").getAttribute("aria-pressed") === "true" && !(await page.locator("#pf-dairy-list").isVisible()), "Vegan is remembered on this device");
             await page.locator("#pf-veg").click();
             check(await page.locator("#pf-veg").getAttribute("aria-pressed") === "true" && await page.locator("#pf-vegan").getAttribute("aria-pressed") === "false" && await page.locator("#pf-dairy-list").isVisible() && !(await page.locator("#pf-meat-list").isVisible()), "Vegetarian after Vegan brings eggs and dairy back");
+            check(!/chicken|salmon/i.test((await page.locator("#pf-day").innerText())) && /yogurt/.test((await page.locator("#pf-day").innerText())) && /egg/.test((await page.locator("#pf-day").innerText())), "Vegetarian sample day has no meat or fish but keeps eggs and dairy");
             await page.locator("#pf-veg").click();
             check(await page.locator("#pf-meat-list").isVisible() && await page.locator("#pf-dairy-list").isVisible(), "turning the filter off shows every food again");
+            check(/chicken/.test((await page.locator("#pf-day").innerText())) && (await page.locator("#pf-day .pf-day:visible").count()) === 1, "with the filter off, the sample day shows one line with every food");
             await page.evaluate(() => localStorage.removeItem("gu-pf-veg"));
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein.png`) });
             await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });

@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-20
+
+- **The sample day on the protein foods list now matches your Vegetarian or Vegan choice.** Under "Which foods have the most protein?" on Gym basics, the "An easy day could look like" line used to mention chicken, salmon, yogurt and milk even with Vegan picked. Now Vegetarian shows a day without meat or fish (yogurt and oats, an egg or tofu wrap, lentils or a bean chili), and Vegan shows a plant-only day (oats made with soy milk, a tofu or black bean wrap, lentils with pasta or rice, edamame or almonds). With neither picked, the original line stays. Why: the example should fit the foods people can actually eat, and this was on the ideas list.
+
 ## 2026-11-19
 
 - **Real vegan meal ideas from the Fitness Coach.** Ask the Coach for vegan high-protein breakfast, snack, lunch or dinner ideas (or pick **Vegan** on the protein foods list on Gym basics) and you now get ideas with no meat, fish, eggs or dairy: a tofu scramble on toast, black beans on toast, roasted chickpeas, lentil pasta, a bean chili, and more, with grams of protein from the protein foods list. "A whole vegan high-protein day" puts four together (about 105 g). Each vegan answer adds a short note: mix plant proteins through the day, and a registered dietitian can help plan a vegan diet, including vitamin B12. Vegan answers offer vegan buttons for the next meal, and vegetarian answers now offer a Vegan button. Why: before, vegans got the vegetarian ideas (with eggs and yogurt) plus a note on what to skip, and this was on the ideas list.
