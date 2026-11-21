@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-21
+
+- **More plant protein on the protein foods list.** Under "Which foods have the most protein?" on Gym basics, Plant foods now includes seitan (about 21 g in 3 oz, with a note that it's made from wheat gluten, so skip it if you avoid gluten), tempeh (about 20 g in 3.5 oz) and unsweetened pea protein milk (about 8 g a cup). They show with every filter, including Vegan. Why: these are some of the highest-protein plant foods, so vegetarians and vegans have more than tofu to lean on, and this was on the ideas list.
+
 ## 2026-11-20
 
 - **The sample day on the protein foods list now matches your Vegetarian or Vegan choice.** Under "Which foods have the most protein?" on Gym basics, the "An easy day could look like" line used to mention chicken, salmon, yogurt and milk even with Vegan picked. Now Vegetarian shows a day without meat or fish (yogurt and oats, an egg or tofu wrap, lentils or a bean chili), and Vegan shows a plant-only day (oats made with soy milk, a tofu or black bean wrap, lentils with pasta or rice, edamame or almonds). With neither picked, the original line stays. Why: the example should fit the foods people can actually eat, and this was on the ideas list.

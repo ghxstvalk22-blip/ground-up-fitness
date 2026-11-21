@@ -2098,6 +2098,7 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator("#faq-protein-foods").evaluate((d) => d.open), "the protein foods link opens the list");
             const pf = await page.locator("#faq-protein-foods .protein-foods li").count();
             check(pf >= 16, `protein foods list has enough foods (${pf})`);
+            check(await page.locator("#pf-plant-list li").evaluateAll((lis) => ["Seitan", "Tempeh", "Pea protein milk"].every((f) => lis.some((li) => li.textContent.includes(f)))) && /gluten/.test(await page.locator("#pf-plant-list").textContent()), "plant foods include tempeh, seitan (with a gluten note) and pea protein milk");
             check(await page.locator("#faq-protein-foods .protein-foods li").first().evaluate((li) => /\d+ g/.test(li.querySelector(".pf-g").textContent) && li.querySelector(".pf-food small").textContent.length > 0), "each food shows a serving and grams");
             check(/registered dietitian/.test(await page.locator("#faq-protein-foods").textContent()), "protein foods list points to a dietitian for health conditions");
             // Jump to row: one link per food group, each lands on its heading

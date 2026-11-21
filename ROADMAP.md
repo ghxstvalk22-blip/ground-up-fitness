@@ -47,7 +47,8 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Goal weight: when the goal is reached, offer a one-tap "Hold steady" that switches the safe-pace note to keeping weight within a small range.
 - [ ] Protein foods list: a "kg / lb" note or metric-first servings for people who set kg in Your starting point.
 - [ ] Fitness Coach: a "Swap a meal" button under the whole high-protein day that trades one meal for another idea and updates the total.
-- [ ] Protein foods list: a couple more vegan staples (tempeh, seitan, pea-protein milk) with typical grams per serving.
+- [ ] Fitness Coach: mention tempeh and seitan in its vegan protein note and meal ideas, now that the protein foods list has them.
+- [ ] Protein foods list: a "Gluten-free" note or filter that hides seitan and points out gluten-free grains.
 - [ ] Fitness Coach: when someone says "I don't eat meat" or "I'm vegan", offer a button to save that as the Vegetarian/Vegan choice (same setting as the protein foods list), so later ideas start meat-free.
 - [ ] Fitness Coach: a "Swap" button on each vegan idea that trades it for another vegan idea of the same meal, so tofu twice in a day is easy to avoid.
 - [ ] Protein foods list: a "Plan my day" link under the sample day that asks the Fitness Coach for a whole high-protein day with the same Vegetarian/Vegan choice.
@@ -58,6 +59,7 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 (Nothing yet.)
 
 ## Done
+- [x] 2026-11-21: Protein foods list: added tempeh, seitan (with a note that it is wheat gluten) and pea protein milk to Plant foods, with typical grams per serving.
 
 - [x] 2026-11-20: Protein foods list: the "An easy day could look like" line under the list follows the Vegetarian/Vegan choice: Vegetarian swaps chicken and salmon for eggs and a bean chili, Vegan gives a plant-only day (oats with soy milk, tofu or black bean wrap, lentils with pasta or rice, edamame or almonds).
 - [x] 2026-11-19: Fitness Coach: true vegan meal ideas. Asking for vegan breakfast, snack, lunch, dinner or a whole day (or having Vegan saved on the protein foods list) now gives plant-only ideas with no eggs or dairy (tofu scramble, black beans on toast, roasted chickpeas, lentil pasta, bean chili), grams from the protein foods list, a whole vegan day of about 105 g, and a note on mixing plant proteins with a registered dietitian and vitamin B12. Vegan buttons follow, and vegetarian ideas offer a Vegan button.
