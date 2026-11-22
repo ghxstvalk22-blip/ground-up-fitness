@@ -665,7 +665,7 @@ function setupProteinVeg() {
     if (veganBtn) veganBtn.hidden = false;
     const NOTES = {
         veg: "Meat and fish hidden. Vegan? Tap Vegan to hide eggs and dairy too.",
-        vegan: "Meat, fish, eggs and dairy hidden. Plant protein is easier to reach when you mix sources through the day (tofu, edamame, lentils, beans, soy milk, whole grains) and aim toward the top of your daily range. A registered dietitian can help you plan it, including vitamin B12."
+        vegan: "Meat, fish, eggs and dairy hidden. Plant protein is easier to reach when you mix sources through the day (tofu, tempeh, edamame, lentils, beans, soy milk, whole grains) and aim toward the top of your daily range. A registered dietitian can help you plan it, including vitamin B12."
     };
     function show(mode, announce) {
         list.classList.toggle("pf-veg-on", mode === "veg");
@@ -5039,7 +5039,7 @@ const coachProteinFoodsQ = (t) => /\bprotein\b/.test(t)
     && !/\b(powder|shakes?|supplements?|creatine)\b/.test(t);
 const COACH_PROTEIN_LINK = `<a href="basics.html#faq-protein-foods">Protein in common foods</a>`;
 function coachProteinFoodsReply() {
-    return `<p>Good everyday protein foods: chicken, fish, lean beef, eggs, Greek yogurt, cottage cheese, milk, tofu, lentils, beans, and edamame. Most people get there by putting one of them in each meal, about 20 to 40 g of protein, 3 or 4 times a day.</p>
+    return `<p>Good everyday protein foods: chicken, fish, lean beef, eggs, Greek yogurt, cottage cheese, milk, tofu, tempeh, seitan, lentils, beans, and edamame. Most people get there by putting one of them in each meal, about 20 to 40 g of protein, 3 or 4 times a day.</p>
         <p>${COACH_PROTEIN_LINK} lists about 20 foods with a typical serving and its grams of protein, plus an easy sample day. Your own daily number is in the <a href="tools.html#tool-calories">calorie and protein estimator</a>. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
 }
 
@@ -5118,11 +5118,11 @@ const COACH_PROTEIN_VEGAN = {
     lunch: [
         ["A cup of black beans on 2 slices of whole wheat toast", 23],
         ["3.5 oz firm tofu and a cup of chickpeas over a cup of rice", 34],
-        ["A cup of lentils over a cup of rice", 22],
+        ["3.5 oz tempeh, crumbled and browned, with a cup of black beans over a cup of rice", 39],
     ],
     dinner: [
         ["A cup of lentils in a tomato sauce over a cup of pasta", 26],
-        ["3.5 oz firm tofu and a cup of edamame stir-fried, over a cup of rice", 37],
+        ["3 oz seitan and a cup of edamame stir-fried, over a cup of rice (seitan is wheat gluten; use firm tofu if you avoid gluten)", 43],
         ["A chili with a cup of black beans and a cup of chickpeas, over a cup of rice", 34],
     ],
 };
@@ -5132,7 +5132,7 @@ const COACH_DIET_WORD = { "": "", veg: "vegetarian", vegan: "vegan" };
 const COACH_DIET_SKIPS = { "": "", veg: " (no meat or fish)", vegan: " (no meat, fish, eggs, or dairy)" };
 const coachDietChip = (d) => ({ "": "High-protein", veg: "Vegetarian high-protein", vegan: "Vegan high-protein" })[d];
 const coachProteinIdeas = (kind, diet) => (diet === "vegan" && COACH_PROTEIN_VEGAN[kind]) || (diet && COACH_PROTEIN_VEG[kind]) || COACH_PROTEIN_IDEAS[kind];
-const COACH_VEGAN_NOTE = "Plant protein is easier to reach when you mix sources through the day (tofu, edamame, lentils, beans, soy milk, whole grains) and aim toward the top of your daily range. A registered dietitian can help you plan a vegan diet, including vitamin B12.";
+const COACH_VEGAN_NOTE = "Plant protein is easier to reach when you mix sources through the day (tofu, tempeh, seitan, edamame, lentils, beans, soy milk, whole grains) and aim toward the top of your daily range. Tempeh and seitan are among the most protein-packed plant foods (about 20 g a serving); seitan is wheat gluten, so skip it if you avoid gluten. A registered dietitian can help you plan a vegan diet, including vitamin B12.";
 // Which meal a protein-ideas question is about, and the other meals to offer next
 const coachProteinKind = (t) => /\b(breakfasts?|morning)\b/.test(t) ? "breakfast" : /\blunch(es)?\b/.test(t) ? "lunch" : /\b(dinners?|suppers?)\b/.test(t) ? "dinner" : "snack";
 const coachProteinChips = (t) => {

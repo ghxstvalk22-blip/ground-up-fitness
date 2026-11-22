@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-22
+
+- **The Fitness Coach now suggests tempeh and seitan for vegans.** Ask the Coach for vegan high-protein lunch or dinner ideas (or pick Vegan on the protein foods list) and you'll now see tempeh with black beans and rice (about 39 g of protein) and a seitan and edamame stir-fry (about 43 g). Seitan always comes with a note that it's made from wheat gluten, so tofu works instead if you avoid gluten. The Coach's vegan tip and its "which foods have protein" answer now name both, and the Vegan note on the protein foods list mentions tempeh. Why: these were just added to the protein foods list and are among the most protein-packed plant foods, and this was on the ideas list.
+
 ## 2026-11-21
 
 - **More plant protein on the protein foods list.** Under "Which foods have the most protein?" on Gym basics, Plant foods now includes seitan (about 21 g in 3 oz, with a note that it's made from wheat gluten, so skip it if you avoid gluten), tempeh (about 20 g in 3.5 oz) and unsweetened pea protein milk (about 8 g a cup). They show with every filter, including Vegan. Why: these are some of the highest-protein plant foods, so vegetarians and vegans have more than tofu to lean on, and this was on the ideas list.

@@ -989,6 +989,11 @@ async function openPage(browser, file, viewport, hash = "") {
                     const list = await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent();
                     check(!animal.test(list) && (list.match(/about \d+ g/g) || []).length === 3 && /vitamin B12/.test(vg) && /registered dietitian/.test(vg), `vegan ${kind} ideas have no animal foods (${(list.match(/about \d+ g/g) || []).join(", ")})`);
                 }
+                // Tempeh and seitan (from the protein foods list) show up in vegan ideas and the vegan note, with a gluten note for seitan
+                const vgLunchT = await ask("vegan high protein lunch ideas");
+                const vgDinnerT = await ask("vegan high protein dinner ideas");
+                check(/tempeh[^:]*: about 39 g/i.test(vgLunchT) && /seitan[^:]*wheat gluten[^:]*: about 43 g/i.test(vgDinnerT) && /tempeh, seitan/.test(vgDinnerT) && /seitan is wheat gluten, so skip it if you avoid gluten/.test(vgDinnerT), "Coach's vegan ideas and note mention tempeh and seitan, with a gluten note");
+                check(/tempeh, seitan/.test(await ask("what foods are high in protein?")), "Coach's protein foods answer mentions tempeh and seitan");
                 check(await page.locator(".chip[data-coach-say='A whole vegan high-protein day']").count() >= 1 && await page.locator(".chip[data-coach-say='Vegan high-protein lunch ideas']").count() >= 1, "vegan ideas offer vegan buttons next");
                 const vgDay = await ask("a whole vegan high-protein day");
                 const vgDayGrams = await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps li").evaluateAll((ls) => ls.map((li) => +(li.textContent.match(/about (\d+) g/) || [])[1]));
