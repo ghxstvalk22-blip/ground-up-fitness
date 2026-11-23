@@ -654,15 +654,20 @@ function setupPageTransitions() {
    show up here automatically.
    ========================================================= */
 // Protein foods list (Gym basics): "Vegetarian" (hides meat and fish) and "Vegan" (also hides eggs and dairy)
-// toggles, remembered on this device as gu-pf-veg: true (vegetarian), "vegan", or false
+// toggles, remembered on this device as gu-pf-veg: true (vegetarian), "vegan", or false.
+// "Gluten-free" (gu-pf-gf: true/false) works alongside either: it hides [data-gluten] foods and shows .pf-gf-tip hints
 function setupProteinVeg() {
     const btn = document.getElementById("pf-veg");
     const veganBtn = document.getElementById("pf-vegan");
+    const gfBtn = document.getElementById("pf-gf");
     const list = document.getElementById("faq-protein-foods");
     const note = document.getElementById("pf-veg-note");
     if (!btn || !list || !note) return;
     btn.hidden = false;
     if (veganBtn) veganBtn.hidden = false;
+    if (gfBtn) gfBtn.hidden = false;
+    const GF_NOTE = "Seitan, wheat bread and regular pasta hidden. Rice, quinoa, potatoes, beans, lentils, tofu, tempeh, meat, fish, eggs and plain dairy are naturally gluten-free; for oats, pasta and wraps, pick ones labeled gluten-free. If you have celiac disease, a doctor or registered dietitian can help you plan meals.";
+    let gf = !!gfBtn && store.get("gu-pf-gf", false) === true;
     const NOTES = {
         veg: "Meat and fish hidden. Vegan? Tap Vegan to hide eggs and dairy too.",
         vegan: "Meat, fish, eggs and dairy hidden. Plant protein is easier to reach when you mix sources through the day (tofu, tempeh, edamame, lentils, beans, soy milk, whole grains) and aim toward the top of your daily range. A registered dietitian can help you plan it, including vitamin B12."
@@ -672,7 +677,10 @@ function setupProteinVeg() {
         list.classList.toggle("pf-vegan-on", mode === "vegan");
         btn.setAttribute("aria-pressed", mode === "veg" ? "true" : "false");
         if (veganBtn) veganBtn.setAttribute("aria-pressed", mode === "vegan" ? "true" : "false");
-        note.textContent = NOTES[mode] || (announce ? "Showing all foods." : "");
+        list.classList.toggle("pf-gf-on", gf);
+        if (gfBtn) gfBtn.setAttribute("aria-pressed", gf ? "true" : "false");
+        const parts = [NOTES[mode], gf ? GF_NOTE : ""].filter(Boolean);
+        note.textContent = parts.join(" ") || (announce ? "Showing all foods." : "");
     }
     function save(mode) { store.set("gu-pf-veg", mode === "vegan" ? "vegan" : mode === "veg"); }
     const saved = store.get("gu-pf-veg", false);
@@ -689,6 +697,11 @@ function setupProteinVeg() {
     if (veganBtn) veganBtn.addEventListener("click", () => {
         mode = mode === "vegan" ? "all" : "vegan";
         save(mode);
+        show(mode, true);
+    });
+    if (gfBtn) gfBtn.addEventListener("click", () => {
+        gf = !gf;
+        store.set("gu-pf-gf", gf);
         show(mode, true);
     });
 }

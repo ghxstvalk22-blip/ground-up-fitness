@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-23
+
+- **Protein foods list: a Gluten-free button.** On Gym basics, open "Which foods have the most protein?" and tap **Gluten-free** next to Vegetarian and Vegan. Seitan (made from wheat gluten), whole wheat bread and regular pasta disappear, a short note lists the foods that are naturally gluten-free and reminds you to pick oats, pasta and wraps labeled gluten-free, and people with celiac disease are pointed to a doctor or registered dietitian. It works together with Vegetarian or Vegan, and it's remembered on this device; tap it again to bring everything back. Quinoa and baked potatoes were also added to the carbs. Why: people who avoid gluten had to spot the wheat foods themselves, and this was on the ideas list.
+
 ## 2026-11-22
 
 - **The Fitness Coach now suggests tempeh and seitan for vegans.** Ask the Coach for vegan high-protein lunch or dinner ideas (or pick Vegan on the protein foods list) and you'll now see tempeh with black beans and rice (about 39 g of protein) and a seitan and edamame stir-fry (about 43 g). Seitan always comes with a note that it's made from wheat gluten, so tofu works instead if you avoid gluten. The Coach's vegan tip and its "which foods have protein" answer now name both, and the Vegan note on the protein foods list mentions tempeh. Why: these were just added to the protein foods list and are among the most protein-packed plant foods, and this was on the ideas list.

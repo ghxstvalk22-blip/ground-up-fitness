@@ -2153,7 +2153,26 @@ async function openPage(browser, file, viewport, hash = "") {
             await page.locator("#pf-veg").click();
             check(await page.locator("#pf-meat-list").isVisible() && await page.locator("#pf-dairy-list").isVisible(), "turning the filter off shows every food again");
             check(/chicken/.test((await page.locator("#pf-day").innerText())) && (await page.locator("#pf-day .pf-day:visible").count()) === 1, "with the filter off, the sample day shows one line with every food");
-            await page.evaluate(() => localStorage.removeItem("gu-pf-veg"));
+            // Gluten-free hides seitan, wheat bread and pasta, works with Vegan, shows label tips, and is remembered
+            const gfb = page.locator("#pf-gf");
+            const seitan = page.locator("#pf-plant-list li", { hasText: "Seitan" });
+            const bread = page.locator("#pf-carbs-list li", { hasText: "Whole wheat bread" });
+            check(await gfb.isVisible() && await gfb.getAttribute("aria-pressed") === "false" && await gfb.evaluate((b) => b.getBoundingClientRect().height >= 44) && await seitan.isVisible() && !(await page.locator("#faq-protein-foods .pf-gf-tip").first().isVisible()), "protein foods list has a Gluten-free toggle, off by default, with seitan showing and no gluten-free tips");
+            await gfb.click();
+            check(await gfb.getAttribute("aria-pressed") === "true" && !(await seitan.isVisible()) && !(await bread.isVisible()) && await page.locator("#pf-carbs-list li", { hasText: "Quinoa" }).isVisible() && await page.locator("#pf-plant-list li", { hasText: "Tempeh" }).isVisible() && await page.locator("#pf-meat-list").isVisible(), "Gluten-free hides seitan, wheat bread and pasta but keeps quinoa, tempeh and meat");
+            check(/Seitan, wheat bread and regular pasta hidden/.test(await page.locator("#pf-veg-note").textContent()) && /registered dietitian/.test(await page.locator("#pf-veg-note").textContent()) && /gluten-free wraps/.test(await page.locator("#pf-day").innerText()), "Gluten-free explains what it hid, points to a dietitian, and adds a tip to the sample day");
+            await page.locator("#pf-vegan").click();
+            check(await gfb.getAttribute("aria-pressed") === "true" && await page.locator("#pf-vegan").getAttribute("aria-pressed") === "true" && !(await seitan.isVisible()) && !(await page.locator("#pf-dairy-list").isVisible()) && /eggs and dairy hidden/i.test(await page.locator("#pf-veg-note").textContent()) && /wheat bread/.test(await page.locator("#pf-veg-note").textContent()), "Gluten-free and Vegan work together");
+            check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), "three filter buttons fit without sideways scrolling");
+            await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein-gf.png`) });
+            await page.reload();
+            await page.waitForTimeout(300);
+            await page.evaluate(() => { document.getElementById("faq-protein-foods").open = true; });
+            check(await page.locator("#pf-gf").getAttribute("aria-pressed") === "true" && !(await seitan.isVisible()), "Gluten-free is remembered on this device");
+            await page.locator("#pf-gf").click();
+            await page.locator("#pf-vegan").click();
+            check(await seitan.isVisible() && await bread.isVisible() && await page.locator("#pf-gf").getAttribute("aria-pressed") === "false", "tapping Gluten-free again brings seitan and wheat foods back");
+            await page.evaluate(() => { localStorage.removeItem("gu-pf-veg"); localStorage.removeItem("gu-pf-gf"); });
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein.png`) });
             await page.evaluate(() => { document.documentElement.dataset.theme = "dark"; });
             await page.locator("#faq-protein-foods").screenshot({ path: path.join(SHOTS, `${name}-basics-protein-dark.png`) });

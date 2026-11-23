@@ -2577,6 +2577,10 @@ a.week-light-btn { display: inline-flex; align-items: center; text-decoration: n
 .pf-veg-note:empty { display: none; }
 .pf-veg-on [data-meat] { display: none !important; }
 .pf-vegan-on [data-meat], .pf-vegan-on [data-dairy] { display: none !important; }
+/* Gluten-free works alongside Vegetarian / Vegan: hides wheat foods, shows label tips */
+.pf-gf-on [data-gluten] { display: none !important; }
+.pf-gf-tip { display: none; }
+.pf-gf-on .pf-gf-tip { display: inline; }
 /* The sample day under the list follows the Vegetarian / Vegan choice */
 .pf-day[data-day="veg"], .pf-day[data-day="vegan"] { display: none; }
 .pf-veg-on .pf-day[data-day="all"], .pf-vegan-on .pf-day[data-day="all"] { display: none; }
