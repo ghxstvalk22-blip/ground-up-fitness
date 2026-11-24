@@ -662,6 +662,8 @@ function setupProteinVeg() {
     const gfBtn = document.getElementById("pf-gf");
     const list = document.getElementById("faq-protein-foods");
     const note = document.getElementById("pf-veg-note");
+    const showing = document.getElementById("pf-showing");
+    const showingText = document.getElementById("pf-showing-text");
     if (!btn || !list || !note) return;
     btn.hidden = false;
     if (veganBtn) veganBtn.hidden = false;
@@ -681,6 +683,12 @@ function setupProteinVeg() {
         if (gfBtn) gfBtn.setAttribute("aria-pressed", gf ? "true" : "false");
         const parts = [NOTES[mode], gf ? GF_NOTE : ""].filter(Boolean);
         note.textContent = parts.join(" ") || (announce ? "Showing all foods." : "");
+        // A short "Showing: Vegan, Gluten-free" line at the top, so people who come back later know why foods are missing
+        if (showing && showingText) {
+            const on = [mode === "veg" ? "Vegetarian" : mode === "vegan" ? "Vegan" : "", gf ? "Gluten-free" : ""].filter(Boolean);
+            showingText.textContent = on.join(", ");
+            showing.hidden = !on.length;
+        }
     }
     function save(mode) { store.set("gu-pf-veg", mode === "vegan" ? "vegan" : mode === "veg"); }
     const saved = store.get("gu-pf-veg", false);
@@ -703,6 +711,15 @@ function setupProteinVeg() {
         gf = !gf;
         store.set("gu-pf-gf", gf);
         show(mode, true);
+    });
+    const clearBtn = document.getElementById("pf-showing-clear");
+    if (clearBtn) clearBtn.addEventListener("click", () => {
+        mode = "all";
+        gf = false;
+        save(mode);
+        store.set("gu-pf-gf", false);
+        show(mode, true);
+        btn.focus();
     });
 }
 

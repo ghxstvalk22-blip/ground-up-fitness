@@ -54,13 +54,14 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Fitness Coach: vegetarian dinner ideas could include a tempeh option too, now that the vegan list has one.
 - [ ] Gym basics: the same "Jump to" and "Back to top" links for other long answers, if any grow past a couple of screens on a phone.
 - [ ] Fitness Coach: start meal ideas gluten-free when Gluten-free is picked on the protein foods list (swap seitan for tofu or tempeh, and wraps or pasta for gluten-free ones), the same way it follows Vegetarian/Vegan.
-- [ ] Protein foods list: a short "Showing: Vegan, Gluten-free" line at the top of the list when filters are on, so people who scroll back later know why foods are missing.
+- [ ] Protein foods list: a small count next to each group heading ("4 of 6 shown") when a filter hides some foods.
 
 ## Blocked
 
 (Nothing yet.)
 
 ## Done
+- [x] 2026-11-24: Protein foods list: a "Showing: Vegan, Gluten-free" line at the top of the list when filters are on (also when coming back later), with a "Show all foods" button that turns every filter off.
 - [x] 2026-11-23: Protein foods list: a "Gluten-free" filter that hides seitan, wheat bread and pasta and points out gluten-free grains (quinoa, rice, potatoes, oats labeled gluten-free).
 - [x] 2026-11-22: Fitness Coach: tempeh and seitan in vegan ideas. Vegan lunch ideas now include tempeh with black beans and rice (about 39 g), vegan dinner ideas include a seitan and edamame stir-fry (about 43 g, with a note that seitan is wheat gluten and tofu works instead), the vegan note names both (with a gluten note), and the "which foods have protein" answer lists them. The Vegan note on the protein foods list mentions tempeh too.
 

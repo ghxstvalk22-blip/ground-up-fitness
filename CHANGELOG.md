@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-24
+
+- **Protein foods list shows which filters are on.** On Gym basics, "Which foods have the most protein?" now has a short "Showing: Vegan, Gluten-free" line at the top whenever a filter is on. Filters are remembered on your phone, so this tells people who come back later why some foods are missing, and a "Show all foods" button turns every filter off in one tap.
+
 ## 2026-11-23
 
 - **Protein foods list: a Gluten-free button.** On Gym basics, open "Which foods have the most protein?" and tap **Gluten-free** next to Vegetarian and Vegan. Seitan (made from wheat gluten), whole wheat bread and regular pasta disappear, a short note lists the foods that are naturally gluten-free and reminds you to pick oats, pasta and wraps labeled gluten-free, and people with celiac disease are pointed to a doctor or registered dietitian. It works together with Vegetarian or Vegan, and it's remembered on this device; tap it again to bring everything back. Quinoa and baked potatoes were also added to the carbs. Why: people who avoid gluten had to spot the wheat foods themselves, and this was on the ideas list.
