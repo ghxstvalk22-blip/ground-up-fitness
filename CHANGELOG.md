@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-25
+
+- **The Fitness Coach now gives gluten-free meal ideas.** If you picked **Gluten-free** on the protein foods list (Gym basics), or you tell the Coach "gluten-free", "no gluten" or "celiac", its high-protein breakfast, lunch, dinner, snack and whole-day ideas leave out wheat: bread and pasta become quinoa (about the same protein, so the grams stay honest), the vegan seitan stir-fry becomes a tempeh one, and oats say "gluten-free oats". A short note explains the swaps, mentions tamari or a soy sauce labeled gluten-free for stir-fries, and points people with celiac disease to a doctor or registered dietitian. It works together with Vegetarian and Vegan, the buttons under each answer stay gluten-free, and saying "with gluten" shows every idea again. Why: the Coach already followed the Vegetarian and Vegan choice, but still suggested toast and pasta to people who had just said they avoid gluten. This was on the ideas list.
+
 ## 2026-11-24
 
 - **Protein foods list shows which filters are on.** On Gym basics, "Which foods have the most protein?" now has a short "Showing: Vegan, Gluten-free" line at the top whenever a filter is on. Filters are remembered on your phone, so this tells people who come back later why some foods are missing, and a "Show all foods" button turns every filter off in one tap.

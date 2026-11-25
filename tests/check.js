@@ -1001,6 +1001,25 @@ async function openPage(browser, file, viewport, hash = "") {
                 check(!/vitamin B12/.test(await ask("high protein snack ideas")) && !/vitamin B12/.test(await ask("vegetarian high protein snack ideas")), "only vegan ideas get the vegan note");
                 check(await page.locator(".chip[data-coach-say='Vegan high-protein snack ideas']").count() >= 1, "vegetarian ideas offer a Vegan button");
                 check(/Which meal/.test(await ask("vegetarian protein meal ideas")) && await page.locator(".chip[data-coach-say='Vegetarian high-protein dinner ideas']").count() >= 1, "vegetarian which-meal question offers vegetarian meal buttons");
+                // Gluten-free twist: typed "gluten-free" or the saved Gluten-free choice swaps bread, pasta and seitan, and says why
+                const wheat = /whole wheat|bread|toast|pasta|seitan|(?<!gluten-free )oats/i;
+                const gfLunch = await ask("gluten-free high protein lunch ideas");
+                const gfLunchList = await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent();
+                check(!wheat.test(gfLunchList) && /quinoa/.test(gfLunchList) && (gfLunchList.match(/about \d+ g/g) || []).length === 3 && /celiac disease/.test(gfLunch) && /registered dietitian/.test(gfLunch), "Coach's gluten-free lunch ideas have no wheat, with a celiac/dietitian note");
+                check(await page.locator(".chip[data-coach-say='Gluten-free high-protein dinner ideas']").count() >= 1, "gluten-free ideas offer gluten-free buttons next");
+                const gfVgDinner = await ask("vegan gluten free high protein dinner ideas");
+                const gfVgList = await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent();
+                check(!wheat.test(gfVgList) && !animal.test(gfVgList) && /tempeh[^:]*: about 42 g/i.test(gfVgList) && /vitamin B12/.test(gfVgDinner), "gluten-free vegan dinner swaps seitan for tempeh");
+                await page.evaluate(() => localStorage.setItem("gu-pf-gf", "true"));
+                const sgBreak = await ask("high protein breakfast ideas");
+                check(/because you picked Gluten-free/.test(sgBreak) && !wheat.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()) && /gluten-free oats/i.test(sgBreak), "the saved Gluten-free choice starts the Coach's ideas gluten-free");
+                const sgDay = await ask("a whole high-protein day");
+                const sgDayList = await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps");
+                const sgGrams = await sgDayList.locator("li").evaluateAll((ls) => ls.map((li) => +(li.textContent.match(/about (\d+) g/) || [])[1]));
+                check(sgGrams.length === 4 && !wheat.test(await sgDayList.textContent()) && +(sgDay.match(/Total: about (\d+) g/) || [])[1] === sgGrams.reduce((a, b) => a + b, 0), "the saved Gluten-free choice makes a gluten-free whole day with a matching total");
+                await ask("high protein lunch ideas with gluten");
+                check(/bread/.test(await page.locator(".coach-msg.is-coach").last().locator("ul.coach-steps").textContent()), "\"with gluten\" shows every idea again");
+                await page.evaluate(() => localStorage.removeItem("gu-pf-gf"));
                 // The Vegetarian / Vegan choice saved on the protein foods list starts the Coach's ideas meat-free
                 await page.evaluate(() => localStorage.setItem("gu-pf-veg", "true"));
                 const sSnack = await ask("high protein snack ideas");

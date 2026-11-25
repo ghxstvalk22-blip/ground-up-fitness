@@ -5161,7 +5161,35 @@ const coachDiet = (t) => !coachVegQ(t) ? "" : coachVeganQ(t) ? "vegan" : "veg";
 const COACH_DIET_WORD = { "": "", veg: "vegetarian", vegan: "vegan" };
 const COACH_DIET_SKIPS = { "": "", veg: " (no meat or fish)", vegan: " (no meat, fish, eggs, or dairy)" };
 const coachDietChip = (d) => ({ "": "High-protein", veg: "Vegetarian high-protein", vegan: "Vegan high-protein" })[d];
-const coachProteinIdeas = (kind, diet) => (diet === "vegan" && COACH_PROTEIN_VEGAN[kind]) || (diet && COACH_PROTEIN_VEG[kind]) || COACH_PROTEIN_IDEAS[kind];
+const coachProteinIdeasRaw = (kind, diet) => (diet === "vegan" && COACH_PROTEIN_VEGAN[kind]) || (diet && COACH_PROTEIN_VEG[kind]) || COACH_PROTEIN_IDEAS[kind];
+// Gluten-free twist: the Gluten-free choice on the protein foods list (gu-pf-gf), or "gluten-free" / "no gluten" / "celiac"
+// in the question, swaps bread and pasta for quinoa (same grams on the list), seitan for tempeh, and asks for gluten-free oats.
+// "with gluten" in the question turns the saved choice off for that answer.
+const COACH_GF_SWAP = {
+    "Greek yogurt cup with ½ cup oats and fruit": ["Greek yogurt cup with ½ cup gluten-free oats and fruit", 22],
+    "2 eggs on 2 slices of whole wheat toast": ["2 eggs with a cup of cooked quinoa", 20],
+    "Oats made with a cup of milk, plus 2 tablespoons of peanut butter": ["Gluten-free oats made with a cup of milk, plus 2 tablespoons of peanut butter", 20],
+    "3 oz chicken breast on 2 slices of whole wheat bread": ["3 oz chicken breast with a cup of cooked quinoa", 34],
+    "A can of tuna (3 oz, drained) on 2 slices of whole wheat bread": ["A can of tuna (3 oz, drained) over a cup of cooked quinoa", 28],
+    "3 oz lean ground beef (90%) in a sauce over a cup of pasta": ["3 oz lean ground beef (90%) in a sauce over a cup of cooked quinoa", 30],
+    "A cup of black beans on 2 slices of whole wheat toast with a slice of cheddar": ["A cup of black beans over a cup of cooked quinoa, with a slice of cheddar", 30],
+    "2 eggs and a slice of cheddar on 2 slices of whole wheat bread": ["2 eggs scrambled with a slice of cheddar, with a cup of cooked quinoa", 27],
+    "A cup of lentils in a tomato sauce over a cup of pasta": ["A cup of lentils in a tomato sauce over a cup of cooked quinoa", 26],
+    "Tofu scramble (7 oz firm tofu) on 2 slices of whole wheat toast": ["Tofu scramble (7 oz firm tofu) with a cup of cooked quinoa", 38],
+    "Oats made with a cup of soy milk, plus 2 tablespoons of peanut butter": ["Gluten-free oats made with a cup of soy milk, plus 2 tablespoons of peanut butter", 19],
+    "2 slices of whole wheat toast with 2 tablespoons of peanut butter, and a cup of soy milk": ["A cup of cooked quinoa with 2 tablespoons of peanut butter stirred in, and a cup of soy milk", 22],
+    "A cup of black beans on 2 slices of whole wheat toast": ["A cup of black beans over a cup of cooked quinoa", 23],
+    "3 oz seitan and a cup of edamame stir-fried, over a cup of rice (seitan is wheat gluten; use firm tofu if you avoid gluten)": ["3.5 oz tempeh and a cup of edamame stir-fried, over a cup of rice", 42],
+};
+const coachGfSaid = (t) => /\bgluten[- ]?free\b|\b(no|without|avoid|avoiding|skip|can'?t (have|eat)) (any )?gluten\b|\bc(o)?eliac\b/.test(t);
+const coachGfOff = (t) => /\bwith gluten\b/.test(t);
+const coachGfSaved = (t) => !coachGfSaid(t) && !coachGfOff(t) && store.get("gu-pf-gf", false) === true;
+const coachGf = (t) => !coachGfOff(t) && (coachGfSaid(t) || coachGfSaved(t));
+const coachProteinIdeas = (kind, diet, gf) => coachProteinIdeasRaw(kind, diet).map((idea) => (gf && COACH_GF_SWAP[idea[0]]) || idea);
+const COACH_GF_NOTE = "Bread and pasta are swapped for quinoa (about the same protein) and seitan for tempeh. Pick oats labeled gluten-free, and tamari or a soy sauce labeled gluten-free for stir-fries. If you have celiac disease, a doctor or registered dietitian can help you plan meals.";
+// The gluten-free line for an answer, and the button prefix that keeps it (only when it came from the question, not the saved choice)
+const coachGfNote = (t) => coachGf(t) ? `<p>${coachGfSaved(t) ? `Gluten-free because you picked Gluten-free on the ${COACH_PROTEIN_LINK} list (saved on this device; say "with gluten" to see every idea). ` : ""}${COACH_GF_NOTE}</p>` : "";
+const coachGfChip = (t, chip) => coachGf(t) && !coachGfSaved(t) ? `Gluten-free ${chip.charAt(0).toLowerCase()}${chip.slice(1)}` : chip;
 const COACH_VEGAN_NOTE = "Plant protein is easier to reach when you mix sources through the day (tofu, tempeh, seitan, edamame, lentils, beans, soy milk, whole grains) and aim toward the top of your daily range. Tempeh and seitan are among the most protein-packed plant foods (about 20 g a serving); seitan is wheat gluten, so skip it if you avoid gluten. A registered dietitian can help you plan a vegan diet, including vitamin B12.";
 // Which meal a protein-ideas question is about, and the other meals to offer next
 const coachProteinKind = (t) => /\b(breakfasts?|morning)\b/.test(t) ? "breakfast" : /\blunch(es)?\b/.test(t) ? "lunch" : /\b(dinners?|suppers?)\b/.test(t) ? "dinner" : "snack";
@@ -5169,9 +5197,9 @@ const coachProteinChips = (t) => {
     const kind = coachProteinKind(t);
     const next = { breakfast: ["snack", "lunch"], snack: ["breakfast", "dinner"], lunch: ["dinner", "snack"], dinner: ["lunch", "breakfast"] }[kind];
     const diet = coachDiet(t);
-    return [...next.map((k) => `${coachDietChip(diet)} ${k} ideas`), diet ? `A whole ${COACH_DIET_WORD[diet]} high-protein day` : `Vegetarian high-protein ${kind} ideas`,
+    return [...[...next.map((k) => `${coachDietChip(diet)} ${k} ideas`), diet ? `A whole ${COACH_DIET_WORD[diet]} high-protein day` : `Vegetarian high-protein ${kind} ideas`,
         ...(diet === "veg" && !coachDietSaved(t) ? [`Vegan high-protein ${kind} ideas`] : []),
-        ...(coachDietSaved(t) ? [`High-protein ${kind} ideas with meat`] : []), "How much protein do I need?"];
+        ...(coachDietSaved(t) ? [`High-protein ${kind} ideas with meat`] : [])].map((c) => coachGfChip(t, c)), "How much protein do I need?"];
 };
 function coachProteinMealReply(t) {
     const kind = coachProteinKind(t);
@@ -5180,9 +5208,9 @@ function coachProteinMealReply(t) {
     const otherTip = diet === "vegan"
         ? (kind === "breakfast" ? "a cup of edamame (18 g) works well" : "oats made with soy milk plus peanut butter gets about 19 g")
         : (kind === "breakfast" ? "a cup of edamame or a Greek yogurt cup (17 to 18 g) works well" : "Greek yogurt with oats or 2 eggs on toast gets about 20 g");
-    return `${coachDietNote(t)}<p>Three quick high-protein ${diet ? COACH_DIET_WORD[diet] + " " : ""}${kind} ideas${COACH_DIET_SKIPS[diet]}:</p>
-        <ul class="coach-steps">${coachProteinIdeas(kind, diet).map(([food, g]) => `<li>${food}: about <strong>${g} g</strong> of protein</li>`).join("")}</ul>
-        ${diet === "vegan" ? `<p>${COACH_VEGAN_NOTE}</p>` : ""}
+    return `${coachDietNote(t)}<p>Three quick high-protein ${coachGf(t) ? "gluten-free " : ""}${diet ? COACH_DIET_WORD[diet] + " " : ""}${kind} ideas${COACH_DIET_SKIPS[diet]}:</p>
+        <ul class="coach-steps">${coachProteinIdeas(kind, diet, coachGf(t)).map(([food, g]) => `<li>${food}: about <strong>${g} g</strong> of protein</li>`).join("")}</ul>
+        ${coachGfNote(t)}${diet === "vegan" ? `<p>${COACH_VEGAN_NOTE}</p>` : ""}
         <p>${other ? `For a ${other}, ${otherTip}.` : "Fill the rest of the plate with vegetables or a salad."} Numbers are rounded from ${COACH_PROTEIN_LINK}, which has about 20 foods and an easy sample day; the label on the pack wins. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
 }
 
@@ -5191,12 +5219,12 @@ const coachProteinAskMealQ = (t) => /\bprotein\b/.test(t) && /\b(meals?|recipes?
     && !/\b(powder|shakes?|supplements?|creatine|bars?|how much|need|per meal|each meal|every meal)\b/.test(t);
 const COACH_PROTEIN_MEALS = ["breakfast", "lunch", "dinner", "snack"];
 function coachProteinAskMealReply(t = "") {
-    return `${coachDietNote(t)}<p>Happy to. Which meal? Pick one below and I'll give you three quick ${coachDiet(t) ? COACH_DIET_WORD[coachDiet(t)] + " " : ""}ideas with the grams of protein in each, from ${COACH_PROTEIN_LINK}.</p>`;
+    return `${coachDietNote(t)}<p>Happy to. Which meal? Pick one below and I'll give you three quick ${coachGf(t) ? "gluten-free " : ""}${coachDiet(t) ? COACH_DIET_WORD[coachDiet(t)] + " " : ""}ideas with the grams of protein in each, from ${COACH_PROTEIN_LINK}.</p>`;
 }
 const coachProteinAskMealChips = (t = "") => {
     const diet = coachDiet(t);
     return [...COACH_PROTEIN_MEALS.map((k) => `${coachDietChip(diet)} ${k} ideas`), diet ? `A whole ${COACH_DIET_WORD[diet]} high-protein day` : "A whole high-protein day",
-        ...(coachDietSaved(t) ? ["A whole high-protein day with meat"] : [])];
+        ...(coachDietSaved(t) ? ["A whole high-protein day with meat"] : [])].map((c) => coachGfChip(t, c));
 };
 
 // "A whole high-protein day" strings one idea from each meal into a sample day, with the total
@@ -5206,16 +5234,16 @@ const coachProteinDayQ = (t) => /\bprotein\b/.test(t)
 const COACH_PROTEIN_DAY = [["Breakfast", "breakfast", 0], ["Lunch", "lunch", 0], ["Snack", "snack", 0], ["Dinner", "dinner", 1]];
 function coachProteinDayReply(t = "") {
     const diet = coachDiet(t);
-    const day = COACH_PROTEIN_DAY.map(([label, kind, i]) => [label, ...coachProteinIdeas(kind, diet)[diet ? 0 : i]]);
+    const day = COACH_PROTEIN_DAY.map(([label, kind, i]) => [label, ...coachProteinIdeas(kind, diet, coachGf(t))[diet ? 0 : i]]);
     const total = day.reduce((sum, [, , g]) => sum + g, 0);
-    return `${coachDietNote(t)}<p>One easy high-protein ${diet ? COACH_DIET_WORD[diet] + " " : ""}day, one idea from each meal${COACH_DIET_SKIPS[diet]}:</p>
+    return `${coachDietNote(t)}<p>One easy high-protein ${coachGf(t) ? "gluten-free " : ""}${diet ? COACH_DIET_WORD[diet] + " " : ""}day, one idea from each meal${COACH_DIET_SKIPS[diet]}:</p>
         <ul class="coach-steps">${day.map(([label, food, g]) => `<li><strong>${label}:</strong> ${food}, about <strong>${g} g</strong></li>`).join("")}</ul>
-        ${diet === "vegan" ? `<p>${COACH_VEGAN_NOTE}</p>` : ""}
+        ${coachGfNote(t)}${diet === "vegan" ? `<p>${COACH_VEGAN_NOTE}</p>` : ""}
         <p>Total: about <strong>${total} g</strong> of protein. That's a sample, not a target: your own daily number is in the <a href="tools.html#tool-calories">calorie and protein estimator</a>, and you can swap any meal for another idea. Numbers are rounded from ${COACH_PROTEIN_LINK}; the label on the pack wins. If you have kidney disease or another health condition, ask your doctor or a registered dietitian how much protein is right for you.</p>`;
 }
-const coachProteinDayChips = (t = "") => coachVegQ(t)
-    ? [`${coachDietChip(coachDiet(t))} lunch ideas`, `${coachDietChip(coachDiet(t))} dinner ideas`, ...(coachDietSaved(t) ? ["A whole high-protein day with meat"] : []), "How much protein do I need?"]
-    : ["High-protein breakfast ideas", "High-protein dinner ideas", "A whole vegetarian high-protein day", "How much protein do I need?"];
+const coachProteinDayChips = (t = "") => [...(coachVegQ(t)
+    ? [`${coachDietChip(coachDiet(t))} lunch ideas`, `${coachDietChip(coachDiet(t))} dinner ideas`, ...(coachDietSaved(t) ? ["A whole high-protein day with meat"] : [])]
+    : ["High-protein breakfast ideas", "High-protein dinner ideas", "A whole vegetarian high-protein day"]).map((c) => coachGfChip(t, c)), "How much protein do I need?"];
 
 // The workout block the AI adds, checked line by line: real exercises only, simple doses, sane weights
 function coachAiWorkout(raw) {
