@@ -1559,6 +1559,38 @@ async function openPage(browser, file, viewport, hash = "") {
             const placeOrder = await page.locator("#log-days .log-day").first().locator(".log-day-name").allTextContents();
             check(placeOrder.join("|") === "Bench press|Barbell row|Back squat", `older logs without a time follow the finished workout's order (got ${placeOrder.join(", ")})`);
             await page.evaluate(([l, s]) => { localStorage.setItem("gu-log", l); localStorage.setItem("gu-sessions", s); window.dispatchEvent(new CustomEvent("logchange", { detail: {} })); }, keepLog);
+            // Unfinished workouts: sets logged without Finish workout show on Overview with "Finish it now"
+            await page.click('[data-me-go="overview"]');
+            check(await page.locator("#me-unfinished").isHidden(), "no unfinished-workout note when every logged set was finished");
+            await page.evaluate(() => {
+                const log = JSON.parse(localStorage.getItem("gu-log"));
+                log["Barbell row"] = [{ date: isoDate(addDays(new Date(), -3)), unit: "lb", sets: [{ w: 95, r: 8 }, { w: 95, r: 8 }] }];
+                localStorage.setItem("gu-log", JSON.stringify(log));
+                window.dispatchEvent(new CustomEvent("logchange", { detail: {} }));
+            });
+            check(await page.locator("#me-unfinished").isVisible() && /2 sets · Barbell row/.test(await page.locator("#me-unfinished").textContent()), "sets logged without Finish workout show as an unfinished workout on Overview");
+            await page.click("#me-unfinished [data-finish-logged]");
+            check(await page.locator("#me-unfinished").isHidden() && await page.evaluate(() => isFinishedEntry("Barbell row", isoDate(addDays(new Date(), -3)))), "Finish it now saves that day as a finished workout");
+            // Today's sets from the plan you're on: Finish it now goes to Plans and finishes that day there
+            const keepPlan = await page.evaluate(() => localStorage.getItem("gu-last-plan"));
+            await page.evaluate(() => {
+                store.set("gu-last-plan", { goal: "beginner", days: 3 });
+                const info = currentPlanInfo();
+                const log = JSON.parse(localStorage.getItem("gu-log"));
+                log[info.items[0].name] = [{ date: isoDate(new Date()), unit: "lb", sets: [{ w: 50, r: 10 }] }];
+                localStorage.setItem("gu-log", JSON.stringify(log));
+                window.dispatchEvent(new CustomEvent("logchange", { detail: {} }));
+            });
+            const finHref = await page.locator("#me-unfinished a.btn").getAttribute("href").catch(() => "");
+            check(/programs\.html\?today=1&finish=\d#program-beginner-3/.test(finHref || ""), `today's unfinished plan workout links to Plans to finish it (got ${finHref})`);
+            await page.goto(url("programs.html", String(finHref).replace(/^programs\.html/, "")), { waitUntil: "load" });
+            await page.waitForTimeout(500);
+            check(await page.evaluate(() => (store.get("gu-sessions") || []).some((x) => x.date === isoDate(new Date()) && x.plan === "beginner")), "opening that link finishes today's workout on Plans");
+            check(!/finish=/.test(page.url()), "the finish link is removed from the address so a reload doesn't finish again");
+            await page.goto(url("me.html"), { waitUntil: "load" });
+            await page.evaluate(([l, s, lp]) => { localStorage.setItem("gu-log", l); localStorage.setItem("gu-sessions", s); if (lp === null) localStorage.removeItem("gu-last-plan"); else localStorage.setItem("gu-last-plan", lp); window.dispatchEvent(new CustomEvent("logchange", { detail: {} })); }, [...keepLog, keepPlan]);
+            await page.reload();
+            await page.waitForTimeout(300);
             await page.click('[data-me-go="lifts"]');
             check(!(await page.evaluate(() => document.documentElement.classList.contains("app-splash"))), "the loading screen only shows in the installed app, not the website");
             await page.click('[data-me-go="lifts"]');

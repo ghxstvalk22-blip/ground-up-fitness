@@ -65,6 +65,7 @@ const FEATURES = [
     setupMeTabs,
     setupLogHistory,
     setupActiveWorkout,
+    setupUnfinishedWorkout,
     setupAddToWorkout,
     setupMuscleMap,
     setupLevelBar,
@@ -3483,7 +3484,7 @@ function setupPrograms() {
         else dlg.setAttribute("open", "");
         document.body.classList.add("finish-open");
         dlg.addEventListener("close", () => document.body.classList.remove("finish-open"), { once: true });
-        if (navigator.vibrate) navigator.vibrate(60);
+        if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) navigator.vibrate(60); // no buzz when finished from a link (no tap on this page yet)
         const btn = dlg.querySelector("[data-finish-close]");
         if (btn) btn.focus();
         }
@@ -3963,6 +3964,13 @@ function setupPrograms() {
         render();
         const day = doing ? (els.grid.querySelector(".day-card.is-next") || els.grid.querySelector(".day-card")) : null;
         if (day) { day.classList.add("is-flash"); setTimeout(() => day.classList.remove("is-flash"), 1800); }
+        // "Finish it now" from My progress (?finish=<day>): finish that day once, then drop it from the address
+        const fin = params.has("finish") ? Number(params.get("finish")) : NaN;
+        if (Number.isInteger(fin) && fin >= 0 && lineups[fin]) {
+            params.delete("finish");
+            history.replaceState(null, "", `${location.pathname}${params.toString() ? `?${params}` : ""}${location.hash}`);
+            setTimeout(() => finishWorkout(fin), 0);
+        }
         return { target: day || document.getElementById("programs") };
     });
 
@@ -8751,6 +8759,84 @@ function setupActiveWorkout() {
     window.addEventListener("logchange", render);
     window.addEventListener("planpause", render);
     window.addEventListener("metab", (e) => { if (e.detail === "active") render(); });
+    render();
+}
+
+/* =========================================================
+   FEATURE: Unfinished workouts (My progress, Overview)
+   Sets logged in the last 30 days that no Finish workout covers don't count
+   on My progress yet. #me-unfinished lists those days with "Finish it now":
+   today's workout on your plan goes to Plans (?finish=<day>) so the day is
+   checked off as usual; any other day is saved here as a finished workout.
+   ========================================================= */
+// [{ date, names, sets, reps, volume, unit }] newest first
+function unfinishedLogDays(days = 30) {
+    const since = isoDate(addDays(new Date(), -days));
+    const sessions = finishedSessions(), unit = getProfile().unit, byDate = new Map();
+    Object.entries(getLog()).forEach(([name, list]) => (Array.isArray(list) ? list : []).forEach((e) => {
+        if (!e || typeof e.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(e.date) || e.date < since || e.date > isoDate(new Date())) return;
+        const sets = Array.isArray(e.sets) ? e.sets.filter((st) => st && Number(st.r) > 0) : [];
+        if (!sets.length || isFinishedEntry(name, e.date, sessions)) return;
+        if (!byDate.has(e.date)) byDate.set(e.date, { date: e.date, names: [], sets: 0, reps: 0, volume: 0, unit });
+        const d = byDate.get(e.date);
+        const hands = !isCardio(name) && ((startWeight(name, 10, unit) || {}).each) ? 2 : 1;
+        d.names.push(name);
+        sets.forEach((st) => { d.sets += 1; d.reps += Number(st.r); d.volume += toUnit(Number(st.w) || 0, e.unit === "kg" ? "kg" : "lb", unit) * Number(st.r) * hands; });
+    }));
+    return [...byDate.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function setupUnfinishedWorkout() {
+    const box = document.getElementById("me-unfinished");
+    if (!box) return;
+    let list = [];
+    // Today's workout on your plan, when the logged sets belong to it: finish it on Plans
+    function planLink(d) {
+        if (d.date !== isoDate(new Date())) return "";
+        const info = currentPlanInfo();
+        if (!info || info.weekDone || !info.items.some((x) => d.names.includes(x.name))) return "";
+        return `programs.html?today=1&finish=${info.di}#program-${info.goal}-${info.days}`;
+    }
+    function render() {
+        list = unfinishedLogDays().slice(0, 3);
+        box.hidden = !list.length;
+        if (!list.length) { box.innerHTML = ""; return; }
+        const today = isoDate(new Date());
+        const plural = (n, w) => `${fmt(n)} ${w}${n === 1 ? "" : "s"}`;
+        box.innerHTML = `<div class="unfinished">
+            <p class="kicker">Not finished yet</p>
+            <h2 class="me-h2">${list.length === 1 ? "A workout isn't finished" : `${list.length} workouts aren't finished`}</h2>
+            <p class="unfinished-lede">Sets only count on My progress after you tap <strong>Finish workout</strong>. Finish these and they show up in your log, lifts, and weekly count.</p>
+            <ul class="unfinished-list">${list.map((d, i) => {
+                const when = d.date === today ? "Today" : parseIso(d.date).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+                const names = d.names.slice(0, 3).join(", ") + (d.names.length > 3 ? ` and ${d.names.length - 3} more` : "");
+                const href = planLink(d);
+                return `<li>
+                    <span class="unfinished-info"><strong>${escapeHtml(when)}</strong><small>${plural(d.sets, "set")} · ${escapeHtml(names)}</small></span>
+                    ${href ? `<a class="btn btn-primary btn-compact" href="${escapeHtml(href)}">Finish it now</a>`
+                        : `<button type="button" class="btn btn-primary btn-compact" data-finish-logged="${i}" aria-label="Finish the workout from ${escapeHtml(when)}">Finish it now</button>`}
+                </li>`;
+            }).join("")}</ul>
+        </div>`;
+    }
+    box.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-finish-logged]");
+        if (!b) return;
+        const d = list[Number(b.dataset.finishLogged)];
+        if (!d) return;
+        const sessions = (store.get("gu-sessions", []) || []).filter((x) => x && typeof x.date === "string");
+        sessions.push({ date: d.date, plan: "logged", planName: "Logged sets", days: 0, day: -1, title: "Logged workout", names: d.names.slice(0, 20), exercises: d.names.length, sets: d.sets, reps: d.reps, volume: Math.round(d.volume), unit: d.unit });
+        // Oldest first, like Finish workout saves them
+        sessions.sort((a, b) => a.date.localeCompare(b.date));
+        store.set("gu-sessions", sessions.slice(-200));
+        window.dispatchEvent(new CustomEvent("logchange", { detail: { finished: true } }));
+        showToast("Workout finished", `${d.sets} set${d.sets === 1 ? "" : "s"} now count on My progress.`);
+        render();
+        const next = box.querySelector("[data-finish-logged], .unfinished a");
+        if (next) next.focus(); else { const h = document.getElementById("me-dash"); if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); } }
+    });
+    window.addEventListener("logchange", render);
+    window.addEventListener("storage", render);
     render();
 }
 

@@ -23,7 +23,6 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Link the "Train like a pro" box on the home page to a random habit's "How to start" guide, so returning visitors see a new tip.
 - [ ] Light week reminder: after about 6 to 8 straight weeks of logged training, gently suggest a light week in the week bar.
 - [ ] Show "Light week" on the Your plan bar and the My progress dashboard when the current week is a light week.
-- [ ] When you leave a workout with logged sets but no Finish, offer "Finish it now" on My progress so those sets count.
 - [ ] Up next card on the home page: a small "Last time" line (date and best set from your last session of that day).
 - [ ] Up next card: when the week is done, show which day starts next week and when.
 
@@ -55,12 +54,15 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Protein foods list: a small count next to each group heading ("4 of 6 shown") when a filter hides some foods.
 - [ ] Fitness Coach: when someone types "gluten-free", offer a button to save it as the Gluten-free choice on the protein foods list, so later ideas start gluten-free.
 - [ ] Fitness Coach: when Gluten-free is on, the vegan note could leave seitan out instead of naming it with a "skip it" warning.
+- [ ] Unfinished workouts note: a small "Not a workout" option to clear sets logged by mistake instead of finishing them.
+- [ ] Log tab: the "logged in a workout you haven't finished yet" line could link to the Finish it now note on Overview.
 
 ## Blocked
 
 (Nothing yet.)
 
 ## Done
+- [x] 2026-11-26: My progress: an "A workout isn't finished" note on Overview when sets from the last 30 days were logged but Finish workout was never tapped. "Finish it now" finishes today's plan workout on Plans (day checked off, usual Workout saved screen) or saves an older day as a finished workout right there, so those sets count in the log, lifts and weekly count.
 - [x] 2026-11-25: Fitness Coach: gluten-free meal ideas. Picking Gluten-free on the protein foods list, or typing "gluten-free", "no gluten" or "celiac", swaps bread and pasta for quinoa (same protein on the list), seitan for tempeh, and asks for gluten-free oats, with a note that names tamari and points people with celiac disease to a doctor or registered dietitian. Buttons keep it gluten-free; "with gluten" shows every idea.
 - [x] 2026-11-24: Protein foods list: a "Showing: Vegan, Gluten-free" line at the top of the list when filters are on (also when coming back later), with a "Show all foods" button that turns every filter off.
 - [x] 2026-11-23: Protein foods list: a "Gluten-free" filter that hides seitan, wheat bread and pasta and points out gluten-free grains (quinoa, rice, potatoes, oats labeled gluten-free).

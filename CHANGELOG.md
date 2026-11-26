@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-26
+
+- **My progress now catches workouts you forgot to finish.** Sets only count on My progress after you tap **Finish workout**, so if you logged your sets and then closed the app, that workout quietly went missing from your log, lifts and weekly count. Now the Overview tab shows a short "A workout isn't finished" note listing those days (last 30 days, with the number of sets and the exercises). Tap **Finish it now**: for today's workout on your plan it opens Plans and finishes that day as usual (the day gets checked off and you see the Workout saved screen); for an earlier day it saves that workout right there. Why: it's an easy step to miss, and people were losing credit for workouts they really did. This was on the ideas list.
+
 ## 2026-11-25
 
 - **The Fitness Coach now gives gluten-free meal ideas.** If you picked **Gluten-free** on the protein foods list (Gym basics), or you tell the Coach "gluten-free", "no gluten" or "celiac", its high-protein breakfast, lunch, dinner, snack and whole-day ideas leave out wheat: bread and pasta become quinoa (about the same protein, so the grams stay honest), the vegan seitan stir-fry becomes a tempeh one, and oats say "gluten-free oats". A short note explains the swaps, mentions tamari or a soy sauce labeled gluten-free for stir-fries, and points people with celiac disease to a doctor or registered dietitian. It works together with Vegetarian and Vegan, the buttons under each answer stay gluten-free, and saying "with gluten" shows every idea again. Why: the Coach already followed the Vegetarian and Vegan choice, but still suggested toast and pasta to people who had just said they avoid gluten. This was on the ideas list.
