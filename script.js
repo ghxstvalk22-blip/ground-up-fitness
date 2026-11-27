@@ -8711,7 +8711,16 @@ function setupMeTabs() {
     // "Add one" style links to other tabs on this page
     document.addEventListener("click", (e) => {
         const a = e.target.closest("[data-me-open]");
-        if (a) { e.preventDefault(); select(a.dataset.meOpen, { scroll: true }); }
+        if (!a) return;
+        e.preventDefault();
+        select(a.dataset.meOpen, { scroll: true });
+        // data-me-target="<id>": then bring that part of the tab into view and move focus there
+        const goal = a.dataset.meTarget && document.getElementById(a.dataset.meTarget);
+        if (goal && !goal.hidden) {
+            goal.scrollIntoView({ block: "start" });
+            if (!goal.hasAttribute("tabindex")) goal.setAttribute("tabindex", "-1");
+            goal.focus({ preventScroll: true });
+        }
     });
 }
 
@@ -8905,7 +8914,18 @@ function setupLogHistory() {
             <li><strong>${fmt(dayCount)}</strong> day${dayCount === 1 ? "" : "s"}</li>
             ${pick && heaviest && heaviest.w ? `<li><strong>${trimNum(roundWeight(heaviest.w, unit))}</strong> ${unit} heaviest set (× ${heaviest.r})</li>` : ""}` : "";
         const pending = Object.values(getLog()).reduce((t, list) => t + (Array.isArray(list) ? list.length : 0), 0) - all.length;
-        if (!undo && pending > 0) status.textContent = `${pending} exercise${pending === 1 ? "" : "s"} logged in a workout you haven't finished yet. Tap Finish workout on Plans to add ${pending === 1 ? "it" : "them"} here.`;
+        if (!undo && pending > 0) {
+            const lead = `${pending} exercise${pending === 1 ? "" : "s"} logged in a workout you haven't finished yet.`;
+            // Recent ones are listed on Overview with "Finish it now": link straight there
+            status.innerHTML = unfinishedLogDays().length
+                ? `${escapeHtml(lead)} <button type="button" class="text-button log-finish-link" data-me-open="overview" data-me-target="me-unfinished">Finish ${pending === 1 ? "it" : "them"} now</button>`
+                : escapeHtml(`${lead} Tap Finish workout on Plans to add ${pending === 1 ? "it" : "them"} here.`);
+            status.dataset.pending = "1";
+        } else if (!undo && status.dataset.pending) {
+            // Everything got finished: drop the stale line
+            status.textContent = "";
+            delete status.dataset.pending;
+        }
         if (!all.length) {
             daysEl.innerHTML = `<p class="me-unlock">Nothing here yet. Finish a workout (log your sets, then tap <strong>Finish workout</strong>) and it shows up here.</p>`;
             more.hidden = true;

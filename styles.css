@@ -1429,6 +1429,10 @@ select, input, textarea {
 .log-buttons { display: flex; align-items: center; gap: 14px; }
 .btn-compact { padding: 10px 16px; font-size: 0.72rem; }
 .log-status { margin: 6px 0 0; font-size: 0.8rem; color: var(--bad); min-height: 0; }
+.log-status .log-finish-link { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; min-height: 44px; padding: 0 2px; }
+#me-unfinished { scroll-margin-top: calc(var(--header-h, 64px) + 64px); }
+#me-unfinished:focus { outline: none; }
+#me-unfinished:focus-visible .unfinished { outline: 2px solid var(--volt); outline-offset: 2px; }
 
 .rest-btn {
     align-self: flex-start;

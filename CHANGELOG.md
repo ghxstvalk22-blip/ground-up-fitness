@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-27
+
+- **One tap from the Log tab to finish a forgotten workout.** When you've logged sets but never tapped **Finish workout**, the Log tab on My progress says so ("2 exercises logged in a workout you haven't finished yet"). That line now has a **Finish them now** link that jumps to the Overview tab, right at the "A workout isn't finished" note, where one more tap finishes it. The line also disappears on its own once everything is finished. Why: people noticed the missing workout on the Log tab but then had to hunt for where to fix it. This was on the ideas list.
+
 ## 2026-11-26
 
 - **My progress now catches workouts you forgot to finish.** Sets only count on My progress after you tap **Finish workout**, so if you logged your sets and then closed the app, that workout quietly went missing from your log, lifts and weekly count. Now the Overview tab shows a short "A workout isn't finished" note listing those days (last 30 days, with the number of sets and the exercises). Tap **Finish it now**: for today's workout on your plan it opens Plans and finishes that day as usual (the day gets checked off and you see the Workout saved screen); for an earlier day it saves that workout right there. Why: it's an easy step to miss, and people were losing credit for workouts they really did. This was on the ideas list.

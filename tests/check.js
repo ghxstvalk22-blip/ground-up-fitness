@@ -1569,6 +1569,11 @@ async function openPage(browser, file, viewport, hash = "") {
                 window.dispatchEvent(new CustomEvent("logchange", { detail: {} }));
             });
             check(await page.locator("#me-unfinished").isVisible() && /2 sets · Barbell row/.test(await page.locator("#me-unfinished").textContent()), "sets logged without Finish workout show as an unfinished workout on Overview");
+            // The Log tab's "not finished yet" line links straight to that note
+            await page.click('[data-me-go="log"]');
+            check(await page.locator("#log-history-status .log-finish-link").isVisible(), "the Log tab's unfinished line has a Finish it now link");
+            await page.click("#log-history-status .log-finish-link");
+            check(await page.locator("#me-unfinished").isVisible() && (await page.locator('.me-tab[aria-selected="true"]').textContent()) === "Overview" && await page.evaluate(() => document.activeElement && document.activeElement.id === "me-unfinished"), "that link opens Overview at the unfinished-workout note");
             await page.click("#me-unfinished [data-finish-logged]");
             check(await page.locator("#me-unfinished").isHidden() && await page.evaluate(() => isFinishedEntry("Barbell row", isoDate(addDays(new Date(), -3)))), "Finish it now saves that day as a finished workout");
             // Today's sets from the plan you're on: Finish it now goes to Plans and finishes that day there
