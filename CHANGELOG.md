@@ -2,6 +2,10 @@
 
 Newest changes first. Each daily update adds an entry here.
 
+## 2026-11-28
+
+- **The home page now tells you about a workout you forgot to finish.** If you logged sets but never tapped **Finish workout**, the Up next card on the home page shows a small "1 workout isn't finished" link (or "2 workouts aren't finished"). Tap it and My progress opens right at the "A workout isn't finished" note, where one tap finishes it. While today's workout is still in progress, today's sets don't trigger it (Continue workout already covers those). Why: plenty of people go straight from the home page to Plans and never open My progress, so they never saw the note. This was on the ideas list.
+
 ## 2026-11-27
 
 - **One tap from the Log tab to finish a forgotten workout.** When you've logged sets but never tapped **Finish workout**, the Log tab on My progress says so ("2 exercises logged in a workout you haven't finished yet"). That line now has a **Finish them now** link that jumps to the Overview tab, right at the "A workout isn't finished" note, where one more tap finishes it. The line also disappears on its own once everything is finished. Why: people noticed the missing workout on the Log tab but then had to hunt for where to fix it. This was on the ideas list.

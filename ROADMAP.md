@@ -55,13 +55,14 @@ From the 2026-10-13 phone walkthroughs (four testers playing real gym-goers), st
 - [ ] Fitness Coach: when someone types "gluten-free", offer a button to save it as the Gluten-free choice on the protein foods list, so later ideas start gluten-free.
 - [ ] Fitness Coach: when Gluten-free is on, the vegan note could leave seitan out instead of naming it with a "skip it" warning.
 - [ ] Unfinished workouts note: a small "Not a workout" option to clear sets logged by mistake instead of finishing them.
-- [ ] Unfinished workouts note: show it on the home page Up next card too (a small "1 workout isn't finished" link), so people who skip My progress still see it.
+- [ ] Up next card on the home page: when today's workout is in progress and other days are unfinished, a short "Finish older ones" hint in the In progress line.
 
 ## Blocked
 
 (Nothing yet.)
 
 ## Done
+- [x] 2026-11-28: Home page Up next card: a small "1 workout isn't finished" link (or "2 workouts aren't finished") when sets from the last 30 days were logged without Finish workout. It opens My progress right at the "A workout isn't finished" note. Today's sets stay out of it while today's workout is in progress.
 - [x] 2026-11-27: Log tab: the "exercises logged in a workout you haven't finished yet" line now has a "Finish them now" link that opens the Overview tab right at the "A workout isn't finished" note. The line also clears itself once everything is finished.
 - [x] 2026-11-26: My progress: an "A workout isn't finished" note on Overview when sets from the last 30 days were logged but Finish workout was never tapped. "Finish it now" finishes today's plan workout on Plans (day checked off, usual Workout saved screen) or saves an older day as a finished workout right there, so those sets count in the log, lifts and weekly count.
 - [x] 2026-11-25: Fitness Coach: gluten-free meal ideas. Picking Gluten-free on the protein foods list, or typing "gluten-free", "no gluten" or "celiac", swaps bread and pasta for quinoa (same protein on the list), seitan for tempeh, and asks for gluten-free oats, with a note that names tamari and points people with celiac disease to a doctor or registered dietitian. Buttons keep it gluten-free; "with gluten" shows every idea.

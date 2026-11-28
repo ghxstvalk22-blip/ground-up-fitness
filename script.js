@@ -9691,6 +9691,18 @@ function setupHero() {
                 if (parts.length) weighLine = `<p class="home-next-weigh">${parts.join(" ")}${trendTxt} <a href="me.html#weighin">${ago >= 4 ? "Weigh in" : "See my weight"}</a></p>`;
             }
         }
+        // Sets logged without Finish workout don't count on My progress: a small link to the note there
+        // (today's sets are left out while today's workout is in progress, since Continue workout covers them)
+        let unfinishedLine = "";
+        {
+            const today = isoDate(new Date());
+            const open = unfinishedLogDays().filter((d) => !(d.date === today && info.started && !info.finishedToday));
+            if (open.length) {
+                const txt = open.length === 1 ? "1 workout isn't finished" : `${open.length} workouts aren't finished`;
+                unfinishedLine = `<p class="home-next-unfinished"><a href="me.html#me-unfinished">${escapeHtml(txt)}</a> <span>Finish it so its sets count on My progress.</span></p>`;
+                if (open.length > 1) unfinishedLine = unfinishedLine.replace("Finish it so its sets count", "Finish them so their sets count");
+            }
+        }
         const h1 = document.querySelector(".hero-copy h1"), who = getProfile().name;
         if (h1) { h1.classList.add("hero-welcome"); h1.innerHTML = `Welcome back${who ? `, <span class="hl">${escapeHtml(who)}</span>` : ""}.`; }
         actions.insertAdjacentHTML("afterbegin", `
@@ -9700,6 +9712,7 @@ function setupHero() {
     <p class="home-next-sub">${escapeHtml(info.name)}${custom ? "" : ` · ${info.weekLabel}`} · ${info.weekDone ? "your next week starts when this one ends" : `${info.items.length} exercise${info.items.length === 1 ? "" : "s"}`}</p>
     ${shown.length ? `<ol class="home-next-list">${shown.map((x) => `<li class="${x.done ? "is-done" : ""}"><strong>${escapeHtml(x.name)}</strong> <span>${escapeHtml(x.d)}${x.done ? " · done" : ""}</span></li>`).join("")}${more > 0 ? `<li class="home-next-more">+ ${more} more</li>` : ""}</ol>` : ""}
     ${weighLine}
+    ${unfinishedLine}
     <div class="home-next-actions">
         <a class="btn btn-primary" href="${info.href}">${escapeHtml(go)} <span aria-hidden="true">&rarr;</span></a>
         <a class="btn btn-outline-light" href="me.html">My progress</a>

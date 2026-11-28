@@ -1574,8 +1574,26 @@ async function openPage(browser, file, viewport, hash = "") {
             check(await page.locator("#log-history-status .log-finish-link").isVisible(), "the Log tab's unfinished line has a Finish it now link");
             await page.click("#log-history-status .log-finish-link");
             check(await page.locator("#me-unfinished").isVisible() && (await page.locator('.me-tab[aria-selected="true"]').textContent()) === "Overview" && await page.evaluate(() => document.activeElement && document.activeElement.id === "me-unfinished"), "that link opens Overview at the unfinished-workout note");
+            // The home page's Up next card links to the same note
+            const keepPlanHome = await page.evaluate(() => localStorage.getItem("gu-last-plan"));
+            await page.evaluate(() => store.set("gu-last-plan", { goal: "beginner", days: 3 }));
+            await page.goto(url("index.html"), { waitUntil: "load" });
+            const homeUnf = page.locator('.home-next .home-next-unfinished a[href="me.html#me-unfinished"]');
+            check(await homeUnf.isVisible() && /1 workout isn't finished/.test(await homeUnf.textContent()), "the home page's Up next card has a '1 workout isn't finished' link");
+            const homeUnfBox = await homeUnf.boundingBox();
+            check(homeUnfBox && homeUnfBox.height >= 44, "that link is at least 44px tall");
+            await homeUnf.click();
+            await page.waitForLoadState("load");
+            await page.waitForTimeout(400);
+            check(await page.locator("#me-unfinished").isVisible() && (await page.locator('.me-tab[aria-selected="true"]').textContent()) === "Overview", "the home link opens My progress at the unfinished-workout note");
+            await page.evaluate((lp) => { if (lp === null) localStorage.removeItem("gu-last-plan"); else localStorage.setItem("gu-last-plan", lp); }, keepPlanHome);
             await page.click("#me-unfinished [data-finish-logged]");
             check(await page.locator("#me-unfinished").isHidden() && await page.evaluate(() => isFinishedEntry("Barbell row", isoDate(addDays(new Date(), -3)))), "Finish it now saves that day as a finished workout");
+            await page.evaluate(() => store.set("gu-last-plan", { goal: "beginner", days: 3 }));
+            await page.goto(url("index.html"), { waitUntil: "load" });
+            check(await page.locator(".home-next").isVisible() && await page.locator(".home-next-unfinished").count() === 0, "no unfinished line on the home card once every workout is finished");
+            await page.goto(url("me.html", "#me-unfinished"), { waitUntil: "load" });
+            await page.evaluate((lp) => { if (lp === null) localStorage.removeItem("gu-last-plan"); else localStorage.setItem("gu-last-plan", lp); }, keepPlanHome);
             // Today's sets from the plan you're on: Finish it now goes to Plans and finishes that day there
             const keepPlan = await page.evaluate(() => localStorage.getItem("gu-last-plan"));
             await page.evaluate(() => {
